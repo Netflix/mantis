@@ -19,7 +19,6 @@ package io.mantisrx.master.api.akka;
 import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.model.HttpRequest;
@@ -28,8 +27,10 @@ import akka.http.javadsl.settings.ServerSettings;
 import akka.http.javadsl.settings.WebSocketSettings;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
+import akka.stream.javadsl.Sink;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
+import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandlerImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
@@ -198,8 +199,6 @@ public class MasterApiAkkaService extends BaseService {
         final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow =
             this.mantisMasterRoute.createRoute().flow(system, materializer);
 
-        final Http http = Http.get(system);
-
         ServerSettings defaultSettings = ServerSettings.create(system);
         java.time.Duration idleTimeout = system.settings().config().getDuration("akka.http.server.idle-timeout");
         logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
@@ -209,18 +208,22 @@ public class MasterApiAkkaService extends BaseService {
 
         ServerSettings customServerSettings = defaultSettings.withWebsocketSettings(customWebsocketSettings);
 
-        final CompletionStage<ServerBinding> binding = http.bindAndHandle(routeFlow,
-            ConnectHttp.toHost("0.0.0.0", port),
-            customServerSettings,
-            system.log(),
-            materializer);
-        binding.exceptionally(failure -> {
-            System.err.println("API service exited, committing suicide !" + failure.getMessage());
-            logger.info("Master API service exited in error, committing suicide !");
-            system.terminate();
-            System.exit(2);
-            return null;
-        });
+        final CompletionStage<ServerBinding> binding = Http.get(system)
+                .newServerAt("0.0.0.0", port)
+                .withSettings(customServerSettings)
+                .connectionSource()
+                .to(Sink.foreach(connection -> {
+                    MasterApiMetrics.getInstance().incrementIncomingRequestCount();
+                    connection.handleWith(routeFlow, materializer);
+                }))
+                .run(materializer)
+                .exceptionally(failure -> {
+                    System.err.println("API service exited, committing suicide !" + failure.getMessage());
+                    logger.info("Master API service exited in error, committing suicide !");
+                    system.terminate();
+                    System.exit(2);
+                    return null;
+                });
         logger.info("Starting Mantis Master API on port {}", port);
         try {
             serviceLatch.await();

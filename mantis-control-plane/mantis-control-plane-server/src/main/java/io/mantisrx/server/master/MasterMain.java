@@ -25,10 +25,12 @@ import akka.actor.Props;
 import com.netflix.fenzo.AutoScaleAction;
 import com.netflix.fenzo.AutoScaleRule;
 import com.netflix.fenzo.VirtualMachineLease;
+import com.netflix.spectator.api.DefaultRegistry;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.master.DeadLetterActor;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.JobClustersManagerService;
@@ -365,6 +367,7 @@ public class MasterMain implements Service {
         }
 
         try {
+            SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
             Properties props = new Properties();
             props.putAll(System.getenv());
             props.putAll(System.getProperties());
