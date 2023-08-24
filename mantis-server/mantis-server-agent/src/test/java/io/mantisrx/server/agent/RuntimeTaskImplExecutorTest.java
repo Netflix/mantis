@@ -127,6 +127,9 @@ public class RuntimeTaskImplExecutorTest {
         props.setProperty("mantis.taskexecutor.cluster-id", "default");
         props.setProperty("mantis.taskexecutor.heartbeats.interval", "100");
         props.setProperty("mantis.taskexecutor.metrics.collector", "io.mantisrx.server.agent.DummyMetricsCollector");
+        props.setProperty("mantis.taskexecutor.registration.retry.initial-delay.ms", "10");
+        props.setProperty("mantis.taskexecutor.registration.retry.mutliplier", "1");
+        props.setProperty("mantis.taskexecutor.registration.retry.randomization-factor", "0.5");
 
         props.setProperty("mantis.localmode", "true");
         props.setProperty("mantis.zookeeper.connectString", "localhost:8100");

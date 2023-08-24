@@ -42,8 +42,6 @@ import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderC
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
@@ -51,7 +49,6 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
@@ -67,8 +64,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.RxNetty;
 import org.apache.flink.api.common.time.Time;
@@ -327,7 +322,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             workerConfiguration.getHeartbeatInterval(),
             workerConfiguration.getHeartbeatTimeout(),
             this::getCurrentReport,
-            workerConfiguration.getTolerableConsecutiveHeartbeatFailures());
+            workerConfiguration.getTolerableConsecutiveHeartbeatFailures(),
+            workerConfiguration.heartbeatRetryInitialDelayMs(),
+            workerConfiguration.heartbeatRetryMaxDelayMs(),
+            workerConfiguration.registrationRetryInitialDelayMillis(),
+            workerConfiguration.registrationRetryMultiplier(),
+            workerConfiguration.registrationRetryRandomizationFactor(),
+            workerConfiguration.registrationRetryMaxAttempts());
     }
 
     private ExecutorService getIOExecutor() {
@@ -346,101 +347,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
             }
         }, timeout);
-    }
-
-    @Slf4j
-    @ToString(of = "gateway")
-    @RequiredArgsConstructor
-    static class ResourceManagerGatewayCxn extends AbstractScheduledService {
-
-        private final int idx;
-        private final TaskExecutorRegistration taskExecutorRegistration;
-        private final ResourceClusterGateway gateway;
-        private final Time heartBeatInterval;
-        private final Time heartBeatTimeout;
-        private final Time timeout = Time.of(1000, TimeUnit.MILLISECONDS);
-        private final Function<Time, CompletableFuture<TaskExecutorReport>> currentReportSupplier;
-        private final int tolerableConsecutiveHeartbeatFailures;
-
-        private int numFailedHeartbeats = 0;
-        // flag representing if the task executor has been registered with the resource manager
-        @Getter
-        private volatile boolean registered = false;
-
-        @Override
-        protected String serviceName() {
-            return "ResourceManagerGatewayCxn-" + idx;
-        }
-
-        @Override
-        protected Scheduler scheduler() {
-            return Scheduler.newFixedDelaySchedule(
-                0,
-                heartBeatInterval.getSize(),
-                heartBeatInterval.getUnit());
-        }
-
-        @Override
-        public void startUp() throws Exception {
-            log.info("Trying to register with resource manager {}", gateway);
-            try {
-                gateway
-                    .registerTaskExecutor(taskExecutorRegistration)
-                    .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-                registered = true;
-            } catch (Exception e) {
-                // the registration may or may not have succeeded. Since we don't know let's just
-                // do the disconnection just to be safe.
-                log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway,
-                    e);
-                try {
-                    gateway.disconnectTaskExecutor(
-                            new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
-                                taskExecutorRegistration.getClusterID()))
-                        .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-                } catch (Exception inner) {
-                    log.error("Disconnection has also failed", inner);
-                }
-                throw e;
-            }
-        }
-
-        @Override
-        public void runOneIteration() throws Exception {
-            try {
-                currentReportSupplier.apply(timeout)
-                    .thenComposeAsync(report -> {
-                        log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
-                        return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
-                    })
-                    .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-
-                // the heartbeat was successful, let's reset the counter and set the registered flag
-                numFailedHeartbeats = 0;
-                registered = true;
-            } catch (Exception e) {
-                log.error("Failed to send heartbeat to gateway {}", gateway, e);
-                // increase the number of failed heartbeats by 1 and clear the registered flag
-                numFailedHeartbeats += 1;
-                if (numFailedHeartbeats > tolerableConsecutiveHeartbeatFailures) {
-                    registered = false;
-                    throw e;
-                } else {
-                    log.info("Ignoring heartbeat failure to gateway {} due to failed heartbeats {} <= {}",
-                        gateway, numFailedHeartbeats, tolerableConsecutiveHeartbeatFailures);
-                }
-            }
-        }
-
-        @Override
-        public void shutDown() throws Exception {
-            registered = false;
-            gateway
-                .disconnectTaskExecutor(
-                    new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
-                        taskExecutorRegistration.getClusterID()))
-                .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-        }
     }
 
     private class ResourceManagerChangeListener implements
@@ -583,7 +489,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         try {
             Preconditions.checkState(currentResourceManagerCxn != null,
                 "currentResourceManagerCxn was not expected to be null");
-            currentResourceManagerCxn.gateway.notifyTaskExecutorStatusChange(
+            currentResourceManagerCxn.getGateway().notifyTaskExecutorStatusChange(
                     new TaskExecutorStatusChange(taskExecutorID, clusterID, newReport))
                 .whenCompleteAsync((ack, throwable) -> {
                     if (throwable != null) {
