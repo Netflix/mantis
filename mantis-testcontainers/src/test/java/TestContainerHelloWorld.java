@@ -18,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.mantisrx.common.metrics.LoggingMetricsPublisher;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,6 +45,7 @@ import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.images.builder.ImageFromDockerfile;
+import org.testcontainers.utility.Base58;
 import org.testcontainers.utility.MountableFile;
 
 @Slf4j
@@ -64,6 +66,8 @@ public class TestContainerHelloWorld {
 
     private static final String CONTAINER_ARTIFACT_PATH = "/apps/mantis/mantis-server-agent/mantis-artifacts/storage/";
 
+    private static final String LOGGING_ENABLED_METRICS_GROUP =
+            "MasterApiMetrics;DeadLetterActor;JobDiscoveryRoute";
     private static final String JOB_CLUSTER_CREATE = "{\"jobDefinition\":{\"name\":\"hello-sine-testcontainers\","
         + "\"user\":\"mantisoss\",\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-2.1.0-SNAPSHOT"
         + ".zip\"," +
@@ -94,8 +98,9 @@ public class TestContainerHelloWorld {
 
         Path path = Paths.get("../mantis-control-plane/Dockerfile");
         log.info("Building control plane image from: {}", path);
-        ImageFromDockerfile controlPlaneDockerFile = new ImageFromDockerfile()
-            .withDockerfile(path);
+        ImageFromDockerfile controlPlaneDockerFile =
+                new ImageFromDockerfile("localhost/testcontainers/mantis_control_plane_server_" + Base58.randomString(4).toLowerCase())
+                    .withDockerfile(path);
         try (
             Network network = Network.newNetwork();
             GenericContainer<?> zookeeper =
@@ -106,11 +111,15 @@ public class TestContainerHelloWorld {
 
             GenericContainer<?> master = USE_LOCAL_BUILT_IMAGE ?
                 new GenericContainer<>(controlPlaneDockerFile)
+                    .withEnv(LoggingMetricsPublisher.LOGGING_ENABLED_METRICS_GROUP_ID_LIST_KEY,
+                            LOGGING_ENABLED_METRICS_GROUP)
                     .withNetwork(network)
                     .withNetworkAliases(CONTROL_PLANE_ALIAS)
                     .withExposedPorts(CONTROL_PLANE_API_PORT)
                 :
                 new GenericContainer<>("netflixoss/mantiscontrolplaneserver:latest")
+                    .withEnv(LoggingMetricsPublisher.LOGGING_ENABLED_METRICS_GROUP_ID_LIST_KEY,
+                            LOGGING_ENABLED_METRICS_GROUP)
                     .withNetwork(network)
                     .withNetworkAliases(CONTROL_PLANE_ALIAS)
                     .withExposedPorts(CONTROL_PLANE_API_PORT);
@@ -135,9 +144,15 @@ public class TestContainerHelloWorld {
             log.info(response.body().string());
 
             // Create agent(s)
+            Path agentDockerFilePath = Paths.get("../mantis-server/mantis-server-agent/Dockerfile");
+            log.info("Building agent image from: {}", agentDockerFilePath);
+            ImageFromDockerfile agentDockerFile =
+                    new ImageFromDockerfile("localhost/testcontainers/mantis_agent_" + Base58.randomString(4).toLowerCase())
+                            .withDockerfile(agentDockerFilePath);
+
             final String agentId0 = "agent0";
             final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
-            GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, network);
+            GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, agentDockerFile, network);
 
             String controlPlaneHost = master.getHost();
             int controlPlanePort = master.getMappedPort(CONTROL_PLANE_API_PORT);
@@ -207,12 +222,7 @@ public class TestContainerHelloWorld {
     }
 
     private GenericContainer<?> createAgent(String agentId, String resourceClusterId, String hostname,
-        Network network) {
-        Path path = Paths.get("../mantis-server/mantis-server-agent/Dockerfile");
-        log.info("Building agent image from: {}", path);
-        ImageFromDockerfile dockerFile = new ImageFromDockerfile()
-            .withDockerfile(path);
-
+            ImageFromDockerfile dockerFile, Network network) {
         // setup sample job artifact
         MountableFile sampleArtifact = MountableFile.forHostPath(
             Paths.get("../mantis-examples/mantis-examples-sine-function/build/distributions/mantis-examples-sine-function-2.1.0-SNAPSHOT.zip"));

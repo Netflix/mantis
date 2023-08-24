@@ -326,13 +326,20 @@ abstract class BaseRoute extends AllDirectives {
             t -> t.fold(
                 throwable -> {
                     if (throwable instanceof TaskExecutorNotFoundException) {
+                        MasterApiMetrics.getInstance().incrementResp4xx();
                         return complete(StatusCodes.NOT_FOUND);
                     }
 
                     if (throwable instanceof RequestThrottledException) {
+                        MasterApiMetrics.getInstance().incrementResp4xx();
                         return complete(StatusCodes.TOO_MANY_REQUESTS);
                     }
 
+                    if (throwable instanceof AskTimeoutException) {
+                        MasterApiMetrics.getInstance().incrementAskTimeOutCount();
+                    }
+
+                    MasterApiMetrics.getInstance().incrementResp5xx();
                     return complete(StatusCodes.INTERNAL_SERVER_ERROR, throwable, Jackson.marshaller());
                 },
                 r -> complete(StatusCodes.OK, r, Jackson.marshaller())));
