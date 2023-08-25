@@ -29,7 +29,6 @@ import mantis.io.reactivex.netty.client.ConnectionPool;
 import mantis.io.reactivex.netty.client.ConnectionPoolBuilder;
 import mantis.io.reactivex.netty.metrics.MetricEventsSubject;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurator;
-import mantis.io.reactivex.netty.protocol.http.client.HttpClient.HttpClientConfig.Builder;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientImpl;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
@@ -122,11 +121,6 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
         }
     }
 
-    public Observable<HttpClientResponse<O>> submit(HttpClientRequest<I> request) {
-        ClientConfig clientConfig = (ClientConfig) Builder.newDefaultConfig();
-        return super.submit(request, this.observableConection, clientConfig);
-    }
-
     public Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connect() {
         this.observableConection = super.connect();
         return this.observableConection.doOnNext(x -> this.connectionTracker.add(x.getChannel()));
@@ -136,7 +130,6 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
         Channel channel;
         for (Channel value : this.connectionTracker) {
             channel = value;
-//            channel.alloc().buffer().writeBytes("writing".getBytes());
             channel.close();
         }
         this.connectionTracker.clear();

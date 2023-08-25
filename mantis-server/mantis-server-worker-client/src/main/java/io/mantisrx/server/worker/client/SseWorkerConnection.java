@@ -36,7 +36,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import mantis.io.reactivex.netty.channel.ObservableConnection;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientBuilder;
@@ -198,12 +197,6 @@ public class SseWorkerConnection {
                 .withNoConnectionPooling()
                 .build();
 
-//        client =
-//                RxNetty.<ByteBuf, ServerSentEvent>newHttpClientBuilder(hostname, port)
-//                        .pipelineConfigurator(PipelineConfigurators.<ByteBuf>clientSseConfigurator())
-//                        //.enableWireLogging(LogLevel.ERROR)
-//                        .withNoConnectionPooling()
-//                        .build();
         StringBuilder sp = new StringBuilder();
 
         String delimiter = sinkParameters == null
@@ -225,9 +218,6 @@ public class SseWorkerConnection {
 
         String uri = "/" + sp.toString();
         logger.info(getName() + ": Using uri: " + uri);
-
-        Observable<ObservableConnection<HttpClientResponse<ServerSentEvent>, HttpClientRequest<ByteBuf>>> conn = client.connect();
-        conn.subscribe();
 
         return
                 client.submit(HttpClientRequest.createGet(uri))
@@ -257,6 +247,7 @@ public class SseWorkerConnection {
     }
 
     private void resetConnected() {
+        // explicitly close the connection
         ((MantisHttpClientImpl<?, ?>)client).closeConn();
         if (isConnected.getAndSet(false)) {
             if (updateConxStatus != null)
