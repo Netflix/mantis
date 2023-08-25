@@ -20,6 +20,9 @@ import akka.actor.ActorRef;
 import akka.pattern.Patterns;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
@@ -37,6 +40,11 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     protected final ActorRef resourceClusterManagerActor;
     protected final Duration askTimeout;
     private final ResourceClusterTaskExecutorMapper mapper;
+    private final Counter registrationCounter;
+    private final Counter heartbeatCounter;
+    private final Counter disconnectionCounter;
+    private final Counter throttledCounter;
+
     protected final RateLimiter rateLimiter;
 
     ResourceClusterGatewayAkkaImpl(
@@ -49,6 +57,18 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
         this.mapper = mapper;
 
         this.rateLimiter = RateLimiter.create(maxConcurrentRequestCount);
+        Metrics m = new Metrics.Builder()
+                .id("ResourceClusterGatewayAkkaImpl")
+                .addCounter("registrationCounter")
+                .addCounter("heartbeatCounter")
+                .addCounter("disconnectionCounter")
+                .addCounter("throttledCounter")
+                .build();
+        Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
+        this.registrationCounter = metrics.getCounter("registrationCounter");
+        this.heartbeatCounter = metrics.getCounter("heartbeatCounter");
+        this.disconnectionCounter = metrics.getCounter("disconnectionCounter");
+        this.throttledCounter = metrics.getCounter("throttledCounter");
     }
 
     private <In, Out> Function<In, CompletableFuture<Out>> withThrottle(Function<In, CompletableFuture<Out>> func) {
@@ -56,6 +76,7 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
             if (rateLimiter.tryAcquire(200, TimeUnit.MILLISECONDS)) {
                 return func.apply(in);
             } else {
+                this.throttledCounter.increment();
                 return CompletableFutures.exceptionallyCompletedFuture(
                         new RequestThrottledException("Throttled req: " + in.getClass().getSimpleName())
                 );
@@ -69,6 +90,7 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     }
 
     private CompletableFuture<Ack> registerTaskExecutorImpl(TaskExecutorRegistration registration) {
+        this.registrationCounter.increment();
         return Patterns
                 .ask(resourceClusterManagerActor, registration, askTimeout)
                 .thenApply(Ack.class::cast)
@@ -85,6 +107,7 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     }
 
     private CompletableFuture<Ack> heartBeatFromTaskExecutorImpl(TaskExecutorHeartbeat heartbeat) {
+        this.heartbeatCounter.increment();
         return
             Patterns
                 .ask(resourceClusterManagerActor, heartbeat, askTimeout)
@@ -104,6 +127,7 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     @Override
     public CompletableFuture<Ack> disconnectTaskExecutor(
         TaskExecutorDisconnection taskExecutorDisconnection) {
+        this.disconnectionCounter.increment();
         return withThrottle(this::disconnectTaskExecutorImpl).apply(taskExecutorDisconnection);
     }
 
