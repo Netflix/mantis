@@ -177,7 +177,7 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         try {
             currentReportSupplier.apply(timeout)
                     .thenComposeAsync(report -> {
-                        log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
+                        log.info("Sending heartbeat to resource manager {} with report {}", gateway, report);
                         return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
                     })
                     .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());

@@ -42,6 +42,8 @@ public abstract class ExponentialBackoffAbstractScheduledService extends Abstrac
 
     @Override
     protected void runOneIteration() throws Exception {
+        log.info("runOneIteration");
+
         if (!isTimeForNextRun()) {
             log.debug("Skipping runIteration due to retry delay. Next run after: {}", nextRunTime);
             return;
@@ -51,6 +53,8 @@ public abstract class ExponentialBackoffAbstractScheduledService extends Abstrac
 
     private void runNow() throws Exception {
         try {
+            log.info("runNow");
+
             runIteration();
             resetRetryCount();
         } catch (Exception e) {
@@ -63,6 +67,8 @@ public abstract class ExponentialBackoffAbstractScheduledService extends Abstrac
     }
 
     private void setNextRunTime(Exception e) throws Exception {
+        log.info("setNextRunTime");
+
         // If max retries reached, rethrow exception
         if (retryCount >= maxRetryCount) {
             throw e;
