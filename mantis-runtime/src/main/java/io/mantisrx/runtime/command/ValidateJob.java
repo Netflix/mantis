@@ -26,7 +26,7 @@ import java.util.List;
 public class ValidateJob implements Command {
 
     @SuppressWarnings("rawtypes")
-    private Job job;
+    private final Job job;
 
     @SuppressWarnings("rawtypes")
     public ValidateJob(Job job) {

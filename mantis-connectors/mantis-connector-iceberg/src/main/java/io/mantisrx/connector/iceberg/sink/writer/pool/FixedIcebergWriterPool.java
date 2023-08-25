@@ -17,6 +17,8 @@
 package io.mantisrx.connector.iceberg.sink.writer.pool;
 
 import io.mantisrx.connector.iceberg.sink.writer.IcebergWriter;
+import io.mantisrx.connector.iceberg.sink.writer.MantisDataFile;
+import io.mantisrx.connector.iceberg.sink.writer.MantisRecord;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.factory.IcebergWriterFactory;
 import java.io.IOException;
@@ -29,7 +31,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.data.Record;
 
 /**
  * A service that delegates operations to {@link IcebergWriter}s.
@@ -70,7 +71,7 @@ public class FixedIcebergWriterPool implements IcebergWriterPool {
     }
 
     @Override
-    public void write(StructLike partition, Record record) {
+    public void write(StructLike partition, MantisRecord record) {
         IcebergWriter writer = pool.get(partition);
         if (writer == null) {
             throw new RuntimeException("writer does not exist in writer pool");
@@ -79,7 +80,7 @@ public class FixedIcebergWriterPool implements IcebergWriterPool {
     }
 
     @Override
-    public DataFile close(StructLike partition) throws IOException, UncheckedIOException {
+    public MantisDataFile close(StructLike partition) throws IOException, UncheckedIOException {
         IcebergWriter writer = pool.get(partition);
         if (writer == null) {
             throw new RuntimeException("writer does not exist in writer pool");
@@ -97,10 +98,10 @@ public class FixedIcebergWriterPool implements IcebergWriterPool {
      * produce a {@code null} which will be excluded from the resulting list.
      */
     @Override
-    public List<DataFile> closeAll() throws IOException, UncheckedIOException {
-        List<DataFile> dataFiles = new ArrayList<>();
+    public List<MantisDataFile> closeAll() throws IOException, UncheckedIOException {
+        List<MantisDataFile> dataFiles = new ArrayList<>();
         for (StructLike partition : pool.keySet()) {
-            DataFile dataFile = close(partition);
+            MantisDataFile dataFile = close(partition);
             if (dataFile != null) {
                 dataFiles.add(dataFile);
             }

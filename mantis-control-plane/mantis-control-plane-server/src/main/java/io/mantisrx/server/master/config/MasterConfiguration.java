@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.master.config;
 
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
+import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.master.store.KeyValueStore;
 import java.time.Duration;
@@ -47,9 +47,6 @@ public interface MasterConfiguration extends CoreConfiguration {
 
     @Config("mantis.master.storageProvider")
     KeyValueStore getStorageProvider();
-
-    @Config("mantis.master.resourceClusterStorageProvider")
-    ResourceClusterStorageProvider getResourceClusterStorageProvider();
 
     @Config("mantis.master.resourceClusterProvider")
     String getResourceClusterProvider();
@@ -202,9 +199,14 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.zookeeper.leader.election.path")
     String getLeaderElectionPath();
 
+    @Config("mantis.worker.heartbeat.intervalv2.secs")
+    @Default("20")
+    long getDefaultWorkerHeartbeatIntervalSecs();
+
+    //todo: fix the property name, ideally to mantis.worker.timeout.secs
     @Config("mantis.worker.heartbeat.interval.secs")
     @Default("60")
-    long getWorkerTimeoutSecs();
+    long getDefaultWorkerTimeoutSecs();
 
     @Config("mantis.worker.heartbeat.interval.init.secs")
     @Default("180")
@@ -363,6 +365,23 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.agent.assignment.interval.ms")
     @Default("60000") // 1 minute
     int getAssignmentIntervalInMs();
+
+    @Config("mantis.job.costsCalculator.class")
+    @Default("io.mantisrx.master.jobcluster.job.NoopCostsCalculator")
+    CostsCalculator getJobCostsCalculator();
+
+    @Config("mantis.job.worker.max.artifacts.to.cache")
+    @Default("5")
+    int getMaxJobArtifactsToCache();
+
+    @Config("mantis.artifactCaching.jobClusters")
+    @Default("")
+    String getJobClustersWithArtifactCachingEnabled();
+
+    // rate limit actions on resource cluster actor to control backlog.
+    @Config("mantis.master.resource.cluster.actions.permitsPerSecond")
+    @Default("300")
+    int getResourceClusterActionsPermitsPerSecond();
 
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());

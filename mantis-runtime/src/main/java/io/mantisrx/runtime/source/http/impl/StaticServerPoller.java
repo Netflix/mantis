@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import rx.Observable;
+import rx.Observable.OnSubscribe;
 import rx.Scheduler;
 import rx.Scheduler.Worker;
 import rx.Subscriber;
@@ -68,12 +69,7 @@ public class StaticServerPoller implements ServerPoller {
 
     @Override
     public Observable<Set<ServerInfo>> servers() {
-        return Observable.create(new Observable.OnSubscribe<Set<ServerInfo>>() {
-            @Override
-            public void call(Subscriber<? super Set<ServerInfo>> subscriber) {
-                schedulePolling(subscriber);
-            }
-        });
+        return Observable.create((OnSubscribe<Set<ServerInfo>>) this::schedulePolling);
     }
 
     @Override

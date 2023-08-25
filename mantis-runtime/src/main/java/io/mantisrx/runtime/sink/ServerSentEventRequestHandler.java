@@ -76,14 +76,14 @@ public class ServerSentEventRequestHandler<T> implements
     private static final byte[] ID_PREFIX_AS_BYTES = "id: ".getBytes();
     private static final byte[] DATA_PREFIX_AS_BYTES = SSE_DATA_PREFIX.getBytes();
     private static final String PING = "\ndata: ping\n\n";
-    final ServerSlotManager ssm = new ServerSlotManager(HashFunctions.ketama());
-    private Observable<T> observableToServe;
-    private Func1<T, String> encoder;
-    private Func1<Throwable, String> errorEncoder;
-    private Predicate<T> predicate;
-    private Func2<Map<String, List<String>>, Context, Void> requestPreprocessor;
-    private Func2<Map<String, List<String>>, Context, Void> requestPostprocessor;
-    private Context context;
+    final ServerSlotManager<String> ssm = new ServerSlotManager<>(HashFunctions.ketama());
+    private final Observable<T> observableToServe;
+    private final Func1<T, String> encoder;
+    private final Func1<Throwable, String> errorEncoder;
+    private final Predicate<T> predicate;
+    private final Func2<Map<String, List<String>>, Context, Void> requestPreprocessor;
+    private final Func2<Map<String, List<String>>, Context, Void> requestPostprocessor;
+    private final Context context;
     private boolean pingsEnabled = true;
     private int flushIntervalMillis = 250;
     private String format = DEFAULT_FORMAT;
@@ -129,10 +129,13 @@ public class ServerSentEventRequestHandler<T> implements
 
         // decouple the observable on a separate thread and add backpressure handling
         String decoupleSSE = "false";//ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("sse.decouple", "false");
+        //TODO Below condition would be always false during if condition.
+        // Since decoupleSSE would be false and matching with true as string
+        // would always ignore code inside if block
         if ("true".equals(decoupleSSE)) {
             final BasicTag sockAddrTag = new BasicTag("sockAddr", Optional.ofNullable(socketAddrStr).orElse("none"));
             requestObservable = requestObservable
-                    .lift(new DropOperator<T>("outgoing_ServerSentEventRequestHandler", sockAddrTag))
+                    .lift(new DropOperator<>("outgoing_ServerSentEventRequestHandler", sockAddrTag))
                     .observeOn(Schedulers.io());
         }
         response.getHeaders().set("Access-Control-Allow-Origin", "*");
@@ -213,6 +216,8 @@ public class ServerSentEventRequestHandler<T> implements
         if (queryParameters != null && queryParameters.containsKey(ENABLE_PINGS_PARAM)) {
             // enablePings
             String enablePings = queryParameters.get(ENABLE_PINGS_PARAM).get(0);
+            //TODO Note: Code logic can be improved here.
+            // since if condition check returns same true or false which can equated to pingsEnabled value.
             if ("true".equalsIgnoreCase(enablePings)) {
                 pingsEnabled = true;
             } else {
@@ -269,7 +274,7 @@ public class ServerSentEventRequestHandler<T> implements
 
                 .filter(filterFunction)
                 .map(encoder)
-                .lift(new DisableBackPressureOperator<String>())
+                .lift(new DisableBackPressureOperator<>())
                 .buffer(flushIntervalMillis, TimeUnit.MILLISECONDS)
                 .flatMap(new Func1<List<String>, Observable<Void>>() {
                     @Override

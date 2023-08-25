@@ -23,12 +23,12 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 
 public class JobDescriptor {
 
-    private JobInfo jobInfo;
-    private String project;
-    private String version;
-    private long timestamp;
-    // flag for rolling out the job master changes, Job Master is luanched by MantisMaster only if this flag is set
-    private boolean readyForJobMaster;
+    private final JobInfo jobInfo;
+    private final  String project;
+    private final  String version;
+    private final  long timestamp;
+    // flag for rolling out the job master changes, Job Master is launched by MantisMaster only if this flag is set
+    private final  boolean readyForJobMaster;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)

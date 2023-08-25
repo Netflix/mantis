@@ -27,12 +27,15 @@ import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
+import io.mantisrx.common.Ack;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v1.HttpRequestMetrics.Endpoints;
 import io.mantisrx.master.api.akka.route.v1.HttpRequestMetrics.HttpVerb;
+import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.resourcecluster.proto.DisableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
+import io.mantisrx.master.resourcecluster.proto.GetTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
@@ -40,6 +43,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Cr
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateResourceClusterScaleRuleRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.JobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
@@ -52,11 +56,14 @@ import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -83,6 +90,10 @@ import lombok.extern.slf4j.Slf4j;
  * /api/v1/resourceClusters/{}/scaleRules                             (GET, POST)
  * <p>
  * /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState  (GET)
+ * <p>
+ * /api/v1/resourceClusters/{}/cacheJobArtifacts                       (GET)
+ * /api/v1/resourceClusters/{}/cacheJobArtifacts                       (POST)
+ * /api/v1/resourceClusters/{}/cacheJobArtifacts                       (DELETE)
  *
  * [Notes]
  * To upgrade cluster containers: each container running task executor is using docker image tag based image version.
@@ -109,7 +120,8 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         this.gateway = gateway;
         this.resourceClusterRouteHandler = resourceClusterRouteHandler;
         MasterConfiguration config = ConfigurationProvider.getConfig();
-        this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
+        this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(),
+            config.getApiCacheMaxSize(),
             config.getApiCacheTtlMilliseconds());
     }
 
@@ -180,7 +192,8 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                 // /{}/getResourceOverview
                 path(
                     PathMatchers.segment().slash("getResourceOverview"),
-                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> getResourceOverview(getClusterID(clusterName)))))
+                    (clusterName) -> pathEndOrSingleSlash(
+                        () -> concat(get(() -> getResourceOverview(getClusterID(clusterName)))))
                 ),
                 // /{}/activeJobOverview?pageSize={}&startingIndex={}
                 path(
@@ -188,27 +201,32 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() ->
                         parameterOptional("startingIndex", startingIndex ->
                             parameterOptional("pageSize", pageSize ->
-                                getActiveJobOverview(getClusterID(clusterName), startingIndex, pageSize))))))
+                                getActiveJobOverview(getClusterID(clusterName), startingIndex,
+                                    pageSize))))))
                 ),
                 // /{}/getRegisteredTaskExecutors
                 path(
                     PathMatchers.segment().slash("getRegisteredTaskExecutors"),
-                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getRegisteredTaskExecutors()))))
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        get(() -> mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getRegisteredTaskExecutors(req.getAttributes())))))
                 ),
                 // /{}/getBusyTaskExecutors
                 path(
                     PathMatchers.segment().slash("getBusyTaskExecutors"),
-                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getBusyTaskExecutors()))))
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        get(() -> mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getBusyTaskExecutors(req.getAttributes())))))
                 ),
                 // /{}/getAvailableTaskExecutors
                 path(
                     PathMatchers.segment().slash("getAvailableTaskExecutors"),
-                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getAvailableTaskExecutors()))))
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        get(() -> mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getAvailableTaskExecutors(req.getAttributes())))))
                 ),
                 // /{}/getUnregisteredTaskExecutors
                 path(
                     PathMatchers.segment().slash("getUnregisteredTaskExecutors"),
-                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getUnregisteredTaskExecutors()))))
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        get(() -> mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getUnregisteredTaskExecutors(req.getAttributes())))))
                 ),
                 // /{}/scaleRule
                 path(
@@ -230,15 +248,33 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                         post(() -> createAllScaleRules(clusterName))
                     ))
                 ),
+                // /{}/cacheJobArtifacts
+                path(
+                    PathMatchers.segment().slash("cacheJobArtifacts"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        // GET
+                        get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName))
+                            .getJobArtifactsToCache())),
+
+                        // POST
+                        post(() -> cacheJobArtifacts(clusterName)),
+
+                        // DELETE
+                        delete(() -> removeJobArtifactsToCache(clusterName))
+                    ))
+                ),
 
                 // /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState
                 pathPrefix(
                     PathMatchers.segment().slash("taskExecutors"),
-                    (clusterName) ->
+                    (clusterName) -> concat(
                         path(
                             PathMatchers.segment().slash("getTaskExecutorState"),
                             (taskExecutorId) ->
-                                pathEndOrSingleSlash(() -> concat(get(() -> getTaskExecutorState(getClusterID(clusterName), getTaskExecutorID(taskExecutorId))))))
+                                pathEndOrSingleSlash(() -> concat(
+                                    get(() -> getTaskExecutorState(getClusterID(clusterName),
+                                        getTaskExecutorID(taskExecutorId))))))
+                    )
                 )
             ));
 
@@ -249,7 +285,8 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         return withFuture(gateway.listActiveClusters());
     }
 
-    private Route getActiveJobOverview(ClusterID clusterID, Optional<String> startingIndex, Optional<String> pageSize) {
+    private Route getActiveJobOverview(ClusterID clusterID, Optional<String> startingIndex,
+        Optional<String> pageSize) {
         CompletableFuture<PagedActiveJobOverview> jobsOverview =
             gateway.getClusterFor(clusterID).getActiveJobOverview(
                 startingIndex.map(Integer::parseInt),
@@ -263,6 +300,20 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         return withFuture(resourceOverview);
     }
 
+    private Route mkTaskExecutorsRoute(
+        ClusterID clusterId,
+        BiFunction<ResourceCluster, GetTaskExecutorsRequest, CompletableFuture<List<TaskExecutorID>>> taskExecutors) {
+        final GetTaskExecutorsRequest empty = new GetTaskExecutorsRequest(ImmutableMap.of());
+        return entity(
+            Jackson.optionalEntityUnmarshaller(GetTaskExecutorsRequest.class),
+            request -> {
+                if (request == null) {
+                    request = empty;
+                }
+                return withFuture(taskExecutors.apply(gateway.getClusterFor(clusterId), request));
+            });
+    }
+
     private Route getTaskExecutorState(ClusterID clusterID, TaskExecutorID taskExecutorID) {
         CompletableFuture<ResourceCluster.TaskExecutorStatus> statusOverview =
             gateway.getClusterFor(clusterID).getTaskExecutorState(taskExecutorID);
@@ -271,18 +322,24 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
     private Route disableTaskExecutors(ClusterID clusterID) {
         return entity(Jackson.unmarshaller(DisableTaskExecutorsRequest.class), request -> {
-            log.info("POST /api/v1/resourceClusters/{}/disableTaskExecutors called with body {}", clusterID, request);
+            log.info("POST /api/v1/resourceClusters/{}/disableTaskExecutors called with body {}",
+                clusterID, request);
             return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutorsFor(
                 request.getAttributes(),
-                Instant.now().plus(Duration.ofHours(request.getExpirationDurationInHours()))));
+                Instant.now().plus(Duration.ofHours(request.getExpirationDurationInHours())),
+                request.getTaskExecutorID()));
         });
     }
 
     private Route setScalerStatus(String clusterID) {
-        return entity(Jackson.unmarshaller(SetResourceClusterScalerStatusRequest.class), request -> {
-            log.info("POST /api/v1/resourceClusters/{}/setScalerStatus called with body {}", clusterID, request);
-            return withFuture(gateway.getClusterFor(request.getClusterID()).setScalerStatus(request.getClusterID(), request.getSkuId(), request.getEnabled(), request.getExpirationDurationInSeconds()));
-        });
+        return entity(Jackson.unmarshaller(SetResourceClusterScalerStatusRequest.class),
+            request -> {
+                log.info("POST /api/v1/resourceClusters/{}/setScalerStatus called with body {}",
+                    clusterID, request);
+                return withFuture(gateway.getClusterFor(request.getClusterID())
+                    .setScalerStatus(request.getClusterID(), request.getSkuId(),
+                        request.getEnabled(), request.getExpirationDurationInSeconds()));
+            });
     }
 
     private ClusterID getClusterID(String clusterName) {
@@ -303,7 +360,8 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
             alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
                 uri -> completeAsync(
                     this.resourceClusterRouteHandler.get(
-                        GetResourceClusterSpecRequest.builder().id(ClusterID.of(clusterId)).build()),
+                        GetResourceClusterSpecRequest.builder().id(ClusterID.of(clusterId))
+                            .build()),
                     resp -> completeOK(
                         resp,
                         Jackson.marshaller()),
@@ -312,21 +370,22 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
     }
 
     private Route provisionResourceClustersRoute() {
-        return entity(Jackson.unmarshaller(ProvisionResourceClusterRequest.class), resClusterSpec -> {
-            log.info("POST /api/v1/resourceClusters called: {}", resClusterSpec);
-            final CompletionStage<GetResourceClusterResponse> response =
-                this.resourceClusterRouteHandler.create(resClusterSpec);
+        return entity(Jackson.unmarshaller(ProvisionResourceClusterRequest.class),
+            resClusterSpec -> {
+                log.info("POST /api/v1/resourceClusters called: {}", resClusterSpec);
+                final CompletionStage<GetResourceClusterResponse> response =
+                    this.resourceClusterRouteHandler.create(resClusterSpec);
 
-            return completeAsync(
-                response,
-                resp -> complete(
-                    StatusCodes.ACCEPTED,
-                    resp.getClusterSpec(),
-                    Jackson.marshaller()),
-                Endpoints.RESOURCE_CLUSTERS,
-                HttpRequestMetrics.HttpVerb.POST
-            );
-        });
+                return completeAsync(
+                    response,
+                    resp -> complete(
+                        StatusCodes.ACCEPTED,
+                        resp.getClusterSpec(),
+                        Jackson.marshaller()),
+                    Endpoints.RESOURCE_CLUSTERS,
+                    HttpRequestMetrics.HttpVerb.POST
+                );
+            });
     }
 
     private Route getRegisteredResourceClustersRoute() {
@@ -335,7 +394,8 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
             alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
                 uri -> {
                     return completeAsync(
-                        this.resourceClusterRouteHandler.get(ListResourceClusterRequest.builder().build()),
+                        this.resourceClusterRouteHandler.get(
+                            ListResourceClusterRequest.builder().build()),
                         resp -> completeOK(
                             resp,
                             Jackson.marshaller()),
@@ -375,59 +435,63 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
 
     private Route upgradeCluster(String clusterId) {
-        return entity(Jackson.unmarshaller(UpgradeClusterContainersRequest.class), upgradeRequest -> {
-            log.info("POST api/v1/resourceClusters/{}/upgrade {}", clusterId, upgradeRequest);
-            final CompletionStage<UpgradeClusterContainersResponse> response =
-                this.resourceClusterRouteHandler.upgrade(upgradeRequest);
+        return entity(Jackson.unmarshaller(UpgradeClusterContainersRequest.class),
+            upgradeRequest -> {
+                log.info("POST api/v1/resourceClusters/{}/upgrade {}", clusterId, upgradeRequest);
+                final CompletionStage<UpgradeClusterContainersResponse> response =
+                    this.resourceClusterRouteHandler.upgrade(upgradeRequest);
 
-            return completeAsync(
-                response,
-                resp -> complete(
-                    StatusCodes.ACCEPTED,
-                    resp,
-                    Jackson.marshaller()),
-                Endpoints.RESOURCE_CLUSTERS,
-                HttpRequestMetrics.HttpVerb.POST
-            );
-        });
+                return completeAsync(
+                    response,
+                    resp -> complete(
+                        StatusCodes.ACCEPTED,
+                        resp,
+                        Jackson.marshaller()),
+                    Endpoints.RESOURCE_CLUSTERS,
+                    HttpRequestMetrics.HttpVerb.POST
+                );
+            });
     }
 
     private Route createSingleScaleRule(String clusterId) {
-        return entity(Jackson.unmarshaller(CreateResourceClusterScaleRuleRequest.class), scaleRuleReq -> {
-            log.info("POST api/v1/resourceClusters/{}/scaleRule {}", clusterId, scaleRuleReq);
-            final CompletionStage<GetResourceClusterScaleRulesResponse> response =
-                this.resourceClusterRouteHandler.createSingleScaleRule(scaleRuleReq);
+        return entity(Jackson.unmarshaller(CreateResourceClusterScaleRuleRequest.class),
+            scaleRuleReq -> {
+                log.info("POST api/v1/resourceClusters/{}/scaleRule {}", clusterId, scaleRuleReq);
+                final CompletionStage<GetResourceClusterScaleRulesResponse> response =
+                    this.resourceClusterRouteHandler.createSingleScaleRule(scaleRuleReq);
 
-            return completeAsync(
-                response,
-                resp -> complete(
-                    StatusCodes.ACCEPTED,
-                    resp,
-                    Jackson.marshaller()),
-                Endpoints.RESOURCE_CLUSTERS,
-                HttpRequestMetrics.HttpVerb.POST
-            );
-        });
+                return completeAsync(
+                    response,
+                    resp -> complete(
+                        StatusCodes.ACCEPTED,
+                        resp,
+                        Jackson.marshaller()),
+                    Endpoints.RESOURCE_CLUSTERS,
+                    HttpRequestMetrics.HttpVerb.POST
+                );
+            });
     }
 
     private Route createAllScaleRules(String clusterId) {
-        return entity(Jackson.unmarshaller(CreateAllResourceClusterScaleRulesRequest.class), scaleRuleReq -> {
-            log.info("POST api/v1/resourceClusters/{}/scaleRules {}", clusterId, scaleRuleReq);
-            final CompletionStage<GetResourceClusterScaleRulesResponse> response =
-                this.resourceClusterRouteHandler.createAllScaleRule(scaleRuleReq);
+        return entity(Jackson.unmarshaller(CreateAllResourceClusterScaleRulesRequest.class),
+            scaleRuleReq -> {
+                log.info("POST api/v1/resourceClusters/{}/scaleRules {}", clusterId, scaleRuleReq);
+                final CompletionStage<GetResourceClusterScaleRulesResponse> response =
+                    this.resourceClusterRouteHandler.createAllScaleRule(scaleRuleReq);
 
-            return completeAsync(
-                response.thenCombineAsync(
-                    this.gateway.getClusterFor(getClusterID(clusterId)).refreshClusterScalerRuleSet(),
-                    (createResp, dontCare) -> createResp),
-                resp -> complete(
-                    StatusCodes.ACCEPTED,
-                    resp,
-                    Jackson.marshaller()),
-                Endpoints.RESOURCE_CLUSTERS,
-                HttpRequestMetrics.HttpVerb.POST
-            );
-        });
+                return completeAsync(
+                    response.thenCombineAsync(
+                        this.gateway.getClusterFor(getClusterID(clusterId))
+                            .refreshClusterScalerRuleSet(),
+                        (createResp, dontCare) -> createResp),
+                    resp -> complete(
+                        StatusCodes.ACCEPTED,
+                        resp,
+                        Jackson.marshaller()),
+                    Endpoints.RESOURCE_CLUSTERS,
+                    HttpRequestMetrics.HttpVerb.POST
+                );
+            });
     }
 
     private Route getScaleRules(String clusterId) {
@@ -436,11 +500,53 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
             alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
                 uri -> completeAsync(
                     this.resourceClusterRouteHandler.getClusterScaleRules(
-                        GetResourceClusterScaleRulesRequest.builder().clusterId(getClusterID(clusterId)).build()),
+                        GetResourceClusterScaleRulesRequest.builder()
+                            .clusterId(getClusterID(clusterId)).build()),
                     resp -> completeOK(
                         resp,
                         Jackson.marshaller()),
                     Endpoints.RESOURCE_CLUSTERS,
                     HttpVerb.GET))));
+    }
+
+    private Route cacheJobArtifacts(String clusterId) {
+        return entity(Jackson.unmarshaller(JobArtifactsToCacheRequest.class), request -> {
+            log.info("POST /api/v1/resourceClusters/{}/cacheJobArtifacts {}", clusterId, request);
+            final CompletionStage<Ack> response =
+                gateway.getClusterFor(getClusterID(clusterId))
+                    .addNewJobArtifactsToCache(request.getClusterID(), request.getArtifacts());
+
+            return completeAsync(
+                response.thenApply(dontCare -> new BaseResponse(request.requestId,
+                    BaseResponse.ResponseCode.SUCCESS, "job artifacts stored successfully")),
+                resp -> complete(
+                    StatusCodes.CREATED,
+                    request.getArtifacts(),
+                    Jackson.marshaller()),
+                Endpoints.RESOURCE_CLUSTERS,
+                HttpRequestMetrics.HttpVerb.POST
+            );
+        });
+    }
+
+    private Route removeJobArtifactsToCache(String clusterId) {
+        return entity(Jackson.unmarshaller(JobArtifactsToCacheRequest.class), request -> {
+            log.info("DELETE /api/v1/resourceClusters/{}/cacheJobArtifacts {}", clusterId, request);
+
+            final CompletionStage<Ack> response =
+                gateway.getClusterFor(getClusterID(clusterId))
+                    .removeJobArtifactsToCache(request.getArtifacts());
+
+            return completeAsync(
+                response.thenApply(dontCare -> new BaseResponse(request.requestId,
+                    BaseResponse.ResponseCode.SUCCESS, "job artifacts removed successfully")),
+                resp -> complete(
+                    StatusCodes.OK,
+                    request.getArtifacts(),
+                    Jackson.marshaller()),
+                Endpoints.RESOURCE_CLUSTERS,
+                HttpRequestMetrics.HttpVerb.DELETE
+            );
+        });
     }
 }

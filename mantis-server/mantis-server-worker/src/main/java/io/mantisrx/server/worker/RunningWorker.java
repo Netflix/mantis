@@ -16,6 +16,8 @@
 
 package io.mantisrx.server.worker;
 
+import static io.mantisrx.server.core.utils.StatusConstants.STATUS_MESSAGE_FORMAT;
+
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.MantisJobState;
@@ -121,17 +123,13 @@ public class RunningWorker {
         };
     }
 
-    private String getWorkerStringPrefix(int stageNum, int index, int number) {
-        return "stage " + stageNum + " worker index=" + index + " number=" + number;
-    }
-
     public void signalStartedInitiated() {
         logger.info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
                 + " signaling started initiated");
         vmTaskStatusObserver.onNext(new VirtualMachineTaskStatus(
                 new WorkerId(jobId, workerIndex, workerNum).getId(),
                 VirtualMachineTaskStatus.TYPE.STARTED, jobName + ", " +
-                getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " started"));
+                String.format(STATUS_MESSAGE_FORMAT, stageNum, workerIndex, workerNum, "started")));
         // indicate start success
         requestSubject.onNext(true);
         requestSubject.onCompleted();
@@ -141,10 +139,9 @@ public class RunningWorker {
     }
 
     public void signalStarted() {
-        logger.info("JobId: " + jobId + ", " + getWorkerStringPrefix(stageNum, workerIndex, workerNum)
-                + " signaling started");
+        logger.info("JobId: " + jobId + ", " + String.format(STATUS_MESSAGE_FORMAT, stageNum, workerIndex, workerNum, "signaling started"));
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
-                TYPE.INFO, getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " running",
+                TYPE.INFO, String.format(STATUS_MESSAGE_FORMAT, stageNum, workerIndex, workerNum, "running"),
                 MantisJobState.Started));
     }
 
@@ -152,7 +149,7 @@ public class RunningWorker {
         logger.info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
                 + " signaling completed");
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
-                TYPE.INFO, getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " completed",
+                TYPE.INFO, String.format(STATUS_MESSAGE_FORMAT, stageNum, workerIndex, workerNum, "completed"),
                 MantisJobState.Completed));
         // send complete status
         jobStatus.onCompleted();
@@ -160,7 +157,7 @@ public class RunningWorker {
         vmTaskStatusObserver.onNext(new VirtualMachineTaskStatus(
                 new WorkerId(jobId, workerIndex, workerNum).getId(),
                 VirtualMachineTaskStatus.TYPE.COMPLETED, jobName + ", " +
-                getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " completed"));
+                String.format(STATUS_MESSAGE_FORMAT, stageNum, workerIndex, workerNum, "completed")));
     }
 
     public void signalFailed(Throwable t) {
@@ -168,7 +165,7 @@ public class RunningWorker {
                 + " signaling failed");
         logger.error("Worker failure detected, shutting down job", t);
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
-                TYPE.INFO, getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " failed. error: " + t.getMessage(),
+                TYPE.INFO, String.format(STATUS_MESSAGE_FORMAT, stageNum, workerIndex, workerNum, "failed. error: " + t.getMessage()),
                 MantisJobState.Failed));
     }
 

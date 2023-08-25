@@ -197,7 +197,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
             try {
                 service.start();
             } catch (Throwable e) {
-                log.error(String.format("Failed to start service %s: %s", service, e.getMessage()), e);
+                log.error("Failed to start service {}", service, e);
                 throw e;
             }
         }

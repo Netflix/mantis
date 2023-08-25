@@ -16,7 +16,7 @@
 
 package io.mantisrx.sourcejob.kafka;
 
-import static io.mantisrx.runtime.parameter.ParameterUtils.STAGE_CONCURRENCY;
+import static io.mantisrx.common.SystemParameters.STAGE_CONCURRENCY;
 
 import io.mantisrx.connector.kafka.KafkaAckable;
 import io.mantisrx.runtime.Context;

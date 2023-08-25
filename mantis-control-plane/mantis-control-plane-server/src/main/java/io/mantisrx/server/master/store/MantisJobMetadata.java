@@ -68,4 +68,7 @@ public interface MantisJobMetadata {
 
     WorkerMigrationConfig getMigrationConfig();
 
+    long getHeartbeatIntervalSecs();
+
+    long getWorkerTimeoutSecs();
 }

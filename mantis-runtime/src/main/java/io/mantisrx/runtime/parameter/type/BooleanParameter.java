@@ -29,12 +29,7 @@ public class BooleanParameter extends Builder<Boolean> {
 
     @Override
     public ParameterDecoder<Boolean> decoder() {
-        return new ParameterDecoder<Boolean>() {
-            @Override
-            public Boolean decode(String value) {
-                return Boolean.parseBoolean(value);
-            }
-        };
+        return Boolean::parseBoolean;
     }
 
     @Override

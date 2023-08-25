@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.annotation.Nullable;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,9 +36,13 @@ import org.slf4j.LoggerFactory;
 class Heartbeat {
 
     private static final Logger logger = LoggerFactory.getLogger(Heartbeat.class);
+    @Getter
     private final String jobId;
+    @Getter
     private final int stageNumber;
+    @Getter
     private final int workerIndex;
+    @Getter
     private final int workerNumber;
     private final ConcurrentMap<String, String> payloads;
     private final BlockingQueue<PayloadPair> singleUsePayloads = new LinkedBlockingQueue<>();

@@ -61,4 +61,20 @@ public interface CoreConfiguration {
     @Config("mantis.metricsPublisher.publishFrequencyInSeconds")
     @Default("15")
     int getMetricsPublisherFrequencyInSeconds();
+
+    @Config("mantis.asyncHttpClient.maxConnectionsPerHost")
+    @Default("2")
+    int getAsyncHttpClientMaxConnectionsPerHost();
+
+    @Config("mantis.asyncHttpClient.connectionTimeoutMs")
+    @Default("10000")
+    int getAsyncHttpClientConnectionTimeoutMs();
+
+    @Config("mantis.asyncHttpClient.requestTimeoutMs")
+    @Default("10000")
+    int getAsyncHttpClientRequestTimeoutMs();
+
+    @Config("mantis.asyncHttpClient.readTimeoutMs")
+    @Default("10000")
+    int getAsyncHttpClientReadTimeoutMs();
 }

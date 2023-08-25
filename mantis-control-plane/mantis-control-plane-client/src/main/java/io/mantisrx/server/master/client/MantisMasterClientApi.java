@@ -80,7 +80,7 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.functions.Func2;
-
+import rx.subjects.BehaviorSubject;
 
 /**
  *
@@ -668,6 +668,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
 
     private WebSocketClient<TextWebSocketFrame, TextWebSocketFrame> getRxnettyWebSocketClient(String host,
                                                                                               int port, String uri) {
+        logger.debug("Creating websocket client for " + host + ":" + port + " uri " + uri + " ...");
         return
                 RxNetty.<TextWebSocketFrame, TextWebSocketFrame>newWebSocketClientBuilder(host, port)
                         .withWebSocketURI(uri)
@@ -697,8 +698,11 @@ public class MantisMasterClientApi implements MantisMasterGateway {
      * @param jobId
      * @return
      */
+    @Override
     public Observable<JobSchedulingInfo> schedulingChanges(final String jobId) {
-        return masterMonitor.getMasterObservable()
+        BehaviorSubject<JobSchedulingInfo> behaviorSubject = BehaviorSubject.create();
+
+        masterMonitor.getMasterObservable()
                 .filter(masterDescription -> masterDescription != null)
                 .retryWhen(retryLogic)
                 .switchMap((Func1<MasterDescription,
@@ -727,7 +731,8 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                         }))
                 .repeatWhen(repeatLogic)
                 .retryWhen(retryLogic)
-                ;
+                .subscribe(behaviorSubject);
+        return behaviorSubject;
     }
 
     /**

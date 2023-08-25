@@ -18,11 +18,16 @@ package io.mantisrx.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.util.DelegateClock;
+import io.mantisrx.master.resourcecluster.ExecutorStateManagerImpl.TaskExecutorHolder;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
@@ -41,6 +46,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.tuple.Pair;
@@ -78,37 +84,41 @@ public class ExecutorStateManagerTests {
         new MachineDefinition(4.0, 2.0, 3.0, 4.0, 5);
     private static final Map<String, String> ATTRIBUTES =
         ImmutableMap.of("attr1", "attr2");
+
+    private static final String SCALE_GROUP_1 = "io-mantisrx-v001";
+    private static final String SCALE_GROUP_2 = "io-mantisrx-v002";
+
+    private static final Map<String, String> ATTRIBUTES_WITH_SCALE_GROUP_1 =
+        ImmutableMap.of(WorkerConstants.AUTO_SCALE_GROUP_KEY, SCALE_GROUP_1);
+
+    private static final Map<String, String> ATTRIBUTES_WITH_SCALE_GROUP_2 =
+        ImmutableMap.of(WorkerConstants.AUTO_SCALE_GROUP_KEY, SCALE_GROUP_2);
+
     private static final WorkerId WORKER_ID = WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1");
 
-    private final TaskExecutorRegistration registration1 = TaskExecutorRegistration.builder()
-        .taskExecutorID(TASK_EXECUTOR_ID_1)
-                .clusterID(CLUSTER_ID)
-                .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
-                .hostname(HOST_NAME)
-                .workerPorts(WORKER_PORTS)
-                .machineDefinition(MACHINE_DEFINITION_1)
-                .taskExecutorAttributes(ATTRIBUTES)
-                .build();
+    private final TaskExecutorRegistration registration1 =
+        getRegistrationBuilder(TASK_EXECUTOR_ID_1, MACHINE_DEFINITION_1, ATTRIBUTES).build();
 
-    private final TaskExecutorRegistration registration2 = TaskExecutorRegistration.builder()
-        .taskExecutorID(TASK_EXECUTOR_ID_2)
-        .clusterID(CLUSTER_ID)
-        .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
-        .hostname(HOST_NAME)
-        .workerPorts(WORKER_PORTS)
-        .machineDefinition(MACHINE_DEFINITION_2)
-        .taskExecutorAttributes(ATTRIBUTES)
-        .build();
+    private final TaskExecutorRegistration registration2 =
+        getRegistrationBuilder(TASK_EXECUTOR_ID_2, MACHINE_DEFINITION_2, ATTRIBUTES).build();
 
-    private final TaskExecutorRegistration registration3 = TaskExecutorRegistration.builder()
-        .taskExecutorID(TASK_EXECUTOR_ID_3)
-        .clusterID(CLUSTER_ID)
-        .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
-        .hostname(HOST_NAME)
-        .workerPorts(WORKER_PORTS)
-        .machineDefinition(MACHINE_DEFINITION_2)
-        .taskExecutorAttributes(ATTRIBUTES)
-        .build();
+    private final TaskExecutorRegistration registration3 =
+        getRegistrationBuilder(TASK_EXECUTOR_ID_3, MACHINE_DEFINITION_2, ATTRIBUTES).build();
+
+    private static TaskExecutorRegistration.TaskExecutorRegistrationBuilder getRegistrationBuilder(
+        TaskExecutorID id,
+        MachineDefinition mDef,
+        Map<String,
+        String> attributes) {
+        return TaskExecutorRegistration.builder()
+            .taskExecutorID(id)
+            .clusterID(CLUSTER_ID)
+            .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+            .hostname(HOST_NAME)
+            .workerPorts(WORKER_PORTS)
+            .machineDefinition(mDef)
+            .taskExecutorAttributes(attributes);
+    }
 
     private final ExecutorStateManager stateManager = new ExecutorStateManagerImpl();
 
@@ -121,38 +131,37 @@ public class ExecutorStateManagerTests {
     public void testGetBestFit() {
         Optional<Pair<TaskExecutorID, TaskExecutorState>> bestFitO =
             stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2),
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0),
                 CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
 
-        stateManager.putIfAbsent(TASK_EXECUTOR_ID_1, state1);
+        stateManager.trackIfAbsent(TASK_EXECUTOR_ID_1, state1);
         state1.onRegistration(registration1);
         state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TASK_EXECUTOR_ID_1, CLUSTER_ID,
             TaskExecutorReport.available()));
-        stateManager.markAvailable(TASK_EXECUTOR_ID_1);
+        stateManager.tryMarkAvailable(TASK_EXECUTOR_ID_1);
 
-        stateManager.putIfAbsent(TASK_EXECUTOR_ID_2, state2);
+        stateManager.trackIfAbsent(TASK_EXECUTOR_ID_2, state2);
         state2.onRegistration(registration2);
         state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TASK_EXECUTOR_ID_2, CLUSTER_ID,
             TaskExecutorReport.available()));
-        stateManager.markAvailable(TASK_EXECUTOR_ID_2);
+        stateManager.tryMarkAvailable(TASK_EXECUTOR_ID_2);
 
-        stateManager.putIfAbsent(TASK_EXECUTOR_ID_3, state3);
+        stateManager.trackIfAbsent(TASK_EXECUTOR_ID_3, state3);
         state3.onRegistration(registration3);
-        stateManager.markAvailable(TASK_EXECUTOR_ID_3);
 
         // test machine def 1
         bestFitO =
             stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1), CLUSTER_ID));
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0), CLUSTER_ID));
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getLeft());
         assertEquals(state1, bestFitO.get().getRight());
 
         bestFitO =
             stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2), CLUSTER_ID));
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0), CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_2, bestFitO.get().getLeft());
@@ -163,29 +172,184 @@ public class ExecutorStateManagerTests {
             TaskExecutorReport.occupied(WORKER_ID)));
         bestFitO =
             stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1), CLUSTER_ID));
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0), CLUSTER_ID));
         assertFalse(bestFitO.isPresent());
 
         // enable e3 and disable e2
         state3.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TASK_EXECUTOR_ID_3, CLUSTER_ID,
             TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TASK_EXECUTOR_ID_3);
         state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TASK_EXECUTOR_ID_2, CLUSTER_ID,
             TaskExecutorReport.occupied(WORKER_ID)));
 
         bestFitO =
             stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2), CLUSTER_ID));
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0), CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_3, bestFitO.get().getLeft());
         assertEquals(state3, bestFitO.get().getRight());
 
         // test mark as unavailable
-        stateManager.markUnavailable(TASK_EXECUTOR_ID_3);
+        stateManager.tryMarkUnavailable(TASK_EXECUTOR_ID_3);
         bestFitO =
             stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2), CLUSTER_ID));
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0), CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
+    }
+
+    @Test
+    public void testTaskExecutorHolderCreation() {
+        TaskExecutorHolder taskExecutorHolder = TaskExecutorHolder.of(
+            TASK_EXECUTOR_ID_1,
+            getRegistrationBuilder(TASK_EXECUTOR_ID_1, MACHINE_DEFINITION_1, ATTRIBUTES).build());
+        assertEquals("empty-generation", taskExecutorHolder.getGeneration());
+        assertEquals(TASK_EXECUTOR_ID_1, taskExecutorHolder.getId());
+
+        taskExecutorHolder = TaskExecutorHolder.of(
+            TASK_EXECUTOR_ID_2,
+            getRegistrationBuilder(TASK_EXECUTOR_ID_2, MACHINE_DEFINITION_1, ATTRIBUTES_WITH_SCALE_GROUP_1).build());
+        assertEquals(SCALE_GROUP_1, taskExecutorHolder.getGeneration());
+        assertEquals(TASK_EXECUTOR_ID_2, taskExecutorHolder.getId());
+
+        taskExecutorHolder = TaskExecutorHolder.of(
+            TASK_EXECUTOR_ID_2,
+            getRegistrationBuilder(TASK_EXECUTOR_ID_2, MACHINE_DEFINITION_2, ATTRIBUTES_WITH_SCALE_GROUP_2).build());
+        assertEquals(SCALE_GROUP_2, taskExecutorHolder.getGeneration());
+        assertEquals(TASK_EXECUTOR_ID_2, taskExecutorHolder.getId());
+
+        ImmutableMap<String, String> attributeWithGeneration = ImmutableMap.of(
+            WorkerConstants.AUTO_SCALE_GROUP_KEY, SCALE_GROUP_1,
+            WorkerConstants.MANTIS_WORKER_CONTAINER_GENERATION, SCALE_GROUP_2);
+
+        taskExecutorHolder = TaskExecutorHolder.of(
+            TASK_EXECUTOR_ID_2,
+            getRegistrationBuilder(TASK_EXECUTOR_ID_2, MACHINE_DEFINITION_2, attributeWithGeneration).build());
+        assertEquals(SCALE_GROUP_2, taskExecutorHolder.getGeneration());
+        assertEquals(TASK_EXECUTOR_ID_2, taskExecutorHolder.getId());
+    }
+
+    @Test
+    public void testGetBestFit_WithGenerationFromScaleGroup() {
+        Optional<Pair<TaskExecutorID, TaskExecutorState>> bestFitO =
+            stateManager.findBestFit(
+                new TaskExecutorAssignmentRequest(
+                    TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0),
+                    CLUSTER_ID));
+        assertFalse(bestFitO.isPresent());
+
+        /*
+        Setup 3 TE where te1 is in group 2 while te2/3 in group 1. The best fit should be te1.
+         */
+
+        // add te0 to another mDef, should not be chosen.
+        TaskExecutorState teState0 = registerNewTaskExecutor(TaskExecutorID.of("te0"),
+            MACHINE_DEFINITION_2,
+            ATTRIBUTES_WITH_SCALE_GROUP_2,
+            stateManager);
+
+        TaskExecutorState teState1 = registerNewTaskExecutor(TASK_EXECUTOR_ID_1,
+            MACHINE_DEFINITION_1,
+            ATTRIBUTES_WITH_SCALE_GROUP_2,
+            stateManager);
+
+        TaskExecutorState teState2 = registerNewTaskExecutor(TASK_EXECUTOR_ID_2,
+            MACHINE_DEFINITION_1,
+            ATTRIBUTES_WITH_SCALE_GROUP_1,
+            stateManager);
+
+        TaskExecutorState teState3 = registerNewTaskExecutor(TASK_EXECUTOR_ID_3,
+            MACHINE_DEFINITION_1,
+            ATTRIBUTES_WITH_SCALE_GROUP_1,
+            stateManager);
+
+        // should get te1 with group2
+        bestFitO =
+            stateManager.findBestFit(
+                new TaskExecutorAssignmentRequest(
+                    TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0),
+                    CLUSTER_ID));
+
+        assertTrue(bestFitO.isPresent());
+        assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getLeft());
+        assertEquals(teState1, bestFitO.get().getRight());
+
+        // add new TE in group1 doesn't affect result.
+        TaskExecutorState teState4 = registerNewTaskExecutor(TaskExecutorID.of("te4"),
+            MACHINE_DEFINITION_1,
+            ATTRIBUTES_WITH_SCALE_GROUP_1,
+            stateManager);
+
+        bestFitO =
+            stateManager.findBestFit(
+                new TaskExecutorAssignmentRequest(
+                    TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0),
+                    CLUSTER_ID));
+
+        assertTrue(bestFitO.isPresent());
+        assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getLeft());
+        assertEquals(teState1, bestFitO.get().getRight());
+
+        // remove te1 and add new te in both groups
+        teState1.onTaskExecutorStatusChange(
+            new TaskExecutorStatusChange(TASK_EXECUTOR_ID_1, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID)));
+
+        TaskExecutorID te5Id = TaskExecutorID.of("te5");
+        TaskExecutorState teState5 = registerNewTaskExecutor(te5Id,
+            MACHINE_DEFINITION_1,
+            ATTRIBUTES_WITH_SCALE_GROUP_2,
+            stateManager);
+
+        TaskExecutorState teState6 = registerNewTaskExecutor(TaskExecutorID.of("te6"),
+            MACHINE_DEFINITION_1,
+            ATTRIBUTES_WITH_SCALE_GROUP_1,
+            stateManager);
+
+        bestFitO =
+            stateManager.findBestFit(
+                new TaskExecutorAssignmentRequest(
+                    TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0),
+                    CLUSTER_ID));
+
+        assertTrue(bestFitO.isPresent());
+        assertEquals(te5Id, bestFitO.get().getLeft());
+        assertEquals(teState5, bestFitO.get().getRight());
+
+        // disable all group2 TEs and allow bestFit from group1
+        teState5.onTaskExecutorStatusChange(
+            new TaskExecutorStatusChange(te5Id, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID)));
+        bestFitO =
+            stateManager.findBestFit(
+                new TaskExecutorAssignmentRequest(
+                    TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0),
+                    CLUSTER_ID));
+
+        assertTrue(bestFitO.isPresent());
+        assertNotEquals(te5Id, bestFitO.get().getLeft());
+        assertNotEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getLeft());
+        assertEquals(SCALE_GROUP_1,
+            Objects.requireNonNull(bestFitO.get().getRight().getRegistration())
+                .getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).orElse("invalid"));
+
+        assertNotNull(stateManager.get(TASK_EXECUTOR_ID_1));
+        assertNull(stateManager.get(TaskExecutorID.of("invalid")));
+    }
+
+    private TaskExecutorState registerNewTaskExecutor(TaskExecutorID id, MachineDefinition mdef,
+        Map<String, String> attributes,
+        ExecutorStateManager stateManager) {
+        TaskExecutorState state = TaskExecutorState.of(clock, rpc, router);
+        TaskExecutorRegistration reg = getRegistrationBuilder(id, mdef, attributes).build();
+        stateManager.trackIfAbsent(id, state);
+        state.onRegistration(reg);
+        state.onTaskExecutorStatusChange(
+            new TaskExecutorStatusChange(
+                id,
+                CLUSTER_ID,
+                TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(id);
+
+        return state;
     }
 }

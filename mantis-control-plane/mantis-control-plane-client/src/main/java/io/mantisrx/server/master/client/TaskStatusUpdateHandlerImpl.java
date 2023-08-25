@@ -44,6 +44,7 @@ public class TaskStatusUpdateHandlerImpl implements TaskStatusUpdateHandler {
 
     @Override
     public void onStatusUpdate(Status status) {
+        log.info("onStatusUpdate for status: {}", status);
         masterMonitor
                 .updateStatus(status)
                 .whenComplete((ack, throwable) -> {

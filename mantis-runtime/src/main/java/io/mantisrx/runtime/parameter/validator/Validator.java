@@ -21,8 +21,8 @@ import rx.functions.Func1;
 
 public class Validator<T> {
 
-    private String description;
-    private Func1<T, Validation> validator;
+    private final String description;
+    private final Func1<T, Validation> validator;
 
     public Validator(String description, Func1<T, Validation> validator) {
         this.description = description;

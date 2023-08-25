@@ -35,8 +35,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class GroupToGroup<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
 
-    private GroupComputation<K1, T, K2, R> computation;
-    private long keyExpireTimeSeconds;
+    private final GroupComputation<K1, T, K2, R> computation;
+    private final long keyExpireTimeSeconds;
 
     /**
      * @deprecated As of release 0.603, use {@link #GroupToGroup(GroupComputation, Config, Codec)} instead
@@ -75,13 +75,13 @@ public class GroupToGroup<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
         // input type for keyToKey is serial
         // always assume a stateful calculation is being made
         // do not allow config to override
-        private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
+        private final INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
         /**
          * @param codec
          *
-         * @return
+         * @return Config
          *
          * @deprecated As of release 0.603, use {@link #codec(Codec)} instead
          */

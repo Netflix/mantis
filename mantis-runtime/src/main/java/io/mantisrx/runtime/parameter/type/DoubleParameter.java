@@ -24,12 +24,7 @@ public class DoubleParameter extends Builder<Double> {
 
     @Override
     public ParameterDecoder<Double> decoder() {
-        return new ParameterDecoder<Double>() {
-            @Override
-            public Double decode(String value) {
-                return Double.parseDouble(value);
-            }
-        };
+        return Double::parseDouble;
     }
 
     @Override

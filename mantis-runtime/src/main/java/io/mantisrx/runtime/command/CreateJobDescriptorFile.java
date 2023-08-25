@@ -16,6 +16,7 @@
 
 package io.mantisrx.runtime.command;
 
+import io.mantisrx.common.SystemParameters;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.StageConfig;
@@ -104,13 +105,13 @@ public class CreateJobDescriptorFile implements Command {
         final Map<String, ParameterInfo> systemParameterInfo = createParameterInfo(ParameterUtils.getSystemParameters());
         final int totalNumStages = numStages;
         final Map<String, ParameterInfo> sysParams = systemParameterInfo.entrySet().stream().filter(sysParam -> {
-            for (int stageNum = totalNumStages + 1; stageNum <= ParameterUtils.MAX_NUM_STAGES_FOR_JVM_OPTS_OVERRIDE; stageNum++) {
-                if (sysParam.getKey().equals(String.format(ParameterUtils.PER_STAGE_JVM_OPTS_FORMAT, stageNum))) {
+            for (int stageNum = totalNumStages + 1; stageNum <= SystemParameters.MAX_NUM_STAGES_FOR_JVM_OPTS_OVERRIDE; stageNum++) {
+                if (sysParam.getKey().equals(String.format(SystemParameters.PER_STAGE_JVM_OPTS_FORMAT, stageNum))) {
                     return false;
                 }
             }
             return true;
-        }).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+        }).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
         parameterInfo.putAll(sysParams);
         // create source/sink info

@@ -21,11 +21,13 @@ import io.mantisrx.runtime.loader.config.Usage;
 import java.io.IOException;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Cgroups based metrics collector.
  * This assumes that the worker task is being run on a cgroup based on container.
  */
+@Slf4j
 @RequiredArgsConstructor
 public class CgroupsMetricsCollector implements MetricsCollector {
     private final CpuAcctsSubsystemProcess cpu;
@@ -49,10 +51,15 @@ public class CgroupsMetricsCollector implements MetricsCollector {
 
     @Override
     public Usage get() throws IOException {
-        Usage.UsageBuilder usageBuilder = Usage.builder();
-        cpu.getUsage(usageBuilder);
-        memory.getUsage(usageBuilder);
-        network.getUsage(usageBuilder);
-        return usageBuilder.build();
+        try {
+            Usage.UsageBuilder usageBuilder = Usage.builder();
+            cpu.getUsage(usageBuilder);
+            memory.getUsage(usageBuilder);
+            network.getUsage(usageBuilder);
+            return usageBuilder.build();
+        } catch (Exception ex) {
+            log.warn("Failed to get usage: ", ex);
+            return Usage.builder().build();
+        }
     }
 }

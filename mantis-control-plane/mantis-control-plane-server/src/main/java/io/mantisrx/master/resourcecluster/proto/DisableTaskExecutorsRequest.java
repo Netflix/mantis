@@ -16,15 +16,20 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import lombok.NonNull;
 import lombok.Value;
 
+
 @Value
 public class DisableTaskExecutorsRequest {
-    @NonNull
-    Map<String, String> attributes;
+    Map<String, String> attributes = new HashMap<>();
 
     @NonNull
     Long expirationDurationInHours;
+
+    Optional<TaskExecutorID> taskExecutorID;
 }

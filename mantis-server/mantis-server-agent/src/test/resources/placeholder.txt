@@ -1,0 +1,2 @@
+This is a placeholder for build/distributions folder.
+(This is needed to ensure that dockerfile copy task can run).

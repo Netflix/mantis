@@ -57,6 +57,7 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
+import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
@@ -126,6 +127,9 @@ public class RuntimeTaskImplExecutorTest {
         props.setProperty("mantis.taskexecutor.cluster-id", "default");
         props.setProperty("mantis.taskexecutor.heartbeats.interval", "100");
         props.setProperty("mantis.taskexecutor.metrics.collector", "io.mantisrx.server.agent.DummyMetricsCollector");
+        props.setProperty("mantis.taskexecutor.registration.retry.initial-delay.ms", "10");
+        props.setProperty("mantis.taskexecutor.registration.retry.mutliplier", "1");
+        props.setProperty("mantis.taskexecutor.registration.retry.randomization-factor", "0.5");
 
         props.setProperty("mantis.localmode", "true");
         props.setProperty("mantis.zookeeper.connectString", "localhost:8100");
@@ -211,10 +215,12 @@ public class RuntimeTaskImplExecutorTest {
                     .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
                         Lists.newArrayList(), Lists.newArrayList()).build(),
                 MantisJobDurationType.Transient,
+                    0,
                 1000L,
                 1L,
                 new WorkerPorts(2, 3, 4, 5, 6),
-                Optional.of(SineFunctionJobProvider.class.getName()))), Time.seconds(1));
+                Optional.of(SineFunctionJobProvider.class.getName()),
+                "user")), Time.seconds(1));
         wait.get();
         Assert.assertTrue(startedSignal.await(5, TimeUnit.SECONDS));
         Subscription subscription = HttpSources.source(HttpClientFactories.sseClientFactory(),
@@ -404,7 +410,7 @@ public class RuntimeTaskImplExecutorTest {
         return gateway;
     }
 
-    private static ResourceClusterGateway getUnhealthyGateway(String name) {
+    private static ResourceClusterGateway getUnhealthyGateway(String name) throws RequestThrottledException {
         ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
         when(gateway.registerTaskExecutor(any())).thenReturn(
             CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error")));

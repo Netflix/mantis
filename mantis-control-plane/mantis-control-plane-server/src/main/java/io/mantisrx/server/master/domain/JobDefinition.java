@@ -30,6 +30,7 @@ import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -243,6 +244,22 @@ public class JobDefinition {
             .filter(label -> label.getName().equals(MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label))
             .findFirst()
             .map(l -> ClusterID.of(l.getValue()));
+    }
+
+    @JsonIgnore
+    public int getIntSystemParameter(String paramName, int defaultValue) {
+        return getParameters().stream()
+            .filter(p -> paramName.equals(p.getName()))
+            .map(Parameter::getValue)
+            .filter(Objects::nonNull)
+            .map(v -> {
+                try {
+                    return Integer.parseInt(v);
+                } catch (Exception e) {
+                    return defaultValue;
+                }})
+            .findFirst()
+            .orElse(defaultValue);
     }
 
 

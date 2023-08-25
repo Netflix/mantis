@@ -24,6 +24,7 @@ import io.mantisrx.runtime.sink.predicate.Predicate;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.WriteBufferWaterMark;
 import io.reactivex.mantis.network.push.PushServerSse;
 import io.reactivex.mantis.network.push.PushServers;
 import io.reactivex.mantis.network.push.Routers;
@@ -145,7 +146,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     @Override
     public void call(Context context, PortRequest portRequest, final Observable<T> observable) {
         port = portRequest.getPort();
-        if (runNewSseServerImpl(context.getWorkerInfo().getJobName())) {
+        if (runNewSseServerImpl(context.getWorkerInfo().getJobClusterName())) {
             LOG.info("Serving modern HTTP SSE server sink on port: " + port);
 
             String serverName = "SseSink";
@@ -184,8 +185,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
                         context,
                         batchInterval))
                 .pipelineConfigurator(PipelineConfigurators.<ByteBuf>serveSseConfigurator())
-                .channelOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 5 * 1024 * 1024)
-                .channelOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 1024 * 1024)
+                .channelOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 5 * 1024 * 1024))
                 .build();
             httpServer.start();
         }

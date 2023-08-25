@@ -93,6 +93,15 @@ public class BlobStoreAwareClassLoaderHandle implements ClassLoaderHandle {
         return SimpleUserCodeClassLoader.create(classLoader);
     }
 
+    @Override
+    public void cacheJobArtifacts(Collection<URI> artifacts) {
+        try {
+            getResolvedUrls(artifacts, blobStore);
+        } catch (IOException | URISyntaxException e) {
+            log.warn("Failed to download artifacts: {}", artifacts);
+        }
+    }
+
     public static class ParentFirstClassLoader extends FlinkUserCodeClassLoader {
 
         ParentFirstClassLoader(

@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.master.config;
 
+
 /**
  * An implementation of this class should return an instance of {@link io.mantisrx.server.master.config.MasterConfiguration}.
  * We create this factory because it's possible that the logic of creating a {@link io.mantisrx.server.master.config.MasterConfiguration}
@@ -26,4 +27,5 @@ package io.mantisrx.server.master.config;
 public interface ConfigurationFactory {
 
     MasterConfiguration getConfig();
+
 }

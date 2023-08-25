@@ -100,6 +100,23 @@ public class Jackson {
         return unmarshaller(defaultObjectMapper, expectedType);
     }
 
+    public static <T> Unmarshaller<HttpEntity, T> optionalEntityUnmarshaller(Class<T> expectedType) {
+        return Unmarshaller.forMediaType(MediaTypes.APPLICATION_JSON, Unmarshaller.entityToString())
+            .thenApply(s -> {
+                if (s.isEmpty()) {
+                    return null;
+                } else {
+                    try {
+                        return fromJSON(defaultObjectMapper, s, expectedType);
+                    } catch (IOException e) {
+                        logger.warn("cannot unmarshal json", e);
+                        throw new IllegalArgumentException("cannot unmarshall Json as " +
+                            expectedType.getSimpleName());
+                    }
+                }
+            });
+    }
+
     public static <T> Unmarshaller<HttpEntity, T> unmarshaller(
             ObjectMapper mapper,
             Class<T> expectedType) {

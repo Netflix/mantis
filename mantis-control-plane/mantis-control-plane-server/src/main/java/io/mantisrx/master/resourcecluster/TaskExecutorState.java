@@ -32,7 +32,9 @@ import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -250,7 +252,24 @@ class TaskExecutorState {
         return this.registration;
     }
 
-    protected CompletableFuture<TaskExecutorGateway> getGateway() {
+    protected TaskExecutorGateway getGateway() throws ExecutionException, InterruptedException {
+        if (this.gateway == null) {
+            throw new IllegalStateException("gateway is null");
+        }
+        return this.gateway.get();
+    }
+
+    protected CompletableFuture<TaskExecutorGateway> reconnect() {
+        this.gateway = rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class)
+            .whenComplete((gateway, throwable) -> {
+                if (throwable != null) {
+                    log.error("Failed to connect to the gateway", throwable);
+                }
+            });
         return this.gateway;
+    }
+
+    boolean containsAttributes(Map<String, String> attributes) {
+        return registration != null && registration.containsAttributes(attributes);
     }
 }

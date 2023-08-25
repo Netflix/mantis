@@ -16,6 +16,7 @@
 package io.mantisrx.server.worker;
 
 import io.mantisrx.common.Ack;
+import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import java.util.concurrent.CompletableFuture;
@@ -37,6 +38,14 @@ public interface TaskExecutorGateway extends RpcGateway {
     CompletableFuture<Ack> submitTask(ExecuteStageRequest request);
 
     /**
+     * instruct the task executor on which job artifacts to cache in order to speed up job initialization time.
+     *
+     * @param request List of job artifacts that need to be cached.
+     * @return Ack in any case (this task is best effort).
+     */
+    CompletableFuture<Ack> cacheJobArtifacts(CacheJobArtifactsRequest request);
+
+    /**
      * cancel the currently running task and get rid of all of the associated resources.
      *
      * @param workerId of the task that needs to be cancelled.
@@ -53,6 +62,8 @@ public interface TaskExecutorGateway extends RpcGateway {
      * @return thread dump in the string format.
      */
     CompletableFuture<String> requestThreadDump();
+
+    CompletableFuture<Boolean> isRegistered();
 
     class TaskAlreadyRunningException extends Exception {
         private static final long serialVersionUID = 1L;

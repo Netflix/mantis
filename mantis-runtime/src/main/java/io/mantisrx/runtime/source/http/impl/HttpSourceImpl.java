@@ -433,10 +433,11 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                 )
                 .doOnNext((HttpClientResponse<E> response) -> checkResponseIsSuccessful(response))
                 .doOnError((Throwable error) -> {
-                    logger.error(String.format(
-                            "Connecting to server %s failed: %s",
-                            clientContext.getServer(),
-                            error.getMessage()), error);
+                    logger.error(
+                        "Connecting to server {} failed: {}",
+                        clientContext.getServer(),
+                        error.getMessage(),
+                        error);
                     SUBSCRIPTION_FAILED.newEvent(observer, clientContext.getServer());
                     subscriptionFailedCounter.increment();
                     logger.info("server disconnected onError2: " + clientContext.getServer());

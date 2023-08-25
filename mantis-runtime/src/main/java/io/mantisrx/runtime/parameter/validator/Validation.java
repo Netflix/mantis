@@ -18,8 +18,8 @@ package io.mantisrx.runtime.parameter.validator;
 
 public class Validation {
 
-    private boolean failedValidation;
-    private String failedValidationReason;
+    private final boolean failedValidation;
+    private final String failedValidationReason;
 
     Validation(boolean failedValidation,
                String failedValidationReason) {

@@ -37,6 +37,17 @@ select * from stream SAMPLE {"strategy": "STICKY", "keys":["zipcode"], "threshol
 The query above should retrieve 2% of the total stream (see [Random Sampling](#random-sampling)
 above for why), predicated on the events being uniformly distributed over the `zipcode`s.
 
+### How sticky sampling works
+Sticky sampling extracts values from the event that correspond to fields specified in `keys` array. `null` values are filtered out and remaining values concatenated to generate a hash. A uniform random sampling is performed on the hash to select values consistently.
+
+For eg: For `keys: ["zipcode", "zipcode_alt", "state"]`, following will be concatenated result to hash-based-sampler:
+
+| zipcode | zipcode_alt | state | concat-result   |
+| ------- | ----------- | ----- | --------------- |
+| 100001  | null        | NY    | 100001NY        |
+| null    | 100001      | NY    | 100001NY        |
+| 100001  | 100001      | NY    | 100001100001NY  |
+
 <!-- Do not edit below this line -->
 <!-- START -->
 <!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->

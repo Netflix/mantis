@@ -25,12 +25,14 @@ import static org.mockito.Mockito.when;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.actor.Status.Failure;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
@@ -44,10 +46,12 @@ import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
@@ -186,7 +190,9 @@ public class ResourceClusterActorTest {
                 Clock.systemDefaultZone(),
                 rpcService,
                 mantisJobStore,
-                jobMessageRouter);
+                jobMessageRouter,
+                0,
+                "");
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =
@@ -194,7 +200,8 @@ public class ResourceClusterActorTest {
                 resourceClusterActor,
                 Duration.ofSeconds(1),
                 CLUSTER_ID,
-                mapper);
+                mapper,
+                    100);
     }
 
     @Test
@@ -226,7 +233,7 @@ public class ResourceClusterActorTest {
                         TaskExecutorReport.available())).get());
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).get());
@@ -279,6 +286,17 @@ public class ResourceClusterActorTest {
         assertEquals(1, usage1.getIdleCount());
         assertEquals(1, usage1.getTotalCount());
 
+        // test get TE status
+        resourceClusterActor.tell(new GetTaskExecutorStatusRequest(TASK_EXECUTOR_ID_2, CLUSTER_ID), probe.getRef());
+        TaskExecutorStatus teStatusRes = probe.expectMsgClass(TaskExecutorStatus.class);
+        assertEquals(TASK_EXECUTOR_REGISTRATION_2, teStatusRes.getRegistration());
+
+        // test get invalid TE status
+        resourceClusterActor.tell(new GetTaskExecutorStatusRequest(TaskExecutorID.of("invalid"), CLUSTER_ID),
+            probe.getRef());
+        Failure teNotFoundStatusRes = probe.expectMsgClass(Failure.class);
+        assertTrue(teNotFoundStatusRes.cause() instanceof TaskExecutorNotFoundException);
+
         assertEquals(1, usageRes.getUsages().stream()
             .filter(usage -> Objects.equals(usage.getUsageGroupKey(), CONTAINER_DEF_ID_2.getResourceID())).count());
         UsageByGroupKey usage2 =
@@ -311,7 +329,7 @@ public class ResourceClusterActorTest {
 
         assertEquals(
             TASK_EXECUTOR_ID_3,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)).get());
 
         probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetClusterUsageRequest(
@@ -345,7 +363,7 @@ public class ResourceClusterActorTest {
 
         assertEquals(
             TASK_EXECUTOR_ID_2,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
         probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetClusterUsageRequest(
                 CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
@@ -400,13 +418,13 @@ public class ResourceClusterActorTest {
                         TaskExecutorReport.available())).get());
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
         assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
         Thread.sleep(2000);
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getAvailableTaskExecutors().get());
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
     }
 
     @Test
@@ -447,7 +465,7 @@ public class ResourceClusterActorTest {
 
             assertEquals(
                 taskExecutorID,
-                resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(workerId, MACHINE_DEFINITION))
+                resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(workerId, MACHINE_DEFINITION, null, 0))
                     .get());
         }
 
@@ -483,7 +501,7 @@ public class ResourceClusterActorTest {
     public void testIfDisableTaskExecutorRequestsMarkTaskExecutorsAsDisabled() throws Exception {
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
         // mark task executor as disabled with an expiry set to 10 seconds
-        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1))).get();
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
         assertEquals(
             ImmutableList.of(),
             resourceCluster.getAvailableTaskExecutors().get());
@@ -495,7 +513,7 @@ public class ResourceClusterActorTest {
     @Test
     public void testIfDisableTaskExecutorRequestsMarkLateTaskExecutorsAsDisabled() throws Exception {
         // mark task executor as disabled with an expiry set to 10 seconds
-        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1))).get();
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
         assertEquals(
             ImmutableList.of(),
@@ -508,7 +526,7 @@ public class ResourceClusterActorTest {
     @Test
     public void testIfDisableTaskExecutorRequestsAreExpiredCorrectly() throws Exception {
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
-        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofSeconds(1))).get();
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofSeconds(1)), Optional.empty()).get();
         assertEquals(
             new ResourceOverview(1, 0, 0, 0, 1),
             resourceCluster.resourceOverview().get());
@@ -533,7 +551,8 @@ public class ResourceClusterActorTest {
                 new DisableTaskExecutorsRequest(
                     ATTRIBUTES,
                     CLUSTER_ID,
-                    Instant.now().plus(Duration.ofDays(1)))));
+                    Instant.now().plus(Duration.ofDays(1)),
+                    Optional.empty())));
 
         actorSystem.stop(resourceClusterActor);
         setupActor();
@@ -556,10 +575,10 @@ public class ResourceClusterActorTest {
             Ack.getInstance(),
             resourceCluster.heartBeatFromTaskExecutor(
                 new TaskExecutorHeartbeat(TASK_EXECUTOR_ID_2, CLUSTER_ID, TaskExecutorReport.available())).get());
-        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1))).get();
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
         assertEquals(
             TASK_EXECUTOR_ID_2,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
     }
 
     @Test
@@ -569,7 +588,7 @@ public class ResourceClusterActorTest {
             Ack.getInstance(),
             resourceCluster.heartBeatFromTaskExecutor(
                 new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID))).get());
-        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofSeconds(1))).get();
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofSeconds(1)), Optional.empty()).get();
         assertEquals(
             new ResourceOverview(1, 0, 1, 0, 1),
             resourceCluster.resourceOverview().get());
@@ -592,7 +611,7 @@ public class ResourceClusterActorTest {
 
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).join());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).join());
         assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join());
         assertEquals(Ack.getInstance(), resourceCluster.notifyTaskExecutorStatusChange(
             new TaskExecutorStatusChange(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID))).join());
