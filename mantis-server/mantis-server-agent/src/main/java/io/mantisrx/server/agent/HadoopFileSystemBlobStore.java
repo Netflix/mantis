@@ -15,10 +15,13 @@
  */
 package io.mantisrx.server.agent;
 
+import io.mantisrx.shaded.com.google.common.util.concurrent.Striped;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.locks.Lock;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.fs.FileSystem;
@@ -30,6 +33,7 @@ import org.apache.hadoop.fs.Path;
  * such as s3, gfs, etc...
  */
 @RequiredArgsConstructor
+@Slf4j
 public class HadoopFileSystemBlobStore implements BlobStore {
 
     //  The file system in which blobs are stored. */
@@ -37,15 +41,24 @@ public class HadoopFileSystemBlobStore implements BlobStore {
 
     private final File localStoreDir;
 
+    final Striped<Lock> locks = Striped.lock(10);
+
     @Override
     public File get(URI blobUrl) throws IOException {
         final Path src = new Path(blobUrl);
         final Path dest = new Path(getStorageLocation(blobUrl));
-        File destFile = new File(dest.toUri().getPath());
-        if (!destFile.exists()) {
-            fileSystem.copyToLocalFile(src, dest);
+        Lock lock = locks.get(dest);
+        try {
+            lock.lock();
+            log.info("Getting file with path {} from HadoopFileSystemBlobStore", dest);
+            File destFile = new File(dest.toUri().getPath());
+            if (!destFile.exists()) {
+                fileSystem.copyToLocalFile(src, dest);
+            }
+            return destFile;
+        } finally {
+            lock.unlock();
         }
-        return destFile;
     }
 
     @Override
