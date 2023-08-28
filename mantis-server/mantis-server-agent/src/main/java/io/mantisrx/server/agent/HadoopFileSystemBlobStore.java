@@ -41,24 +41,24 @@ public class HadoopFileSystemBlobStore implements BlobStore {
 
     private final File localStoreDir;
 
-    final Striped<Lock> locks = Striped.lock(10);
+    final Striped<Lock> locks = Striped.lock(1024);
 
     @Override
     public File get(URI blobUrl) throws IOException {
         final Path src = new Path(blobUrl);
         final Path dest = new Path(getStorageLocation(blobUrl));
-        Lock lock = locks.get(dest);
-        try {
+        log.info("Getting file with path {}", dest);
+        File destFile = new File(dest.toUri().getPath());
+        if (!destFile.exists()) {
+            Lock lock = locks.get(dest);
             lock.lock();
-            log.info("Getting file with path {} from HadoopFileSystemBlobStore", dest);
-            File destFile = new File(dest.toUri().getPath());
-            if (!destFile.exists()) {
+            try {
                 fileSystem.copyToLocalFile(src, dest);
+            } finally {
+                lock.unlock();
             }
-            return destFile;
-        } finally {
-            lock.unlock();
         }
+        return destFile;
     }
 
     @Override
