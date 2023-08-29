@@ -380,7 +380,7 @@ public interface MasterConfiguration extends CoreConfiguration {
 
     // rate limit actions on resource cluster actor to control backlog.
     @Config("mantis.master.resource.cluster.actions.permitsPerSecond")
-    @Default("300")
+    @Default("800")
     int getResourceClusterActionsPermitsPerSecond();
 
     default Duration getHeartbeatInterval() {
