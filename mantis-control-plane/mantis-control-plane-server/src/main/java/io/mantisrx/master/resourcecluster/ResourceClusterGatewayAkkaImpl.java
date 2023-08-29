@@ -30,12 +30,16 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
-import io.mantisrx.shaded.com.google.common.util.concurrent.RateLimiter;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     protected final ActorRef resourceClusterManagerActor;
     protected final Duration askTimeout;
@@ -45,7 +49,13 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     private final Counter disconnectionCounter;
     private final Counter throttledCounter;
 
-    protected final RateLimiter rateLimiter;
+    /**
+     * Throttle requests to a single ResourceCluster actor to avoid piled up mailbox.
+     */
+    private final Semaphore semaphore;
+
+    // todo: cleanup scheduler on service shutdown.
+    private final ScheduledExecutorService semaphoreResetScheduler = Executors.newScheduledThreadPool(1);
 
     ResourceClusterGatewayAkkaImpl(
             ActorRef resourceClusterManagerActor,
@@ -56,7 +66,13 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
         this.askTimeout = askTimeout;
         this.mapper = mapper;
 
-        this.rateLimiter = RateLimiter.create(maxConcurrentRequestCount);
+        log.info("Setting maxConcurrentRequestCount for resourceCluster gateway {}", maxConcurrentRequestCount);
+        this.semaphore = new Semaphore(maxConcurrentRequestCount);
+        semaphoreResetScheduler.scheduleAtFixedRate(() -> {
+            semaphore.drainPermits();
+            semaphore.release(maxConcurrentRequestCount);
+        }, 1, 1, TimeUnit.SECONDS);
+
         Metrics m = new Metrics.Builder()
                 .id("ResourceClusterGatewayAkkaImpl")
                 .addCounter("registrationCounter")
@@ -73,7 +89,7 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
 
     private <In, Out> Function<In, CompletableFuture<Out>> withThrottle(Function<In, CompletableFuture<Out>> func) {
         return in -> {
-            if (rateLimiter.tryAcquire(200, TimeUnit.MILLISECONDS)) {
+            if (semaphore.tryAcquire()) {
                 return func.apply(in);
             } else {
                 this.throttledCounter.increment();
