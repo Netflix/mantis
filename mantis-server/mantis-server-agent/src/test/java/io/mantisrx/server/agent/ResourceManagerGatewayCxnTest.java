@@ -17,6 +17,7 @@ package io.mantisrx.server.agent;
 
 import static org.apache.flink.util.ExceptionUtils.stripExecutionException;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -27,7 +28,6 @@ import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
-import io.mantisrx.server.agent.TaskExecutor.ResourceManagerGatewayCxn;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -40,6 +40,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import org.apache.flink.api.common.time.Time;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
@@ -76,7 +77,7 @@ public class ResourceManagerGatewayCxnTest {
         report = TaskExecutorReport.available();
         heartbeat = new TaskExecutorHeartbeat(taskExecutorID, clusterID, report);
         cxn = new ResourceManagerGatewayCxn(0, registration, gateway, Time.milliseconds(10),
-            Time.milliseconds(100), dontCare -> CompletableFuture.completedFuture(report), 3);
+            Time.milliseconds(100), dontCare -> CompletableFuture.completedFuture(report), 3, 1000, 5000, 50, 2, 0.5, 3);
     }
 
 
@@ -97,12 +98,55 @@ public class ResourceManagerGatewayCxnTest {
         verify(gateway, atLeastOnce()).heartBeatFromTaskExecutor(heartbeat);
     }
 
-    @Test(expected = UnknownError.class)
-    public void testWhenRegistrationFails() throws Throwable {
-        when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
-            CompletableFutures.exceptionallyCompletedFuture(new UnknownError("exception")));
+    @Test
+    public void testWhenRegistrationFailsIntermittently() throws Throwable {
+        when(gateway.heartBeatFromTaskExecutor(Matchers.eq(heartbeat)))
+                .thenReturn(CompletableFuture.completedFuture(null));
+        when(gateway.disconnectTaskExecutor(Matchers.eq(disconnection))).thenReturn(
+                CompletableFuture.completedFuture(null));
+        when(gateway.registerTaskExecutor(Matchers.eq(registration)))
+                .thenAnswer(new Answer<CompletableFuture<Void>>() {
+                    private int count = 0;
+
+                    @Override
+                    public CompletableFuture<Void> answer(InvocationOnMock invocation) {
+                        count++;
+                        if (count % 2 == 0) {
+                            return CompletableFuture.completedFuture(null);
+                        } else {
+                            return CompletableFutures.exceptionallyCompletedFuture(new UnknownError("exception"));
+                        }
+                    }
+                });
+        cxn.startAsync().awaitRunning();
+
+        Thread.sleep(1000);
+        assertEquals(cxn.state(), State.RUNNING);
+        cxn.stopAsync().awaitTerminated();
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testWhenRegistrationFailsContinuously() throws Throwable {
+        when(gateway.heartBeatFromTaskExecutor(Matchers.eq(heartbeat)))
+                .thenReturn(CompletableFuture.completedFuture(null));
+        when(gateway.disconnectTaskExecutor(Matchers.eq(disconnection))).thenReturn(
+                CompletableFuture.completedFuture(null));
+        when(gateway.registerTaskExecutor(Matchers.eq(registration)))
+                .thenAnswer(new Answer<CompletableFuture<Void>>() {
+                    private int count = 0;
+
+                    @Override
+                    public CompletableFuture<Void> answer(InvocationOnMock invocation) {
+                        count++;
+                        if (count >= 5) {
+                            return CompletableFuture.completedFuture(null);
+                        } else {
+                            return CompletableFutures.exceptionallyCompletedFuture(new UnknownError("exception"));
+                        }
+                    }
+                });
         cxn.startAsync();
-        CompletableFuture<Void> result = Services.stopAsync(cxn, Executors.newSingleThreadExecutor());
+        CompletableFuture<Void> result = Services.awaitAsync(cxn, Executors.newSingleThreadExecutor());
         try {
             result.get();
         } catch (Exception e) {
@@ -131,6 +175,7 @@ public class ResourceManagerGatewayCxnTest {
         cxn.startAsync();
         Thread.sleep(1000);
         assertEquals(cxn.state(), State.RUNNING);
+        assertTrue(cxn.isRegistered());
     }
 
     @Test
@@ -163,5 +208,6 @@ public class ResourceManagerGatewayCxnTest {
 
         assertEquals(UnknownError.class, throwable.getClass());
         verify(gateway, times(1)).disconnectTaskExecutor(disconnection);
+        Assert.assertFalse(cxn.isRegistered());
     }
 }

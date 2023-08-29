@@ -43,7 +43,7 @@ public class SourceJobParameters {
     }
 
     public static List<TargetInfo> parseTargetInfo(String targetListStr) {
-        List<TargetInfo> targetList = new ArrayList<TargetInfo>();
+        List<TargetInfo> targetList = new ArrayList<>();
 
         try {
             Map<String, List<TargetInfo>> targets = mapper.readValue(targetListStr, new TypeReference<Map<String, List<TargetInfo>>>() {});
@@ -211,11 +211,11 @@ public class SourceJobParameters {
                 target.clientId = defaultClientId;
             }
 
-            Map.Entry<String, String> connectionPair = new AbstractMap.SimpleEntry(target.sourceJobName, target.clientId);
+            Map.Entry<String, String> connectionPair = new AbstractMap.SimpleEntry<>(target.sourceJobName, target.clientId);
             int attempts = 0;
 
             while (connectionPairs.contains(connectionPair)) {
-                connectionPair = new AbstractMap.SimpleEntry(target.sourceJobName, target.clientId + "_" + ++attempts);
+                connectionPair = new AbstractMap.SimpleEntry<>(target.sourceJobName, target.clientId + "_" + ++attempts);
             }
 
             target.clientId = connectionPair.getValue();

@@ -20,7 +20,6 @@ import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
-import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import java.util.concurrent.CompletionStage;
 
@@ -59,7 +58,7 @@ public interface ResourceClusterProvider {
      * If multiple image digest versions need to be ran/hosted at the same time, it is recommended to create a separate
      * sku id in addition to the existing sku(s).
      */
-    CompletionStage<UpgradeClusterContainersResponse> upgradeContainerResource(UpgradeClusterContainersRequest request);
+    CompletionStage<UpgradeClusterContainersResponse> upgradeContainerResource(ResourceClusterProviderUpgradeRequest request);
 
     ResourceClusterResponseHandler getResponseHandler();
 }

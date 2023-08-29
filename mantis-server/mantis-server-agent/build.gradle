@@ -29,6 +29,7 @@ dependencies {
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
     implementation libraries.spectatorApi
+    implementation "io.github.resilience4j:resilience4j-retry:1.5.0"
 
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
@@ -36,9 +37,13 @@ dependencies {
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
 }
 
+tasks.register('copyPlaceholderFile', Copy) {
+    from 'src/test/resources/placeholder.txt'
+    into "${buildDir}/distributions"
+}
+
+tasks.named('installDist') {
+    dependsOn copyPlaceholderFile
+}
 
 mainClassName = "io.mantisrx.server.agent.AgentV2Main"
-
-run {
-    standardInput = System.in
-}

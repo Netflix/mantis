@@ -86,6 +86,7 @@ import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.JobClusterActor;
+import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobHelper;
 import io.mantisrx.master.jobcluster.job.JobState;
@@ -139,21 +140,23 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
-    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher) {
-        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher)
+    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator) {
+        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, costsCalculator)
             .withMailbox("akka.actor.metered-mailbox");
     }
 
     private final MantisJobStore jobStore;
     private final LifecycleEventPublisher eventPublisher;
+    private final CostsCalculator costsCalculator;
     private MantisSchedulerFactory mantisSchedulerFactory = null;
 
     JobClusterInfoManager jobClusterInfoManager;
 
     private ActorRef jobListHelperActor;
-    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher) {
+    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator) {
         this.jobStore = store;
         this.eventPublisher = eventPublisher;
+        this.costsCalculator = costsCalculator;
 
         MetricGroupId metricGroupId = getMetricGroupId();
         Metrics m = new Metrics.Builder()
@@ -320,7 +323,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             mantisSchedulerFactory = initMsg.getScheduler();
             Map<String, IJobClusterMetadata> jobClusterMap = new HashMap<>();
 
-            this.jobClusterInfoManager = new JobClusterInfoManager(jobStore, mantisSchedulerFactory, eventPublisher);
+            this.jobClusterInfoManager = new JobClusterInfoManager(jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator);
 
             if (!initMsg.isLoadJobsFromStore()) {
                 getContext().become(initializedBehavior);
@@ -821,11 +824,13 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         private MantisSchedulerFactory mantisSchedulerFactory;
         private final MantisJobStore jobStore;
         private final Metrics metrics;
+        private final CostsCalculator costsCalculator;
 
-        JobClusterInfoManager(MantisJobStore jobStore, MantisSchedulerFactory mantisSchedulerFactory, LifecycleEventPublisher eventPublisher) {
+        JobClusterInfoManager(MantisJobStore jobStore, MantisSchedulerFactory mantisSchedulerFactory, LifecycleEventPublisher eventPublisher, CostsCalculator costsCalculator) {
             this.eventPublisher = eventPublisher;
             this.mantisSchedulerFactory  = mantisSchedulerFactory;
             this.jobStore = jobStore;
+            this.costsCalculator = costsCalculator;
 
 
             MetricGroupId metricGroupId = new MetricGroupId("JobClusterInfoManager");
@@ -853,7 +858,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 }
                 ActorRef jobClusterActor =
                     getContext().actorOf(
-                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher),
+                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, this.costsCalculator),
                         "JobClusterActor-" + clusterName);
                 getContext().watch(jobClusterActor);
 

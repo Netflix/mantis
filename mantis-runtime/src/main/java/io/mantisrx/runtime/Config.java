@@ -26,11 +26,11 @@ import java.util.Map;
 public class Config<T> {
 
     private Metadata metadata = new Metadata();
-    private SourceHolder<?> source;
-    private List<StageConfig<?, ?>> stages;
-    private SinkHolder<T> sink;
+    private final SourceHolder<?> source;
+    private final List<StageConfig<?, ?>> stages;
+    private final SinkHolder<T> sink;
     private Lifecycle lifecycle = DefaultLifecycleFactory.getInstance();
-    private Map<String, ParameterDefinition<?>> parameterDefinitions = new HashMap<>();
+    private final Map<String, ParameterDefinition<?>> parameterDefinitions = new HashMap<>();
 
     Config(Stages<?> stages, SinkHolder<T> observable) {
         this.source = stages.getSource();
@@ -49,11 +49,11 @@ public class Config<T> {
 
     private void initParams() {
         // add parameters from Source, Stage and Sink and ensure we don't have naming conflicts between params defined by Source, Stage and Sink
-        source.getSourceFunction().getParameters().forEach(p -> putParameterOnce(p));
+        source.getSourceFunction().getParameters().forEach(this::putParameterOnce);
         for (StageConfig<?, ?> stage : stages) {
-            stage.getParameters().forEach(p -> putParameterOnce(p));
+            stage.getParameters().forEach(this::putParameterOnce);
         }
-        sink.getSinkAction().getParameters().forEach(p -> putParameterOnce(p));
+        sink.getSinkAction().getParameters().forEach(this::putParameterOnce);
     }
 
     public Config<T> lifecycle(Lifecycle lifecycle) {
@@ -80,7 +80,7 @@ public class Config<T> {
     }
 
     public Job<T> create() {
-        return new Job<T>(source, stages, sink, lifecycle,
-                metadata, parameterDefinitions);
+        return new Job<>(source, stages, sink, lifecycle,
+            metadata, parameterDefinitions);
     }
 }

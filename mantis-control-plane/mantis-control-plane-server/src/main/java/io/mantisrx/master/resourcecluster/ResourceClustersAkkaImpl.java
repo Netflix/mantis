@@ -19,9 +19,9 @@ package io.mantisrx.master.resourcecluster;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.pattern.Patterns;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -48,6 +48,7 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
     private final ActorRef resourceClustersManagerActor;
     private final Duration askTimeout;
     private final ResourceClusterTaskExecutorMapper mapper;
+    private final int rateLimitPerSecond;
     private final ConcurrentMap<ClusterID, ResourceCluster> cache =
         new ConcurrentHashMap<>();
 
@@ -60,7 +61,8 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
                     resourceClustersManagerActor,
                     askTimeout,
                     clusterID,
-                    mapper));
+                    mapper,
+                        rateLimitPerSecond));
         return cache.get(clusterID);
     }
 
@@ -81,17 +83,18 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
         MantisJobStore mantisJobStore,
         JobMessageRouter jobMessageRouter,
         ActorRef resourceClusterHostActorRef,
-        ResourceClusterStorageProvider resourceStorageProvider) {
+        IMantisPersistenceProvider persistenceProvider) {
         final ActorRef resourceClusterManagerActor =
             actorSystem.actorOf(
                 ResourceClustersManagerActor.props(masterConfiguration, Clock.systemDefaultZone(),
-                    rpcService, mantisJobStore, resourceClusterHostActorRef, resourceStorageProvider,
+                    rpcService, mantisJobStore, resourceClusterHostActorRef, persistenceProvider,
                     jobMessageRouter));
         final ResourceClusterTaskExecutorMapper globalMapper =
             ResourceClusterTaskExecutorMapper.inMemory();
 
         final Duration askTimeout = java.time.Duration.ofMillis(
             ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs());
-        return new ResourceClustersAkkaImpl(resourceClusterManagerActor, askTimeout, globalMapper);
+        final int rateLimitPerSecond = masterConfiguration.getResourceClusterActionsPermitsPerSecond();
+        return new ResourceClustersAkkaImpl(resourceClusterManagerActor, askTimeout, globalMapper, rateLimitPerSecond);
     }
 }

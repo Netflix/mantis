@@ -465,7 +465,7 @@ public class DataFormatAdapter {
         // generate job meta
         MantisJobMetadataImpl mantisJobMetadata = new MantisJobMetadataImpl(jIdOp.get(), archJob.getSubmittedAt(),
                 archJob.getStartedAt(), jobDefn, convertMantisJobStateToJobState(archJob.getState()),
-                archJob.getNextWorkerNumberToUse());
+                archJob.getNextWorkerNumberToUse(), archJob.getHeartbeatIntervalSecs(), archJob.getWorkerTimeoutSecs());
 
 
         // add the stages
@@ -558,6 +558,8 @@ public class DataFormatAdapter {
                 jobMetadata.getTotalStages(),
                 jobMetadata.getSla().orElse(null),
                 convertToMantisJobState(jobMetadata.getState()),
+                jobMetadata.getWorkerTimeoutSecs(),
+                jobMetadata.getHeartbeatIntervalSecs(),
                 jobMetadata.getSubscriptionTimeoutSecs(),
                 jobMetadata.getParameters(),
                 jobMetadata.getNextWorkerNumberToUse(),
@@ -577,12 +579,15 @@ public class DataFormatAdapter {
                 jobMetadata.getTotalStages(),
                 jobMetadata.getSla().orElse(null),
                 convertToMantisJobState(jobMetadata.getState()),
+                jobMetadata.getWorkerTimeoutSecs(),
+                jobMetadata.getHeartbeatIntervalSecs(),
                 jobMetadata.getSubscriptionTimeoutSecs(),
                 jobMetadata.getParameters(),
                 jobMetadata.getNextWorkerNumberToUse(),
                 // TODO need to wire migration config here so it can get persisted
                 null,
-                jobMetadata.getLabels());
+                jobMetadata.getLabels(),
+                jobMetadata.getJobCosts());
     }
 
 

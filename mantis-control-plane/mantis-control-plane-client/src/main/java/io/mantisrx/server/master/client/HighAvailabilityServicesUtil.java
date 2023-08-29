@@ -15,6 +15,9 @@
  */
 package io.mantisrx.server.master.client;
 
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
@@ -58,11 +61,12 @@ public class HighAvailabilityServicesUtil {
                   parts[0],
                   "127.0.0.1",
                   apiPort,
-                  apiPort + 2,
-                  apiPort + 4,
+                  apiPort,
+                  apiPort,
                   "api/postjobstatus",
                   apiPort + 6,
-                  System.currentTimeMillis())));
+                  System.currentTimeMillis()),
+              configuration));
       }
     }
     else {
@@ -76,9 +80,11 @@ public class HighAvailabilityServicesUtil {
 
   private static class LocalHighAvailabilityServices extends AbstractIdleService implements HighAvailabilityServices {
     private final MasterMonitor masterMonitor;
+    private final CoreConfiguration configuration;
 
-    public LocalHighAvailabilityServices(MasterDescription masterDescription) {
+    public LocalHighAvailabilityServices(MasterDescription masterDescription, CoreConfiguration configuration) {
         this.masterMonitor = new LocalMasterMonitor(masterDescription);
+        this.configuration = configuration;
     }
 
     @Override
@@ -98,7 +104,7 @@ public class HighAvailabilityServicesUtil {
 
             @Override
             public ResourceClusterGateway getCurrent() {
-                return new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster());
+                return new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster(), configuration);
             }
 
             @Override
@@ -124,10 +130,21 @@ public class HighAvailabilityServicesUtil {
       HighAvailabilityServices {
 
     private final CuratorService curatorService;
+    private final Counter resourceLeaderChangeCounter;
+    private final Counter resourceLeaderAlreadyRegisteredCounter;
     private final AtomicInteger rmConnections = new AtomicInteger(0);
+    private final CoreConfiguration configuration;
 
     public ZkHighAvailabilityServices(CoreConfiguration configuration) {
       curatorService = new CuratorService(configuration);
+      final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(new Metrics.Builder()
+        .name("ZkHighAvailabilityServices")
+        .addCounter("resourceLeaderChangeCounter")
+        .addCounter("resourceLeaderAlreadyRegisteredCounter")
+        .build());
+      resourceLeaderChangeCounter = metrics.getCounter("resourceLeaderChangeCounter");
+      resourceLeaderAlreadyRegisteredCounter = metrics.getCounter("resourceLeaderAlreadyRegisteredCounter");
+      this.configuration = configuration;
     }
 
     @Override
@@ -157,7 +174,7 @@ public class HighAvailabilityServicesUtil {
         final MasterMonitor masterMonitor = curatorService.getMasterMonitor();
 
         ResourceClusterGateway currentResourceClusterGateway =
-            new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster());
+            new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster(), configuration);
 
         final String nameFormat =
             "ResourceClusterGatewayCxn (" + rmConnections.getAndIncrement() + ")-%d";
@@ -182,9 +199,15 @@ public class HighAvailabilityServicesUtil {
               .observeOn(scheduler)
               .subscribe(nextDescription -> {
                 log.info("nextDescription={}", nextDescription);
+
+                if (nextDescription.equals(((ResourceClusterGatewayClient)currentResourceClusterGateway).getMasterDescription())) {
+                    resourceLeaderAlreadyRegisteredCounter.increment();
+                    return;
+                }
                 ResourceClusterGateway previous = currentResourceClusterGateway;
-                currentResourceClusterGateway =
-                    new ResourceClusterGatewayClient(clusterID, nextDescription);
+                currentResourceClusterGateway = new ResourceClusterGatewayClient(clusterID, nextDescription, configuration);
+
+                resourceLeaderChangeCounter.increment();
                 changeListener.onResourceLeaderChanged(previous, currentResourceClusterGateway);
               });
 

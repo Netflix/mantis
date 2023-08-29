@@ -46,8 +46,11 @@ public class DeadLetterActor extends AbstractActor {
                 .match(DeadLetter.class, msg -> {
                     this.numDeadLetterMsgs.increment();
                     String m = toString(msg.message());
-                    log.error("Dead Letter from {} to {} msg:{}", msg.sender(), msg.recipient(),
-                            m.substring(0, Math.min(250, m.length() - 1)));
+                    log.error("Dead Letter from {} to {} msg type: {} payload: {}",
+                        msg.sender(),
+                        msg.recipient(),
+                        msg.message().getClass().getSimpleName(),
+                        m.substring(0, Math.min(250, m.length() - 1)));
                 })
                 .build();
     }

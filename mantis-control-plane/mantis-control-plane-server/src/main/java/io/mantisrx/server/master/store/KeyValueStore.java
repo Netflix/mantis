@@ -19,9 +19,12 @@ package io.mantisrx.server.master.store;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
@@ -36,6 +39,14 @@ import org.apache.commons.lang3.StringUtils;
 public interface KeyValueStore {
 
     KeyValueStore NO_OP = new NoopStore();
+
+    static KeyValueStore noop() {
+        return NO_OP;
+    }
+
+    static KeyValueStore inMemory() {
+        return new InMemoryStore();
+    }
 
     /**
      * Gets all rows from the table
@@ -211,6 +222,63 @@ public interface KeyValueStore {
 
         @Override
         public boolean deleteAll(String tableName, String partitionKey) {
+            return false;
+        }
+    }
+
+    class InMemoryStore implements KeyValueStore {
+
+        // table -> partitionKey -> secondaryKey -> data
+        private final Map<String, Map<String, Map<String, String>>> store = new ConcurrentHashMap<>();
+
+        @Override
+        public List<String> getAllPartitionKeys(String tableName) {
+            if (store.get(tableName) == null) {
+                return Collections.emptyList();
+            } else{
+                return new ArrayList<>(store.get(tableName).keySet());
+            }
+        }
+
+        @Override
+        public Map<String, String> getAll(String tableName, String partitionKey)
+            throws IOException {
+            if (store.get(tableName) == null) {
+                return Collections.emptyMap();
+            } else if (store.get(tableName).get(partitionKey) == null) {
+                return Collections.emptyMap();
+            } else {
+                return store.get(tableName).get(partitionKey);
+            }
+        }
+
+        @Override
+        public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all,
+            Duration ttl) throws IOException {
+            store.putIfAbsent(tableName, new ConcurrentHashMap<>());
+            store.get(tableName).put(partitionKey, new ConcurrentHashMap<>(all));
+            return true;
+        }
+
+        @Override
+        public boolean delete(String tableName, String partitionKey, String secondaryKey)
+            throws IOException {
+            if (store.containsKey(tableName) && // table exists
+                store.get(tableName).containsKey(partitionKey) && // partitionKey exists
+                store.get(tableName).get(partitionKey).containsKey(secondaryKey)) { // secondaryKey exists
+                store.get(tableName).get(partitionKey).remove(secondaryKey);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean deleteAll(String tableName, String partitionKey) throws IOException {
+            if (store.containsKey(tableName) && // table exists
+                store.get(tableName).containsKey(partitionKey)) { // partitionKey exists
+                store.get(tableName).remove(partitionKey);
+                return true;
+            }
             return false;
         }
     }

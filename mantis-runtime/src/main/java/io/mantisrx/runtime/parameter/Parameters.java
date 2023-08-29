@@ -39,7 +39,7 @@ public class Parameters {
 
     /**
      * Get parameter value given key with validation.
-     *
+     * <p>
      * If the key is required, parameters must have a value provided otherwise it will throw an exception.
      * If the key is not defined, it will throw an exception.
      */
@@ -60,7 +60,7 @@ public class Parameters {
 
     /**
      * Get parameter value given key without validation.
-     *
+     * <p>
      * If the key is not defined, value is missing or is null, given {@code defaultValue} will be returned.
      */
     public Object get(String key, Object defaultValue) {

@@ -27,8 +27,8 @@ import java.util.concurrent.TimeUnit;
 
 public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
 
-    private ToScalarComputation<K, T, R> computation;
-    private long keyExpireTimeSeconds;
+    private final ToScalarComputation<K, T, R> computation;
+    private final long keyExpireTimeSeconds;
 
     /**
      * @deprecated As of release 0.603, use {@link #KeyToScalar(ToScalarComputation, Config, Codec)} instead
@@ -66,13 +66,13 @@ public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
         // default input type is serial for
         // 'stateful group calculation' use case
         // do not allow config override
-        private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
+        private final INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
         /**
-         * @param codec
+         * @param codec is netty reactive x
          *
-         * @return
+         * @return Config
          *
          * @deprecated As of release 0.603, use {@link #codec(Codec)} instead
          */

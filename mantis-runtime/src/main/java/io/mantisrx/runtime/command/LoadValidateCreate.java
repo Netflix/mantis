@@ -22,11 +22,11 @@ import java.io.File;
 
 public class LoadValidateCreate implements Command {
 
-    private String jobJarFile;
-    private String artifactName;
-    private String version;
-    private String project;
-    private String outputLocation;
+    private final String jobJarFile;
+    private final String artifactName;
+    private final String version;
+    private final String project;
+    private final String outputLocation;
 
     public LoadValidateCreate(String jobJarFile, String artifactName,
                               String version, String outputLocation,

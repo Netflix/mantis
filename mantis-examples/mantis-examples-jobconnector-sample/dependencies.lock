@@ -11,6 +11,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
@@ -232,7 +238,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.1"
+            "locked": "1.1.10.2"
         }
     },
     "compileClasspath": {
@@ -241,6 +247,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
@@ -466,7 +478,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.1"
+            "locked": "1.1.10.2"
         }
     },
     "lombok": {
@@ -494,6 +506,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.2"
+        },
         "com.google.code.gson:gson": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-job"
@@ -808,7 +826,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.1"
+            "locked": "1.1.10.2"
         }
     },
     "testAnnotationProcessor": {
@@ -822,6 +840,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.2"
         },
         "com.google.guava:guava": {
             "firstLevelTransitive": [
@@ -1065,7 +1089,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.1"
+            "locked": "1.1.10.2"
         }
     },
     "testRuntimeClasspath": {
@@ -1087,6 +1111,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.2"
         },
         "com.google.code.gson:gson": {
             "firstLevelTransitive": [
@@ -1402,7 +1432,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.1"
+            "locked": "1.1.10.2"
         }
     }
 }

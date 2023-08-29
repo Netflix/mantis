@@ -38,7 +38,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     // ------------------------------------------------------------------------
     //  Task Executor machine related configurations
     // ------------------------------------------------------------------------
-    @Config("mantis.taskexecutor.id")
+    @Config({"mantis.taskexecutor.id", "MANTIS_TASKEXECUTOR_ID"})
     @DefaultNull
     String getTaskExecutorId();
 
@@ -46,7 +46,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
         return getExternalAddress();
     }
 
-    @Config("mantis.taskexecutor.cluster-id")
+    @Config({"mantis.taskexecutor.cluster-id", "MANTIS_TASKEXECUTOR_CLUSTER_ID"})
     @Default("DEFAULT_CLUSTER")
     String getClusterId();
 
@@ -85,6 +85,30 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Default("5000")
     int heartbeatTimeoutMs();
 
+    @Config("mantis.taskexecutor.heartbeats.retry.initial-delay.ms")
+    @Default("1000")
+    long heartbeatRetryInitialDelayMs();
+
+    @Config("mantis.taskexecutor.heartbeats.retry.max-delay.ms")
+    @Default("5000")
+    long heartbeatRetryMaxDelayMs();
+
+    @Config("mantis.taskexecutor.registration.retry.initial-delay.ms")
+    @Default("2000")
+    long registrationRetryInitialDelayMillis();
+
+    @Config("mantis.taskexecutor.registration.retry.mutliplier")
+    @Default("2")
+    double registrationRetryMultiplier();
+
+    @Config("mantis.taskexecutor.registration.retry.randomization-factor")
+    @Default("0.5")
+    double registrationRetryRandomizationFactor();
+
+    @Config("mantis.taskexecutor.registration.retry.max-attempts")
+    @Default("5")
+    int registrationRetryMaxAttempts();
+
     default Time getHeartbeatTimeout() {
         return Time.milliseconds(heartbeatTimeoutMs());
     }
@@ -96,8 +120,8 @@ public interface WorkerConfiguration extends CoreConfiguration {
     // ------------------------------------------------------------------------
     //  RPC related configurations
     // ------------------------------------------------------------------------
-    @Config("mantis.taskexecutor.rpc.external-address")
-    @Default("${EC2_LOCAL_IPV4}")
+    @Config({"mantis.taskexecutor.rpc.external-address", "MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS"})
+    @Default("localhost")
     String getExternalAddress();
 
     @Config("mantis.taskexecutor.rpc.port-range")

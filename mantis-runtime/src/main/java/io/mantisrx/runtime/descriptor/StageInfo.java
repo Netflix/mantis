@@ -23,8 +23,8 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 
 public class StageInfo {
 
-    private int stageNumber;
-    private String description;
+    private final int stageNumber;
+    private final String description;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)

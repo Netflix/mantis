@@ -101,6 +101,7 @@ public class TestHelpers {
                             mantisJobMetadata.getSchedulingInfo(),
                             mantisJobMetadata.getParameters(),
                             mantisJobMetadata.getSubscriptionTimeoutSecs(),
+                            0,
                             mantisJobMetadata.getMinRuntimeSecs()
                     ),
                     mantisJobMetadata.getSla().get().getDurationType(),

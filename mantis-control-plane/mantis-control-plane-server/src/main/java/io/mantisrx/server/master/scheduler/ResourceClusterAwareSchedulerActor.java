@@ -125,7 +125,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             resourceCluster
                 .getTaskExecutorFor(
                     TaskExecutorAllocationRequest.of(
-                        event.getRequest().getWorkerId(), event.getRequest().getMachineDefinition()))
+                        event.getRequest().getWorkerId(), event.getRequest().getMachineDefinition(), event.getRequest().getJobMetadata(), event.getRequest().getStageNum()))
                 .<Object>thenApply(event::onAssignment)
                 .exceptionally(event::onFailure);
 
@@ -178,7 +178,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         if (event.getAttempt() >= this.maxScheduleRetries) {
             log.error("Failed to submit the request {} because of ", event.getScheduleRequestEvent(), event.getThrowable());
         } else {
-            log.error("Failed to submit the request {}; Retrying in {} because of ", event.getScheduleRequestEvent(), event.getThrowable());
+            log.error("Failed to submit the request {}; Retrying in {} because of ", event.getScheduleRequestEvent(), intervalBetweenRetries, event.getThrowable());
             getTimers().startSingleTimer(
                 getSchedulingQueueKeyFor(event.getScheduleRequestEvent().getRequest().getWorkerId()),
                 event.onRetry(),

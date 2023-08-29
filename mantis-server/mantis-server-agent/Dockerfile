@@ -9,6 +9,12 @@ COPY ./src/main/resources/agent-docker.properties /apps/mantis/mantis-server-age
 
 RUN mkdir -p /apps/mantis/mantis-server-agent/src/main/webapp
 RUN mkdir -p /apps/mantis/mantis-server-agent/logs
+RUN mkdir -p /apps/mantis/mantis-server-agent/mantis-artifacts
+RUN mkdir -p /apps/mantis/mantis-server-agent/mantis-artifacts/storage
+
+COPY ./build/distributions/* /apps/mantis/mantis-server-agent/mantis-artifacts/storage/
+
+RUN apt-get update && apt-get install -y curl
 
 WORKDIR /apps/mantis/mantis-server-agent
 

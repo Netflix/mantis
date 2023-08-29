@@ -17,9 +17,18 @@
 package io.mantisrx.server.agent.metrics.cgroups;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 interface Cgroup {
+
+    /**
+     * Represents if this cgroup is a v1 or v2 cgroup
+     * @return
+     */
+    Boolean isV1();
+
+    List<Long> getMetrics(String subsystem, String metricName) throws IOException;
     Long getMetric(String subsystem, String metricName) throws IOException;
     Map<String, Long> getStats(String subsystem, String stat) throws IOException;
 }

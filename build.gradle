@@ -21,6 +21,7 @@ buildscript {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven { url 'https://artifacts-oss.netflix.net/maven-oss-releases' }
     }
     dependencies {
         classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:10.6.0'
@@ -64,6 +65,7 @@ ext.libraries = [
         ],
         hadoopCommon   : "org.apache.hadoop:hadoop-common:${versions.hadoop}",
         hadoopS3       : "org.apache.hadoop:hadoop-aws:${versions.hadoop}",
+        httpClient     : "org.apache.httpcomponents:httpclient:4.5.14",
         jsr305         : "com.google.code.findbugs:jsr305:${versions.jsr305}", // For Nonnull annotation
         junitJupiter   : [
                 "org.junit.jupiter:junit-jupiter-api:${versions.junit5}",

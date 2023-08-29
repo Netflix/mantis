@@ -144,6 +144,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     // Used to schedule and unschedule workers
     private final MantisScheduler mantisScheduler;
     private final LifecycleEventPublisher eventPublisher;
+    private final CostsCalculator costsCalculator;
     private boolean hasJobMaster;
     private volatile boolean allWorkersCompleted = false;
 
@@ -163,9 +164,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             final MantisJobMetadataImpl jobMetadata,
             final MantisJobStore jobStore,
             final MantisScheduler mantisScheduler,
-            final LifecycleEventPublisher eventPublisher) {
+            final LifecycleEventPublisher eventPublisher,
+            final CostsCalculator costsCalculator) {
         return Props.create(JobActor.class, jobClusterDefinition, jobMetadata, jobStore,
-                mantisScheduler, eventPublisher);
+                mantisScheduler, eventPublisher, costsCalculator);
     }
 
     /**
@@ -178,9 +180,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @param eventPublisher
      */
     public JobActor(
-            final IJobClusterDefinition jobClusterDefinition, final MantisJobMetadataImpl jobMetadata,
-            MantisJobStore jobStore, final MantisScheduler scheduler,
-            final LifecycleEventPublisher eventPublisher) {
+        final IJobClusterDefinition jobClusterDefinition,
+        final MantisJobMetadataImpl jobMetadata,
+        final MantisJobStore jobStore,
+        final MantisScheduler scheduler,
+        final LifecycleEventPublisher eventPublisher,
+        final CostsCalculator costsCalculator) {
 
         this.clusterName = jobMetadata.getClusterName();
         this.jobId = jobMetadata.getJobId();
@@ -189,6 +194,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.mantisScheduler = scheduler;
         this.eventPublisher = eventPublisher;
         this.mantisJobMetaData = jobMetadata;
+        this.costsCalculator = costsCalculator;
 
         initializedBehavior = getInitializedBehavior();
 
@@ -258,7 +264,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.workerManager = new WorkerManager(this, jobClusterDefinition.getWorkerMigrationConfig(),
                 this.mantisScheduler, isSubmit);
 
-        long checkAgainInSeconds = ConfigurationProvider.getConfig().getWorkerTimeoutSecs();
+        long checkAgainInSeconds = getWorkerTimeoutSecs();
         long refreshStageAssignementsDurationMs = ConfigurationProvider.getConfig()
                 .getStageAssignmentRefreshIntervalMs();
         getTimers().startPeriodicTimer(CHECK_HB_TIMER_KEY, new JobProto.CheckHeartBeat(),
@@ -274,6 +280,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         LOGGER.info("Job {} initialized", this.jobId);
     }
 
+    private long getWorkerTimeoutSecs() {
+        if (mantisJobMetaData.getWorkerTimeoutSecs() > 0) {
+            return mantisJobMetaData.getWorkerTimeoutSecs();
+        } else {
+            return ConfigurationProvider.getConfig().getDefaultWorkerTimeoutSecs();
+        }
+    }
+
     private void setupJobMasterStage(SchedulingInfo schedulingInfo)
             throws io.mantisrx.runtime.command.InvalidJobException {
         LOGGER.info("Job {} is autoscaled setting up Job Master", this.jobId);
@@ -286,9 +300,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     .build());
 
             // Update jobMetadata with the new stage added
-            mantisJobMetaData = new MantisJobMetadataImpl.Builder()
-                    .from(mantisJobMetaData)
-                    .withJobDefinition(new JobDefinition.Builder()
+            mantisJobMetaData = new MantisJobMetadataImpl.Builder(mantisJobMetaData)
+                    .withJobDefinition(
+                        new JobDefinition.Builder()
                             .from(mantisJobMetaData.getJobDefinition())
                             .withSchedulingInfo(schedulingInfo)
                             .withNumberOfStages(schedulingInfo.getStages().size())
@@ -724,7 +738,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
     @Override
     public void onGetJobStatusSubject(GetJobSchedInfoRequest r) {
-        LOGGER.trace("Entering onGetJobStatusSubject {}", r);
         ActorRef sender = getSender();
         if (r.getJobId().equals(this.jobId)) {
             sender.tell(new GetJobSchedInfoResponse(r.requestId, SUCCESS, "",
@@ -738,7 +751,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
     @Override
     public void onGetLatestJobDiscoveryInfo(GetLatestJobDiscoveryInfoRequest r) {
-        LOGGER.trace("Entering onGetLatestJobDiscoveryInfo {}", r);
         ActorRef sender = getSender();
         if (r.getJobCluster().equals(this.jobId.getCluster())) {
             JobSchedulingInfo schedulingInfo = workerManager.getJobStatusSubject().getValue();
@@ -773,9 +785,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      */
     @Override
     public void onResubmitWorker(final ResubmitWorkerRequest r) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Enter Job {} onResubmitWorker {}", jobId, r);
-        }
         ActorRef sender = getSender();
         try {
             eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
@@ -789,14 +798,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         } catch (Exception e) {
             sender.tell(new ResubmitWorkerResponse(r.requestId, SERVER_ERROR, e.getMessage()), getSelf());
         }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Exit Job {} onResubmitWorker {}", jobId, r);
-        }
     }
 
     @Override
     public void onMigrateWorkers(final JobProto.MigrateDisabledVmWorkersRequest r) {
-        LOGGER.trace("Enter JobActor::onMigrateWorkersRequest {}", jobId);
         workerManager.migrateDisabledVmWorkers(r.time);
     }
 
@@ -807,8 +812,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      */
     @Override
     public void onCheckHeartBeats(final JobProto.CheckHeartBeat r) {
-        LOGGER.trace("Enter JobActor::onCheckHearbeats {}", jobId);
-
         this.workerManager.checkHeartBeats(r.getTime());
     }
 
@@ -824,7 +827,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
     @Override
     public void onSendWorkerAssignments(final JobProto.SendWorkerAssignementsIfChanged r) {
-        LOGGER.trace("Enter JobActor::onSendWorkerAssignments {}", jobId);
         this.workerManager.refreshAndSendWorkerAssignments();
     }
 
@@ -838,13 +840,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      */
     @Override
     public void onJobKill(JobClusterProto.KillJobRequest req) {
-        LOGGER.trace("Enter JobActor::onJobKill {}", jobId);
         ActorRef sender = getSender();
 
         LOGGER.info("Shutting down job {} on request by {}", jobId, sender);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.info("shutting down job with metadata {}", mantisJobMetaData);
-        }
         try {
             eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
                 "Killing job, reason: " + req.reason,
@@ -875,8 +873,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     getJobId() + " Could not be terminated due to " + e.getMessage(), getJobId(),
                     this.mantisJobMetaData, req.user, req.requestor), getSelf());
         }
-
-        LOGGER.trace("Exit JobActor::onJobKill {}", jobId);
     }
 
     @Override
@@ -941,9 +937,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     /////////////////////////////////////////// Internal State change events Begin //////////////////////////////
 
     private void performFinalShutdown() {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Enter performFinalShutdown for Job {}", jobId);
-        }
         try {
             LOGGER.info("Archiving Job {}", this.jobId);
             jobStore.archiveJob(mantisJobMetaData);
@@ -953,9 +946,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         getContext().become(terminatedBehavior);
         // commit suicide
         getSelf().tell(PoisonPill.getInstance(), ActorRef.noSender());
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Exit performFinalShutdown for Job {}", jobId);
-        }
     }
 
     /**
@@ -1019,9 +1009,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             LOGGER.warn("Unexpected all Workers Started Event while job in {} state", mantisJobMetaData.getState());
             isSuccess = false;
         }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Exit AllWorkerStarted event processed successfully ? {}", isSuccess);
-        }
         return isSuccess;
     }
 
@@ -1054,13 +1041,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
     @Override
     public IMantisJobMetadata getJobDetails() {
-        LOGGER.debug("Returning job Details {}", this.mantisJobMetaData);
         return this.mantisJobMetaData;
     }
 
     public JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse getIntermediateJobDefinition(
             GetJobDefinitionUpdatedFromJobActorRequest r) {
-        LOGGER.debug("Returning intermediate job Details {}", this.mantisJobMetaData);
         final JobDefinition givenJobDefn = r.getJobDefinition();
         final boolean forceInheritance = r.isQuickSubmit();
         IMantisJobMetadata lastJobMeta = this.mantisJobMetaData;
@@ -1071,7 +1056,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         try {
             JobDefinition mergedJobDefn = jobDefnBuilder.build();
-            LOGGER.debug("Returning intermediate job definition: {}", mergedJobDefn);
             return new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
                     r.requestId, SUCCESS, "", r.getUser(), mergedJobDefn, r.isAutoResubmit(),
                     r.isQuickSubmit(), r.getOriginalSender());
@@ -1110,12 +1094,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     }
 
     private void updateStateAndPersist(JobState newState) throws Exception {
-
-        LOGGER.trace("Enter JobActor::updateStateAndPersist for Job {} Updating job Status {}", jobId, newState);
-
         mantisJobMetaData.setJobState(newState, jobStore);
-
-        LOGGER.trace("Exit JobActor::updateStateAndPersist for Job {}", jobId);
     }
 
     /**
@@ -1149,11 +1128,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     }
 
     private boolean isAutoscaled(SchedulingInfo schedulingInfo) {
-        LOGGER.trace("In isAutoscaled {}", schedulingInfo);
         for (Map.Entry<Integer, StageSchedulingInfo> entry : schedulingInfo.getStages().entrySet()) {
-
             final StageScalingPolicy scalingPolicy = entry.getValue().getScalingPolicy();
-
             if (scalingPolicy != null && scalingPolicy.isEnabled()) {
                 LOGGER.info("Job {} is autoscaleable", jobId);
                 return true;
@@ -1181,6 +1157,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 : mjmd.getSubscriptionTimeoutSecs();
     }
 
+    static long getHeartbeatIntervalSecs(final IMantisJobMetadata mjmd) {
+        if (mjmd.getHeartbeatIntervalSecs() > 0) {
+            return mjmd.getHeartbeatIntervalSecs();
+        }
+        return ConfigurationProvider.getConfig().getDefaultWorkerHeartbeatIntervalSecs();
+    }
+
     /**
      * Keeps track of the last used worker number and mints a new one every time a worker is scheduled.
      */
@@ -1205,7 +1188,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     "Last Used worker Number cannot be negative {} ", lastUsed);
             Preconditions.checkArgument(incrementStep >= 1,
                     "incrementStepcannot be less than 1 {} ", incrementStep);
-            LOGGER.debug("WorkerNumberGenerator ctor2 lastUsed {}", lastUsed);
 
             this.lastUsed = lastUsed;
             this.currLimit = lastUsed;
@@ -1217,23 +1199,17 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          */
         WorkerNumberGenerator() {
             this(0, DEFAULT_INCREMENT_STEP);
-            LOGGER.trace("WorkerNumberGenerator ctor1");
         }
 
         private void advance(MantisJobMetadataImpl mantisJobMetaData, MantisJobStore jobStore) {
-            LOGGER.trace("getNextWorkerNumber in advance");
             try {
                 currLimit += incrementStep;
 
                 mantisJobMetaData.setNextWorkerNumberToUse(currLimit, jobStore);
-
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("{} nextWorkerNumber set to : {} ", mantisJobMetaData.getJobId(), currLimit);
-                }
             } catch (Exception e) {
                 hasErrored = true;
                 LOGGER.error("Exception setting next Worker number to use ", e);
-                throw new RuntimeException("Unexpected: " + e.getMessage());
+                throw new RuntimeException("Unexpected error setting next worker number to use", e);
             }
         }
 
@@ -1246,7 +1222,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          * @throws IllegalStateException if there was an error saving the next worker number to use to the job store
          */
         int getNextWorkerNumber(MantisJobMetadataImpl mantisJobMetaData, MantisJobStore jobStore) {
-            LOGGER.debug("getNextWorkerNumber lastUsed {}", lastUsed);
             if (hasErrored) {
                 throw new IllegalStateException("Unexpected: Invalid state likely due to getting/setting"
                         + "next worker number");
@@ -1255,7 +1230,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             if (lastUsed == currLimit) {
                 advance(mantisJobMetaData, jobStore);
             }
-            LOGGER.debug("getNextWorkerNumber returns {}", lastUsed + 1);
             return ++lastUsed;
         }
     }
@@ -1298,7 +1272,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         WorkerManager(
                 IMantisJobManager jobMgr, WorkerMigrationConfig migrationConfig, MantisScheduler scheduler,
                 boolean isSubmit) throws Exception {
-            LOGGER.debug("In WorkerManager ctor");
 
             workerNumberGenerator = new WorkerNumberGenerator((isSubmit) ? 0
                     : jobMgr.getJobDetails().getNextWorkerNumberToUse(), WorkerNumberGenerator.DEFAULT_INCREMENT_STEP);
@@ -1316,7 +1289,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             jobSchedulingInfoBehaviorSubject = BehaviorSubject.create(initialJS);
 
             initialize(isSubmit);
-            LOGGER.debug("Exit WorkerManager ctor");
         }
 
         /**
@@ -1334,19 +1306,15 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          * @throws Exception
          */
         void initialize(boolean isSubmit) throws Exception {
-
-            LOGGER.trace("In initialize WorkerManager for Job {} with isSubmit {}", jobId, isSubmit);
             if (isSubmit) {
                 submitInitialWorkers();
             } else {
                 initializeRunningWorkers();
             }
-            LOGGER.trace("Exit initialize WorkerManager for Job {}", jobId);
+            mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
         }
 
         private void initializeRunningWorkers() {
-            LOGGER.trace("In initializeRunningWorkers for Job {}", jobId);
-
             // Scan for the list of all corrupted workers to be resubmitted.
             List<JobWorker> workersToResubmit = markCorruptedWorkers();
 
@@ -1387,13 +1355,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                         ScheduleRequest scheduleRequest = createSchedulingRequest(wm, empty());
 
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("initializing Running task {}-worker-{}-{}", wm.getJobId(),
-                                    wm.getWorkerIndex(), wm.getWorkerNumber());
-                        }
-
                         scheduler.initializeRunningWorker(scheduleRequest, wm.getSlave(), wm.getSlaveID());
-                        LOGGER.debug("Initialized running worker {}", wm.getSlave());
                     } else if (wm.getState().equals(WorkerState.Accepted)) {
                         queueTask(wm);
                     }
@@ -1419,12 +1381,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             jobWorker, e.getMessage(), e);
                 }
             }
-
-            LOGGER.trace("Initialized running workers for Job {} complete", jobId);
         }
 
         private List<JobWorker> markCorruptedWorkers() {
-            LOGGER.trace("Enter markCorruptedWorkers for Job {} ", jobId);
             List<JobWorker> corruptedWorkers = new ArrayList<>();
 
             for (IMantisStageMetadata stageMeta : mantisJobMetaData.getStageMetadata().values()) {
@@ -1454,8 +1413,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     }
                 }
             }
-            LOGGER.trace("Exit markCorruptedWorkers for Job {} ", jobId);
-
             return corruptedWorkers;
         }
 
@@ -1468,10 +1425,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         private void refreshStageAssignmentsAndPush() {
-            LOGGER.trace("Enter refreshStageAssignmentsAndPush for Job {} ", jobId);
-
             if (!stageAssignmentPotentiallyChanged) {
-                LOGGER.debug("Worker Assignments have not changed since last push skipping.");
                 return;
             }
 
@@ -1506,7 +1460,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             }
             JobSchedulingInfo jobSchedulingInfo = new JobSchedulingInfo(jobId.getId(), stageAssignments);
 
-            LOGGER.debug("publishing scheduling Info for job {}", jobId);
             jobSchedulingInfoBehaviorSubject.onNext(jobSchedulingInfo);
 
             eventPublisher.publishWorkerListChangedEvent(new LifecycleEventsProto.WorkerListChangedEvent(
@@ -1515,8 +1468,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             numSchedulingChangesRefreshed.increment();
 
             stageAssignmentPotentiallyChanged = false;
-
-            LOGGER.trace("Exit refreshStageAssignmentsAndPush for Job {} ", jobId);
         }
 
         private void submitInitialWorkers() throws Exception {
@@ -1524,7 +1475,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     mantisJobMetaData.getJobDefinition(),
                     System.currentTimeMillis());
 
-            LOGGER.debug("Got initial workers " + workers);
             int beg = 0;
             while (true) {
                 if (beg >= workers.size()) {
@@ -1540,10 +1490,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     // queue to scheduler
                     workerRequests.forEach(this::queueTask);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    LOGGER.error("Error {} storing workers of job {}", e.getMessage(), jobId.getId());
-                    throw new RuntimeException(String.format("Exception saving worker %s for Job %s ", e.getMessage(),
-                            jobId));
+                    LOGGER.error("Error {} storing workers of job {}", e.getMessage(), jobId.getId(), e);
+                    throw new RuntimeException("Exception saving worker for Job " + jobId, e);
                 }
                 beg = en;
             }
@@ -1556,7 +1504,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 scheduler.scheduleWorker(schedulingRequest);
             } catch (Exception e) {
                 LOGGER.error("Exception queueing task", e);
-                e.printStackTrace();
             }
         }
 
@@ -1568,8 +1515,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 final IMantisWorkerMetadata workerRequest,
                 final Optional<Long> readyAt) {
             try {
-                LOGGER.trace("In createSchedulingRequest for worker {}", workerRequest);
-
                 final WorkerId workerId = workerRequest.getWorkerId();
 
                 // setup constraints
@@ -1577,7 +1522,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 final List<VMTaskFitnessCalculator> softConstraints = new ArrayList<>();
                 Optional<IMantisStageMetadata> stageMetadataOp =
                         mantisJobMetaData.getStageMetadata(workerRequest.getStageNum());
-                LOGGER.debug("Got stageMeta {}", stageMetadataOp);
 
                 if (!stageMetadataOp.isPresent()) {
                     throw new RuntimeException(String.format("No such stage %d", workerRequest.getStageNum()));
@@ -1623,6 +1567,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                 mantisJobMetaData.getSchedulingInfo(),
                                 mantisJobMetaData.getParameters(),
                                 getSubscriptionTimeoutSecs(mantisJobMetaData),
+                                getHeartbeatIntervalSecs(mantisJobMetaData),
                                 mantisJobMetaData.getMinRuntimeSecs()
                         ),
                         mantisJobMetaData.getSla().orElse(new JobSla.Builder().build()).getDurationType(),
@@ -1631,11 +1576,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         softConstraints,
                         readyAt.orElse(0L),
                         workerRequest.getPreferredClusterOptional());
-                LOGGER.trace("created scheduleRequest {}", sr);
                 return sr;
             } catch (Exception e) {
-                e.printStackTrace();
-                LOGGER.error("Exception creating scheduleRequest {}", e.getMessage());
+                LOGGER.error("Exception creating scheduleRequest ", e);
                 throw e;
             }
         }
@@ -1643,13 +1586,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private List<IMantisWorkerMetadata> getInitialWorkers(JobDefinition jobDetails, long submittedAt)
                 throws Exception {
             List<IMantisWorkerMetadata> workerRequests = Lists.newLinkedList();
-            LOGGER.debug("In getInitial Workers : " + jobDetails);
-
             SchedulingInfo schedulingInfo = jobDetails.getSchedulingInfo();
-            LOGGER.debug("scheduling info " + schedulingInfo);
             int totalStages = schedulingInfo.getStages().size();
-
-            LOGGER.debug("total stages {} ", totalStages);
 
             Iterator<Integer> it = schedulingInfo.getStages().keySet().iterator();
             while (it.hasNext()) {
@@ -1665,8 +1603,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private List<IMantisWorkerMetadata> setupStageWorkers(
                 SchedulingInfo schedulingInfo, int totalStages,
                 int stageNum, long submittedAt) throws Exception {
-            LOGGER.trace("In setupStageWorkers for Job {} with sched info", jobId, schedulingInfo);
-
             List<IMantisWorkerMetadata> workerRequests = new LinkedList<>();
             StageSchedulingInfo stage = schedulingInfo.getStages().get(stageNum);
             if (stage == null) {
@@ -1695,26 +1631,17 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                             .isScalable(stage.getScalable())
                             .build();
-                    LOGGER.debug("Job Actor adding stage ");
                     mantisJobMetaData.addJobStageIfAbsent(msmd);
                     jobStore.updateStage(msmd);
-
-                    LOGGER.debug("Added " + mantisJobMetaData.getStageMetadata(stageNum));
-
-                    LOGGER.debug("Total stages " + mantisJobMetaData.getTotalStages());
                 }
                 IMantisWorkerMetadata mwmd = addWorker(schedulingInfo, stageNum, workerIndex);
                 workerRequests.add(mwmd);
             }
-            LOGGER.trace("Exit setupStageWorkers for Job {} ", jobId);
             return workerRequests;
         }
 
         private IMantisWorkerMetadata addWorker(SchedulingInfo schedulingInfo, int stageNo, int workerIndex)
                 throws InvalidJobException {
-
-            LOGGER.trace("In addWorker for index {} for Job {} with sched info {}", workerIndex, jobId, schedulingInfo);
-
             StageSchedulingInfo stageSchedInfo = schedulingInfo.getStages().get(stageNo);
             int workerNumber = workerNumberGenerator.getNextWorkerNumber(mantisJobMetaData, jobStore);
             JobWorker jw = new JobWorker.Builder()
@@ -1739,15 +1666,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                     + workerIndex + "doesn't exist "));
                 }
             }
-
-            LOGGER.trace("Exit addWorker for index {} for Job {} with sched info", workerIndex, jobId, schedulingInfo);
-
+            mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
             return jw.getMetadata();
         }
 
         @Override
         public void shutdown() {
-            LOGGER.trace("Enter shutdown for Job {}", jobId);
             // if workers have not already completed
             if (!allWorkerCompleted()) {
                 // kill workers
@@ -1758,8 +1682,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     this.jobMgr.getJobId().getId(),
                     new HashMap<>()));
             jobSchedulingInfoBehaviorSubject.onCompleted();
-
-            LOGGER.trace("Exit shutdown for Job {}", jobId);
         }
 
         private void terminateAllWorkersAsync() {
@@ -1792,8 +1714,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         workerMeta.getWorkerId(),
                         Optional.ofNullable(workerMeta.getSlave()));
 
-                LOGGER.debug("WorkerNumber->StageMap {}", mantisJobMetaData.getWorkerNumberToStageMap());
-
                 int stageNum = mantisJobMetaData.getWorkerNumberToStageMap().get(workerMeta.getWorkerNumber());
 
                 Optional<IMantisStageMetadata> stageMetaOp = mantisJobMetaData.getStageMetadata(stageNum);
@@ -1825,10 +1745,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             LOGGER.info("Terminating and removing worker {}", workerMeta.getWorkerId().getId());
             try {
                 WorkerId workerId = workerMeta.getWorkerId();
-
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("WorkerNumber->StageMap {}", mantisJobMetaData.getWorkerNumberToStageMap());
-                }
                 int stageNum = mantisJobMetaData.getWorkerNumberToStageMap().get(workerMeta.getWorkerNumber());
 
                 Optional<IMantisStageMetadata> stageMetaOp = mantisJobMetaData.getStageMetadata(stageNum);
@@ -1850,6 +1766,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                     //remove from workerNumber to stage map
                     mantisJobMetaData.removeWorkerMetadata(workerMeta.getWorkerNumber());
+                    mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
 
                     LOGGER.info("Terminated worker {}", workerMeta);
                     markStageAssignmentsChanged(true);
@@ -1863,16 +1780,15 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         @Override
         public void refreshAndSendWorkerAssignments() {
-            LOGGER.trace("In WorkerManager::refreshAndSendWorkerAssignments");
             refreshStageAssignmentsAndPush();
-            LOGGER.trace("Exit WorkerManager::refreshAndSendWorkerAssignments");
         }
 
         @Override
         public void checkHeartBeats(Instant currentTime) {
-            LOGGER.trace("In WorkerManager::checkHeartBeats");
-            //// heartbeat misses are calculated as 3 * heartbeatInterval, pick 1.5 multiplier for this check interval
-            long missedHeartBeatToleranceSecs = (long) (1.5 * ConfigurationProvider.getConfig().getWorkerTimeoutSecs());
+
+            LOGGER.info("Using worker timeout {} for job {}", getWorkerTimeoutSecs(), this.jobMgr.getJobId());
+            // heartbeat misses are calculated as 3 * heartbeatInterval, pick 1.5 multiplier for this check interval
+            long missedHeartBeatToleranceSecs = (long) (1.5 * getWorkerTimeoutSecs());
             // Allow more time for workers to start
             long stuckInSubmitToleranceSecs =
                 missedHeartBeatToleranceSecs + ConfigurationProvider.getConfig().getWorkerInitTimeoutSecs();
@@ -1881,51 +1797,43 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             // expire worker resubmit entries
             resubmitRateLimiter.expireResubmitRecords(currentTime.toEpochMilli());
             // For each stage
-            for (Iterator<? extends IMantisStageMetadata> stageIt =
-                 mantisJobMetaData.getStageMetadata().values().iterator(); stageIt.hasNext(); ) {
-                IMantisStageMetadata stage = stageIt.next();
+            for (IMantisStageMetadata stage : mantisJobMetaData.getStageMetadata().values()) {
                 // For each worker in the stage
-                for (Iterator<JobWorker> workerIt = stage.getAllWorkers().iterator(); workerIt.hasNext(); ) {
-                    JobWorker worker = workerIt.next();
+                for (JobWorker worker : stage.getAllWorkers()) {
                     IMantisWorkerMetadata workerMeta = worker.getMetadata();
                     if (!workerMeta.getLastHeartbeatAt().isPresent()) {
-                        System.out.println("1");
                         Instant acceptedAt = Instant.ofEpochMilli(workerMeta.getAcceptedAt());
                         if (Duration.between(acceptedAt, currentTime).getSeconds() > stuckInSubmitToleranceSecs) {
                             // worker stuck in accepted
                             workersToResubmit.add(worker);
                             eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(
-                                    WARN,
-                                    "worker stuck in Accepted state, resubmitting worker",
-                                    workerMeta.getStageNum(),
-                                    workerMeta.getWorkerId(),
-                                    workerMeta.getState()));
+                                WARN,
+                                "worker stuck in Accepted state, resubmitting worker",
+                                workerMeta.getStageNum(),
+                                workerMeta.getWorkerId(),
+                                workerMeta.getState()));
                         }
                     } else {
-                        LOGGER.debug(
-                                "Duration between last heartbeat and now {} ",
-                                Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds());
-
                         if (Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds()
-                                > missedHeartBeatToleranceSecs) {
+                            > missedHeartBeatToleranceSecs) {
                             // heartbeat too old
                             LOGGER.info("Job {}, Worker {} Duration between last heartbeat and now {} "
-                                            + "missed heart beat threshold {} exceeded", this.jobMgr.getJobId(),
-                                    workerMeta.getWorkerId(), Duration.between(
-                                            workerMeta.getLastHeartbeatAt().get(),
-                                            currentTime).getSeconds(), missedHeartBeatToleranceSecs);
+                                    + "missed heart beat threshold {} exceeded", this.jobMgr.getJobId(),
+                                workerMeta.getWorkerId(), Duration.between(
+                                    workerMeta.getLastHeartbeatAt().get(),
+                                    currentTime).getSeconds(), missedHeartBeatToleranceSecs);
 
                             if (ConfigurationProvider.getConfig().isHeartbeatTerminationEnabled()) {
                                 eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(WARN,
-                                        "heartbeat too old, resubmitting worker", workerMeta.getStageNum(),
-                                        workerMeta.getWorkerId(), workerMeta.getState()));
+                                    "heartbeat too old, resubmitting worker", workerMeta.getStageNum(),
+                                    workerMeta.getWorkerId(), workerMeta.getState()));
 
                                 workersToResubmit.add(worker);
                             } else {
                                 LOGGER.warn(
-                                        "Heart beat based termination is disabled. Skipping termination of "
-                                                + "worker {} Please see mantis.worker.heartbeat.termination.enabled",
-                                        workerMeta);
+                                    "Heart beat based termination is disabled. Skipping termination of "
+                                        + "worker {} Please see mantis.worker.heartbeat.termination.enabled",
+                                    workerMeta);
                             }
                         }
                     }
@@ -1948,8 +1856,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         @Override
         public void migrateDisabledVmWorkers(Instant currentTime) {
-            LOGGER.trace("Enter migrateDisabledVmWorkers Workers To Migrate {} for Job {}", workersToMigrate, jobId);
-
             if (!workersToMigrate.isEmpty()) {
                 Map<Integer, Integer> workerToStageMap = mantisJobMetaData.getWorkerNumberToStageMap();
                 final List<Integer> workers = migrationStrategy.execute(workersToMigrate,
@@ -1986,24 +1892,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     }
                 });
             }
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Exit migrateWorkersIfNeeded Workers To Migrate {} for Job {}", workersToMigrate, jobId);
-            }
         }
 
         private Optional<IMantisStageMetadata> getStageForWorker(WorkerEvent event) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Enter getStageForWorker with Num {} in Job {} ", event.getWorkerId().getWorkerNum(),
-                        this.jobMgr.getJobId());
-            }
             // Make sure we know about this worker. If not terminate it
             Map<Integer, Integer> workerToStageMap = mantisJobMetaData.getWorkerNumberToStageMap();
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Worker to Stage Map {} in Job {}", workerToStageMap, this.jobMgr.getJobId());
-            }
             if (!workerToStageMap.containsKey(event.getWorkerId().getWorkerNum())) {
                 LOGGER.warn("Event {} from Unknown worker {} ", event.getWorkerId(), event);
-                LOGGER.trace("Exit getStageForWorker");
                 return empty();
             }
 
@@ -2013,7 +1908,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             if (!stageMetaOp.isPresent()) {
                 LOGGER.warn("Stage {} not found in Job {} while processing event {}", stageNum, jobId, event);
             }
-            LOGGER.trace("Exit getStageForWorker");
             return stageMetaOp;
         }
 
@@ -2031,10 +1925,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         @Override
         public void processEvent(WorkerEvent event, JobState jobState) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Processing worker event in Worker Manager {} in Job {}", event, this.jobMgr.getJobId());
-            }
-
             try {
                 Optional<IMantisStageMetadata> stageMetaOp = getStageForWorker(event);
                 if (!stageMetaOp.isPresent()) {
@@ -2112,7 +2002,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     }
                 }
             } catch (Exception e1) {
-                e1.printStackTrace();
                 LOGGER.error("Job {} Exception occurred in process worker event ", jobId, e1);
             }
         }
@@ -2239,6 +2128,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 mantisJobMetaData.replaceWorkerMetaData(oldWorkerMetadata.getStageNum(), newWorker, oldWorker,
                         jobStore);
+                mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
 
                 // kill the task if it is still running
                 scheduler.unscheduleAndTerminateWorker(

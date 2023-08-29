@@ -22,21 +22,24 @@ import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetBusyTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.RemoveJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -69,7 +72,7 @@ class ResourceClustersManagerActor extends AbstractActor {
     private final Map<ClusterID, ActorHolder> resourceClusterActorMap;
 
     private final ActorRef resourceClusterHostActor;
-    private final ResourceClusterStorageProvider resourceStorageProvider;
+    private final IMantisPersistenceProvider mantisPersistenceProvider;
     private final JobMessageRouter jobMessageRouter;
 
     public static Props props(
@@ -78,7 +81,7 @@ class ResourceClustersManagerActor extends AbstractActor {
         RpcService rpcService,
         MantisJobStore mantisJobStore,
         ActorRef resourceClusterHostActorRef,
-        ResourceClusterStorageProvider resourceStorageProvider,
+        IMantisPersistenceProvider mantisPersistenceProvider,
         JobMessageRouter jobMessageRouter) {
         return Props.create(
             ResourceClustersManagerActor.class,
@@ -87,7 +90,7 @@ class ResourceClustersManagerActor extends AbstractActor {
             rpcService,
             mantisJobStore,
             resourceClusterHostActorRef,
-            resourceStorageProvider,
+            mantisPersistenceProvider,
             jobMessageRouter);
     }
 
@@ -96,14 +99,14 @@ class ResourceClustersManagerActor extends AbstractActor {
         RpcService rpcService,
         MantisJobStore mantisJobStore,
         ActorRef resourceClusterHostActorRef,
-        ResourceClusterStorageProvider resourceStorageProvider,
+        IMantisPersistenceProvider mantisPersistenceProvider,
         JobMessageRouter jobMessageRouter) {
         this.masterConfiguration = masterConfiguration;
         this.clock = clock;
         this.rpcService = rpcService;
         this.mantisJobStore = mantisJobStore;
         this.resourceClusterHostActor = resourceClusterHostActorRef;
-        this.resourceStorageProvider = resourceStorageProvider;
+        this.mantisPersistenceProvider = mantisPersistenceProvider;
         this.jobMessageRouter = jobMessageRouter;
 
         this.resourceClusterActorMap = new HashMap<>();
@@ -142,6 +145,12 @@ class ResourceClustersManagerActor extends AbstractActor {
                     getRCActor(req.getClusterID()).forward(req, context()))
                 .match(DisableTaskExecutorsRequest.class, req ->
                     getRCActor(req.getClusterID()).forward(req, context()))
+                .match(AddNewJobArtifactsToCacheRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(req, context()))
+                .match(RemoveJobArtifactsToCacheRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(req, context()))
+                .match(GetJobArtifactsToCacheRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(req, context()))
                 .match(TriggerClusterRuleRefreshRequest.class, req ->
                     getRCScalerActor(req.getClusterID()).forward(req, context()))
                 .match(SetResourceClusterScalerStatusRequest.class, req ->
@@ -161,7 +170,9 @@ class ResourceClustersManagerActor extends AbstractActor {
                     clock,
                     rpcService,
                     mantisJobStore,
-                    jobMessageRouter),
+                    jobMessageRouter,
+                    masterConfiguration.getMaxJobArtifactsToCache(),
+                    masterConfiguration.getJobClustersWithArtifactCachingEnabled()),
                 "ResourceClusterActor-" + clusterID.getResourceID());
         log.info("Created resource cluster actor for {}", clusterID);
         return clusterActor;
@@ -176,7 +187,7 @@ class ResourceClustersManagerActor extends AbstractActor {
                     clock,
                     Duration.ofSeconds(masterConfiguration.getScalerTriggerThresholdInSecs()),
                     Duration.ofSeconds(masterConfiguration.getScalerRuleSetRefreshThresholdInSecs()),
-                    this.resourceStorageProvider,
+                    this.mantisPersistenceProvider,
                     this.resourceClusterHostActor,
                     rcActor
                 ),

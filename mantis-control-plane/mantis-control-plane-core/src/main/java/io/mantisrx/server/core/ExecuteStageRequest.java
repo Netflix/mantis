@@ -29,24 +29,32 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * ExecuteStageRequest represents the data structure that defines the StageTask workload a given worker needs to run.
  * The data structure is sent over the wire using java serialization when the server requests a given task executor to
  * perform a certain stage task.
  */
-@EqualsAndHashCode
+@Slf4j
+@Getter
 @ToString
+@EqualsAndHashCode
 public class ExecuteStageRequest implements Serializable {
-
+    //todo: refactor into ConfigurationProvider or something equivalent and drive from there!
+    public static final long DEFAULT_HEARTBEAT_INTERVAL_SECS = 20;
     private static final long serialVersionUID = 1L;
 
     // indicates whether this is stage 0 or not. stage 0 runs the autoscaler for the mantis job.
     private final boolean hasJobMaster;
-    // subscription threshold for when a sink should considered to be inactive so that ephemeral jobs producing the sink
+    // interval in seconds between worker heartbeats
+    private final long heartbeatIntervalSecs;
+    // subscription threshold for when a sink should be considered inactive so that ephemeral jobs producing the sink
     // can be shutdown.
     private final long subscriptionTimeoutSecs;
     private final long minRuntimeSecs;
@@ -71,26 +79,30 @@ public class ExecuteStageRequest implements Serializable {
     // class name that provides the job provider.
     @Nullable
     private final String nameOfJobProviderClass;
+    private final String user;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public ExecuteStageRequest(@JsonProperty("jobName") String jobName,
-                               @JsonProperty("jobID") String jobId,
-                               @JsonProperty("workerIndex") int workerIndex,
-                               @JsonProperty("workerNumber") int workerNumber,
-                               @JsonProperty("jobJarUrl") URL jobJarUrl,
-                               @JsonProperty("stage") int stage,
-                               @JsonProperty("totalNumStages") int totalNumStages,
-                               @JsonProperty("ports") List<Integer> ports,
-                               @JsonProperty("timeoutToReportStart") long timeoutToReportStart,
-                               @JsonProperty("metricsPort") int metricsPort,
-                               @JsonProperty("parameters") List<Parameter> parameters,
-                               @JsonProperty("schedulingInfo") SchedulingInfo schedulingInfo,
-                               @JsonProperty("durationType") MantisJobDurationType durationType,
-                               @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
-                               @JsonProperty("minRuntimeSecs") long minRuntimeSecs,
-                               @JsonProperty("workerPorts") WorkerPorts workerPorts,
-                               @JsonProperty("nameOfJobProviderClass") java.util.Optional<String> nameOfJobProviderClass) {
+    public ExecuteStageRequest(
+        @JsonProperty("jobName") String jobName,
+        @JsonProperty("jobID") String jobId,
+        @JsonProperty("workerIndex") int workerIndex,
+        @JsonProperty("workerNumber") int workerNumber,
+        @JsonProperty("jobJarUrl") URL jobJarUrl,
+        @JsonProperty("stage") int stage,
+        @JsonProperty("totalNumStages") int totalNumStages,
+        @JsonProperty("ports") List<Integer> ports,
+        @JsonProperty("timeoutToReportStart") long timeoutToReportStart,
+        @JsonProperty("metricsPort") int metricsPort,
+        @JsonProperty("parameters") List<Parameter> parameters,
+        @JsonProperty("schedulingInfo") SchedulingInfo schedulingInfo,
+        @JsonProperty("durationType") MantisJobDurationType durationType,
+        @JsonProperty("heartbeatIntervalSecs") long heartbeatIntervalSecs,
+        @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
+        @JsonProperty("minRuntimeSecs") long minRuntimeSecs,
+        @JsonProperty("workerPorts") WorkerPorts workerPorts,
+        @JsonProperty("nameOfJobProviderClass") Optional<String> nameOfJobProviderClass,
+        @JsonProperty("user") String user) {
         this.jobName = jobName;
         this.jobId = jobId;
         this.workerIndex = workerIndex;
@@ -99,6 +111,7 @@ public class ExecuteStageRequest implements Serializable {
         this.stage = stage;
         this.totalNumStages = totalNumStages;
         this.nameOfJobProviderClass = nameOfJobProviderClass.orElse(null);
+        this.user = user;
         this.ports.addAll(ports);
         this.metricsPort = metricsPort;
         this.timeoutToReportStart = timeoutToReportStart;
@@ -109,78 +122,16 @@ public class ExecuteStageRequest implements Serializable {
         }
         this.schedulingInfo = schedulingInfo;
         this.durationType = durationType;
-        hasJobMaster = schedulingInfo != null && schedulingInfo.forStage(0) != null;
+        this.heartbeatIntervalSecs = (heartbeatIntervalSecs > 0) ? heartbeatIntervalSecs : DEFAULT_HEARTBEAT_INTERVAL_SECS;
+        log.info("heartbeat interval {}, using {}", heartbeatIntervalSecs, this.heartbeatIntervalSecs);
+        this.hasJobMaster = schedulingInfo != null && schedulingInfo.forStage(0) != null;
         this.subscriptionTimeoutSecs = subscriptionTimeoutSecs;
         this.minRuntimeSecs = minRuntimeSecs;
         this.workerPorts = workerPorts;
     }
 
-    public SchedulingInfo getSchedulingInfo() {
-        return schedulingInfo;
-    }
-
-    public List<Parameter> getParameters() {
-        return parameters;
-    }
-
-    public int getMetricsPort() {
-        return metricsPort;
-    }
-
-    public String getJobName() {
-        return jobName;
-    }
-
-    public String getJobId() {
-        return jobId;
-    }
-
-    public int getWorkerIndex() {
-        return workerIndex;
-    }
-
-    public int getWorkerNumber() {
-        return workerNumber;
-    }
-
-    public URL getJobJarUrl() {
-        return jobJarUrl;
-    }
-
-    public int getStage() {
-        return stage;
-    }
-
-    public int getTotalNumStages() {
-        return totalNumStages;
-    }
-
-    public List<Integer> getPorts() {
-        return ports;
-    }
-
-    public WorkerPorts getWorkerPorts() {
-        return workerPorts;
-    }
-
-    public long getTimeoutToReportStart() {
-        return timeoutToReportStart;
-    }
-
-    public MantisJobDurationType getDurationType() {
-        return durationType;
-    }
-
     public boolean getHasJobMaster() {
         return hasJobMaster;
-    }
-
-    public long getSubscriptionTimeoutSecs() {
-        return subscriptionTimeoutSecs;
-    }
-
-    public long getMinRuntimeSecs() {
-        return minRuntimeSecs;
     }
 
     public java.util.Optional<String> getNameOfJobProviderClass() {

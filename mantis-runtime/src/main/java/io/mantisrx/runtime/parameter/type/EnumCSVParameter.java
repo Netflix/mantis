@@ -56,9 +56,7 @@ public class EnumCSVParameter<T extends Enum<T>> extends ParameterDefinition.Bui
                 }
 
                 EnumSet<T> set = EnumSet.noneOf(clazz);
-                for (T val : enumVals) {
-                    set.add(val);
-                }
+                set.addAll(enumVals);
                 return set;
             }
         };
@@ -66,7 +64,7 @@ public class EnumCSVParameter<T extends Enum<T>> extends ParameterDefinition.Bui
 
     @Override
     public String getTypeDescription() {
-        List<String> ts = Arrays.stream(clazz.getEnumConstants()).map(x -> x.name()).collect(Collectors.toList());
+        List<String> ts = Arrays.stream(clazz.getEnumConstants()).map(Enum::name).collect(Collectors.toList());
         return "Comma separated set of values: " + String.join(",", ts);
     }
 

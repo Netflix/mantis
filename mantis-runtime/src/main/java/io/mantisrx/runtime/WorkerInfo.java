@@ -43,7 +43,7 @@ public class WorkerInfo {
     }
 
     /**
-     * @return
+     * @return String
      *
      * @deprecated use {@link #getJobClusterName()} instead
      */

@@ -27,7 +27,6 @@ ext {
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
     rxJavaReactiveStreamsVersion = '1.+'
-    curatorVersion = '2.11.0'
     testngVersion = '6.+'
     scalaBinaryVersion = '2.12'
 }
@@ -49,6 +48,7 @@ dependencies {
     api "org.skife.config:config-magic:$configMagicVersion"
 
     implementation libraries.vavr
+    implementation libraries.spotifyFutures
 
     // todo: separate worker entrypoint and move this to testImplementation instead.
     implementation libraries.spectatorApi
@@ -66,7 +66,7 @@ dependencies {
 mainClassName = "io.mantisrx.server.master.MasterMain"
 
 run {
-    standardInput = System.in
+    args = ["-p", "master-local.properties"]
 }
 
 test {

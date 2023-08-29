@@ -18,8 +18,8 @@ package io.mantisrx.runtime;
 
 public class ScalingPolicy {
 
-    private int numInstances;
-    private MachineDefinition machineDefinition;
+    private final int numInstances;
+    private final MachineDefinition machineDefinition;
 
     ScalingPolicy(int numInstances,
                   MachineDefinition machineDefinition) {

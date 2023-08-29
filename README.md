@@ -17,6 +17,9 @@
 ### Setting up Intellij
 Run `./gradlew idea` to (re-) generate IntelliJ project and module files from the templates in `.baseline`. The generated project is pre-configured with Baseline code style settings and support for the CheckStyle-IDEA plugin.
 
+### Install Docker
+Install and run Docker to support local containers.
+
 ### Building
 
 ```sh

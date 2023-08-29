@@ -21,11 +21,13 @@ import static org.asynchttpclient.Dsl.post;
 
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
+import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.asynchttpclient.AsyncHttpClient;
@@ -36,21 +38,20 @@ import org.asynchttpclient.Request;
 @Slf4j
 public class ResourceClusterGatewayClient implements ResourceClusterGateway, Closeable {
 
-  private final int connectTimeout = 100;
-  private final int connectionRequestTimeout = 1000;
-  private final int socketTimeout = 2000;
   private final ClusterID clusterID;
+  @Getter
   private final MasterDescription masterDescription;
   private AsyncHttpClient client;
   private final ObjectMapper mapper;
 
   public ResourceClusterGatewayClient(
       ClusterID clusterID,
-      MasterDescription masterDescription) {
+      MasterDescription masterDescription,
+      CoreConfiguration configuration) {
     this.clusterID = clusterID;
     this.masterDescription = masterDescription;
     this.mapper = new ObjectMapper();
-    this.client = buildCloseableHttpClient();
+    this.client = buildCloseableHttpClient(configuration);
   }
 
   @Override
@@ -89,7 +90,13 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
       return client.executeRequest(request).toCompletableFuture().thenCompose(response -> {
         if (response.getStatusCode() == 200) {
           return CompletableFuture.completedFuture(Ack.getInstance());
-        } else {
+        }
+        else if (response.getStatusCode() == 429) {
+          log.warn("request was throttled on control plane side: {}", request);
+          return CompletableFutures.exceptionallyCompletedFuture(
+                  new RequestThrottledException("request was throttled on control plane side: " + request));
+        }
+        else {
           try {
             log.error("failed request {} with response {}", request, response.getResponseBody());
             return CompletableFutures.exceptionallyCompletedFuture(
@@ -114,9 +121,13 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
     return uri;
   }
 
-  private AsyncHttpClient buildCloseableHttpClient() {
+  private AsyncHttpClient buildCloseableHttpClient(CoreConfiguration configuration) {
     return asyncHttpClient(
-        new Builder().setConnectTimeout(connectTimeout).setRequestTimeout(connectionRequestTimeout)
-            .setReadTimeout(socketTimeout).build());
+        new Builder()
+            .setMaxConnections(configuration.getAsyncHttpClientMaxConnectionsPerHost())
+            .setConnectTimeout(configuration.getAsyncHttpClientConnectionTimeoutMs())
+            .setRequestTimeout(configuration.getAsyncHttpClientRequestTimeoutMs())
+            .setReadTimeout(configuration.getAsyncHttpClientReadTimeoutMs())
+            .build());
   }
 }

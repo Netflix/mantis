@@ -25,10 +25,12 @@ import akka.actor.Props;
 import com.netflix.fenzo.AutoScaleAction;
 import com.netflix.fenzo.AutoScaleRule;
 import com.netflix.fenzo.VirtualMachineLease;
+import com.netflix.spectator.api.DefaultRegistry;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.master.DeadLetterActor;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.JobClustersManagerService;
@@ -168,7 +170,7 @@ public class MasterMain implements Service {
 
             storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
-            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher), "JobClustersManager");
+            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, config.getJobCostsCalculator()), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
 
             // Beginning of new stuff
@@ -177,7 +179,7 @@ public class MasterMain implements Service {
             final ActorRef resourceClustersHostActor = system.actorOf(
                 ResourceClustersHostManagerActor.props(
                     new ResourceClusterProviderAdapter(this.config.getResourceClusterProvider(), system),
-                    config.getResourceClusterStorageProvider()),
+                    storageProvider),
                 "ResourceClusterHostActor");
 
             final RpcSystem rpcSystem =
@@ -194,7 +196,7 @@ public class MasterMain implements Service {
                     mantisJobStore,
                     jobMessageRouter,
                     resourceClustersHostActor,
-                    config.getResourceClusterStorageProvider());
+                    storageProvider);
 
             // end of new stuff
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;
@@ -272,6 +274,17 @@ public class MasterMain implements Service {
         } catch (IOException e) {
             throw new RuntimeException(String.format("Can't load properties from the given property file %s: %s", propFile, e.getMessage()), e);
         }
+
+        for (String key : props.stringPropertyNames()) {
+            String envVarKey = key.toUpperCase().replace('.', '_');
+            String envValue = System.getenv(envVarKey);
+            if (envValue != null) {
+                props.setProperty(key, envValue);
+                logger.info("Override config from env {}: {}.", key, envValue);
+            }
+
+        }
+
         return props;
     }
 
@@ -354,7 +367,12 @@ public class MasterMain implements Service {
         }
 
         try {
-            StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(loadProperties(propFile));
+            SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
+            Properties props = new Properties();
+            props.putAll(System.getenv());
+            props.putAll(System.getProperties());
+            props.putAll(loadProperties(propFile));
+            StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
             setupDummyAgentClusterAutoScaler();
             final AuditEventSubscriber auditEventSubscriber = new AuditEventSubscriberLoggingImpl();
             MasterMain master = new MasterMain(factory, auditEventSubscriber);

@@ -25,8 +25,10 @@ public class StaticPropertiesConfigurationFactory implements ConfigurationFactor
 
     private final ConfigurationObjectFactory delegate;
     private final MasterConfiguration config;
+    private final Properties properties;
 
     public StaticPropertiesConfigurationFactory(Properties props) {
+        this.properties = props;
         delegate = new ConfigurationObjectFactory(props);
         delegate.addCoercible(new MetricsCoercer(props));
         delegate.addCoercible(clazz -> {

@@ -22,6 +22,8 @@ import static org.mockito.Mockito.when;
 
 import io.mantisrx.runtime.loader.config.Usage;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import io.mantisrx.shaded.com.google.common.io.Resources;
+import java.io.IOException;
 import org.junit.Test;
 
 public class TestMemorySubsystemProcess {
@@ -31,6 +33,7 @@ public class TestMemorySubsystemProcess {
 
     @Test
     public void testHappyPath() throws Exception {
+        when(cgroup.isV1()).thenReturn(true);
         when(cgroup.getMetric("memory", "memory.limit_in_bytes"))
             .thenReturn(17179869184L);
         when(cgroup.getStats("memory", "memory.stat"))
@@ -80,5 +83,19 @@ public class TestMemorySubsystemProcess {
         assertEquals(17179869184L, (long) usage.getMemLimit());
         assertEquals(14828109824L, (long) usage.getMemRssBytes());
         assertEquals(14828109824L, (long) usage.getMemAnonBytes());
+    }
+
+    @Test
+    public void testCgroupv2() throws IOException {
+        final Cgroup cgroupv2 =
+            new CgroupImpl(Resources.getResource("example2").getPath());
+
+        final MemorySubsystemProcess process = new MemorySubsystemProcess(cgroupv2);
+        final Usage.UsageBuilder usageBuilder = Usage.builder();
+        process.getUsage(usageBuilder);
+        final Usage usage = usageBuilder.build();
+        assertEquals(2147483648L, (long) usage.getMemLimit());
+        assertEquals(1693843456L, (long) usage.getMemRssBytes());
+        assertEquals(945483776L, (long) usage.getMemAnonBytes());
     }
 }

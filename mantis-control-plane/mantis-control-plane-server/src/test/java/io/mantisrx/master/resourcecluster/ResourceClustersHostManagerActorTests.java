@@ -43,19 +43,24 @@ import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.master.persistence.InMemoryPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import lombok.val;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ResourceClustersHostManagerActorTests {
     static ActorSystem system;
+
+    private final IMantisPersistenceProvider storageProvider = mock(IMantisPersistenceProvider.class);
+
 
     @BeforeClass
     public static void setup() {
@@ -86,7 +91,7 @@ public class ResourceClustersHostManagerActorTests {
         ));
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
-        ActorRef resourceClusterActor = system.actorOf(ResourceClustersHostManagerActor.props(resProvider));
+        ActorRef resourceClusterActor = system.actorOf(ResourceClustersHostManagerActor.props(resProvider, new InMemoryPersistenceProvider()));
 
         ProvisionResourceClusterRequest request = buildProvisionRequest();
 
@@ -142,7 +147,6 @@ public class ResourceClustersHostManagerActorTests {
     @Test
     public void testProvisionSpecError() {
         TestKit probe = new TestKit(system);
-        ResourceClusterStorageProvider resStorageProvider = mock(ResourceClusterStorageProvider.class);
         ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
         ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
 
@@ -155,12 +159,12 @@ public class ResourceClustersHostManagerActorTests {
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
         ActorRef resourceClusterHostActor = system.actorOf(
-            ResourceClustersHostManagerActor.props(resProvider, resStorageProvider));
+            ResourceClustersHostManagerActor.props(resProvider, storageProvider));
 
         ProvisionResourceClusterRequest request =
             ProvisionResourceClusterRequest.builder()
                 .clusterId(ClusterID.of("id1"))
-                .build();;
+                .build();
 
         resourceClusterHostActor.tell(request, probe.getRef());
         GetResourceClusterResponse createResp = probe.expectMsgClass(GetResourceClusterResponse.class);
@@ -356,9 +360,8 @@ public class ResourceClustersHostManagerActorTests {
     }
 
     @Test
-    public void testProvisionPersisError() {
+    public void testProvisionPersisError() throws IOException {
         TestKit probe = new TestKit(system);
-        ResourceClusterStorageProvider resStorageProvider = mock(ResourceClusterStorageProvider.class);
         ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
         ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
 
@@ -368,14 +371,12 @@ public class ResourceClustersHostManagerActorTests {
                 provisionResponse
         ));
 
-        val err = new RuntimeException("persist error");
-        when(resStorageProvider.registerAndUpdateClusterSpec(any())).thenReturn(CompletableFuture.supplyAsync(() -> {
-            throw err;
-        }));
+        IOException err = new IOException("persist error");
+        when(storageProvider.registerAndUpdateClusterSpec(any())).thenThrow(err);
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
         ActorRef resourceClusterActor = system.actorOf(
-                ResourceClustersHostManagerActor.props(resProvider, resStorageProvider));
+                ResourceClustersHostManagerActor.props(resProvider, storageProvider));
 
         ProvisionResourceClusterRequest request = buildProvisionRequest();
 
@@ -406,7 +407,7 @@ public class ResourceClustersHostManagerActorTests {
 
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
-        ActorRef resourceClusterActor = system.actorOf(ResourceClustersHostManagerActor.props(resProvider));
+        ActorRef resourceClusterActor = system.actorOf(ResourceClustersHostManagerActor.props(resProvider, new InMemoryPersistenceProvider()));
 
         ProvisionResourceClusterRequest request = buildProvisionRequest();
 
@@ -440,7 +441,6 @@ public class ResourceClustersHostManagerActorTests {
     @Test
     public void testUpgradeRequest() {
         TestKit probe = new TestKit(system);
-        ResourceClusterStorageProvider resStorageProvider = mock(ResourceClusterStorageProvider.class);
         ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
         ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
 
@@ -453,10 +453,50 @@ public class ResourceClustersHostManagerActorTests {
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
         ActorRef resourceClusterActor = system.actorOf(
-            ResourceClustersHostManagerActor.props(resProvider, resStorageProvider));
+            ResourceClustersHostManagerActor.props(resProvider, new InMemoryPersistenceProvider()));
 
         UpgradeClusterContainersRequest request = UpgradeClusterContainersRequest.builder()
             .clusterId(ClusterID.of("mantisTestResCluster1"))
+            .build();
+
+        resourceClusterActor.tell(request, probe.getRef());
+        UpgradeClusterContainersResponse createResp = probe.expectMsgClass(UpgradeClusterContainersResponse.class);
+
+        assertEquals(ResponseCode.SUCCESS, createResp.responseCode);
+
+        verify(resProvider, times(1)).upgradeContainerResource(any());
+        probe.getSystem().stop(resourceClusterActor);
+    }
+
+    @Test
+    public void testUpgradeRequestEnableSkuSpecUpgrade() throws IOException {
+        TestKit probe = new TestKit(system);
+        IMantisPersistenceProvider resStorageProvider = mock(IMantisPersistenceProvider.class);
+        ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
+        ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
+
+        UpgradeClusterContainersResponse upgradeRes =
+            UpgradeClusterContainersResponse.builder().responseCode(ResponseCode.SUCCESS).build();
+        when(resProvider.upgradeContainerResource(any())).thenReturn(CompletableFuture.completedFuture(
+            upgradeRes
+        ));
+
+        ProvisionResourceClusterRequest provisionReq = buildProvisionRequest();
+        when(resStorageProvider.getResourceClusterSpecWritable(any()))
+            .thenReturn(
+                ResourceClusterSpecWritable.builder()
+                    .clusterSpec(provisionReq.getClusterSpec())
+                    .id(provisionReq.getClusterId())
+                    .build());
+
+        when(resProvider.getResponseHandler()).thenReturn(responseHandler);
+
+        ActorRef resourceClusterActor = system.actorOf(
+            ResourceClustersHostManagerActor.props(resProvider, resStorageProvider));
+
+        UpgradeClusterContainersRequest request = UpgradeClusterContainersRequest.builder()
+            .clusterId(provisionReq.getClusterId())
+            .enableSkuSpecUpgrade(true)
             .build();
 
         resourceClusterActor.tell(request, probe.getRef());

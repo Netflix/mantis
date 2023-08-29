@@ -68,6 +68,11 @@ public class TaskExecutorStarter extends AbstractIdleService {
         highAvailabilityServices.startAsync().awaitRunning();
 
         taskExecutor.start();
+        try {
+            taskExecutor.awaitRunning().get();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override
@@ -79,6 +84,10 @@ public class TaskExecutorStarter extends AbstractIdleService {
                 MoreExecutors.directExecutor()))
             .thenRunAsync(rpcSystem::close)
             .get();
+    }
+
+    public TaskExecutor getTaskExecutor() {
+        return this.taskExecutor;
     }
 
     public static TaskExecutorStarterBuilder builder(WorkerConfiguration workerConfiguration) {

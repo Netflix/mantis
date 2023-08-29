@@ -21,6 +21,7 @@ import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.server.master.domain.Costs;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
@@ -176,4 +177,21 @@ public interface IMantisJobMetadata {
      */
     JobDefinition getJobDefinition();
 
+    /**
+     * Returns the costs associated with this job.
+     * @return Costs
+     */
+    Costs getJobCosts();
+
+    /**
+     * Job level heartbeat configuration
+     */
+    long getHeartbeatIntervalSecs();
+
+    /**
+     * Job level timeout interval for worker
+     * This resubmits a worker if existing worker
+     * is past timeout secs
+     */
+    long getWorkerTimeoutSecs();
 }

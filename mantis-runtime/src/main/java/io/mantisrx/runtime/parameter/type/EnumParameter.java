@@ -33,17 +33,12 @@ public class EnumParameter<T extends Enum<T>> extends ParameterDefinition.Builde
 
     @Override
     public ParameterDecoder<Enum<T>> decoder() {
-        return new ParameterDecoder<Enum<T>>() {
-            @Override
-            public Enum<T> decode(String value) {
-                return T.valueOf(clazz, value.trim());
-            }
-        };
+        return value -> T.valueOf(clazz, value.trim());
     }
 
     @Override
     public String getTypeDescription() {
-        List<String> ts = Arrays.stream(clazz.getEnumConstants()).map(x -> x.name()).collect(Collectors.toList());
+        List<String> ts = Arrays.stream(clazz.getEnumConstants()).map(Enum::name).collect(Collectors.toList());
         return "One of (" + String.join(",", ts) + ")";
     }
 

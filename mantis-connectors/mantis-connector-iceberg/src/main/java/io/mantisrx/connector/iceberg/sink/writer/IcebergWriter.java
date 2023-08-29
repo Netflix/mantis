@@ -18,9 +18,7 @@ package io.mantisrx.connector.iceberg.sink.writer;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.data.Record;
 
 public interface IcebergWriter {
 
@@ -28,9 +26,9 @@ public interface IcebergWriter {
 
     void open(StructLike newPartitionKey) throws IOException;
 
-    void write(Record record);
+    void write(MantisRecord record);
 
-    DataFile close() throws IOException, UncheckedIOException;
+    MantisDataFile close() throws IOException, UncheckedIOException;
 
     boolean isClosed();
 

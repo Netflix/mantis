@@ -23,12 +23,14 @@ import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
+import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
@@ -40,8 +42,6 @@ import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderC
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
@@ -49,7 +49,6 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
@@ -65,8 +64,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.RxNetty;
 import org.apache.flink.api.common.time.Time;
@@ -86,6 +83,10 @@ import rx.subjects.PublishSubject;
  */
 @Slf4j
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
+
+
+    public static final Time DEFAULT_TIMEOUT = Time.seconds(5);
+
     @Getter
     private final TaskExecutorID taskExecutorID;
     @Getter
@@ -108,12 +109,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     // represents the current connection to the resource manager.
     private ResourceManagerGatewayCxn currentResourceManagerCxn;
     private TaskExecutorReport currentReport;
-    private RuntimeTask currentTask;
     private Subscription currentTaskStatusSubscription;
     private int resourceManagerCxnIdx;
     private Throwable previousFailure;
 
     private final TaskFactory taskFactory;
+
+    private RuntimeTask currentTask;
+    private ExecuteStageRequest currentRequest;
 
     public TaskExecutor(
         RpcService rpcService,
@@ -319,7 +322,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             workerConfiguration.getHeartbeatInterval(),
             workerConfiguration.getHeartbeatTimeout(),
             this::getCurrentReport,
-            workerConfiguration.getTolerableConsecutiveHeartbeatFailures());
+            workerConfiguration.getTolerableConsecutiveHeartbeatFailures(),
+            workerConfiguration.heartbeatRetryInitialDelayMs(),
+            workerConfiguration.heartbeatRetryMaxDelayMs(),
+            workerConfiguration.registrationRetryInitialDelayMillis(),
+            workerConfiguration.registrationRetryMultiplier(),
+            workerConfiguration.registrationRetryRandomizationFactor(),
+            workerConfiguration.registrationRetryMaxAttempts());
     }
 
     private ExecutorService getIOExecutor() {
@@ -338,96 +347,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
             }
         }, timeout);
-    }
-
-    @Slf4j
-    @ToString(of = "gateway")
-    @RequiredArgsConstructor
-    static class ResourceManagerGatewayCxn extends AbstractScheduledService {
-
-        private final int idx;
-        private final TaskExecutorRegistration taskExecutorRegistration;
-        private final ResourceClusterGateway gateway;
-        private final Time heartBeatInterval;
-        private final Time heartBeatTimeout;
-        private final Time timeout = Time.of(1000, TimeUnit.MILLISECONDS);
-        private final Function<Time, CompletableFuture<TaskExecutorReport>> currentReportSupplier;
-        private final int tolerableConsecutiveHeartbeatFailures;
-
-        private int numFailedHeartbeats = 0;
-
-        @Override
-        protected String serviceName() {
-            return "ResourceManagerGatewayCxn-" + idx;
-        }
-
-        @Override
-        protected Scheduler scheduler() {
-            return Scheduler.newFixedDelaySchedule(
-                0,
-                heartBeatInterval.getSize(),
-                heartBeatInterval.getUnit());
-        }
-
-        @Override
-        public void startUp() throws Exception {
-            log.info("Trying to register with resource manager {}", gateway);
-            try {
-                gateway
-                    .registerTaskExecutor(taskExecutorRegistration)
-                    .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-            } catch (Exception e) {
-                // the registration may or may not have succeeded. Since we don't know let's just
-                // do the disconnection just to be safe.
-                log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway,
-                    e);
-                try {
-                    gateway.disconnectTaskExecutor(
-                            new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
-                                taskExecutorRegistration.getClusterID()))
-                        .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-                } catch (Exception inner) {
-                    log.error("Disconnection has also failed", inner);
-                }
-                throw e;
-            }
-        }
-
-        @Override
-        public void runOneIteration() throws Exception {
-            try {
-                currentReportSupplier.apply(timeout)
-                    .thenComposeAsync(report -> {
-                        log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
-                        return gateway.heartBeatFromTaskExecutor(
-                            new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(),
-                                taskExecutorRegistration.getClusterID(), report));
-                    })
-                    .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-
-                // the heartbeat was successful, let's reset the counter.
-                numFailedHeartbeats = 0;
-            } catch (Exception e) {
-                log.error("Failed to send heartbeat to gateway {}", gateway, e);
-                // increase the number of failed heartbeats by 1
-                numFailedHeartbeats += 1;
-                if (numFailedHeartbeats > tolerableConsecutiveHeartbeatFailures) {
-                    throw e;
-                } else {
-                    log.info("Ignoring heartbeat failure to gateway {} due to failed heartbeats {} <= {}",
-                        gateway, numFailedHeartbeats, tolerableConsecutiveHeartbeatFailures);
-                }
-            }
-        }
-
-        @Override
-        public void shutDown() throws Exception {
-            gateway
-                .disconnectTaskExecutor(
-                    new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
-                        taskExecutorRegistration.getClusterID()))
-                .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-        }
     }
 
     private class ResourceManagerChangeListener implements
@@ -470,8 +389,18 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         return CompletableFuture.completedFuture(Ack.getInstance());
     }
 
+    @Override
+    public CompletableFuture<Ack> cacheJobArtifacts(CacheJobArtifactsRequest request) {
+
+        log.info("Received request {} for downloading artifact", request);
+        getIOExecutor().execute(() -> this.classLoaderHandle.cacheJobArtifacts(request.getArtifacts()));
+        return CompletableFuture.completedFuture(Ack.getInstance());
+    }
+
     private void prepareTask(WrappedExecuteStageRequest wrappedRequest) {
         try {
+            this.currentRequest = wrappedRequest.getRequest();
+
             UserCodeClassLoader userCodeClassLoader = this.taskFactory.getUserCodeClassLoader(
                 wrappedRequest.getRequest(), classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
@@ -492,6 +421,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             }, 0, TimeUnit.MILLISECONDS);
         } catch (Exception ex) {
             log.error("Failed to submit task, request: {}", wrappedRequest.getRequest(), ex);
+            final Status failedStatus = new Status(currentRequest.getJobId(), currentRequest.getStage(), currentRequest.getWorkerIndex(), currentRequest.getWorkerNumber(),
+                Status.TYPE.INFO, "stage " + currentRequest.getStage() + " worker index=" + currentRequest.getWorkerIndex() + " number=" + currentRequest.getWorkerNumber() + " failed during initialization",
+                MantisJobState.Failed);
+            updateExecutionStatus(failedStatus);
             listeners.enqueue(getTaskFailedEvent(null, ex));
         }
         finally {
@@ -556,7 +489,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         try {
             Preconditions.checkState(currentResourceManagerCxn != null,
                 "currentResourceManagerCxn was not expected to be null");
-            currentResourceManagerCxn.gateway.notifyTaskExecutorStatusChange(
+            currentResourceManagerCxn.getGateway().notifyTaskExecutorStatusChange(
                     new TaskExecutorStatusChange(taskExecutorID, clusterID, newReport))
                 .whenCompleteAsync((ack, throwable) -> {
                     if (throwable != null) {
@@ -632,6 +565,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @Override
     public CompletableFuture<String> requestThreadDump() {
         return CompletableFuture.completedFuture(JvmUtils.createThreadDumpAsString());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isRegistered() {
+        return callAsync(() -> this.currentResourceManagerCxn != null && this.currentResourceManagerCxn.isRegistered(), DEFAULT_TIMEOUT);
     }
 
     CompletableFuture<Boolean> isRegistered(Time timeout) {

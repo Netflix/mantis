@@ -18,11 +18,15 @@ package io.mantisrx.runtime.command;
 
 import io.mantisrx.runtime.Job;
 import java.io.File;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class LoadValidateCreateDir implements Command {
 
-    private String jarPath;
+    private static final Logger logger = LoggerFactory.getLogger(LoadValidateCreateDir.class);
+
+    private final String jarPath;
 
     public LoadValidateCreateDir(String jarPath) {
         this.jarPath = jarPath;
@@ -38,16 +42,8 @@ public class LoadValidateCreateDir implements Command {
 
         String classpath = System.getProperty("java.class.path");
         System.out.println(classpath);
-
         // loop through each file in directory and process it
-
         String jarPath = args[0];
-
-        //String jobJarFile = args[0];
-        //String name = args[1];
-        //String version = args[2];
-        //String outputLocation = args[3];
-
         new LoadValidateCreateDir(jarPath).execute();
 
         System.exit(0);
@@ -79,7 +75,7 @@ public class LoadValidateCreateDir implements Command {
                 System.out.println("Basename: " + fileLoop.getName());
 
                 String fileBase = fileLoop.getName().substring(0, fileLoop.getName().lastIndexOf("."));
-                String fileExtension = fileLoop.getName().substring(fileLoop.getName().lastIndexOf(".") + 1, fileLoop.getName().length());
+                String fileExtension = fileLoop.getName().substring(fileLoop.getName().lastIndexOf(".") + 1);
                 String jsonFile = fileBase + ".json";
                 String fileVersion = fileLoop.getName().substring(fileLoop.getName().lastIndexOf("-") + 1, fileLoop.getName().lastIndexOf("."));
 
@@ -96,7 +92,7 @@ public class LoadValidateCreateDir implements Command {
                     File jobDescriptor = new File(fileLoop.getParent() + "/" + jsonFile);
                     new CreateJobDescriptorFile(job, jobDescriptor, fileVersion, fileBase).execute();
                 } catch (Exception e) {
-                    System.out.println("Got an error " + e.toString());
+                    logger.error("Got an error " + e.getMessage());
                     System.exit(1);
                 }
 
@@ -112,14 +108,5 @@ public class LoadValidateCreateDir implements Command {
             System.exit(1);
         }
 
-
-        //		ReadJobFromJar readCommand = new ReadJobFromJar(jobJarFile);
-        //		readCommand.execute();
-        //		Job job = readCommand.getJob();
-        //		new ValidateJob(job).execute();
-        //		File jobDescriptor = new File(outputLocation+"/"+artifactName+"-"+version+".json");
-        //		new CreateJobDescriptorFile(job, jobDescriptor, version, project).execute();
-        //		new CreateZipFile(new File(outputLocation+"/"+artifactName+"-"+version+".mantis")
-        //			, new File(jobJarFile), jobDescriptor).execute();
     }
 }

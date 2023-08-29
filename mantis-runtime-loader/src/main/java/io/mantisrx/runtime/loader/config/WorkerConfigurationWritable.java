@@ -52,6 +52,12 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     int heartbeatInternalInMs;
     int tolerableConsecutiveHeartbeatFailures;
     int heartbeatTimeoutMs;
+    long heartbeatRetryInitialDelayMs;
+    long heartbeatRetryMaxDelayMs;
+    long registrationRetryInitialDelayMillis;
+    double registrationRetryMultiplier;
+    double registrationRetryRandomizationFactor;
+    int registrationRetryMaxAttempts;
     String externalAddress;
     String externalPortRange;
     String bindAddress;
@@ -61,6 +67,10 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     File localStorageDir;
     double networkBandwidthInMB;
     String taskExecutorAttributesStr;
+    int asyncHttpClientMaxConnectionsPerHost;
+    int asyncHttpClientConnectionTimeoutMs;
+    int asyncHttpClientRequestTimeoutMs;
+    int asyncHttpClientReadTimeoutMs;
 
     @JsonIgnore
     MetricsPublisher metricsPublisher;
@@ -166,6 +176,36 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     @Override
     public int heartbeatTimeoutMs() {
         return this.heartbeatTimeoutMs;
+    }
+
+    @Override
+    public long heartbeatRetryInitialDelayMs() {
+        return this.heartbeatRetryInitialDelayMs;
+    }
+
+    @Override
+    public long heartbeatRetryMaxDelayMs() {
+        return this.heartbeatRetryMaxDelayMs;
+    }
+
+    @Override
+    public long registrationRetryInitialDelayMillis() {
+        return this.registrationRetryInitialDelayMillis;
+    }
+
+    @Override
+    public double registrationRetryMultiplier() {
+        return this.registrationRetryMultiplier;
+    }
+
+    @Override
+    public double registrationRetryRandomizationFactor() {
+        return this.registrationRetryRandomizationFactor;
+    }
+
+    @Override
+    public int registrationRetryMaxAttempts() {
+        return this.registrationRetryMaxAttempts;
     }
 
     @Override

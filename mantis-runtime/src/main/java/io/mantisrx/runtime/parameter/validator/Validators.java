@@ -37,21 +37,21 @@ public class Validators {
                 }
             }
         };
-        return new Validator<T>("range >=" + start + "<=" + end, func);
+        return new Validator<>("range >=" + start + "<=" + end, func);
     }
 
     public static Validator<String> notNullOrEmpty() {
         Func1<String, Validation> func = new Func1<String, Validation>() {
             @Override
             public Validation call(String t1) {
-                if (t1 == null || t1.length() <= 0) {
+                if (t1 == null || t1.length() == 0) {
                     return Validation.failed("string must not be null or empty");
                 } else {
                     return Validation.passed();
                 }
             }
         };
-        return new Validator<String>("not null or empty", func);
+        return new Validator<>("not null or empty", func);
     }
 
     public static <T> Validator<T> alwaysPass() {
@@ -61,7 +61,7 @@ public class Validators {
                 return Validation.passed();
             }
         };
-        return new Validator<T>("always passes validation", func);
+        return new Validator<>("always passes validation", func);
     }
 
     public static <T extends Enum<T>> Validator<EnumSet<T>> notNullOrEmptyEnumCSV() {
@@ -75,6 +75,6 @@ public class Validators {
                 }
             }
         };
-        return new Validator<EnumSet<T>>("not null or empty", func);
+        return new Validator<>("not null or empty", func);
     }
 }

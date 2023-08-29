@@ -17,6 +17,8 @@
 package io.mantisrx.master.jobcluster;
 
 import static akka.pattern.PatternsCS.ask;
+import static io.mantisrx.common.SystemParameters.JOB_WORKER_HEARTBEAT_INTERVAL_SECS;
+import static io.mantisrx.common.SystemParameters.JOB_WORKER_TIMEOUT_SECS;
 import static io.mantisrx.master.StringConstants.MANTIS_MASTER_USER;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_NOT_FOUND;
@@ -49,6 +51,7 @@ import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
+import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobActor;
 import io.mantisrx.master.jobcluster.job.JobHelper;
@@ -194,9 +197,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final Counter numSLAEnforcementExecutions;
 
 
-    public static Props props(final String name, final MantisJobStore jobStore, final MantisSchedulerFactory mantisSchedulerFactory,
-                              final LifecycleEventPublisher eventPublisher) {
-        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher);
+    public static Props props(
+        final String name,
+        final MantisJobStore jobStore,
+        final MantisSchedulerFactory mantisSchedulerFactory,
+        final LifecycleEventPublisher eventPublisher,
+        final CostsCalculator costsCalculator) {
+        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator);
     }
 
     private Receive initializedBehavior;
@@ -217,13 +224,18 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
 
 
-    public JobClusterActor(final String name, final MantisJobStore jobStore, final MantisSchedulerFactory schedulerFactory, final LifecycleEventPublisher eventPublisher) {
+    public JobClusterActor(
+        final String name,
+        final MantisJobStore jobStore,
+        final MantisSchedulerFactory schedulerFactory,
+        final LifecycleEventPublisher eventPublisher,
+        final CostsCalculator costsCalculator) {
         this.name = name;
         this.jobStore = jobStore;
         this.mantisSchedulerFactory = schedulerFactory;
         this.eventPublisher = eventPublisher;
 
-        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore);
+        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, costsCalculator);
 
         jobIdSubmissionSubject = BehaviorSubject.create();
 
@@ -1307,7 +1319,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     public void onJobSubmit(final SubmitJobRequest request) {
         final ActorRef sender = getSender();
         // if the job is submitted with a userDefinedType check to see if such a job is already running. If so just reply with a reference to it.
-        if(request.getJobDefinition().isPresent()) {
+        if (request.getJobDefinition().isPresent()) {
             String uniq = request.getJobDefinition().get().getJobSla().getUserProvidedType();
             if(uniq != null && !uniq.isEmpty()) {
                 Optional<JobInfo> existingJob = jobManager.getJobInfoByUniqueId(uniq);
@@ -1509,19 +1521,24 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
     private void submitJob(JobDefinition jobDefinition, ActorRef sender, String user) throws PersistException {
-        if(logger.isTraceEnabled()) { logger.trace("Enter submitJobb"); }
+        if (logger.isTraceEnabled()) { logger.trace("Enter submitJobb"); }
         JobId jId = null;
         try {
             validateJobDefinition(jobDefinition);
             long lastJobIdNumber = jobClusterMetadata.getLastJobCount();
             jId = new JobId(name, ++lastJobIdNumber);
-            logger.info("Creating new job id: " + jId + " with job defn " + jobDefinition);
+            final int heartbeatIntervalSecs = jobDefinition.getIntSystemParameter(JOB_WORKER_HEARTBEAT_INTERVAL_SECS, 0);
+            final int workerTimeoutSecs = jobDefinition.getIntSystemParameter(JOB_WORKER_TIMEOUT_SECS, 0);
+            logger.info("Creating new job id: {} with job defn {}, with heartbeat {} and workertimeout {}",
+                jId, jobDefinition, heartbeatIntervalSecs, workerTimeoutSecs);
             MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
                     .withJobId(jId)
                     .withSubmittedAt(Instant.now())
                     .withJobState(JobState.Accepted)
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefinition)
+                    .withHeartbeatIntervalSecs(heartbeatIntervalSecs)
+                    .withWorkerTimeoutSecs(workerTimeoutSecs)
                     .build();
 
             eventPublisher.publishAuditEvent(
@@ -1633,33 +1650,26 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      * @throws InvalidJobRequest If the job definition is invalid
      */
     private void validateJobDefinition(JobDefinition definition) throws InvalidJobRequest {
-        if (definition == null){
+        if (definition == null) {
             throw new InvalidJobRequest(null, "MantisJobDefinition cannot be null");
         }
-        if (definition.getArtifactName() == null){
+        if (definition.getArtifactName() == null) {
             throw new InvalidJobRequest(null, "MantisJobDefinition job artifactName attribute cannot be null");
         }
-        if (definition.getName() == null){
+        if (definition.getName() == null) {
             throw new InvalidJobRequest(null, "MantisJobDefinition name attribute cannot be null");
         }
 
-        if (definition.getSchedulingInfo() == null){
+        if (definition.getSchedulingInfo() == null) {
             throw new InvalidJobRequest(null, "MantisJobDefinition schedulingInfo cannot be null");
         }
 
-        for(StageSchedulingInfo ssi : definition.getSchedulingInfo().getStages().values()) {
-            List<JobConstraints> hardConstraints = ssi.getHardConstraints();
-
-            List<JobConstraints> softConstraints = ssi.getSoftConstraints();
-
-            validateConstraints(softConstraints,hardConstraints);
-
-        };
-
-
+        for (StageSchedulingInfo ssi : definition.getSchedulingInfo().getStages().values()) {
+            validateConstraints(ssi.getSoftConstraints(), ssi.getHardConstraints());
+        }
     }
 
-    private void validateConstraints(List<JobConstraints> softConstraints, List<JobConstraints> hardConstraints) throws InvalidJobRequest{
+    private void validateConstraints(List<JobConstraints> softConstraints, List<JobConstraints> hardConstraints) throws InvalidJobRequest {
         // ok to have null constraints as they will get replaced later with empty list in JobActor.setupStageWorkers
         if(softConstraints != null) {
 
@@ -1791,7 +1801,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     if(!jobClusterMetadata.isDisabled()) {
                         SLA sla = this.jobClusterMetadata.getJobClusterDefinition().getSLA();
                         if(sla.getMin() == 0 && sla.getMax() == 0) {
-                            logger.info("No SLA specified nothing to enforce {}", sla);
+                            logger.info("{} No SLA specified nothing to enforce {}",
+                                completedJob.get().getJobId(), sla);
                         } else {
                             try {
                                 // first check if response has job meta for last job
@@ -2591,17 +2602,19 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         private final LifecycleEventPublisher publisher;
 
         private final MantisJobStore jobStore;
+        private final CostsCalculator costsCalculator;
 
         private final LabelCache labelCache = new LabelCache();
 
 
-        JobManager(String clusterName, ActorContext context, MantisSchedulerFactory schedulerFactory, LifecycleEventPublisher publisher, MantisJobStore jobStore) {
+        JobManager(String clusterName, ActorContext context, MantisSchedulerFactory schedulerFactory, LifecycleEventPublisher publisher, MantisJobStore jobStore, CostsCalculator costsCalculator) {
             this.name = clusterName;
             this.jobStore = jobStore;
             this.context = context;
             this.scheduler = schedulerFactory;
             this.publisher = publisher;
             this.completedJobsCache = new CompletedJobCache(name, labelCache);
+            this.costsCalculator = costsCalculator;
         }
 
         /**
@@ -2678,7 +2691,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             MantisScheduler scheduler1 = scheduler.forJob(jobMeta.getJobDefinition());
             ActorRef jobActor = context.actorOf(JobActor.props(jobClusterMetadata.getJobClusterDefinition(),
-                    jobMeta, jobStore, scheduler1, publisher), "JobActor-" + jobMeta.getJobId().getId());
+                    jobMeta, jobStore, scheduler1, publisher, costsCalculator), "JobActor-" + jobMeta.getJobId().getId());
 
 
             context.watch(jobActor);
@@ -3438,6 +3451,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 triggerId = triggerOperator.registerTrigger(triggerGroup, scheduledTrigger);
                 isCronActive = true;
             } catch (IllegalArgumentException e) {
+                destroyCron();
+                logger.error("Failed to start cron for {}: {}", jobClusterName, e);
                 throw new SchedulerException(e.getMessage(), e);
             }
 
@@ -3447,9 +3462,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             try {
                 if (triggerId != null) {
                     logger.info("Destroying cron " + triggerId);
-                    triggerOperator.deleteTrigger(triggerGroup, triggerId);
                     triggerId = null;
                     isCronActive = false;
+                    triggerOperator.deleteTrigger(triggerGroup, triggerId);
                 }
             } catch (TriggerNotFoundException | SchedulerException e) {
                 logger.warn("Couldn't delete trigger group " + triggerGroup + ", id " + triggerId);

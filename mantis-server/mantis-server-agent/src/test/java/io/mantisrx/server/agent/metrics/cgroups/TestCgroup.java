@@ -17,6 +17,7 @@
 package io.mantisrx.server.agent.metrics.cgroups;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.io.Resources;
@@ -33,6 +34,7 @@ public class TestCgroup {
         assertEquals(
             ImmutableMap.of("user", 49692738L, "system", 4700825L),
             cgroup.getStats("cpuacct", "cpuacct.stat"));
+        assertTrue(cgroup.isV1());
     }
 
     @Test
