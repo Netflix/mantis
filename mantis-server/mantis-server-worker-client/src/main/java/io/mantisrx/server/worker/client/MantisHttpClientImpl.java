@@ -32,10 +32,12 @@ import mantis.io.reactivex.netty.pipeline.PipelineConfigurator;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientImpl;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 
 public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
-
+    private static final Logger logger = LoggerFactory.getLogger(MantisHttpClientImpl.class);
     protected final String name;
     protected final ServerInfo serverInfo;
     protected final Bootstrap clientBootstrap;
@@ -123,13 +125,17 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
 
     public Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connect() {
         this.observableConection = super.connect();
-        return this.observableConection.doOnNext(x -> this.connectionTracker.add(x.getChannel()));
+        return this.observableConection.doOnNext(x -> {
+            logger.info("Tracking connection: {}", x.getChannel().toString());
+            this.connectionTracker.add(x.getChannel());
+        });
     }
 
     public void closeConn() {
         Channel channel;
         for (Channel value : this.connectionTracker) {
             channel = value;
+            logger.info("Closing connection: {}", channel.toString());
             channel.close();
         }
         this.connectionTracker.clear();
