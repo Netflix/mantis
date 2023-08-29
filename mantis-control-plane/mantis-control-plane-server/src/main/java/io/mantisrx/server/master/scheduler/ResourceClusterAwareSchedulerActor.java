@@ -125,7 +125,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             resourceCluster
                 .getTaskExecutorFor(
                     TaskExecutorAllocationRequest.of(
-                        event.getRequest().getWorkerId(), event.getRequest().getMachineDefinition(), event.getRequest().getJobMetadata(), event.getRequest().getStageNum()))
+                        event.getRequest().getWorkerId(), event.getRequest().getMachineDefinition()))
                 .<Object>thenApply(event::onAssignment)
                 .exceptionally(event::onFailure);
 

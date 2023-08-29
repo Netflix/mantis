@@ -17,7 +17,6 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.runtime.MachineDefinition;
-import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
 import lombok.AllArgsConstructor;
 import lombok.Value;
@@ -27,6 +26,4 @@ import lombok.Value;
 public class TaskExecutorAllocationRequest {
     WorkerId workerId;
     MachineDefinition machineDefinition;
-    JobMetadata jobMetadata;
-    int stageNum;
 }

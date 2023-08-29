@@ -370,14 +370,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("io.mantisrx.master.jobcluster.job.NoopCostsCalculator")
     CostsCalculator getJobCostsCalculator();
 
-    @Config("mantis.job.worker.max.artifacts.to.cache")
-    @Default("5")
-    int getMaxJobArtifactsToCache();
-
-    @Config("mantis.artifactCaching.jobClusters")
-    @Default("")
-    String getJobClustersWithArtifactCachingEnabled();
-
     // rate limit actions on resource cluster actor to control backlog.
     @Config("mantis.master.resource.cluster.actions.permitsPerSecond")
     @Default("300")
