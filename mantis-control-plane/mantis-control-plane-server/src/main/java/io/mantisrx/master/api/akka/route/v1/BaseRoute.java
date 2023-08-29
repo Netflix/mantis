@@ -244,6 +244,7 @@ abstract class BaseRoute extends AllDirectives {
                             case SERVER_ERROR:
                             default:
                                 MasterApiMetrics.getInstance().incrementResp5xx();
+                                logger.error("completeAsync default response code error: {}", r.message);
                                 return complete(StatusCodes.INTERNAL_SERVER_ERROR, r.message);
                             }
                         })
@@ -261,6 +262,7 @@ abstract class BaseRoute extends AllDirectives {
                                         })
                                         .matchAny(ex -> {
                                             MasterApiMetrics.getInstance().incrementResp5xx();
+                                            logger.error("completeAsync matchAny ex: ", ex);
                                             return complete(
                                                     StatusCodes.INTERNAL_SERVER_ERROR,
                                                     generateFailureResponsePayload(
@@ -341,6 +343,7 @@ abstract class BaseRoute extends AllDirectives {
                     }
 
                     MasterApiMetrics.getInstance().incrementResp5xx();
+                    logger.error("withFuture error: ", throwable);
                     return complete(StatusCodes.INTERNAL_SERVER_ERROR, throwable, Jackson.marshaller());
                 },
                 r -> complete(StatusCodes.OK, r, Jackson.marshaller())));
