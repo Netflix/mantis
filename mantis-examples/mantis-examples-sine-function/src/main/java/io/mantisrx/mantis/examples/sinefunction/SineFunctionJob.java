@@ -202,6 +202,7 @@ public class SineFunctionJob extends MantisJobProvider<Point> {
             return Observable.just(
                     Observable.interval(0, period, TimeUnit.SECONDS)
                             .map(time -> {
+                                System.out.println("total worker num: " + index.getTotalNumWorkers());
                                 if (useRandom) {
                                     return randomNumGenerator.nextInt((max - min) + 1) + min;
                                 } else {
