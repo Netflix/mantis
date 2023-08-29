@@ -67,9 +67,8 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
         ActorRef resourceClusterManagerActor,
         Duration askTimeout,
         ClusterID clusterID,
-        ResourceClusterTaskExecutorMapper mapper,
-        int rateLimitPerSecond) {
-        super(resourceClusterManagerActor, askTimeout, mapper, rateLimitPerSecond);
+        ResourceClusterTaskExecutorMapper mapper) {
+        super(resourceClusterManagerActor, askTimeout, mapper);
         this.clusterID = clusterID;
         this.mapper = mapper;
     }

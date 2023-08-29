@@ -96,9 +96,11 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
                 "POST /api/v1/resourceClusters/{}/actions/registerTaskExecutor called {}",
                 clusterID,
                 request);
+
             return withFuture(gateway.getClusterFor(clusterID).registerTaskExecutor(request));
         });
     }
+
 
     private Route heartbeatFromTaskExecutor(ClusterID clusterID) {
         return entity(Jackson.unmarshaller(TaskExecutorHeartbeat.class), request -> {
@@ -106,6 +108,7 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
                 "POST /api/v1/resourceClusters/{}/actions/heartbeatFromTaskExecutor called {}",
                 clusterID.getResourceID(),
                 request);
+
             return withFuture(gateway.getClusterFor(clusterID).heartBeatFromTaskExecutor(request));
         });
     }
@@ -116,6 +119,7 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
                 "POST /api/v1/resourceClusters/{}/actions/disconnectTaskExecutor called {}",
                 clusterID.getResourceID(),
                 request);
+
             return withFuture(gateway.getClusterFor(clusterID).disconnectTaskExecutor(request));
         });
     }
@@ -134,4 +138,5 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
     private ClusterID getClusterID(String clusterName) {
         return ClusterID.of(clusterName);
     }
+
 }

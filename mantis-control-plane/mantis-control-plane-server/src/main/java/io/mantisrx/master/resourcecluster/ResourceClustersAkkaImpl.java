@@ -48,7 +48,6 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
     private final ActorRef resourceClustersManagerActor;
     private final Duration askTimeout;
     private final ResourceClusterTaskExecutorMapper mapper;
-    private final int rateLimitPerSecond;
     private final ConcurrentMap<ClusterID, ResourceCluster> cache =
         new ConcurrentHashMap<>();
 
@@ -61,8 +60,7 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
                     resourceClustersManagerActor,
                     askTimeout,
                     clusterID,
-                    mapper,
-                        rateLimitPerSecond));
+                    mapper));
         return cache.get(clusterID);
     }
 
@@ -94,7 +92,6 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
 
         final Duration askTimeout = java.time.Duration.ofMillis(
             ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs());
-        final int rateLimitPerSecond = masterConfiguration.getResourceClusterActionsPermitsPerSecond();
-        return new ResourceClustersAkkaImpl(resourceClusterManagerActor, askTimeout, globalMapper, rateLimitPerSecond);
+        return new ResourceClustersAkkaImpl(resourceClusterManagerActor, askTimeout, globalMapper);
     }
 }

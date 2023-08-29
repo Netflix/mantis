@@ -378,10 +378,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("")
     String getJobClustersWithArtifactCachingEnabled();
 
-    // rate limit actions on resource cluster actor to control backlog.
-    @Config("mantis.master.resource.cluster.actions.permitsPerSecond")
-    @Default("300")
-    int getResourceClusterActionsPermitsPerSecond();
 
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());

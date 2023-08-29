@@ -200,8 +200,7 @@ public class ResourceClusterActorTest {
                 resourceClusterActor,
                 Duration.ofSeconds(1),
                 CLUSTER_ID,
-                mapper,
-                    100);
+                mapper);
     }
 
     @Test
