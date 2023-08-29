@@ -25,7 +25,6 @@ public class MasterApiMetrics {
     private final Counter resp4xx;
     private final Counter resp5xx;
     private final Counter incomingRequestCount;
-    private final Counter throttledRequestCount;
     private final Counter askTimeOutCount;
 
     private static final MasterApiMetrics INSTANCE = new MasterApiMetrics();
@@ -34,7 +33,6 @@ public class MasterApiMetrics {
         Metrics m = new Metrics.Builder()
                 .id("MasterApiMetrics")
                 .addCounter("incomingRequestCount")
-                .addCounter("throttledRequestCount")
                 .addCounter("resp2xx")
                 .addCounter("resp4xx")
                 .addCounter("resp5xx")
@@ -46,7 +44,6 @@ public class MasterApiMetrics {
         this.resp4xx = metrics.getCounter("resp4xx");
         this.resp5xx = metrics.getCounter("resp5xx");
         this.incomingRequestCount = metrics.getCounter("incomingRequestCount");
-        this.throttledRequestCount = metrics.getCounter("throttledRequestCount");
     }
 
     public static final MasterApiMetrics getInstance() {
@@ -71,9 +68,5 @@ public class MasterApiMetrics {
 
     public void incrementIncomingRequestCount() {
         incomingRequestCount.increment();
-    }
-
-    public void incrementThrottledRequestCount() {
-        throttledRequestCount.increment();
     }
 }

@@ -332,7 +332,6 @@ abstract class BaseRoute extends AllDirectives {
 
                     if (throwable instanceof RequestThrottledException) {
                         MasterApiMetrics.getInstance().incrementResp4xx();
-                        MasterApiMetrics.getInstance().incrementThrottledRequestCount();
                         return complete(StatusCodes.TOO_MANY_REQUESTS);
                     }
 

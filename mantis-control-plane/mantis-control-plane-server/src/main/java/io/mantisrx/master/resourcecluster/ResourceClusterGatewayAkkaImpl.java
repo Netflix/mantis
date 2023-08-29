@@ -73,7 +73,7 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
 
     private <In, Out> Function<In, CompletableFuture<Out>> withThrottle(Function<In, CompletableFuture<Out>> func) {
         return in -> {
-            if (rateLimiter.tryAcquire(200, TimeUnit.MILLISECONDS)) {
+            if (rateLimiter.tryAcquire(1, TimeUnit.SECONDS)) {
                 return func.apply(in);
             } else {
                 this.throttledCounter.increment();
