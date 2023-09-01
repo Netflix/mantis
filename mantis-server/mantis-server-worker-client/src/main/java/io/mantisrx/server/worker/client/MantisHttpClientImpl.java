@@ -16,6 +16,9 @@
 
 package io.mantisrx.server.worker.client;
 
+import io.mantisrx.common.metrics.Gauge;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -50,11 +53,19 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
 
     private Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConection;
     private List<Channel> connectionTracker;
+    private final Gauge numConnectionsTracked;
+    final MetricGroupId connectionTrackerMetricgroup = new MetricGroupId("ConnectionMonitor");
 
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ClientChannelFactory<HttpClientResponse<O>, HttpClientRequest<I>> channelFactory, ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connectionFactory, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, channelFactory, connectionFactory, eventsSubject);
 
         this.connectionTracker = new ArrayList<>();
+
+        Metrics m = new Metrics.Builder()
+                .id(connectionTrackerMetricgroup)
+                .addGauge("numConnectionsTracked")
+                .build();
+        this.numConnectionsTracked = m.getGauge("numConnectionsTracked");
 
         if (null == name) {
             throw new NullPointerException("Name can not be null.");
@@ -94,6 +105,12 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
 
         this.connectionTracker = new ArrayList<>();
 
+        Metrics m = new Metrics.Builder()
+                .id(connectionTrackerMetricgroup)
+                .addGauge("numConnectionsTracked")
+                .build();
+        this.numConnectionsTracked = m.getGauge("numConnectionsTracked");
+
         if (null == name) {
             throw new NullPointerException("Name can not be null.");
         } else if (null == clientBootstrap) {
@@ -131,6 +148,7 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
     protected void trackConnection(Channel channel) {
         logger.info("Tracking connection: {}", channel.toString());
         this.connectionTracker.add(channel);
+        numConnectionsTracked.increment();
     }
 
     protected void closeConn() {
@@ -139,6 +157,7 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
             channel = value;
             logger.info("Closing connection: {}", channel.toString());
             channel.close();
+            numConnectionsTracked.decrement();
         }
         this.connectionTracker.clear();
     }
