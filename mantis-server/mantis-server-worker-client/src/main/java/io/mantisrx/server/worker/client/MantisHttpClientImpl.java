@@ -125,13 +125,15 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
 
     public Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connect() {
         this.observableConection = super.connect();
-        return this.observableConection.doOnNext(x -> {
-            logger.info("Tracking connection: {}", x.getChannel().toString());
-            this.connectionTracker.add(x.getChannel());
-        });
+        return this.observableConection.doOnNext(x -> trackConnection(x.getChannel()));
     }
 
-    public void closeConn() {
+    protected void trackConnection(Channel channel) {
+        logger.info("Tracking connection: {}", channel.toString());
+        this.connectionTracker.add(channel);
+    }
+
+    protected void closeConn() {
         Channel channel;
         for (Channel value : this.connectionTracker) {
             channel = value;
@@ -139,5 +141,13 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
             channel.close();
         }
         this.connectionTracker.clear();
+    }
+
+    protected int connectionTrackerSize() {
+        return this.connectionTracker.size();
+    }
+
+    protected boolean isObservableConectionSet() {
+        return (this.observableConection != null);
     }
 }
