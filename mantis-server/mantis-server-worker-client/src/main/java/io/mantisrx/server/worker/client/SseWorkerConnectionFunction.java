@@ -20,12 +20,13 @@ import static com.mantisrx.common.utils.MantisMetricStringConstants.DROP_OPERATO
 
 import com.mantisrx.common.utils.NettyUtils;
 import io.mantisrx.common.MantisServerSentEvent;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.runtime.parameter.SinkParameters;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.search.Search;
 import io.reactivx.mantis.operators.DropOperator;
+import io.reactivx.mantis.operators.DropOperator.Counters;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -68,10 +69,10 @@ public class SseWorkerConnectionFunction implements WorkerConnectionFunc<MantisS
                     if (!metricGroups.isEmpty()) {
                         for (String metricGroup : metricGroups) {
                             if (metricGroup != null) {
-                                final Counter onNext = meterRegistry.counter(metricGroup + "_DropOperator_" + ("" + DropOperator.Counters.onNext));
-                                final Counter onError = meterRegistry.counter(metricGroup + "_DropOperator_" + ("" + DropOperator.Counters.onError));
-                                final Counter onComplete = meterRegistry.counter(metricGroup + "_DropOperator_" + ("" + DropOperator.Counters.onComplete));
-                                final Counter dropped = meterRegistry.counter(metricGroup + "_DropOperator_" + ("" + DropOperator.Counters.dropped));
+                                final Counter onNext = Search.in(meterRegistry).name(name-> name.startsWith(metricGroup) && name.endsWith(DropOperator.Counters.onNext.toString())).counter();
+                                final Counter onError = Search.in(meterRegistry).name(name-> name.startsWith(metricGroup) && name.endsWith(DropOperator.Counters.onError.toString())).counter();
+                                final Counter onComplete = Search.in(meterRegistry).name(name-> name.startsWith(metricGroup) && name.endsWith(Counters.onComplete.toString())).counter();
+                                final Counter dropped = Search.in(meterRegistry).name(name-> name.startsWith(metricGroup) && name.endsWith(Counters.onNext.toString())).counter();
                                 logger.info(metricGroup + ": onNext=" + onNext.count() + ", onError=" + onError.count() +
                                                 ", onComplete=" + onComplete.count() + ", dropped=" + dropped.count()
                                         // + ", buffered=" + buffered.value()

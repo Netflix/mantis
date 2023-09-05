@@ -55,7 +55,6 @@ public class TaskExecutorStarter extends AbstractIdleService {
     private final TaskExecutor taskExecutor;
     private final HighAvailabilityServices highAvailabilityServices;
     private final RpcSystem rpcSystem;
-    private final MeterRegistry meterRegistry;
 
     @Override
     protected void startUp() {
@@ -113,7 +112,6 @@ public class TaskExecutorStarter extends AbstractIdleService {
         private TaskFactory taskFactory;
 
         private final List<Tuple2<TaskExecutor.Listener, Executor>> listeners = new ArrayList<>();
-        private MeterRegistry meterRegistry;
 
         private TaskExecutorStarterBuilder(WorkerConfiguration workerConfiguration) {
             this.workerConfiguration = workerConfiguration;
@@ -132,10 +130,6 @@ public class TaskExecutorStarter extends AbstractIdleService {
             return this;
         }
 
-        public TaskExecutorStarterBuilder registry(MeterRegistry meterRegistry) {
-            this.meterRegistry = meterRegistry;
-            return this;
-        }
 
         private RpcSystem getRpcSystem() {
             if (this.rpcSystem == null) {
@@ -214,14 +208,13 @@ public class TaskExecutorStarter extends AbstractIdleService {
                     highAvailabilityServices,
                     getClassLoaderHandle(),
                     getSinkSubscriptionHandlerFactory(),
-                    this.taskFactory,
-                    meterRegistry);
+                    this.taskFactory);
 
             for (Tuple2<TaskExecutor.Listener, Executor> listener : listeners) {
                 taskExecutor.addListener(listener._1(), listener._2());
             }
 
-            return new TaskExecutorStarter(taskExecutor, highAvailabilityServices, getRpcSystem(), meterRegistry);
+            return new TaskExecutorStarter(taskExecutor, highAvailabilityServices, getRpcSystem());
         }
     }
 }

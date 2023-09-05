@@ -52,7 +52,6 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Map;
 import java.util.Optional;
@@ -119,17 +118,15 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private RuntimeTask currentTask;
     private ExecuteStageRequest currentRequest;
-    private MeterRegistry meterRegistry;
 
     public TaskExecutor(
         RpcService rpcService,
         WorkerConfiguration workerConfiguration,
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
-        SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
-        MeterRegistry meterRegistry) {
+        SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory) {
         this(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle,
-            subscriptionStateHandlerFactory, null, meterRegistry);
+            subscriptionStateHandlerFactory, null);
     }
 
     public TaskExecutor(
@@ -138,8 +135,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
         SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
-        @Nullable TaskFactory taskFactory,
-        MeterRegistry meterRegistry) {
+        @Nullable TaskFactory taskFactory) {
         super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
         // this is the task executor ID that will be used for the rest of the JVM process
@@ -207,8 +203,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         validateRunsInMainThread();
 
         masterMonitor = highAvailabilityServices.getMasterClientApi();
-        taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor, meterRegistry);
-        RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory(meterRegistry));
+        taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor);
+        RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         resourceClusterGatewaySupplier =
             highAvailabilityServices.connectWithResourceManager(clusterID);
         resourceClusterGatewaySupplier.register(new ResourceManagerChangeListener());

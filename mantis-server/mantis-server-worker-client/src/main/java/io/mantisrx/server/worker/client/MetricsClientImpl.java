@@ -152,7 +152,7 @@ class MetricsClientImpl<T> implements MetricsClient<T> {
                     }
                 })
                 .share()
-                .lift(new DropOperator<Observable<T>>(meterRegistry, "client_metrics_share"))
+                .lift(new DropOperator<Observable<T>>("client_metrics_share"))
                 ;
     }
 

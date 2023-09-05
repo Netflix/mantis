@@ -21,16 +21,15 @@ import static com.mantisrx.common.utils.MantisMetricStringConstants.DROP_OPERATO
 import com.mantisrx.common.utils.MantisSSEConstants;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.compression.CompressionUtils;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.runtime.parameter.SinkParameter;
 import io.mantisrx.runtime.parameter.SinkParameters;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.search.Search;
 import io.netty.buffer.ByteBuf;
 import io.reactivx.mantis.operators.DropOperator;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
@@ -61,13 +60,14 @@ public class SseWorkerConnection {
     private final String hostname;
     private final int port;
     private final String metricGroup;
+    private final MeterRegistry meterRegistry;
     private final Counter pingCounter;
     private final boolean reconnectUponConnectionReset;
     private final Action1<Boolean> updateConxStatus;
     private final Action1<Boolean> updateDataRecvngStatus;
     private final Action1<Throwable> connectionResetHandler;
     private final long dataRecvTimeoutSecs;
-    private final CopyOnWriteArraySet<MetricGroupId> metricsSet;
+    private final CopyOnWriteArraySet<String> metricsSet;
     private final int bufferSize;
     private final SinkParameters sinkParameters;
     private final boolean disablePingFiltering;
@@ -77,33 +77,34 @@ public class SseWorkerConnection {
     private boolean compressedBinaryInputEnabled = false;
     private volatile boolean isShutdown = false;
     private final Func1<Observable<? extends Throwable>, Observable<?>> retryLogic =
-            new Func1<Observable<? extends Throwable>, Observable<?>>() {
-                @Override
-                public Observable<?> call(Observable<? extends Throwable> attempts) {
-                    if (!reconnectUponConnectionReset)
-                        return Observable.empty();
-                    return attempts
-                            .zipWith(Observable.range(1, Integer.MAX_VALUE), new Func2<Throwable, Integer, Integer>() {
-                                @Override
-                                public Integer call(Throwable t1, Integer integer) {
-                                    return integer;
-                                }
-                            })
-                            .flatMap(new Func1<Integer, Observable<?>>() {
-                                @Override
-                                public Observable<?> call(Integer integer) {
-                                    if (isShutdown) {
-                                        logger.info(getName() + ": Is shutdown, stopping retries");
-                                        return Observable.empty();
-                                    }
-                                    long delay = 2 * (integer > 10 ? 10 : integer);
-                                    logger.info(getName() + ": retrying conx after sleeping for " + delay + " secs");
-                                    return Observable.timer(delay, TimeUnit.SECONDS);
-                                }
-                            });
-                }
-            };
+        new Func1<Observable<? extends Throwable>, Observable<?>>() {
+            @Override
+            public Observable<?> call(Observable<? extends Throwable> attempts) {
+                if (!reconnectUponConnectionReset)
+                    return Observable.empty();
+                return attempts
+                    .zipWith(Observable.range(1, Integer.MAX_VALUE), new Func2<Throwable, Integer, Integer>() {
+                        @Override
+                        public Integer call(Throwable t1, Integer integer) {
+                            return integer;
+                        }
+                    })
+                    .flatMap(new Func1<Integer, Observable<?>>() {
+                        @Override
+                        public Observable<?> call(Integer integer) {
+                            if (isShutdown) {
+                                logger.info(getName() + ": Is shutdown, stopping retries");
+                                return Observable.empty();
+                            }
+                            long delay = 2 * (integer > 10 ? 10 : integer);
+                            logger.info(getName() + ": retrying conx after sleeping for " + delay + " secs");
+                            return Observable.timer(delay, TimeUnit.SECONDS);
+                        }
+                    });
+            }
+        };
     private long lastDataDropValue = 0L;
+
     public SseWorkerConnection(final String connectionType,
                                final String hostname,
                                final Integer port,
@@ -118,8 +119,9 @@ public class SseWorkerConnection {
                                final String metricGroup,
                                final MeterRegistry meterRegistry) {
         this(connectionType, hostname, port, updateConxStatus, updateDataRecvngStatus, connectionResetHandler,
-                dataRecvTimeoutSecs, reconnectUponConnectionReset, metricsSet, bufferSize, sinkParameters, false, metricGroup, meterRegistry);
+            dataRecvTimeoutSecs, reconnectUponConnectionReset, metricsSet, bufferSize, sinkParameters, false, metricGroup, meterRegistry);
     }
+
     public SseWorkerConnection(final String connectionType,
                                final String hostname,
                                final Integer port,
@@ -128,7 +130,7 @@ public class SseWorkerConnection {
                                final Action1<Throwable> connectionResetHandler,
                                final long dataRecvTimeoutSecs,
                                final boolean reconnectUponConnectionReset,
-                               final CopyOnWriteArraySet<MetricGroupId> metricsSet,
+                               final CopyOnWriteArraySet<String> metricsSet,
                                final int bufferSize,
                                final SinkParameters sinkParameters,
                                final boolean disablePingFiltering,
@@ -139,7 +141,7 @@ public class SseWorkerConnection {
         this.port = port;
         this.meterRegistry = meterRegistry;
         this.metricGroup = metricGroup;
-        this.pingCounter = meterRegistry.counter(metricGroup + "_ConnectionHealth_pingCount");
+        this.pingCounter = meterRegistry.counter("ConnectionHealth_pingCount");
         this.updateConxStatus = updateConxStatus;
         this.updateDataRecvngStatus = updateDataRecvngStatus;
         this.connectionResetHandler = connectionResetHandler;
@@ -181,26 +183,25 @@ public class SseWorkerConnection {
         if (isShutdown)
             return Observable.empty();
         client =
-                RxNetty.<ByteBuf, ServerSentEvent>newHttpClientBuilder(hostname, port)
-                        .pipelineConfigurator(PipelineConfigurators.<ByteBuf>clientSseConfigurator())
-                        //.enableWireLogging(LogLevel.ERROR)
-                        .withNoConnectionPooling()
-                        .build();
+            RxNetty.<ByteBuf, ServerSentEvent>newHttpClientBuilder(hostname, port)
+                .pipelineConfigurator(PipelineConfigurators.<ByteBuf>clientSseConfigurator())
+                //.enableWireLogging(LogLevel.ERROR)
+                .withNoConnectionPooling()
+                .build();
         StringBuilder sp = new StringBuilder();
 
         String delimiter = sinkParameters == null
-                ? null
-                : sinkParameters.getSinkParams().stream()
-                        .filter(s -> s.getName()
-                                .equalsIgnoreCase(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER))
-                        .findFirst()
-                        .map(SinkParameter::getValue)
-                        .orElse(null);
+            ? null
+            : sinkParameters.getSinkParams().stream()
+            .filter(s -> s.getName()
+                .equalsIgnoreCase(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER))
+            .findFirst()
+            .map(SinkParameter::getValue)
+            .orElse(null);
 
         if (sinkParameters != null) {
             sp.append(sinkParameters.toString());
         }
-
 
 
         sp.append(sp.length() == 0 ? getDefaultSinkParams("?") : getDefaultSinkParams("&"));
@@ -208,30 +209,30 @@ public class SseWorkerConnection {
         String uri = "/" + sp.toString();
         logger.info(getName() + ": Using uri: " + uri);
         return
-                client.submit(HttpClientRequest.createGet(uri))
-                        .takeUntil(shutdownSubject)
-                        .takeWhile((serverSentEventHttpClientResponse) -> !isShutdown)
-                        .filter((HttpClientResponse<ServerSentEvent> response) -> {
-                            if (!response.getStatus().reasonPhrase().equals("OK"))
-                                logger.warn(getName() + ":Trying to continue after unexpected response from sink: "
-                                        + response.getStatus().reasonPhrase());
-                            return response.getStatus().reasonPhrase().equals("OK");
-                        })
-                        .flatMap((HttpClientResponse<ServerSentEvent> response) -> {
-                            if (!isConnected.getAndSet(true)) {
-                                if (updateConxStatus != null)
-                                    updateConxStatus.call(true);
-                            }
-                            return streamContent(response, updateDataRecvngStatus, dataRecvTimeoutSecs, delimiter);
-                        })
-                        .doOnError((Throwable throwable) -> {
-                            resetConnected();
-                            logger.warn(getName() +
-                                    "Error on getting response from SSE server: " + throwable.getMessage());
-                            connectionResetHandler.call(throwable);
-                        })
-                        .retryWhen(retryLogic)
-                        .doOnCompleted(this::resetConnected);
+            client.submit(HttpClientRequest.createGet(uri))
+                .takeUntil(shutdownSubject)
+                .takeWhile((serverSentEventHttpClientResponse) -> !isShutdown)
+                .filter((HttpClientResponse<ServerSentEvent> response) -> {
+                    if (!response.getStatus().reasonPhrase().equals("OK"))
+                        logger.warn(getName() + ":Trying to continue after unexpected response from sink: "
+                            + response.getStatus().reasonPhrase());
+                    return response.getStatus().reasonPhrase().equals("OK");
+                })
+                .flatMap((HttpClientResponse<ServerSentEvent> response) -> {
+                    if (!isConnected.getAndSet(true)) {
+                        if (updateConxStatus != null)
+                            updateConxStatus.call(true);
+                    }
+                    return streamContent(response, updateDataRecvngStatus, dataRecvTimeoutSecs, delimiter);
+                })
+                .doOnError((Throwable throwable) -> {
+                    resetConnected();
+                    logger.warn(getName() +
+                        "Error on getting response from SSE server: " + throwable.getMessage());
+                    connectionResetHandler.call(throwable);
+                })
+                .retryWhen(retryLogic)
+                .doOnCompleted(this::resetConnected);
     }
 
     private void resetConnected() {
@@ -247,72 +248,72 @@ public class SseWorkerConnection {
     }
 
     protected Observable<MantisServerSentEvent> streamContent(HttpClientResponse<ServerSentEvent> response,
-                                                            final Action1<Boolean> updateDataRecvngStatus,
-                                                            final long dataRecvTimeoutSecs, String delimiter) {
+                                                              final Action1<Boolean> updateDataRecvngStatus,
+                                                              final long dataRecvTimeoutSecs, String delimiter) {
         long interval = Math.max(1, dataRecvTimeoutSecs / 2);
         if (updateDataRecvngStatus != null) {
             Observable.interval(interval, interval, TimeUnit.SECONDS)
-                    .doOnNext((Long aLong) -> {
-                        if (!isShutdown) {
-                            if (hasDataDrop() || System.currentTimeMillis() > (lastDataReceived.get() + dataRecvTimeoutSecs * 1000)) {
-                                if (isReceivingData.compareAndSet(true, false))
-                                    synchronized (updateDataRecvngStatus) {
-                                        updateDataRecvngStatus.call(false);
-                                    }
-                            } else {
-                                if (isConnected.get() && isReceivingData.compareAndSet(false, true))
-                                    synchronized (updateDataRecvngStatus) {
-                                        updateDataRecvngStatus.call(true);
-                                    }
-                            }
+                .doOnNext((Long aLong) -> {
+                    if (!isShutdown) {
+                        if (hasDataDrop() || System.currentTimeMillis() > (lastDataReceived.get() + dataRecvTimeoutSecs * 1000)) {
+                            if (isReceivingData.compareAndSet(true, false))
+                                synchronized (updateDataRecvngStatus) {
+                                    updateDataRecvngStatus.call(false);
+                                }
+                        } else {
+                            if (isConnected.get() && isReceivingData.compareAndSet(false, true))
+                                synchronized (updateDataRecvngStatus) {
+                                    updateDataRecvngStatus.call(true);
+                                }
                         }
-                    })
-                    .takeUntil(shutdownSubject)
-                    .takeWhile((o) -> !isShutdown)
-                    .doOnCompleted(() -> {
-                        if (isReceivingData.compareAndSet(true, false))
-                            synchronized (updateDataRecvngStatus) {
-                                updateDataRecvngStatus.call(false);
-                            }
-                    })
-                    .subscribe();
+                    }
+                })
+                .takeUntil(shutdownSubject)
+                .takeWhile((o) -> !isShutdown)
+                .doOnCompleted(() -> {
+                    if (isReceivingData.compareAndSet(true, false))
+                        synchronized (updateDataRecvngStatus) {
+                            updateDataRecvngStatus.call(false);
+                        }
+                })
+                .subscribe();
         }
         return response.getContent()
-                .lift(new DropOperator<ServerSentEvent>(meterRegistry))
-                .flatMap((ServerSentEvent t1) -> {
-                    lastDataReceived.set(System.currentTimeMillis());
-                    if (isConnected.get() && isReceivingData.compareAndSet(false, true))
-                        if (updateDataRecvngStatus != null)
-                            synchronized (updateDataRecvngStatus) {
-                                updateDataRecvngStatus.call(true);
-                            }
+            .lift(new DropOperator<ServerSentEvent>(meterRegistry, metricGroup))
+            .flatMap((ServerSentEvent t1) -> {
+                lastDataReceived.set(System.currentTimeMillis());
+                if (isConnected.get() && isReceivingData.compareAndSet(false, true))
+                    if (updateDataRecvngStatus != null)
+                        synchronized (updateDataRecvngStatus) {
+                            updateDataRecvngStatus.call(true);
+                        }
 
-                    if (t1.hasEventType() && t1.getEventTypeAsString().startsWith("error:")) {
-                        return Observable.error(new SseException(ErrorType.Retryable, "Got error SSE event: " + t1.contentAsString()));
-                    }
-                    return Observable.just(t1.contentAsString());
-                }, 1)
-                .filter(data -> {
-                    if (data.startsWith("ping")) {
-                        pingCounter.increment();
-                        return this.disablePingFiltering;
-                    }
-                    return true;
-                })
-                .flatMapIterable((data) -> {
-                    boolean useSnappy = true;
-                    return CompressionUtils.decompressAndBase64Decode(data, compressedBinaryInputEnabled, useSnappy, delimiter);
-                }, 1)
-                .takeUntil(shutdownSubject)
-                .takeWhile((event) -> !isShutdown);
+                if (t1.hasEventType() && t1.getEventTypeAsString().startsWith("error:")) {
+                    return Observable.error(new SseException(ErrorType.Retryable, "Got error SSE event: " + t1.contentAsString()));
+                }
+                return Observable.just(t1.contentAsString());
+            }, 1)
+            .filter(data -> {
+                if (data.startsWith("ping")) {
+                    pingCounter.increment();
+                    return this.disablePingFiltering;
+                }
+                return true;
+            })
+            .flatMapIterable((data) -> {
+                boolean useSnappy = true;
+                return CompressionUtils.decompressAndBase64Decode(data, compressedBinaryInputEnabled, useSnappy, delimiter);
+            }, 1)
+            .takeUntil(shutdownSubject)
+            .takeWhile((event) -> !isShutdown);
     }
 
     private boolean hasDataDrop() {
         long totalDataDrop = 0L;
-        if (meterRegistry.getMeters().contains(pingCounter)) {
-            final Counter dropped = meterRegistry.find(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_" + ("" + DropOperator.Counters.dropped)).counter();
-            final Counter onNext = meterRegistry.find(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_" + ("" + DropOperator.Counters.onNext)).counter();
-            }
+        final Counter dropped = Search.in(meterRegistry).name(name -> name.startsWith("DropOperator_") && name.endsWith(DropOperator.Counters.dropped.toString())).counter();
+        final Counter onNext = Search.in(meterRegistry).name(name -> name.startsWith("DropOperator_") && name.endsWith(DropOperator.Counters.onNext.toString())).counter();
+        if (dropped != null)
+            totalDataDrop += dropped.count();
         if (totalDataDrop > lastDataDropValue) {
             lastDataDropValue = totalDataDrop;
             return true;

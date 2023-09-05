@@ -71,29 +71,31 @@ class DataDroppedPayloadSetter implements Closeable {
         long totalDropped = 0L;
         long totalOnNext = 0L;
         try {
-            if (meterRegistry.getMeters().contains(dropCountGauge) && meterRegistry.getMeters().contains(onNextCountGauge)){
-                //logger.info("Got " + metrics.size() + " metrics for DropOperator");
-                final Counter dropped = meterRegistry.find("DropOperator_" + "" + DropOperator.Counters.dropped).counter();
-                final Counter onNext = meterRegistry.find("DropOperator_" + "" + DropOperator.Counters.onNext).counter();
-                if (dropped != null)
-                    totalDropped += dropped.count();
-                else
-                    logger.warn("Unexpected to get null dropped counter for metric DropOperator DropOperator_dropped.");
-                if (onNext != null)
-                    totalOnNext += onNext.count();
-                else
-                    logger.warn("Unexpected to get null onNext counter for metric DropOperator_onNext.");
-
-                final StatusPayloads.DataDropCounts dataDrop = new StatusPayloads.DataDropCounts(totalOnNext, totalDropped);
-                try {
-                    heartbeat.addSingleUsePayload("" + StatusPayloads.Type.IncomingDataDrop, objectMapper.writeValueAsString(dataDrop));
-                } catch (JsonProcessingException e) {
-                    logger.warn("Error writing json for dataDrop payload: " + e.getMessage());
+            for (Meter meter : meterRegistry.getMeters()) {
+                if (meter.getId().getName().startsWith("DropOperator_") && meter.getId().getName().endsWith(DropOperator.Counters.dropped.toString())){
+                    final Counter dropped = meterRegistry.find(meter.getId().getName()).counter();
+                    if (dropped != null)
+                        totalDropped += dropped.count();
+                    else
+                        logger.warn("Unexpected to get null dropped counter for metric DropOperator DropOperator_dropped.");
                 }
-                dropCountValue.set(dataDrop.getDroppedCount());
-                onNextCountValue.set(dataDrop.getOnNextCount());
-            } else
-                logger.debug("Got no metrics from DropOperator");
+                if (meter.getId().getName().startsWith("DropOperator_") && meter.getId().getName().endsWith(DropOperator.Counters.onNext.toString())){
+                    final Counter onNext = meterRegistry.find(meter.getId().getName()).counter();
+                    if (onNext != null)
+                        totalOnNext += onNext.count();
+                    else
+                        logger.warn("Unexpected to get null onNext counter for metric DropOperator_onNext.");
+                }
+            }
+            //logger.info("Got " + metrics.size() + " metrics for DropOperator");
+            final StatusPayloads.DataDropCounts dataDrop = new StatusPayloads.DataDropCounts(totalOnNext, totalDropped);
+            try {
+                heartbeat.addSingleUsePayload("" + StatusPayloads.Type.IncomingDataDrop, objectMapper.writeValueAsString(dataDrop));
+            } catch (JsonProcessingException e) {
+                logger.warn("Error writing json for dataDrop payload: " + e.getMessage());
+            }
+            dropCountValue.set(dataDrop.getDroppedCount());
+            onNextCountValue.set(dataDrop.getOnNextCount());
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }

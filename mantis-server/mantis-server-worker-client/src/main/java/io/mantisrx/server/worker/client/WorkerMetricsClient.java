@@ -23,6 +23,7 @@ import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import java.util.Properties;
 import org.slf4j.Logger;
@@ -39,7 +40,7 @@ public class WorkerMetricsClient {
 
     private final MasterClientWrapper clientWrapper;
 
-    private final JobWorkerMetricsLocator jobWrokerMetricsLocator = new JobWorkerMetricsLocator() {
+    private final JobWorkerMetricsLocator jobWorkerMetricsLocator = new JobWorkerMetricsLocator() {
         @Override
         public Observable<EndpointChange> locateWorkerMetricsForJob(final String jobId) {
             return clientWrapper.getMasterClientApi()
@@ -101,7 +102,7 @@ public class WorkerMetricsClient {
 
 
     public JobWorkerMetricsLocator getWorkerMetricsLocator() {
-        return jobWrokerMetricsLocator;
+        return jobWorkerMetricsLocator;
     }
 
     /* package */ MasterClientWrapper getClientWrapper() {
@@ -131,6 +132,6 @@ public class WorkerMetricsClient {
                                 return jobNumWorkers.getNumWorkers();
                             }
                         }),
-                workerConnectionsStatusObserver, dataRecvTimeoutSecs);
+                workerConnectionsStatusObserver, dataRecvTimeoutSecs, meterRegistry);
     }
 }
