@@ -28,6 +28,7 @@ import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.sink.Sinks;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -91,6 +92,7 @@ public class JobConnectorJob extends MantisJobProvider<String> {
 
         // To run locally we use the LocalJobExecutor
         LocalJobExecutorNetworked.execute(new JobConnectorJob().getJobInstance(),
+                new SimpleMeterRegistry(),
                 new Parameter(MantisSourceJobConnector.MANTIS_SOURCEJOB_TARGET_KEY, target));
     }
 }

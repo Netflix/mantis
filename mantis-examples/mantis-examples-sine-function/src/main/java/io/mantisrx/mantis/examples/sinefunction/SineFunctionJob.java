@@ -36,6 +36,7 @@ import io.mantisrx.runtime.sink.ServerSentEventsSink;
 import io.mantisrx.runtime.sink.predicate.Predicate;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -101,6 +102,7 @@ public class SineFunctionJob extends MantisJobProvider<Point> {
      */
     public static void main(String[] args) {
         LocalJobExecutorNetworked.execute(new SineFunctionJob().getJobInstance(),
+                new SimpleMeterRegistry(),
                 new Parameter("useRandom", "false"));
     }
 

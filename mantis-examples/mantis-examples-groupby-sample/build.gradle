@@ -20,4 +20,5 @@ dependencies {
     implementation libraries.mockneat
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
+    implementation libraries.micrometerCore
 }

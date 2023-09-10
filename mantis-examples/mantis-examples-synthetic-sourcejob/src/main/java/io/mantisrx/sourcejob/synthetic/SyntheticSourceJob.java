@@ -26,6 +26,7 @@ import io.mantisrx.sourcejob.synthetic.sink.QueryRequestPreProcessor;
 import io.mantisrx.sourcejob.synthetic.sink.TaggedDataSourceSink;
 import io.mantisrx.sourcejob.synthetic.source.SyntheticSource;
 import io.mantisrx.sourcejob.synthetic.stage.TaggingStage;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 /**
  * A sample queryable source job that generates synthetic request events.
@@ -57,6 +58,6 @@ public class SyntheticSourceJob extends MantisJobProvider<TaggedData> {
     }
 
     public static void main(String[] args) {
-        LocalJobExecutorNetworked.execute(new SyntheticSourceJob().getJobInstance());
+        LocalJobExecutorNetworked.execute(new SyntheticSourceJob().getJobInstance(), new SimpleMeterRegistry());
     }
 }

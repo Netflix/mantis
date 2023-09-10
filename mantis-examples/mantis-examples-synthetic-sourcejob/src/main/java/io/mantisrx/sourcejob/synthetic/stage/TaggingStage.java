@@ -26,6 +26,7 @@ import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.sourcejob.synthetic.core.MQLQueryManager;
 import io.mantisrx.sourcejob.synthetic.core.TaggedData;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -76,19 +77,18 @@ public class TaggingStage  implements ScalarComputation<String, TaggedData> {
     @Override
     public void init(Context context) {
 
-        context.getMetricsRegistry().registerAndGet(new Metrics.Builder()
-                .name("mql")
-                .addCounter(MQL_COUNTER)
-                .addCounter(MQL_FAILURE)
-                .addCounter(MQL_CLASSLOADER_ERROR)
-                .addCounter(MANTIS_QUERY_COUNTER).build());
+        MeterRegistry meterRegistry= context.getMeterRegistry();
+        meterRegistry.counter("mql_" + MQL_COUNTER);
+        meterRegistry.counter("mql_" + MQL_FAILURE);
+        meterRegistry.counter("mql_" + MQL_CLASSLOADER_ERROR);
+        meterRegistry.counter("mql_" + MANTIS_QUERY_COUNTER);
     }
 
 
     private List<TaggedData> tagData(Map<String, Object> d, Context context) {
         List<TaggedData> taggedDataList = new ArrayList<>();
 
-        Metrics metrics = context.getMetricsRegistry().getMetric(new MetricGroupId("mql"));
+        MeterRegistry meterRegistry = context.getMeterRegistry();
 
         Collection<Query> queries = MQLQueryManager.getInstance().getRegisteredQueries();
         Iterator<Query> it = queries.iterator();
@@ -107,16 +107,16 @@ public class TaggingStage  implements ScalarComputation<String, TaggedData> {
                 if (ex instanceof ClassNotFoundException) {
                     log.error("Error loading MQL: " + ex.getMessage());
                     ex.printStackTrace();
-                    metrics.getCounter(MQL_CLASSLOADER_ERROR).increment();
+                    meterRegistry.find("mql_" + MQL_CLASSLOADER_ERROR).counter().increment();
                 } else {
                     ex.printStackTrace();
-                    metrics.getCounter(MQL_FAILURE).increment();
+                    meterRegistry.find("mql_" + MQL_FAILURE).counter().increment();
                     log.error("MQL Error: " + ex.getMessage());
                     log.error("MQL Query: " + query.getRawQuery());
                     log.error("MQL Datum: " + d);
                 }
             } catch (Error e) {
-                metrics.getCounter(MQL_FAILURE).increment();
+                meterRegistry.find("mql_" + MQL_FAILURE).counter().increment();
                 if (!errorLogged.get()) {
                     log.error("caught Error when processing MQL {} on {}", query.getRawQuery(), d.toString(), e);
                     errorLogged.set(true);
