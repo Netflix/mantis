@@ -218,7 +218,6 @@ public class SseWorkerConnection {
 
         String uri = "/" + sp.toString();
         logger.info(getName() + ": Using uri: " + uri);
-
         return
                 client.submit(HttpClientRequest.createGet(uri))
                         .takeUntil(shutdownSubject)

@@ -51,6 +51,7 @@ public class MantisHttpClientBuilder<I, O> extends HttpClientBuilder<I, O> {
         this.pipelineConfigurator(PipelineConfigurators.httpClientConfigurator());
     }
 
+    @Override
     protected HttpClient<I, O> createClient() {
         if (null == super.poolBuilder) {
             return new MantisHttpClientImpl<I, O>(this.getOrCreateName(), this.serverInfo, this.bootstrap, this.pipelineConfigurator, this.clientConfig, this.channelFactory, this.connectionFactory, this.eventsSubject);

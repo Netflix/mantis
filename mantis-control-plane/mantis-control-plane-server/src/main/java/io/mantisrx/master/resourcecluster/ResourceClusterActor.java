@@ -554,8 +554,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         setupTaskExecutorStateIfNecessary(heartbeat.getTaskExecutorID());
         try {
             final TaskExecutorID taskExecutorID = heartbeat.getTaskExecutorID();
-
-            // todo: metrics: RC actor mailbox, TE heertbeat, no resouce log
             final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
             boolean stateChange = state.onHeartbeat(heartbeat);
             if (stateChange) {
