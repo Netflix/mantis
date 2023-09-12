@@ -38,96 +38,26 @@ import rx.Observable;
 
 public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
     private static final Logger logger = LoggerFactory.getLogger(MantisHttpClientImpl.class);
-    protected final String name;
-    protected final ServerInfo serverInfo;
-    protected final Bootstrap clientBootstrap;
-    protected final PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator;
-    protected final ClientChannelFactory<HttpClientResponse<O>, HttpClientRequest<I>> channelFactory;
-    protected final ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connectionFactory;
-    protected final ClientConfig clientConfig;
-    protected final MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject;
-    protected final ConnectionPool<HttpClientResponse<O>, HttpClientRequest<I>> pool;
 
     private Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConection;
     private List<Channel> connectionTracker;
 
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ClientChannelFactory<HttpClientResponse<O>, HttpClientRequest<I>> channelFactory, ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connectionFactory, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, channelFactory, connectionFactory, eventsSubject);
-
         this.connectionTracker = new ArrayList<>();
-
-        if (null == name) {
-            throw new NullPointerException("Name can not be null.");
-        } else if (null == clientBootstrap) {
-            throw new NullPointerException("Client bootstrap can not be null.");
-        } else if (null == serverInfo) {
-            throw new NullPointerException("Server info can not be null.");
-        } else if (null == clientConfig) {
-            throw new NullPointerException("Client config can not be null.");
-        } else if (null == connectionFactory) {
-            throw new NullPointerException("Connection factory can not be null.");
-        } else if (null == channelFactory) {
-            throw new NullPointerException("Channel factory can not be null.");
-        } else {
-            this.name = name;
-            this.pool = null;
-            this.eventsSubject = eventsSubject;
-            this.clientConfig = clientConfig;
-            this.serverInfo = serverInfo;
-            this.clientBootstrap = clientBootstrap;
-            this.connectionFactory = connectionFactory;
-            this.connectionFactory.useMetricEventsSubject(eventsSubject);
-            this.channelFactory = channelFactory;
-            this.channelFactory.useMetricEventsSubject(eventsSubject);
-            this.pipelineConfigurator = pipelineConfigurator;
-            final PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> configurator = this.adaptPipelineConfigurator(pipelineConfigurator, clientConfig, eventsSubject);
-            this.clientBootstrap.handler(new ChannelInitializer<Channel>() {
-                public void initChannel(Channel ch) throws Exception {
-                    configurator.configureNewPipeline(ch.pipeline());
-                }
-            });
-        }
     }
 
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ConnectionPoolBuilder<HttpClientResponse<O>, HttpClientRequest<I>> poolBuilder, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, poolBuilder, eventsSubject);
-
         this.connectionTracker = new ArrayList<>();
-
-        if (null == name) {
-            throw new NullPointerException("Name can not be null.");
-        } else if (null == clientBootstrap) {
-            throw new NullPointerException("Client bootstrap can not be null.");
-        } else if (null == serverInfo) {
-            throw new NullPointerException("Server info can not be null.");
-        } else if (null == clientConfig) {
-            throw new NullPointerException("Client config can not be null.");
-        } else if (null == poolBuilder) {
-            throw new NullPointerException("Pool builder can not be null.");
-        } else {
-            this.name = name;
-            this.eventsSubject = eventsSubject;
-            this.clientConfig = clientConfig;
-            this.serverInfo = serverInfo;
-            this.clientBootstrap = clientBootstrap;
-            this.pipelineConfigurator = pipelineConfigurator;
-            final PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> configurator = this.adaptPipelineConfigurator(pipelineConfigurator, clientConfig, eventsSubject);
-            this.clientBootstrap.handler(new ChannelInitializer<Channel>() {
-                public void initChannel(Channel ch) throws Exception {
-                    configurator.configureNewPipeline(ch.pipeline());
-                }
-            });
-            this.pool = poolBuilder.build();
-            this.channelFactory = poolBuilder.getChannelFactory();
-            this.connectionFactory = (ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>>) poolBuilder.getConnectionFactory();
-        }
     }
 
+    @Override
     public Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connect() {
         this.observableConection = super.connect();
-        return this.observableConection.doOnNext(x -> {
-            logger.info("Tracking connection: {}", x.getChannel().toString());
-            this.connectionTracker.add(x.getChannel());
+        return this.observableConection.doOnNext(conn -> {
+            logger.info("Tracking connection: {}", conn.getChannel().toString());
+            this.connectionTracker.add(conn.getChannel());
         });
     }
 
@@ -135,7 +65,8 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
         Channel channel;
         for (Channel value : this.connectionTracker) {
             channel = value;
-            logger.info("Closing connection: {}", channel.toString());
+            logger.info("Closing connection: {}. Status at close: isActive: {}, isOpen: {}, isWritable: {}",
+                    channel.toString(), channel.isActive(), channel.isOpen(), channel.isWritable());
             channel.close();
         }
         this.connectionTracker.clear();
