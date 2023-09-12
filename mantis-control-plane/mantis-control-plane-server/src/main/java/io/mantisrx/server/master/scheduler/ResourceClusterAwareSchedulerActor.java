@@ -147,7 +147,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         } catch (Exception e) {
             // we are not able to get the gateway, which either means the node is not great or some transient network issue
             // we will retry the request
-            log.error(
+            log.warn(
                 "Failed to establish connection with the task executor {}; Resubmitting the request",
                 event.getTaskExecutorID(), e);
             connectionFailures.increment();
@@ -188,25 +188,29 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
 
     private void onSubmittedScheduleRequestEvent(SubmittedScheduleRequestEvent event) {
         final TaskExecutorID taskExecutorID = event.getTaskExecutorID();
-        final TaskExecutorRegistration info = resourceCluster.getTaskExecutorInfo(taskExecutorID)
-            .join();
-        boolean success =
-            jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
-                event.getEvent().getRequest().getWorkerId(),
-                event.getEvent().getRequest().getStageNum(),
-                info.getHostname(),
-                taskExecutorID.getResourceId(),
-                Optional.ofNullable(info.getClusterID().getResourceID()),
-                Optional.of(info.getClusterID()),
-                info.getWorkerPorts()));
-        final Duration latency =
-            Duration.between(event.getEvent().getEventTime(), Clock.systemDefaultZone().instant());
-        schedulingLatency.record(latency.toNanos(), TimeUnit.NANOSECONDS);
+        try {
+            final TaskExecutorRegistration info = resourceCluster.getTaskExecutorInfo(taskExecutorID)
+                .join();
+            boolean success =
+                jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
+                    event.getEvent().getRequest().getWorkerId(),
+                    event.getEvent().getRequest().getStageNum(),
+                    info.getHostname(),
+                    taskExecutorID.getResourceId(),
+                    Optional.ofNullable(info.getClusterID().getResourceID()),
+                    Optional.of(info.getClusterID()),
+                    info.getWorkerPorts()));
+            final Duration latency =
+                Duration.between(event.getEvent().getEventTime(), Clock.systemDefaultZone().instant());
+            schedulingLatency.record(latency.toNanos(), TimeUnit.NANOSECONDS);
 
-        if (!success) {
-            log.error(
-                "Routing message to jobMessageRouter was never expected to fail but it has failed to event {}",
-                event);
+            if (!success) {
+                log.error(
+                    "Routing message to jobMessageRouter was never expected to fail but it has failed to event {}",
+                    event);
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to route message due to error in getting TaskExecutor info: {}", taskExecutorID, ex);
         }
     }
 
@@ -216,6 +220,15 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             event.getScheduleRequestEvent().getRequest().getWorkerId(),
             event.getScheduleRequestEvent().getRequest().getStageNum(),
             Throwables.getStackTraceAsString(event.throwable)));
+
+        try {
+            resourceCluster.reconnectTaskExecutorGateway(event.getTaskExecutorID()).join();
+        } catch (Exception e) {
+            log.warn(
+                "Failed to establish re-connection with the task executor {} on failed schedule request",
+                event.getTaskExecutorID(), e);
+            connectionFailures.increment();
+        }
     }
 
     private void onCancelRequestEvent(CancelRequestEvent event) {

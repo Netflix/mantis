@@ -34,6 +34,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.InitializeTaskExe
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.RemoveJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayReconnectRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsList;
@@ -198,6 +199,17 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
         return
             Patterns
                 .ask(resourceClusterManagerActor, new TaskExecutorGatewayRequest(taskExecutorID, clusterID), askTimeout)
+                .thenApply(TaskExecutorGateway.class::cast)
+                .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<TaskExecutorGateway> reconnectTaskExecutorGateway(
+        TaskExecutorID taskExecutorID) {
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, new TaskExecutorGatewayReconnectRequest(taskExecutorID, clusterID),
+                    askTimeout)
                 .thenApply(TaskExecutorGateway.class::cast)
                 .toCompletableFuture();
     }
