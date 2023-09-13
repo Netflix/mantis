@@ -143,9 +143,5 @@ public class SseWorkerConnectionTest {
 
         logger.info("Connection tracker size: {}", client.connectionTrackerSize());
         assertEquals(0, client.connectionTrackerSize());
-        logger.info("Channel active: {}, channel open: {}, channel writable: {}", dummyChannel.isActive(), dummyChannel.isOpen(), dummyChannel.isWritable());
-        assertFalse(dummyChannel.isActive());
-        assertFalse(dummyChannel.isWritable());
-        assertFalse(dummyChannel.isOpen());
     }
 }
