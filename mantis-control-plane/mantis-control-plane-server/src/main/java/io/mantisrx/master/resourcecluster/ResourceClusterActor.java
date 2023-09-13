@@ -116,8 +116,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private final int maxJobArtifactsToCache;
     private final String jobClustersWithArtifactCachingEnabled;
 
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled)
+    private final boolean isJobArtifactCachingEnabled;
+
+    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled, boolean isJobArtifactCachingEnabled) {
+        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled, isJobArtifactCachingEnabled)
                 .withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -131,11 +133,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         MantisJobStore mantisJobStore,
         JobMessageRouter jobMessageRouter,
         int maxJobArtifactsToCache,
-        String jobClustersWithArtifactCachingEnabled) {
+        String jobClustersWithArtifactCachingEnabled,
+        boolean isJobArtifactCachingEnabled) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
         this.disabledTaskExecutorsCheckInterval = disabledTaskExecutorsCheckInterval;
+        this.isJobArtifactCachingEnabled = isJobArtifactCachingEnabled;
 
         this.clock = clock;
         this.rpcService = rpcService;
@@ -565,7 +569,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 updateHeartbeatTimeout(registration.getTaskExecutorID());
             }
             log.info("Successfully registered {} with the resource cluster {}", registration.getTaskExecutorID(), this);
-            if (!jobArtifactsToCache.isEmpty() && isJobArtifactCachingEnabled()) {
+            if (!jobArtifactsToCache.isEmpty() && isJobArtifactCachingEnabled) {
                 self().tell(new CacheJobArtifactsOnTaskExecutorRequest(taskExecutorID, clusterID), self());
             }
             sender().tell(Ack.getInstance(), self());
@@ -1152,11 +1156,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 return throwInvalidTransition(report);
             }
         }
-    }
-
-    private Boolean isJobArtifactCachingEnabled() {
-        return true;
-// TODO: fix this ->   return ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.job.artifact.caching.enabled", "false").equals("true");
     }
 
     private Predicate<Entry<TaskExecutorID, TaskExecutorState>> filterByAttrs(HasAttributes hasAttributes) {
