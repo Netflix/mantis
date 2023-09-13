@@ -350,14 +350,14 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private void onTaskExecutorGatewayRequest(TaskExecutorGatewayRequest request) {
         TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
         if (state == null) {
-            sender().tell(new Exception("Null TaskExecutorState for: " + request.getTaskExecutorID()), self());
+            sender().tell(new NullPointerException("Null TaskExecutorState for: " + request.getTaskExecutorID()), self());
         } else {
             try {
                 if (state.isRegistered()) {
                     sender().tell(state.getGateway(), self());
                 } else {
                     sender().tell(
-                        new Status.Failure(new Exception("Unregistered TaskExecutor: " + request.getTaskExecutorID())),
+                        new Status.Failure(new IllegalStateException("Unregistered TaskExecutor: " + request.getTaskExecutorID())),
                         self());
                 }
             } catch (Exception e) {
@@ -390,7 +390,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
         if (state == null) {
             sender().tell(
-                new Status.Failure(new Exception("Null TaskExecutor state: " + request.getTaskExecutorID())),
+                new Status.Failure(new NullPointerException("Null TaskExecutor state: " + request.getTaskExecutorID())),
                 self());
         } else {
             try {
@@ -398,7 +398,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     sender().tell(state.reconnect().join(), self());
                 } else {
                     sender().tell(
-                        new Status.Failure(new Exception("Unregistered TaskExecutor: " + request.getTaskExecutorID())),
+                        new Status.Failure(
+                            new IllegalStateException("Unregistered TaskExecutor: " + request.getTaskExecutorID())),
                         self());
                 }
             } catch (Exception e) {
