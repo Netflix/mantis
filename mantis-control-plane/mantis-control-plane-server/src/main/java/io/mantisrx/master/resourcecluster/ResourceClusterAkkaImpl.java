@@ -197,20 +197,29 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     public CompletableFuture<TaskExecutorGateway> getTaskExecutorGateway(
         TaskExecutorID taskExecutorID) {
         return
-            Patterns
-                .ask(resourceClusterManagerActor, new TaskExecutorGatewayRequest(taskExecutorID, clusterID), askTimeout)
-                .thenApply(TaskExecutorGateway.class::cast)
-                .toCompletableFuture();
+                (CompletableFuture<TaskExecutorGateway>) Patterns
+                    .ask(resourceClusterManagerActor, new TaskExecutorGatewayRequest(taskExecutorID, clusterID),
+                        askTimeout)
+                    .thenComposeAsync(result -> {
+                        if (result instanceof CompletableFuture) {
+                            return (CompletableFuture<TaskExecutorGateway>) result;
+                        } else {
+                            CompletableFuture<TaskExecutorGateway> exceptionFuture = new CompletableFuture<>();
+                            exceptionFuture.completeExceptionally(new RuntimeException(
+                                "Unexpected object type on getTaskExecutorGateway: " + result.getClass().getName()));
+                            return exceptionFuture;
+                        }
+                    });
     }
 
     @Override
-    public CompletableFuture<TaskExecutorGateway> reconnectTaskExecutorGateway(
+    public CompletableFuture<Ack> reconnectGateway(
         TaskExecutorID taskExecutorID) {
         return
             Patterns
                 .ask(resourceClusterManagerActor, new TaskExecutorGatewayReconnectRequest(taskExecutorID, clusterID),
                     askTimeout)
-                .thenApply(TaskExecutorGateway.class::cast)
+                .thenApply(Ack.class::cast)
                 .toCompletableFuture();
     }
 
