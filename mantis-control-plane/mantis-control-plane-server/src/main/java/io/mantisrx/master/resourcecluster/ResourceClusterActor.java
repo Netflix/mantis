@@ -50,7 +50,6 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Occupied;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
-import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.Comparators;
@@ -399,7 +398,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         } else {
             try {
                 if (state.isRegistered()) {
-                    sender().tell(state.reconnect().join(), self());
+                    state.reconnect().whenComplete((res, throwable) -> {
+                        if (throwable != null) {
+                            log.error("failed to reconnect to {}", request.getTaskExecutorID(), throwable);
+                        }
+                    });
+                    sender().tell(Ack.getInstance(), self());
                 } else {
                     sender().tell(
                         new Status.Failure(
@@ -813,11 +817,22 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
         if (state != null && state.isRegistered()) {
             try {
-                TaskExecutorGateway gateway = state.getGateway();
                 // TODO(fdichiara): store URI directly to avoid remapping for each TE
-                List<URI> artifacts = jobArtifactsToCache.stream().map(artifactID -> URI.create(artifactID.getResourceID())).collect(Collectors.toList());
-
-                gateway.cacheJobArtifacts(new CacheJobArtifactsRequest(artifacts));
+                state.getGatewayAsync()
+                    .thenComposeAsync(taskExecutorGateway ->
+                        taskExecutorGateway.cacheJobArtifacts(new CacheJobArtifactsRequest(
+                            jobArtifactsToCache
+                                .stream()
+                                .map(artifactID -> URI.create(artifactID.getResourceID()))
+                                .collect(Collectors.toList()))))
+                    .whenComplete((res, throwable) -> {
+                        if (throwable != null) {
+                            log.error("failed to cache artifact on {}", request.getTaskExecutorID(), throwable);
+                        }
+                        else {
+                            log.debug("Acked from cacheJobArtifacts for {}", request.getTaskExecutorID());
+                        }
+                    });
             } catch (Exception ex) {
                 log.warn("Failed to cache job artifacts in task executor {}", request.getTaskExecutorID(), ex);
             }

@@ -204,13 +204,13 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     }
 
     @Override
-    public CompletableFuture<TaskExecutorGateway> reconnectTaskExecutorGateway(
+    public CompletableFuture<Ack> reconnectTaskExecutorGateway(
         TaskExecutorID taskExecutorID) {
         return
             Patterns
                 .ask(resourceClusterManagerActor, new TaskExecutorGatewayReconnectRequest(taskExecutorID, clusterID),
                     askTimeout)
-                .thenApply(TaskExecutorGateway.class::cast)
+                .thenApply(Ack.class::cast)
                 .toCompletableFuture();
     }
 

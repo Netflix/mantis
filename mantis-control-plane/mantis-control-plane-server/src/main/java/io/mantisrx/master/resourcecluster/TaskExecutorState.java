@@ -259,6 +259,13 @@ class TaskExecutorState {
         return this.gateway.get();
     }
 
+    protected CompletableFuture<TaskExecutorGateway> getGatewayAsync() {
+        if (this.gateway == null) {
+            throw new IllegalStateException("gateway is null");
+        }
+        return this.gateway;
+    }
+
     protected CompletableFuture<TaskExecutorGateway> reconnect() {
         this.gateway = rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class)
             .whenComplete((gateway, throwable) -> {
