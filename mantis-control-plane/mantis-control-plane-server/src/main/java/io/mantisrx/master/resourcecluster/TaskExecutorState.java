@@ -34,7 +34,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -250,13 +249,6 @@ class TaskExecutorState {
 
     TaskExecutorRegistration getRegistration() {
         return this.registration;
-    }
-
-    protected TaskExecutorGateway getGateway() throws ExecutionException, InterruptedException {
-        if (this.gateway == null) {
-            throw new IllegalStateException("gateway is null");
-        }
-        return this.gateway.get();
     }
 
     protected CompletableFuture<TaskExecutorGateway> getGatewayAsync() {

@@ -357,13 +357,14 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         } else {
             try {
                 if (state.isRegistered()) {
-                    sender().tell(state.getGateway(), self());
+                    sender().tell(state.getGatewayAsync(), self());
                 } else {
                     sender().tell(
                         new Status.Failure(new IllegalStateException("Unregistered TaskExecutor: " + request.getTaskExecutorID())),
                         self());
                 }
             } catch (Exception e) {
+                log.error("onTaskExecutorGatewayRequest error: {}", request, e);
                 metrics.incrementCounter(
                     ResourceClusterActorMetrics.TE_CONNECTION_FAILURE,
                     TagList.create(ImmutableMap.of(
