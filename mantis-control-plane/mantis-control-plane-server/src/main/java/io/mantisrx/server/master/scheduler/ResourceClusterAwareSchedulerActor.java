@@ -238,7 +238,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             Throwables.getStackTraceAsString(event.throwable)));
 
         try {
-            resourceCluster.reconnectTaskExecutorGateway(event.getTaskExecutorID())
+            resourceCluster.reconnectGateway(event.getTaskExecutorID())
                 .whenComplete((res, throwable) -> {
                     if (throwable != null) {
                         log.error("Failed to request reconnect to gateway for {}", event.getTaskExecutorID(), throwable);

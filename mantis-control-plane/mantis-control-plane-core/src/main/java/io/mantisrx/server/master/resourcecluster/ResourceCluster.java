@@ -118,7 +118,7 @@ public interface ResourceCluster extends ResourceClusterGateway {
      */
     CompletableFuture<TaskExecutorGateway> getTaskExecutorGateway(TaskExecutorID taskExecutorID);
 
-    CompletableFuture<Ack> reconnectTaskExecutorGateway(TaskExecutorID taskExecutorID);
+    CompletableFuture<Ack> reconnectGateway(TaskExecutorID taskExecutorID);
 
     CompletableFuture<TaskExecutorRegistration> getTaskExecutorInfo(String hostName);
 
