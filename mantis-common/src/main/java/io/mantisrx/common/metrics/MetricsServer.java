@@ -82,7 +82,7 @@ public class MetricsServer {
                                     for (Entry<MetricId, Gauge> gaugeEntry : metrics.gauges().entrySet()) {
                                         gauges.add(new GaugeMeasurement(gaugeEntry.getKey().metricName(), gaugeEntry.getValue().doubleValue()));
                                     }
-                                    measurements.add(new Measurements(metrics.getMetricGroupId().name(),
+                                    measurements.add(new Measurements(metrics.getMetricGroupId().id(),
                                             timestamp, counters, gauges, tags));
                                 }
                                 return Observable.from(measurements);
