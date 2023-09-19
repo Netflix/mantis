@@ -86,7 +86,7 @@ docker {
         instruction 'COPY mantis-control-plane-server/lib/* lib/'
         instruction 'COPY resources/* conf/'
         instruction 'COPY docker/job-clusters/* job-clusters/'
-        instruction 'COPY docker/bin/* bin/'
+        instruction 'COPY docker/scripts/* bin/'
 
         entryPoint './bin/start.sh'
     }
