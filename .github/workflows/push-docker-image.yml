@@ -3,8 +3,8 @@ name: "Publish Docker images to Docker Registry"
 on:
   pull_request:
     paths:
-      - ./mantis-control-plane/Dockerfile
-      - ./mantis-server/mantis-server-agent/Dockerfile
+      - ./mantis-control-plane/mantis-control-plane-server/build.gradle
+      - ./mantis-server/mantis-server-agent/build.gradle
       - .github/workflows/push-docker-image.yml
   push:
     tags:
@@ -21,12 +21,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - dockerfile: ./mantis-control-plane/Dockerfile
+          - dockerfile: ./mantis-control-plane/mantis-control-plane-server/build/docker/Dockerfile
             image: "netflixoss/mantiscontrolplaneserver"
-            workingDirectory: ./mantis-control-plane
-          - dockerfile: ./mantis-server/mantis-server-agent/Dockerfile
+            workingDirectory: ./mantis-control-plane/mantis-control-plane-server/build/docker
+            target: mantis-control-plane:mantis-control-plane-server
+          - dockerfile: ./mantis-server/mantis-server-agent/build/docker/Dockerfile
             image: "netflixoss/mantisagent"
-            workingDirectory: ./mantis-server/mantis-server-agent
+            target: mantis-server:mantis-server-agent
+            workingDirectory: ./mantis-server/mantis-server-agent/build/docker
     permissions:
       contents: read
       packages: write
@@ -35,7 +37,7 @@ jobs:
       - name: Checkout PR
         uses: actions/checkout@v3
 
-      - name: Build executable
+      - name: Generate dockerfiles
         uses: gradle/gradle-build-action@v2
         env:
           NETFLIX_OSS_SIGNING_KEY: ${{ secrets.ORG_SIGNING_KEY }}
@@ -43,7 +45,7 @@ jobs:
           NETFLIX_OSS_REPO_USERNAME: ${{ secrets.ORG_NETFLIXOSS_USERNAME }}
           NETFLIX_OSS_REPO_PASSWORD: ${{ secrets.ORG_NETFLIXOSS_PASSWORD }}
         with:
-          arguments: installDist
+          arguments: --info --stacktrace ${{ matrix.target }}:dockerCreateDockerfile
 
       - name: Fetch tags
         run: |

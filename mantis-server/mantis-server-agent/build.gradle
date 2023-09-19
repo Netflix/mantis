@@ -15,6 +15,7 @@
  */
 
 apply plugin: 'application'
+apply plugin: 'com.bmuschko.docker-java-application'
 
 dependencies {
     api project(":mantis-runtime-loader")
@@ -37,13 +38,43 @@ dependencies {
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
 }
 
-tasks.register('copyPlaceholderFile', Copy) {
-    from 'src/test/resources/placeholder.txt'
-    into "${buildDir}/distributions"
+def mantisExamplesSineFunction = project(":mantis-examples:mantis-examples-sine-function")
+def mantisExamplesSineFunctionBuildDir = mantisExamplesSineFunction.buildDir
+def mantisExamplesSineFunctionMantisZipArtifact = mantisExamplesSineFunction.tasks.named("mantisZipArtifact")
+def installDir = file("${buildDir}/install")
+def resourcesDir = file("${buildDir}/resources")
+def ci = System.getenv('GITHUB_ACTIONS')
+def imageRepository = ci ? 'netflixoss' : 'localhost:5001/netflixoss'
+
+docker {
+    dockerSyncBuildContext {
+        from mantisExamplesSineFunctionBuildDir
+        from installDir
+        from resourcesDir
+    }
+
+    dockerCreateDockerfile {
+        instruction 'RUN apt-get update && apt-get install -y curl'
+        // root directory to store all the files
+        instruction 'WORKDIR /apps/mantis/mantis-server-agent'
+        // copy the files from the build context to the image
+        instruction 'COPY mantis-server-agent/bin/* /apps/mantis/mantis-server-agent/bin/'
+        instruction 'COPY mantis-server-agent/lib/* /apps/mantis/mantis-server-agent/lib/'
+        instruction 'COPY distributions/* mantis-artifacts/storage/'
+        instruction 'COPY resources/* conf/'
+        entryPoint 'bin/mantis-server-agent', '-p', 'conf/agent-docker.properties'
+    }
+
+    javaApplication {
+        baseImage = 'azul/zulu-openjdk:8-latest'
+        maintainer = 'Mantis Developers "mantis-oss-dev@netflix.com"'
+        mainClassName = 'io.mantisrx.server.agent.AgentV2Main'
+        images = ["$imageRepository/mantisagent:latest"]
+        ports = [5050]
+    }
 }
 
-tasks.named('installDist') {
-    dependsOn copyPlaceholderFile
-}
+dockerSyncBuildContext.dependsOn(installDist)
+dockerSyncBuildContext.dependsOn(mantisExamplesSineFunctionMantisZipArtifact)
 
 mainClassName = "io.mantisrx.server.agent.AgentV2Main"
