@@ -15,14 +15,15 @@
  */
 package io.mantisrx.server.agent;
 
+import io.mantisrx.shaded.com.google.common.util.concurrent.Striped;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.locks.Lock;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.lingala.zip4j.ZipFile;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -50,6 +51,10 @@ public interface BlobStore extends Closeable {
         return new ZipHandlingBlobStore(this);
     }
 
+    default BlobStore withThreadSafeBlobStore() {
+        return new ThreadSafeBlobStore(this);
+    }
+
     static BlobStore forHadoopFileSystem(URI clusterStoragePath, File localStoreDir) throws Exception {
         final org.apache.hadoop.fs.FileSystem fileSystem =
             FileSystemInitializer.create(clusterStoragePath);
@@ -57,7 +62,8 @@ public interface BlobStore extends Closeable {
         return
             new HadoopFileSystemBlobStore(fileSystem, localStoreDir)
                 .withPrefix(clusterStoragePath)
-                .withZipCapabilities();
+                .withZipCapabilities()
+                .withThreadSafeBlobStore();
     }
 
     @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
@@ -93,7 +99,7 @@ public interface BlobStore extends Closeable {
                     String destDirStr = getUnzippedDestDir(z);
                     File destDir = new File(destDirStr);
                     if (destDir.exists()) {
-                        FileUtils.deleteDirectory(destDir);
+                        return destDir;
                     }
 
                     z.extractAll(destDirStr);
@@ -118,6 +124,31 @@ public interface BlobStore extends Closeable {
             } else {
                 return null;
             }
+        }
+    }
+
+
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+    class ThreadSafeBlobStore implements BlobStore {
+
+        private final BlobStore blobStore;
+
+        final Striped<Lock> locks = Striped.lock(1024);
+
+        @Override
+        public File get(URI blobUrl) throws IOException {
+            Lock lock = locks.get(blobUrl.getPath());
+            lock.lock();
+            try {
+                return blobStore.get(blobUrl);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            blobStore.close();
         }
     }
 }
