@@ -24,6 +24,7 @@ import java.util.concurrent.locks.Lock;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.lingala.zip4j.ZipFile;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -95,15 +96,22 @@ public interface BlobStore extends Closeable {
             if (zipFile == null) {
                 return localFile;
             } else {
+                File destDir = null;
                 try (ZipFile z = zipFile) {
                     String destDirStr = getUnzippedDestDir(z);
-                    File destDir = new File(destDirStr);
+                    destDir = new File(destDirStr);
                     if (destDir.exists()) {
                         return destDir;
                     }
 
                     z.extractAll(destDirStr);
                     return destDir;
+                } catch(Exception e) {
+                    // delete directory before re-throwing exception to avoid possible data corruptions
+                    if (destDir != null) {
+                        FileUtils.deleteDirectory(destDir);
+                    }
+                    throw e;
                 }
             }
         }
