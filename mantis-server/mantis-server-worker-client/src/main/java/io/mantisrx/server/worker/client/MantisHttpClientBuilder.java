@@ -35,22 +35,6 @@ public class MantisHttpClientBuilder<I, O> extends HttpClientBuilder<I, O> {
         super(host, port, new Bootstrap());
     }
 
-    public MantisHttpClientBuilder(String host, int port, Bootstrap bootstrap) {
-        super(bootstrap, host, port, new UnpooledClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>>(), new ClientChannelFactoryImpl<HttpClientResponse<O>, HttpClientRequest<I>>(bootstrap));
-    }
-
-    public MantisHttpClientBuilder(Bootstrap bootstrap, String host, int port, ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connectionFactory, ClientChannelFactory<HttpClientResponse<O>, HttpClientRequest<I>> factory) {
-        super(bootstrap, host, port, connectionFactory, factory);
-        this.clientConfig = Builder.newDefaultConfig();
-        this.pipelineConfigurator(PipelineConfigurators.httpClientConfigurator());
-    }
-
-    public MantisHttpClientBuilder(Bootstrap bootstrap, String host, int port, ConnectionPoolBuilder<HttpClientResponse<O>, HttpClientRequest<I>> poolBuilder) {
-        super(bootstrap, host, port, poolBuilder);
-        this.clientConfig = Builder.newDefaultConfig();
-        this.pipelineConfigurator(PipelineConfigurators.httpClientConfigurator());
-    }
-
     @Override
     protected HttpClient<I, O> createClient() {
         if (null == super.poolBuilder) {
