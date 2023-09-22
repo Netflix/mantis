@@ -1947,6 +1947,34 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 }
 
                 MantisStageMetadataImpl stageMeta = (MantisStageMetadataImpl) stageMetaOp.get();
+
+                // Check if stage worker state (worker index -> worker number) is consistent with the worker event.
+                // TODO: add termination once confirmed the actual corruption scenario.
+                try {
+                    if (event instanceof WorkerHeartbeat) {
+                        int eventWorkerIndex = event.getWorkerId().getWorkerIndex();
+                        int eventWorkerNum = event.getWorkerId().getWorkerNum();
+                        int currentWorkerNum = stageMeta.getWorkerByIndex(eventWorkerIndex).getMetadata().getWorkerNumber();
+                        if (currentWorkerNum > eventWorkerNum) {
+                            // event is from a different worker number on same worker index
+                            LOGGER.error(
+                                    "[Corrupted state] StaleWorkerEvent: {}, current worker at {}, Terminate stale "
+                                            + "worker",
+                                    event.getWorkerId(),
+                                    currentWorkerNum);
+                        }
+                        else if (currentWorkerNum < eventWorkerNum) {
+                            // this case should not happen as new worker assignment should update state and persist first.
+                            LOGGER.error(
+                                    "[Corrupted state] Newer worker num received: {}, Current stage worker: {}",
+                                    event,
+                                    currentWorkerNum);
+                        }
+                    }
+                } catch (InvalidJobException ije) {
+                    LOGGER.error("Invalid job error when checking event: {}", event, ije);
+                }
+
                 try {
                     // Delegate processing of the event to the stage
                     Optional<JobWorker> workerOp = stageMeta.processWorkerEvent(event, jobStore);

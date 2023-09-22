@@ -36,8 +36,10 @@ import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.Duration;
 
+@Slf4j
 abstract class BaseRoute extends AllDirectives {
     protected HttpResponse toHttpResponse(final BaseResponse r) {
         switch (r.responseCode) {
@@ -62,6 +64,7 @@ abstract class BaseRoute extends AllDirectives {
             case SERVER_ERROR:
             default:
                 MasterApiMetrics.getInstance().incrementResp5xx();
+                log.error("Non-matched response code error: {}", r.message);
                 return HttpResponse.create()
                     .withEntity(ContentTypes.APPLICATION_JSON, "{\"error\": \"" + r.message + "\"}")
                     .withStatus(StatusCodes.INTERNAL_SERVER_ERROR);
@@ -107,6 +110,7 @@ abstract class BaseRoute extends AllDirectives {
                     })
                     .matchAny(ex -> {
                         MasterApiMetrics.getInstance().incrementResp5xx();
+                        log.error("Internal server error from completeAsync: ", ex);
                         return complete(StatusCodes.INTERNAL_SERVER_ERROR,
                             "{\"error\": \"" + ex.getMessage() + "\"}");
                     })
