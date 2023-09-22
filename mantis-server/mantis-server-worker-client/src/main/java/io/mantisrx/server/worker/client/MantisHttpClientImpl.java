@@ -18,14 +18,12 @@ package io.mantisrx.server.worker.client;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
 import java.util.ArrayList;
 import java.util.List;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import mantis.io.reactivex.netty.client.ClientChannelFactory;
 import mantis.io.reactivex.netty.client.ClientConnectionFactory;
 import mantis.io.reactivex.netty.client.ClientMetricsEvent;
-import mantis.io.reactivex.netty.client.ConnectionPool;
 import mantis.io.reactivex.netty.client.ConnectionPoolBuilder;
 import mantis.io.reactivex.netty.metrics.MetricEventsSubject;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurator;
