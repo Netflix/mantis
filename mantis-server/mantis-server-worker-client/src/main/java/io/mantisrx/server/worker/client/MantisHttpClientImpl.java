@@ -23,6 +23,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import mantis.io.reactivex.netty.client.ClientChannelFactory;
 import mantis.io.reactivex.netty.client.ClientConnectionFactory;
@@ -43,28 +44,32 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
     private Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConection;
     private List<Channel> connectionTracker;
     private final Gauge numConnectionsTracked;
-    final String connectionTrackerMetricgroup = "ConnectionMonitor";
+    private final static String connectionTrackerMetricgroup = "ConnectionMonitor";
+    private final static String metricName = "numConnectionsTracked";
+    private final static String metricTagName = "uuid";
 
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ClientChannelFactory<HttpClientResponse<O>, HttpClientRequest<I>> channelFactory, ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connectionFactory, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, channelFactory, connectionFactory, eventsSubject);
         this.connectionTracker = new ArrayList<>();
 
+        Tag metricTag = Tag.of(metricTagName, UUID.randomUUID().toString());
         Metrics m = new Metrics.Builder()
-                .id(connectionTrackerMetricgroup, Tag.of("thread-id", Long.toString(Thread.currentThread().getId())))
-                .addGauge("numConnecionsTracked")
+                .id(connectionTrackerMetricgroup, metricTag)
+                .addGauge(metricName)
                 .build();
-        this.numConnectionsTracked = m.getGauge("numConnectionsTracked");
+        this.numConnectionsTracked = m.getGauge(metricName);
     }
 
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ConnectionPoolBuilder<HttpClientResponse<O>, HttpClientRequest<I>> poolBuilder, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, poolBuilder, eventsSubject);
         this.connectionTracker = new ArrayList<>();
 
+        Tag metricTag = Tag.of(metricTagName, UUID.randomUUID().toString());
         Metrics m = new Metrics.Builder()
-                .id(connectionTrackerMetricgroup)
-                .addGauge("numConnectionsTracked")
+                .id(connectionTrackerMetricgroup, metricTag)
+                .addGauge(metricName)
                 .build();
-        this.numConnectionsTracked = m.getGauge("numConnectionsTracked");
+        this.numConnectionsTracked = m.getGauge(metricName);
     }
 
     @Override
