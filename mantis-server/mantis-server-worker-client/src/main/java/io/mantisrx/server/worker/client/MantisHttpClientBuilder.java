@@ -17,18 +17,8 @@
 package io.mantisrx.server.worker.client;
 
 import io.netty.bootstrap.Bootstrap;
-import mantis.io.reactivex.netty.channel.ObservableConnection;
-import mantis.io.reactivex.netty.client.ClientChannelFactory;
-import mantis.io.reactivex.netty.client.ClientChannelFactoryImpl;
-import mantis.io.reactivex.netty.client.ClientConnectionFactory;
-import mantis.io.reactivex.netty.client.ConnectionPoolBuilder;
-import mantis.io.reactivex.netty.client.UnpooledClientConnectionFactory;
-import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
-import mantis.io.reactivex.netty.protocol.http.client.HttpClient.HttpClientConfig.Builder;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientBuilder;
-import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;
-import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 
 public class MantisHttpClientBuilder<I, O> extends HttpClientBuilder<I, O> {
     public MantisHttpClientBuilder(String host, int port) {
