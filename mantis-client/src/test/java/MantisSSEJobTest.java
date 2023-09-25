@@ -19,6 +19,7 @@ import static org.junit.Assert.fail;
 import io.mantisrx.client.MantisClient;
 import io.mantisrx.client.MantisSSEJob;
 import io.mantisrx.client.SinkConnectionsStatus;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -88,7 +89,7 @@ public class MantisSSEJobTest {
                     }
                 })
                 //    .sinkParams(params)
-                .buildJobConnector();
+                .buildJobConnector(new SimpleMeterRegistry());
 
         job.connectAndGet()
                 .flatMap((t) -> {
@@ -150,7 +151,7 @@ public class MantisSSEJobTest {
 
                 .onCloseKillJob()
                 //    .sinkParams(params)
-                .buildJobSubmitter();
+                .buildJobSubmitter(new SimpleMeterRegistry());
 
         job.submitAndGet()
                 .flatMap((t) -> {

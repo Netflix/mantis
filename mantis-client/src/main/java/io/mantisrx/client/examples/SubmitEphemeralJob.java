@@ -20,6 +20,8 @@ import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.client.MantisSSEJob;
 import io.mantisrx.common.MantisServerSentEvent;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,6 +64,7 @@ public class SubmitEphemeralJob {
         // AutoCloseable job will terminate job if onCloseKillJob() called when building it
         Subscription subscription1 = null;
         //        Subscription s2=null;
+        final MeterRegistry meterRegistry = new SimpleMeterRegistry();
         MantisSSEJob job1 = new MantisSSEJob.Builder(properties)
                 .name(jobName)
                 //                .parameters(new Parameter("param1", "val1"), new Parameter("param2", "val2"))
@@ -73,7 +76,7 @@ public class SubmitEphemeralJob {
                         System.err.println("Reconnecting due to error: " + throwable.getMessage());
                     }
                 })
-                .buildJobSubmitter();
+                .buildJobSubmitter(meterRegistry);
         //        MantisSSEJob job2 = new MantisSSEJob.Builder(properties)
         //                .name(jobName)
         ////                .parameters(new Parameter("param1", "val1"), new Parameter("param2", "val2"))

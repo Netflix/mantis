@@ -28,6 +28,7 @@ import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import java.util.List;
 import java.util.Properties;
@@ -137,12 +138,12 @@ public class MantisClient {
     }
 
     public <T> Observable<SinkClient<T>> getSinkClientByJobName(final String jobName, final SinkConnectionFunc<T> sinkConnectionFunc,
-                                                                final Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver) {
-        return getSinkClientByJobName(jobName, sinkConnectionFunc, sinkConnectionsStatusObserver, 5);
+                                                                final Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, MeterRegistry meterRegistry) {
+        return getSinkClientByJobName(jobName, sinkConnectionFunc, sinkConnectionsStatusObserver, 5, meterRegistry);
     }
 
     public <T> Observable<SinkClient<T>> getSinkClientByJobName(final String jobName, final SinkConnectionFunc<T> sinkConnectionFunc,
-                                                                final Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, final long dataRecvTimeoutSecs) {
+                                                                final Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, final long dataRecvTimeoutSecs, MeterRegistry meterRegistry) {
         final AtomicReference<String> lastJobIdRef = new AtomicReference<>();
         return clientWrapper.getNamedJobsIds(jobName)
                 .doOnUnsubscribe(() -> lastJobIdRef.set(null))
@@ -167,7 +168,7 @@ public class MantisClient {
                         return getErrorSinkClient(jobId);
                     lastJobIdRef.set(jobId);
                     logger.info("Connecting to job " + jobName + " with new jobId=" + jobId);
-                    return getSinkClientByJobId(jobId, sinkConnectionFunc, sinkConnectionsStatusObserver, dataRecvTimeoutSecs);
+                    return getSinkClientByJobId(jobId, sinkConnectionFunc, sinkConnectionsStatusObserver, dataRecvTimeoutSecs, meterRegistry);
                 });
     }
 
@@ -214,19 +215,19 @@ public class MantisClient {
     }
 
     public <T> SinkClient<T> getSinkClientByJobId(final String jobId, final SinkConnectionFunc<T> sinkConnectionFunc,
-                                                  Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver) {
-        return getSinkClientByJobId(jobId, sinkConnectionFunc, sinkConnectionsStatusObserver, 5);
+                                                  Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, MeterRegistry meterRegistry) {
+        return getSinkClientByJobId(jobId, sinkConnectionFunc, sinkConnectionsStatusObserver, 5, meterRegistry);
     }
 
     public <T> SinkClient<T> getSinkClientByJobId(final String jobId, final SinkConnectionFunc<T> sinkConnectionFunc,
-                                                  Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, long dataRecvTimeoutSecs) {
+                                                  Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, long dataRecvTimeoutSecs, MeterRegistry meterRegistry) {
         PublishSubject<MasterClientWrapper.JobSinkNumWorkers> numSinkWrkrsSubject = PublishSubject.create();
         clientWrapper.addNumSinkWorkersObserver(numSinkWrkrsSubject);
         return new SinkClientImpl<T>(jobId, sinkConnectionFunc, getSinkLocator(),
                 numSinkWrkrsSubject
                         .filter((jobSinkNumWorkers) -> jobId.equals(jobSinkNumWorkers.getJobId()))
                         .map((jobSinkNumWorkers) -> jobSinkNumWorkers.getNumSinkWorkers()),
-                sinkConnectionsStatusObserver, dataRecvTimeoutSecs, this.disablePingFiltering);
+                sinkConnectionsStatusObserver, dataRecvTimeoutSecs, this.disablePingFiltering, meterRegistry);
     }
 
     public String submitJob(final String name, final String version, final List<Parameter> parameters,

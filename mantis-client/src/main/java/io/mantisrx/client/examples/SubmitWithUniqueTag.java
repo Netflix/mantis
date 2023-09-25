@@ -21,6 +21,8 @@ import com.sampullara.cli.Argument;
 import io.mantisrx.client.MantisSSEJob;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.runtime.JobSla;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,10 +62,11 @@ public class SubmitWithUniqueTag {
         final JobSla jobSla = new JobSla.Builder()
                 .withUniqueJobTagValue("foobar")
                 .build();
+        final MeterRegistry meterRegistry = new SimpleMeterRegistry();
         MantisSSEJob job = new MantisSSEJob.Builder(properties)
                 .jobSla(jobSla)
                 .name(jobName)
-                .buildJobSubmitter();
+                .buildJobSubmitter(meterRegistry);
         final Observable<Observable<MantisServerSentEvent>> o = job.submitAndGet();
         final CountDownLatch latch = new CountDownLatch(5);
         final Subscription subscribe = o
