@@ -24,6 +24,7 @@ import io.mantisrx.server.worker.client.MetricsClient;
 import io.mantisrx.server.worker.client.SseWorkerConnectionFunction;
 import io.mantisrx.server.worker.client.WorkerConnectionsStatus;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.UnsupportedEncodingException;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -38,9 +39,11 @@ public class WorkerMetricSubscription {
     final MetricsClient<MantisServerSentEvent> metricsClient;
     // worker metrics to subscribe to
     private final Set<String> metrics;
+    private MeterRegistry meterRegistry;
 
-    public WorkerMetricSubscription(final String jobId, WorkerMetricsClient workerMetricsClient, Set<String> metricGroups) {
+    public WorkerMetricSubscription(final String jobId, WorkerMetricsClient workerMetricsClient, Set<String> metricGroups, MeterRegistry meterRegistry) {
         this.metrics = metricGroups;
+        this.meterRegistry = meterRegistry;
 
         SinkParameters metricNamesFilter = null;
         try {
@@ -64,7 +67,7 @@ public class WorkerMetricSubscription {
                             logger.error("Interrupted waiting for retrying connection");
                         }
                     }
-                }, metricNamesFilter),
+                }, metricNamesFilter, meterRegistry),
                 new Observer<WorkerConnectionsStatus>() {
                     @Override
                     public void onCompleted() {

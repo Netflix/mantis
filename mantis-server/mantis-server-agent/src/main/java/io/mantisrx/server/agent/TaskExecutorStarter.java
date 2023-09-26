@@ -27,6 +27,7 @@ import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.time.Clock;
@@ -128,6 +129,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
             this.rpcSystem = rpcSystem;
             return this;
         }
+
 
         private RpcSystem getRpcSystem() {
             if (this.rpcSystem == null) {

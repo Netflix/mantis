@@ -52,6 +52,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;

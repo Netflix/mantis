@@ -21,6 +21,8 @@ import static org.junit.Assert.fail;
 
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.server.worker.TestSseServerFactory;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
@@ -43,6 +45,7 @@ public class SseWorkerConnectionFunctionTest {
         final CountDownLatch errorLatch = new CountDownLatch(1);
         final CountDownLatch latch = new CountDownLatch(1);
         final boolean reconnectOnConnReset = true;
+        final MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
         SseWorkerConnectionFunction connectionFunction = new SseWorkerConnectionFunction(reconnectOnConnReset, new Action1<Throwable>() {
             @Override
@@ -50,7 +53,7 @@ public class SseWorkerConnectionFunctionTest {
                 logger.warn("connection was reset, should be retried", throwable);
                 errorLatch.countDown();
             }
-        });
+        }, meterRegistry);
         final WorkerConnection<MantisServerSentEvent> conn = connectionFunction.call("localhost", serverPort);
 
         final Observable<MantisServerSentEvent> events = conn.call();

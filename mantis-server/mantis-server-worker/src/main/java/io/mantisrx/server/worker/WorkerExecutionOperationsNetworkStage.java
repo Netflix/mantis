@@ -22,7 +22,6 @@ import static io.mantisrx.server.core.utils.StatusConstants.STATUS_MESSAGE_FORMA
 import com.mantisrx.common.utils.Closeables;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.WorkerPorts;
-import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.runtime.Context;
@@ -59,6 +58,7 @@ import io.mantisrx.server.worker.jobmaster.JobMasterStageConfig;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.base.Strings;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
@@ -107,6 +107,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private final ScheduledExecutorService scheduledExecutorService;
     private final ClassLoader classLoader;
     private Observer<Status> jobStatusObserver;
+    private MeterRegistry meterRegistry;
 
     public WorkerExecutionOperationsNetworkStage(
         Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
@@ -114,13 +115,15 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         WorkerConfiguration config,
         WorkerMetricsClient workerMetricsClient,
         SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
-        ClassLoader classLoader) {
+        ClassLoader classLoader,
+        MeterRegistry meterRegistry) {
         this.vmTaskStatusObserver = vmTaskStatusObserver;
         this.mantisMasterApi = mantisMasterApi;
         this.config = config;
         this.workerMetricsClient = workerMetricsClient;
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
         this.classLoader = classLoader;
+        this.meterRegistry = meterRegistry;
 
         String connectionsPerEndpointStr =
             ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.connectionsPerEndpoint", "2");
@@ -203,9 +206,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     }
 
     private static Context generateContext(Parameters parameters, ServiceLocator serviceLocator, WorkerInfo workerInfo,
-                                           MetricsRegistry metricsRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable, ClassLoader classLoader) {
+                                           MeterRegistry meterRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable, ClassLoader classLoader) {
 
-        return new Context(parameters, serviceLocator, workerInfo, metricsRegistry, completeAndExitAction, workerMapObservable, classLoader);
+        return new Context(parameters, serviceLocator, workerInfo, meterRegistry, completeAndExitAction, workerMapObservable, classLoader);
 
     }
 
@@ -217,10 +220,10 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             heartbeatIntervalSecs,
             TimeUnit.SECONDS);
         // start heartbeat payload setter for incoming data drops
-        DataDroppedPayloadSetter droppedPayloadSetter = new DataDroppedPayloadSetter(heartbeatRef.get());
+        DataDroppedPayloadSetter droppedPayloadSetter = new DataDroppedPayloadSetter(heartbeatRef.get(), meterRegistry);
         droppedPayloadSetter.start(heartbeatIntervalSecs);
 
-        ResourceUsagePayloadSetter usagePayloadSetter = new ResourceUsagePayloadSetter(heartbeatRef.get(), config, networkMbps);
+        ResourceUsagePayloadSetter usagePayloadSetter = new ResourceUsagePayloadSetter(heartbeatRef.get(), config, networkMbps, meterRegistry);
         usagePayloadSetter.start(heartbeatIntervalSecs);
 
         return Closeables.combine(() -> heartbeatFuture.cancel(false), droppedPayloadSetter, usagePayloadSetter);
@@ -342,7 +345,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             Parameters parameters = ParameterUtils
                     .createContextParameters(rw.getJob().getParameterDefinitions(),
                             setup.getParameters());
-            final Context context = generateContext(parameters, serviceLocator, workerInfo, MetricsRegistry.getInstance(),
+            final Context context = generateContext(parameters, serviceLocator, workerInfo, meterRegistry,
                     () -> {
                         rw.signalCompleted();
                         // wait for completion signal to go to the master and us getting killed. Upon timeout, exit.
@@ -436,7 +439,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     WorkerPublisherRemoteObservable publisher
                             = new WorkerPublisherRemoteObservable<>(rw.getPorts().next(),
                             remoteObservableName, numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1),
-                            rw.getJobName());
+                            rw.getJobName(), meterRegistry);
 
                     closeables.add(StageExecutors.executeSource(rw.getWorkerIndex(), rw.getJob().getSource(),
                             rw.getStage(), publisher, rw.getContext(), rw.getSourceStageTotalWorkersObservable()));
@@ -444,7 +447,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     logger.info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", serving remote observable for source with name: " + remoteObservableName);
                     RemoteRxServer server = publisher.getServer();
                     RxMetrics rxMetrics = server.getMetrics();
-                    MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
 
                     signalStarted(rw);
                     logger.info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", blocking until source observable completes");
@@ -511,7 +513,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     }
                 };
                 RxMetrics rxMetrics = new RxMetrics();
-                MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
                 final CountDownLatch blockUntilComplete = new CountDownLatch(1);
                 Action0 countDownLatch = new Action0() {
                     @Override
@@ -541,14 +542,13 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
                 WorkerPublisherRemoteObservable publisher
                         = new WorkerPublisherRemoteObservable<>(workerPort, remoteObservableName,
-                        numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1), rw.getJobName());
+                        numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1), rw.getJobName(), meterRegistry);
                 closeables.add(StageExecutors.executeIntermediate(consumer, rw.getStage(), publisher,
                         rw.getContext()));
                 RemoteRxServer server = publisher.getServer();
 
                 logger.info("JobId: " + jobId + " stage: " + stageNumToExecute + ", serving intermediate remote observable with name: " + remoteObservableName);
                 RxMetrics rxMetrics = server.getMetrics();
-                MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
                 // send running signal only after server is started
                 signalStarted(rw);
                 logger.info("JobId: " + jobId + " stage: " + stageNumToExecute + ", blocking until intermediate observable completes");
@@ -615,7 +615,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         String name = jobId + "_" + previousStageNum;
 
         return new WorkerConsumerRemoteObservable(name,
-                new ToDeltaEndpointInjector(schedulingUpdates));
+                new ToDeltaEndpointInjector(schedulingUpdates), meterRegistry);
     }
 
     @Override
