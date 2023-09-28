@@ -34,6 +34,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTa
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.RemoveJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayReconnectRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
@@ -143,6 +144,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                     getRCActor(req.getClusterID()).forward(req, context()))
                 .match(TaskExecutorGatewayRequest.class, req ->
                     getRCActor(req.getClusterID()).forward(req, context()))
+                .match(TaskExecutorGatewayReconnectRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(req, context()))
                 .match(DisableTaskExecutorsRequest.class, req ->
                     getRCActor(req.getClusterID()).forward(req, context()))
                 .match(AddNewJobArtifactsToCacheRequest.class, req ->
@@ -172,7 +175,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                     mantisJobStore,
                     jobMessageRouter,
                     masterConfiguration.getMaxJobArtifactsToCache(),
-                    masterConfiguration.getJobClustersWithArtifactCachingEnabled()),
+                    masterConfiguration.getJobClustersWithArtifactCachingEnabled(),
+                    masterConfiguration.isJobArtifactCachingEnabled()),
                 "ResourceClusterActor-" + clusterID.getResourceID());
         log.info("Created resource cluster actor for {}", clusterID);
         return clusterActor;
