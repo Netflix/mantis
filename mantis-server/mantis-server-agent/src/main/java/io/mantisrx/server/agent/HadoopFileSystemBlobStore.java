@@ -15,11 +15,9 @@
  */
 package io.mantisrx.server.agent;
 
-import io.mantisrx.shaded.com.google.common.util.concurrent.Striped;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.concurrent.locks.Lock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -41,8 +39,6 @@ public class HadoopFileSystemBlobStore implements BlobStore {
 
     private final File localStoreDir;
 
-    final Striped<Lock> locks = Striped.lock(1024);
-
     @Override
     public File get(URI blobUrl) throws IOException {
         final Path src = new Path(blobUrl);
@@ -50,13 +46,7 @@ public class HadoopFileSystemBlobStore implements BlobStore {
         log.info("Getting file with path {}", dest);
         File destFile = new File(dest.toUri().getPath());
         if (!destFile.exists()) {
-            Lock lock = locks.get(dest);
-            lock.lock();
-            try {
-                fileSystem.copyToLocalFile(src, dest);
-            } finally {
-                lock.unlock();
-            }
+            fileSystem.copyToLocalFile(src, dest);
         }
         return destFile;
     }
