@@ -34,6 +34,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.InitializeTaskExe
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.RemoveJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayReconnectRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsList;
@@ -196,9 +197,29 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     public CompletableFuture<TaskExecutorGateway> getTaskExecutorGateway(
         TaskExecutorID taskExecutorID) {
         return
+                (CompletableFuture<TaskExecutorGateway>) Patterns
+                    .ask(resourceClusterManagerActor, new TaskExecutorGatewayRequest(taskExecutorID, clusterID),
+                        askTimeout)
+                    .thenComposeAsync(result -> {
+                        if (result instanceof CompletableFuture) {
+                            return (CompletableFuture<TaskExecutorGateway>) result;
+                        } else {
+                            CompletableFuture<TaskExecutorGateway> exceptionFuture = new CompletableFuture<>();
+                            exceptionFuture.completeExceptionally(new RuntimeException(
+                                "Unexpected object type on getTaskExecutorGateway: " + result.getClass().getName()));
+                            return exceptionFuture;
+                        }
+                    });
+    }
+
+    @Override
+    public CompletableFuture<Ack> reconnectGateway(
+        TaskExecutorID taskExecutorID) {
+        return
             Patterns
-                .ask(resourceClusterManagerActor, new TaskExecutorGatewayRequest(taskExecutorID, clusterID), askTimeout)
-                .thenApply(TaskExecutorGateway.class::cast)
+                .ask(resourceClusterManagerActor, new TaskExecutorGatewayReconnectRequest(taskExecutorID, clusterID),
+                    askTimeout)
+                .thenApply(Ack.class::cast)
                 .toCompletableFuture();
     }
 

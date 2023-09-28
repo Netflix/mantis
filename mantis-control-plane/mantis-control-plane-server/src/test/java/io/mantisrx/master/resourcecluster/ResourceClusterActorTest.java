@@ -192,7 +192,8 @@ public class ResourceClusterActorTest {
                 mantisJobStore,
                 jobMessageRouter,
                 0,
-                "");
+                "",
+                false);
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =
