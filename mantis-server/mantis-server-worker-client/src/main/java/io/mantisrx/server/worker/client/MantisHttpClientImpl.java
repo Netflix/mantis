@@ -20,6 +20,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import mantis.io.reactivex.netty.client.ClientChannelFactory;
 import mantis.io.reactivex.netty.client.ClientConnectionFactory;
@@ -30,12 +31,10 @@ import mantis.io.reactivex.netty.pipeline.PipelineConfigurator;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientImpl;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import rx.Observable;
 
+@Slf4j
 public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
-    private static final Logger logger = LoggerFactory.getLogger(MantisHttpClientImpl.class);
 
     private Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConection;
     private List<Channel> connectionTracker;
@@ -57,7 +56,7 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
     }
 
     protected void trackConnection(Channel channel) {
-        logger.info("Tracking connection: {}", channel.toString());
+        log.info("Tracking connection: {}", channel.toString());
         this.connectionTracker.add(channel);
     }
 
@@ -65,7 +64,7 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
         Channel channel;
         for (Channel value : this.connectionTracker) {
             channel = value;
-            logger.info("Closing connection: {}. Status at close: isActive: {}, isOpen: {}, isWritable: {}",
+            log.info("Closing connection: {}. Status at close: isActive: {}, isOpen: {}, isWritable: {}",
                     channel.toString(), channel.isActive(), channel.isOpen(), channel.isWritable());
             channel.close();
         }

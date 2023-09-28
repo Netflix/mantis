@@ -20,8 +20,10 @@ import static akka.pattern.Patterns.pipe;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.Props;
+import akka.actor.Status.Failure;
 import akka.japi.pf.ReceiveBuilder;
 import com.netflix.spectator.api.Tag;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -40,6 +42,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import lombok.Value;
@@ -112,6 +115,8 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             .match(FailedToSubmitScheduleRequestEvent.class, this::onFailedToSubmitScheduleRequestEvent)
             .match(RetryCancelRequestEvent.class, this::onRetryCancelRequestEvent)
             .match(Noop.class, this::onNoop)
+            .match(Ack.class, ack -> log.debug("Received ack from {}", sender()))
+            .match(Failure.class, failure -> log.error("Received failure from {}: {}", sender(), failure))
             .build();
     }
 
@@ -139,37 +144,47 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     }
 
     private void onAssignedScheduleRequestEvent(AssignedScheduleRequestEvent event) {
-        TaskExecutorGateway gateway = null;
-        TaskExecutorRegistration info = null;
         try {
-             gateway = resourceCluster.getTaskExecutorGateway(event.getTaskExecutorID()).join();
-             info = resourceCluster.getTaskExecutorInfo(event.getTaskExecutorID()).join();
+            CompletableFuture<TaskExecutorGateway> gatewayFut = resourceCluster.getTaskExecutorGateway(event.getTaskExecutorID());
+            TaskExecutorRegistration info = resourceCluster.getTaskExecutorInfo(event.getTaskExecutorID()).join();
+
+            if (gatewayFut != null && info != null) {
+                CompletionStage<Object> ackFuture =
+                    gatewayFut
+                        .thenComposeAsync(gateway ->
+                            gateway
+                                .submitTask(
+                                    executeStageRequestFactory.of(
+                                        event.getScheduleRequestEvent().getRequest(),
+                                        info))
+                                .<Object>thenApply(
+                                    dontCare -> new SubmittedScheduleRequestEvent(
+                                        event.getScheduleRequestEvent(),
+                                        event.getTaskExecutorID()))
+                                .exceptionally(
+                                    throwable -> new FailedToSubmitScheduleRequestEvent(
+                                        event.getScheduleRequestEvent(),
+                                        event.getTaskExecutorID(), throwable))
+                                .whenCompleteAsync((res, err) ->
+                                {
+                                    if (err == null) {
+                                        log.debug("[Submit Task] finish with {}", res);
+                                    }
+                                    else {
+                                        log.error("[Submit Task] fail: {}", event.getTaskExecutorID(), err);
+                                    }
+                                })
+
+                        );
+                pipe(ackFuture, getContext().getDispatcher()).to(self());
+            }
         } catch (Exception e) {
             // we are not able to get the gateway, which either means the node is not great or some transient network issue
             // we will retry the request
-            log.error(
-                "Failed to establish connection with the task executor {}; Resubmitting the request",
+            log.warn(
+                "Failed to submit task with the task executor {}; Resubmitting the request",
                 event.getTaskExecutorID(), e);
-            connectionFailures.increment();
             self().tell(event.getScheduleRequestEvent().onFailure(e), self());
-        }
-
-        if (gateway != null && info != null) {
-            CompletableFuture<Object> ackFuture =
-                gateway
-                    .submitTask(
-                        executeStageRequestFactory.of(event.getScheduleRequestEvent().getRequest(),
-                            info))
-                    .<Object>thenApply(
-                        dontCare -> new SubmittedScheduleRequestEvent(
-                            event.getScheduleRequestEvent(),
-                            event.getTaskExecutorID()))
-                    .exceptionally(
-                        throwable -> new FailedToSubmitScheduleRequestEvent(
-                            event.getScheduleRequestEvent(),
-                            event.getTaskExecutorID(), throwable));
-
-            pipe(ackFuture, getContext().getDispatcher()).to(self());
         }
     }
 
@@ -187,26 +202,31 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     }
 
     private void onSubmittedScheduleRequestEvent(SubmittedScheduleRequestEvent event) {
+        log.debug("[Submit Task]: receive SubmittedScheduleRequestEvent: {}", event);
         final TaskExecutorID taskExecutorID = event.getTaskExecutorID();
-        final TaskExecutorRegistration info = resourceCluster.getTaskExecutorInfo(taskExecutorID)
-            .join();
-        boolean success =
-            jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
-                event.getEvent().getRequest().getWorkerId(),
-                event.getEvent().getRequest().getStageNum(),
-                info.getHostname(),
-                taskExecutorID.getResourceId(),
-                Optional.ofNullable(info.getClusterID().getResourceID()),
-                Optional.of(info.getClusterID()),
-                info.getWorkerPorts()));
-        final Duration latency =
-            Duration.between(event.getEvent().getEventTime(), Clock.systemDefaultZone().instant());
-        schedulingLatency.record(latency.toNanos(), TimeUnit.NANOSECONDS);
+        try {
+            final TaskExecutorRegistration info = resourceCluster.getTaskExecutorInfo(taskExecutorID)
+                .join();
+            boolean success =
+                jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
+                    event.getEvent().getRequest().getWorkerId(),
+                    event.getEvent().getRequest().getStageNum(),
+                    info.getHostname(),
+                    taskExecutorID.getResourceId(),
+                    Optional.ofNullable(info.getClusterID().getResourceID()),
+                    Optional.of(info.getClusterID()),
+                    info.getWorkerPorts()));
+            final Duration latency =
+                Duration.between(event.getEvent().getEventTime(), Clock.systemDefaultZone().instant());
+            schedulingLatency.record(latency.toNanos(), TimeUnit.NANOSECONDS);
 
-        if (!success) {
-            log.error(
-                "Routing message to jobMessageRouter was never expected to fail but it has failed to event {}",
-                event);
+            if (!success) {
+                log.error(
+                    "Routing message to jobMessageRouter was never expected to fail but it has failed to event {}",
+                    event);
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to route message due to error in getting TaskExecutor info: {}", taskExecutorID, ex);
         }
     }
 
@@ -216,6 +236,23 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             event.getScheduleRequestEvent().getRequest().getWorkerId(),
             event.getScheduleRequestEvent().getRequest().getStageNum(),
             Throwables.getStackTraceAsString(event.throwable)));
+
+        try {
+            resourceCluster.reconnectGateway(event.getTaskExecutorID())
+                .whenComplete((res, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Failed to request reconnect to gateway for {}", event.getTaskExecutorID(), throwable);
+                    }
+                    else {
+                        log.debug("Acked from reconnection request for {}", event.getTaskExecutorID());
+                    }
+                });
+        } catch (Exception e) {
+            log.warn(
+                "Failed to establish re-connection with the task executor {} on failed schedule request",
+                event.getTaskExecutorID(), e);
+            connectionFailures.increment();
+        }
     }
 
     private void onCancelRequestEvent(CancelRequestEvent event) {
@@ -224,24 +261,24 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             getTimers().cancel(getSchedulingQueueKeyFor(event.getWorkerId()));
             final TaskExecutorID taskExecutorID =
                 resourceCluster.getTaskExecutorAssignedFor(event.getWorkerId()).join();
-            final TaskExecutorGateway gateway =
-                resourceCluster.getTaskExecutorGateway(taskExecutorID).join();
 
             CompletableFuture<Object> cancelFuture =
-                gateway
-                    .cancelTask(event.getWorkerId())
-                    .<Object>thenApply(dontCare -> Noop.getInstance())
-                    .exceptionally(exception -> {
-                        Throwable actual =
-                            ExceptionUtils.stripCompletionException(
-                                ExceptionUtils.stripExecutionException(exception));
-                        // no need to retry if the TaskExecutor does not know about the task anymore.
-                        if (actual instanceof TaskNotFoundException) {
-                            return Noop.getInstance();
-                        } else {
-                            return event.onFailure(actual);
-                        }
-                    });
+                resourceCluster.getTaskExecutorGateway(taskExecutorID)
+                    .thenComposeAsync(gateway ->
+                        gateway
+                            .cancelTask(event.getWorkerId())
+                            .<Object>thenApply(dontCare -> Noop.getInstance())
+                            .exceptionally(exception -> {
+                                Throwable actual =
+                                    ExceptionUtils.stripCompletionException(
+                                        ExceptionUtils.stripExecutionException(exception));
+                                // no need to retry if the TaskExecutor does not know about the task anymore.
+                                if (actual instanceof TaskNotFoundException) {
+                                    return Noop.getInstance();
+                                } else {
+                                    return event.onFailure(actual);
+                                }
+                            }));
 
             pipe(cancelFuture, context().dispatcher()).to(self());
         } catch (Exception e) {
