@@ -29,6 +29,7 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.reactivx.mantis.operators.DropOperator;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -90,5 +91,56 @@ public class SseWorkerConnectionTest {
         logger.info("drop: {}", droppedCounter.value());
         assertTrue(onNextCounter.value() < 10);
         assertTrue(droppedCounter.value() > 90);
+    }
+
+    // Goals of tests:
+    // SseWorkerConnection uses the MantisHttpClientImpl client
+    // Connection tracking functionality of the MantisHttpClientImpl
+    // The connect call should go via MantisHttpClientImpl
+    @Test
+    public void testMantisHttpClientUsage() throws Exception {
+        SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
+        String metricGroupString = "testmetric";
+        MetricGroupId metricGroupId = new MetricGroupId(metricGroupString);
+        SseWorkerConnection workerConnection = new SseWorkerConnection("connection_type",
+                "hostname",
+                80,
+                b -> {},
+                b -> {},
+                t -> {},
+                600,
+                false,
+                new CopyOnWriteArraySet<>(),
+                1,
+                null,
+                true,
+                metricGroupId);
+
+
+        // get SseWorkerConnection to instantiate client
+        workerConnection.call();
+        MantisHttpClientImpl client = (MantisHttpClientImpl) workerConnection.client;
+
+        // SseWorkerConnection object should use MantisHttpClientImpl
+        logger.info("Client type: {}", client.getClass().toString());
+        assertTrue(workerConnection.client instanceof MantisHttpClientImpl);
+
+
+        // check MantisHttpClientImpl.connect usage
+        logger.info("MantisHttpClientImpl.connect() called: {}", client.isObservableConectionSet());
+        assertTrue(client.isObservableConectionSet());
+
+
+        // check connection monitor functionality of MantisHttpClientImpl
+        Channel dummyChannel = mock(Channel.class);
+
+        client.trackConnection(dummyChannel);
+        logger.info("Connection tracker size: {}", client.connectionTrackerSize());
+        assertEquals(1, client.connectionTrackerSize());
+
+        client.closeConn();
+
+        logger.info("Connection tracker size: {}", client.connectionTrackerSize());
+        assertEquals(0, client.connectionTrackerSize());
     }
 }
