@@ -18,6 +18,8 @@ dependencies {
     api project(":mantis-control-plane:mantis-control-plane-core")
     api project(":mantis-control-plane:mantis-control-plane-client")
 
+    implementation libraries.spectatorApi
+
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
     testImplementation libraries.spectatorApi

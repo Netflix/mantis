@@ -16,10 +16,14 @@
 
 package io.mantisrx.server.worker.client;
 
+import com.netflix.spectator.api.Tag;
+import io.mantisrx.common.metrics.Gauge;
+import io.mantisrx.common.metrics.Metrics;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import mantis.io.reactivex.netty.client.ClientChannelFactory;
@@ -38,15 +42,33 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
 
     private Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConection;
     private List<Channel> connectionTracker;
+    private final Gauge numConnectionsTracked;
+    private final static String connectionTrackerMetricgroup = "ConnectionMonitor";
+    private final static String metricName = "numConnectionsTracked";
+    private final static String metricTagName = "uuid";
 
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ClientChannelFactory<HttpClientResponse<O>, HttpClientRequest<I>> channelFactory, ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connectionFactory, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, channelFactory, connectionFactory, eventsSubject);
         this.connectionTracker = new ArrayList<>();
+
+        Tag metricTag = Tag.of(metricTagName, UUID.randomUUID().toString());
+        Metrics m = new Metrics.Builder()
+                .id(connectionTrackerMetricgroup, metricTag)
+                .addGauge(metricName)
+                .build();
+        this.numConnectionsTracked = m.getGauge(metricName);
     }
 
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ConnectionPoolBuilder<HttpClientResponse<O>, HttpClientRequest<I>> poolBuilder, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, poolBuilder, eventsSubject);
         this.connectionTracker = new ArrayList<>();
+
+        Tag metricTag = Tag.of(metricTagName, UUID.randomUUID().toString());
+        Metrics m = new Metrics.Builder()
+                .id(connectionTrackerMetricgroup, metricTag)
+                .addGauge(metricName)
+                .build();
+        this.numConnectionsTracked = m.getGauge(metricName);
     }
 
     @Override
@@ -58,6 +80,7 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
     protected void trackConnection(Channel channel) {
         log.info("Tracking connection: {}", channel.toString());
         this.connectionTracker.add(channel);
+        numConnectionsTracked.increment();
     }
 
     protected void closeConn() {
@@ -67,6 +90,7 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
             log.info("Closing connection: {}. Status at close: isActive: {}, isOpen: {}, isWritable: {}",
                     channel.toString(), channel.isActive(), channel.isOpen(), channel.isWritable());
             channel.close();
+            numConnectionsTracked.decrement();
         }
         this.connectionTracker.clear();
     }
