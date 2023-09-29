@@ -175,7 +175,11 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
                                     }
                                 })
 
-                        );
+                        )
+                        .exceptionally(
+                            throwable -> new FailedToSubmitScheduleRequestEvent(
+                                event.getScheduleRequestEvent(),
+                                event.getTaskExecutorID(), throwable));
                 pipe(ackFuture, getContext().getDispatcher()).to(self());
             }
         } catch (Exception e) {
