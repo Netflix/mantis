@@ -28,7 +28,7 @@ import org.junit.Test;
 
 
 public class JobClusterConfigTest {
-    private static final SchedulingInfo DEFAULT_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2), Lists.newArrayList(), Lists.newArrayList()).build();
+    private static final SchedulingInfo DEFAULT_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).addStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2), Lists.newArrayList(), Lists.newArrayList()).build();
 
     @Test
     public void happyTest() {

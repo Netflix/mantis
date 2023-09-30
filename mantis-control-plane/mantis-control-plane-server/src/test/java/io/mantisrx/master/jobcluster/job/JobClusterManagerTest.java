@@ -188,7 +188,6 @@ public class JobClusterManagerTest {
 
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
             .withArtifactName("myart")
-
             .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1)
                 .singleWorkerStageWithConstraints(
                     new MachineDefinition(
@@ -201,7 +200,6 @@ public class JobClusterManagerTest {
                     Lists.newArrayList())
                 .build())
             .withVersion("0.0.1")
-
             .build();
         return new JobClusterDefinitionImpl.Builder()
             .withName(name)

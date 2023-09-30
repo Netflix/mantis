@@ -173,7 +173,7 @@ public class WorkerRegistryV2Test {
         smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
         SchedulingInfo sInfo = new SchedulingInfo.Builder()
                 .numberOfStages(1)
-                .multiWorkerScalableStageWithConstraints(1,
+                .addMultiScalableStagesWithConstraints(1,
                         new MachineDefinition(1.0,1.0,1.0,3),
                         Lists.newArrayList(),
                         Lists.newArrayList(),
@@ -225,7 +225,7 @@ public class WorkerRegistryV2Test {
         smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
         SchedulingInfo sInfo = new SchedulingInfo.Builder()
                 .numberOfStages(1)
-                .multiWorkerScalableStageWithConstraints(2,
+                .addMultiScalableStagesWithConstraints(2,
                         new MachineDefinition(1.0,1.0,1.0,3),
                         Lists.newArrayList(),
                         Lists.newArrayList(),
@@ -281,7 +281,7 @@ public class WorkerRegistryV2Test {
         smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
         SchedulingInfo sInfo = new SchedulingInfo.Builder()
                 .numberOfStages(1)
-                .multiWorkerScalableStageWithConstraints(1,
+                .addMultiScalableStagesWithConstraints(1,
                         new MachineDefinition(1.0,1.0,1.0,3),
                         Lists.newArrayList(),
                         Lists.newArrayList(),

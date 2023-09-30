@@ -79,7 +79,7 @@ public class FileBasedStoreTest {
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
                 .withArtifactName("myart")
 
-                .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2), Lists.newArrayList(), Lists.newArrayList()).build())
+                .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1).addStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2), Lists.newArrayList(), Lists.newArrayList()).build())
                 .withVersion("0.0.1")
 
                 .build();

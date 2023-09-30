@@ -72,7 +72,7 @@ import org.junit.Test;
 
 public class DataFormatAdapterTest {
     public static final MachineDefinition DEFAULT_MACHINE_DEFINITION = new MachineDefinition(1, 10, 10, 10, 2);
-    private static final SchedulingInfo DEFAULT_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(DEFAULT_MACHINE_DEFINITION, Lists.newArrayList(), Lists.newArrayList()).build();
+    private static final SchedulingInfo DEFAULT_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).addStageWithConstraints(DEFAULT_MACHINE_DEFINITION, Lists.newArrayList(), Lists.newArrayList()).build();
     private final LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
     @Test
     public void jobClusterConfigToJarTest() {

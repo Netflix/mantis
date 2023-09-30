@@ -47,7 +47,7 @@ public class LocalJobExecutorNetworkedTest {
         TestJobSingleStage provider = new TestJobSingleStage();
         SchedulingInfo scheduling = new SchedulingInfo.Builder()
                 .numberOfStages(1)
-                .multiWorkerStage(2, MachineDefinitions.micro())
+                .addMultiStages(2, MachineDefinitions.micro())
                 .build();
 
         LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
@@ -78,9 +78,9 @@ public class LocalJobExecutorNetworkedTest {
         TestJobThreeStage provider = new TestJobThreeStage(); // 1 instance per stage
         SchedulingInfo scheduling = new SchedulingInfo.Builder()
                 .numberOfStages(3)
-                .singleWorkerStage(MachineDefinitions.micro())
-                .singleWorkerStage(MachineDefinitions.micro())
-                .singleWorkerStage(MachineDefinitions.micro())
+                .addStageWithMachineDefinition(MachineDefinitions.micro())
+                .addStageWithMachineDefinition(MachineDefinitions.micro())
+                .addStageWithMachineDefinition(MachineDefinitions.micro())
                 .build();
         LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
 
@@ -95,9 +95,9 @@ public class LocalJobExecutorNetworkedTest {
         TestJobThreeStage provider = new TestJobThreeStage(); // 1,2,1 topology
         SchedulingInfo scheduling = new SchedulingInfo.Builder()
                 .numberOfStages(3)
-                .singleWorkerStage(MachineDefinitions.micro())
-                .multiWorkerStage(2, MachineDefinitions.micro())
-                .singleWorkerStage(MachineDefinitions.micro())
+                .addStageWithMachineDefinition(MachineDefinitions.micro())
+                .addMultiStages(2, MachineDefinitions.micro())
+                .addStageWithMachineDefinition(MachineDefinitions.micro())
                 .build();
         LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
 
@@ -112,9 +112,9 @@ public class LocalJobExecutorNetworkedTest {
         TestJobThreeStage provider = new TestJobThreeStage(); // 2,1,1 topology
         SchedulingInfo scheduling = new SchedulingInfo.Builder()
                 .numberOfStages(3)
-                .multiWorkerStage(2, MachineDefinitions.micro())
-                .singleWorkerStage(MachineDefinitions.micro())
-                .singleWorkerStage(MachineDefinitions.micro())
+                .addMultiStages(2, MachineDefinitions.micro())
+                .addStageWithMachineDefinition(MachineDefinitions.micro())
+                .addStageWithMachineDefinition(MachineDefinitions.micro())
                 .build();
         LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
 
@@ -129,9 +129,9 @@ public class LocalJobExecutorNetworkedTest {
         TestJobThreeStage provider = new TestJobThreeStage(); // 2,1,1 topology
         SchedulingInfo scheduling = new SchedulingInfo.Builder()
                 .numberOfStages(3)
-                .multiWorkerStage(2, MachineDefinitions.micro())
-                .multiWorkerStage(2, MachineDefinitions.micro())
-                .singleWorkerStage(MachineDefinitions.micro())
+                .addMultiStages(2, MachineDefinitions.micro())
+                .addMultiStages(2, MachineDefinitions.micro())
+                .addStageWithMachineDefinition(MachineDefinitions.micro())
                 .build();
         LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
 

@@ -152,7 +152,7 @@ public class LocalJobExecutorNetworked {
         List<StageConfig> stages = job.getStages();
         SchedulingInfo.Builder builder = new SchedulingInfo.Builder();
         for (@SuppressWarnings("unused") StageConfig stage : stages) {
-            builder.singleWorkerStage(MachineDefinitions.micro());
+            builder.addStageWithMachineDefinition(MachineDefinitions.micro());
         }
         builder.numberOfStages(stages.size());
         execute(job, builder.build(), parameters);

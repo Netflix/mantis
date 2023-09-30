@@ -89,7 +89,7 @@ public class JobTestMigrationTests {
 
         String clusterName= "testWorkerMigration";
         TestKit probe = new TestKit(system);
-        SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
+        SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).addStageWithConstraints(new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
         IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName, sInfo, new WorkerMigrationConfig(MigrationStrategyEnum.ONE_WORKER, "{}"));
 
         CountDownLatch scheduleCDL = new CountDownLatch(2);

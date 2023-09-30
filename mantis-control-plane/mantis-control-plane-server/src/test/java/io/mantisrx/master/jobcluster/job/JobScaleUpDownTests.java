@@ -114,7 +114,7 @@ public class JobScaleUpDownTests {
 		smap.put(ScalingReason.DataDrop, new Strategy(ScalingReason.DataDrop, 0.0, 2.0, null));
 		SchedulingInfo sInfo = new SchedulingInfo.Builder()
 				.numberOfStages(1)
-				.multiWorkerScalableStageWithConstraints(1,
+				.addMultiScalableStagesWithConstraints(1,
 						new MachineDefinition(1.0,1.0,1.0,3),
 						Lists.newArrayList(),
 						Lists.newArrayList(),
@@ -157,7 +157,7 @@ public class JobScaleUpDownTests {
 		smap.put(ScalingReason.DataDrop, new Strategy(ScalingReason.DataDrop, 0.0, 2.0, null));
 		SchedulingInfo sInfo = new SchedulingInfo.Builder()
 				.numberOfStages(1)
-				.multiWorkerScalableStageWithConstraints(2,
+				.addMultiScalableStagesWithConstraints(2,
 						new MachineDefinition(1.0,1.0,1.0,3),
 						Lists.newArrayList(),
 						Lists.newArrayList(),
@@ -215,7 +215,7 @@ public class JobScaleUpDownTests {
         smap.put(ScalingReason.DataDrop, new Strategy(ScalingReason.DataDrop, 0.0, 2.0, null));
         SchedulingInfo sInfo = new SchedulingInfo.Builder()
                 .numberOfStages(1)
-                .multiWorkerScalableStageWithConstraints(1,
+                .addMultiScalableStagesWithConstraints(1,
                         new MachineDefinition(1.0,1.0,1.0,3),
                         Lists.newArrayList(),
                         Lists.newArrayList(),
@@ -496,7 +496,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 
 		SchedulingInfo sInfo = new SchedulingInfo.Builder()
 				.numberOfStages(1)
-				.multiWorkerScalableStageWithConstraints(1,
+				.addMultiScalableStagesWithConstraints(1,
 						new MachineDefinition(1.0,1.0,1.0,3),
 						Lists.newArrayList(),
 						Lists.newArrayList(),
@@ -539,7 +539,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 
 		SchedulingInfo sInfo = new SchedulingInfo.Builder()
 				.numberOfStages(1)
-				.multiWorkerScalableStageWithConstraints(1,
+				.addMultiScalableStagesWithConstraints(1,
 						new MachineDefinition(1.0,1.0,1.0,3),
 						Lists.newArrayList(),
 						Lists.newArrayList(),

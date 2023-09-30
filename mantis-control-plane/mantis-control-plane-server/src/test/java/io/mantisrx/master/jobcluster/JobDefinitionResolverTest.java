@@ -44,8 +44,8 @@ public class JobDefinitionResolverTest {
     public static final SLA NO_OP_SLA = new SLA(0, 0, null, null);
 
     public static final MachineDefinition DEFAULT_MACHINE_DEFINITION = new MachineDefinition(1, 10, 10, 10, 2);
-    public static final SchedulingInfo SINGLE_WORKER_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(DEFAULT_MACHINE_DEFINITION, Lists.newArrayList(), Lists.newArrayList()).build();
-    public static final SchedulingInfo TWO_WORKER_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).multiWorkerStage(2, DEFAULT_MACHINE_DEFINITION).build();
+    public static final SchedulingInfo SINGLE_WORKER_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).addStageWithConstraints(DEFAULT_MACHINE_DEFINITION, Lists.newArrayList(), Lists.newArrayList()).build();
+    public static final SchedulingInfo TWO_WORKER_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).addMultiStages(2, DEFAULT_MACHINE_DEFINITION).build();
     public static final JobOwner DEFAULT_JOB_OWNER = new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo");
     public static final String DEFAULT_ARTIFACT_NAME = "myart";
     public static final String DEFAULT_VERSION = "0.0.1";
@@ -218,7 +218,7 @@ public class JobDefinitionResolverTest {
         JobConstraints softConstraints = JobConstraints.ExclusiveHost;
         List<JobConstraints> constraintsList = new ArrayList<>();
         constraintsList.add(softConstraints);
-        SchedulingInfo schedulingInfo = new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(DEFAULT_MACHINE_DEFINITION, Lists.newArrayList(), constraintsList).build();
+        SchedulingInfo schedulingInfo = new SchedulingInfo.Builder().numberOfStages(1).addStageWithConstraints(DEFAULT_MACHINE_DEFINITION, Lists.newArrayList(), constraintsList).build();
 
         try {
             JobDefinition givenJobDefn = new JobDefinition.Builder().withName(clusterName).withSchedulingInfo(schedulingInfo).withVersion(version).build();
@@ -300,7 +300,7 @@ public class JobDefinitionResolverTest {
         JobConstraints softConstraints = JobConstraints.ExclusiveHost;
         List<JobConstraints> constraintsList = new ArrayList<>();
         constraintsList.add(softConstraints);
-        SchedulingInfo schedulingInfo = new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(DEFAULT_MACHINE_DEFINITION, Lists.newArrayList(), constraintsList).build();
+        SchedulingInfo schedulingInfo = new SchedulingInfo.Builder().numberOfStages(1).addStageWithConstraints(DEFAULT_MACHINE_DEFINITION, Lists.newArrayList(), constraintsList).build();
 
         try {
             // only sched info set.

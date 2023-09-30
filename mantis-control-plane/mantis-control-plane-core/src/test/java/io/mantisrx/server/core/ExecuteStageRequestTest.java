@@ -47,7 +47,7 @@ public class ExecuteStageRequestTest {
             ImmutableList.of(1, 2, 3, 4, 5), 100L, 1,
             ImmutableList.of(new Parameter("name", "value")),
             new SchedulingInfo.Builder().numberOfStages(1)
-                .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
+                .addStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
                     Lists.newArrayList(), Lists.newArrayList()).build(),
             MantisJobDurationType.Perpetual,
             0,
@@ -62,7 +62,7 @@ public class ExecuteStageRequestTest {
             ImmutableList.of(1, 2, 3, 4, 5), 100L, 1,
             ImmutableList.of(new Parameter("name", "value")),
             new SchedulingInfo.Builder().numberOfStages(1)
-                .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
+                .addStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
                     Lists.newArrayList(), Lists.newArrayList()).build(),
             MantisJobDurationType.Perpetual,
             0,
