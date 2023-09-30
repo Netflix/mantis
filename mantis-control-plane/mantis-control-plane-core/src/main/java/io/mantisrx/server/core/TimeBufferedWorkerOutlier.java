@@ -25,8 +25,8 @@ import rx.functions.Action1;
  * metrics such as sourcejob drops. Volume may have high variation over time, buffering by time will eliminate the variant.
  */
 public class TimeBufferedWorkerOutlier extends WorkerOutlier {
-    private Map<Integer, CumulatedValue> workerValues = new HashMap<>();
-    private long bufferedSecs;
+    private final Map<Integer, CumulatedValue> workerValues = new HashMap<>();
+    private final long bufferedSecs;
 
     public TimeBufferedWorkerOutlier(long cooldownSecs, long bufferedSecs, Action1<Integer> outlierTrigger) {
         super(cooldownSecs, outlierTrigger);

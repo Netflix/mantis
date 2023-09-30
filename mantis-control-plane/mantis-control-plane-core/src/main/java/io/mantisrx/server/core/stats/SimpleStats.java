@@ -45,7 +45,7 @@ public class SimpleStats {
         for (int i = 1; i < 4; i++)
             simpleStats.add(0.0);
         simpleStats.add(10.0);
-        System.out.println(String.format("thresh=%8.2f", simpleStats.getOutlierThreshold()));
+        System.out.printf("thresh=%8.2f%n", simpleStats.getOutlierThreshold());
     }
 
     public void add(double d) {

@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.core;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
@@ -34,7 +34,7 @@ public class WorkerAssignmentsTest {
         WorkerAssignments a1 = new WorkerAssignments(1, 1, ImmutableMap.of(0, w1));
         WorkerAssignments a2 = new WorkerAssignments(1, 1, ImmutableMap.of(0, w2));
         WorkerAssignments a3 = new WorkerAssignments(1, 1, ImmutableMap.of(0, w3));
-        assertTrue(a1.equals(a2));
-        assertFalse(a1.equals(a3));
+        assertEquals(a1, a2);
+        assertNotEquals(a1, a3);
     }
 }

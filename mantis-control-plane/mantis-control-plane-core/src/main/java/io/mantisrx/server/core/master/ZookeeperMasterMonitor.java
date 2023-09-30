@@ -21,10 +21,7 @@ import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
-import io.mantisrx.shaded.org.apache.curator.framework.api.BackgroundCallback;
-import io.mantisrx.shaded.org.apache.curator.framework.api.CuratorEvent;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCache;
-import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
@@ -57,12 +54,7 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
 
     @Override
     public void startUp() throws Exception {
-        nodeMonitor.getListenable().addListener(new NodeCacheListener() {
-            @Override
-            public void nodeChanged() throws Exception {
-                retrieveMaster();
-            }
-        });
+        nodeMonitor.getListenable().addListener(this::retrieveMaster);
 
         nodeMonitor.start(true);
 
@@ -89,18 +81,13 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
                 .inBackground(
                     curator
                         .getData()
-                        .inBackground(new BackgroundCallback() {
-                            @Override
-                            public void processResult(CuratorFramework client, CuratorEvent event) throws Exception {
-                                onMasterNodeUpdated(event.getData());
-                            }
-                        })
+                        .inBackground((client, event) -> onMasterNodeUpdated(event.getData()))
                         .forPath(masterPath)
                 )
                 .forPath(masterPath);
 
         } catch (Exception e) {
-            logger.error("Failed to retrieve updated master information: " + e.getMessage(), e);
+            logger.error("Failed to retrieve updated master information: {}", e.getMessage(), e);
         }
 
     }
@@ -112,7 +99,7 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
 
     /**
      *
-     * @return
+     * @return the latest master description, or null if the master monitor is not running.
      */
     @Override
     @Nullable

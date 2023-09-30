@@ -36,7 +36,7 @@ public class WorkerIdTest {
     }
 
     @Test
-    public void testIfWorkerIdIsSerializableUsingJava() throws Exception {
+    public void testIfWorkerIdIsSerializableUsingJava() {
         WorkerId workerId = WorkerId.fromId("late-sine-function-tutorial-1-worker-0-1").get();
         byte[] serialized = SerializationUtils.serialize(workerId);
         assertEquals(workerId, SerializationUtils.deserialize(serialized));

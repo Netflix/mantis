@@ -23,8 +23,8 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PostJobStatusRequest {
 
-    private String jobId;
-    private Status status;
+    private final String jobId;
+    private final Status status;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)

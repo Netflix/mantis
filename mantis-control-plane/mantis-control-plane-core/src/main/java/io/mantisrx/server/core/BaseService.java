@@ -25,7 +25,7 @@ import rx.functions.Action0;
 
 public abstract class BaseService implements Service {
 
-    private static AtomicInteger SERVICES_COUNTER = new AtomicInteger(0);
+    private static final AtomicInteger SERVICES_COUNTER = new AtomicInteger(0);
     private final boolean awaitsActiveMode;
     private final ActiveMode activeMode = new ActiveMode();
     private final int myServiceCount;
@@ -104,23 +104,20 @@ public abstract class BaseService implements Service {
         }
 
         public void waitAndStart(final Action0 onActive, final BaseService predecessor) {
-            logger.info(myServiceCount + ": Setting up thread to wait for entering leader mode");
-            Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    awaitLeaderMode();
-                    logger.info(myServiceCount + ": done waiting for leader mode");
-                    if (predecessor != null) {
-                        predecessor.activeMode.awaitInit();
-                    }
-                    logger.info(myServiceCount + ": done waiting for predecessor init");
-                    if (onActive != null) {
-                        onActive.call();
-                    }
-                    synchronized (isInited) {
-                        isInited.set(true);
-                        isInited.notify();
-                    }
+            logger.info("{}: Setting up thread to wait for entering leader mode", myServiceCount);
+            Runnable runnable = () -> {
+                awaitLeaderMode();
+                logger.info("{}: done waiting for leader mode", myServiceCount);
+                if (predecessor != null) {
+                    predecessor.activeMode.awaitInit();
+                }
+                logger.info("{}: done waiting for predecessor init", myServiceCount);
+                if (onActive != null) {
+                    onActive.call();
+                }
+                synchronized (isInited) {
+                    isInited.set(true);
+                    isInited.notify();
                 }
             };
             Thread thr = new Thread(runnable, "BaseService-LeaderModeWaitThread-" + myServiceCount);
@@ -145,7 +142,7 @@ public abstract class BaseService implements Service {
         }
 
         public void enterActiveMode() {
-            logger.info(myServiceCount + ": Entering leader mode");
+            logger.info("{}: Entering leader mode", myServiceCount);
             synchronized (isLeaderMode) {
                 isLeaderMode.set(true);
                 isLeaderMode.notify();

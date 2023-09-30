@@ -76,11 +76,11 @@ public class JobAssignmentResult implements JsonType {
 
     public static class Failure {
 
-        private int workerNumber;
-        private String type;
-        private double asking;
-        private double used;
-        private double available;
+        private final int workerNumber;
+        private final String type;
+        private final double asking;
+        private final double used;
+        private final double available;
 
         @JsonCreator
         @JsonIgnoreProperties(ignoreUnknown = true)

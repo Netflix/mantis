@@ -102,8 +102,8 @@ public interface ResourceCluster extends ResourceClusterGateway {
      * Can throw {@link NoResourceAvailableException} wrapped within the CompletableFuture in case there
      * are no task executors.
      *
-     * @param machineDefinition machine definition that's requested for the worker
-     * @param workerId          worker id of the task that's going to run on the node.
+     * @param allocationRequest allocation request that has the worker id of the task
+     *                          and the machine definition that's requested for the worker
      * @return task executor assigned for the particular task.
      */
     CompletableFuture<TaskExecutorID> getTaskExecutorFor(

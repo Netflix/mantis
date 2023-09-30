@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.core;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
@@ -39,7 +39,7 @@ public class JobSchedulingInfoTest {
         JobSchedulingInfo s2 = new JobSchedulingInfo("job-1", ImmutableMap.of(1, a2));
         JobSchedulingInfo s3 = new JobSchedulingInfo("job-1", ImmutableMap.of(1, a3));
 
-        assertTrue(s1.equals(s2));
-        assertFalse(s1.equals(s3));
+        assertEquals(s1, s2);
+        assertNotEquals(s1, s3);
     }
 }

@@ -25,10 +25,10 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode
 public class WorkerAssignments {
 
-    private int stage;
+    private final int stage;
     private int numWorkers;
     private int activeWorkers;
-    private Map<Integer, WorkerHost> hosts; // lookup by workerNumber
+    private final Map<Integer, WorkerHost> hosts; // lookup by workerNumber
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
