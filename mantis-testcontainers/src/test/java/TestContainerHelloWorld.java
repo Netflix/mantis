@@ -40,6 +40,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
@@ -89,118 +90,183 @@ public class TestContainerHelloWorld {
         "{\"name\":\"hello-sine-testcontainers\",\"user\":\"mantisoss\",\"jobSla\":{\"durationType\":\"Perpetual\","
             + "\"runtimeLimitSecs\":\"0\",\"minRuntimeSecs\":\"0\",\"userProvidedType\":\"\"}}";
 
+    private static final String REGULAR_SUBMIT = "{\"name\":\"hello-sine-testcontainers\",\"user\":\"mantisoss\","
+        + "\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-2.1.0-SNAPSHOT.zip\",\"version\":\"0.2.9 2018-05-29 16:12:56\","
+        + "\"subscriptionTimeoutSecs\":\"0\",\"jobSla\":{\"durationType\":\"Transient\","
+        + "\"runtimeLimitSecs\":\"300\",\"minRuntimeSecs\":\"0\"},"
+        + "\"schedulingInfo\":{\"stages\":{\"1\":{\"numberOfInstances\":1,\"machineDefinition\":{\"cpuCores\":1,"
+        + "\"memoryMB\":1024,\"diskMB\":1024,\"networkMbps\":128,\"numPorts\":\"1\"},\"scalable\":true,"
+        + "\"softConstraints\":[],\"hardConstraints\":[]}}},\"parameters\":[{\"name\":\"useRandom\",\"value\":\"false\"}],"
+        + "\"isReadyForJobMaster\":false}";
 
     private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    @Test
-    public void helloWorld() throws Exception {
+    private static final Path path = Paths.get("../mantis-control-plane/Dockerfile");
+    private static ImageFromDockerfile controlPlaneDockerFile;
+    private static ImageFromDockerfile agentDockerFile;
+    private static Network network = Network.newNetwork();
+    private static GenericContainer<?> zookeeper;
+    private static GenericContainer<?> controlPlaneLeader;
 
-        Path path = Paths.get("../mantis-control-plane/Dockerfile");
+    private static String controlPlaneLeaderUrl;
+    private static String controlPlaneHost;
+    private static int controlPlanePort;
+
+    private static OkHttpClient client = new OkHttpClient();
+
+    @BeforeClass
+    public static void prepareControlPlane() throws Exception {
         log.info("Building control plane image from: {}", path);
-        ImageFromDockerfile controlPlaneDockerFile =
-                new ImageFromDockerfile("localhost/testcontainers/mantis_control_plane_server_" + Base58.randomString(4).toLowerCase())
-                    .withDockerfile(path);
-        try (
-            Network network = Network.newNetwork();
-            GenericContainer<?> zookeeper =
-                new GenericContainer<>("zookeeper:3.8.0")
-                    .withNetwork(network)
-                    .withNetworkAliases(ZOOKEEPER_ALIAS)
-                    .withExposedPorts(ZOOKEEPER_PORT);
+        controlPlaneDockerFile =
+            new ImageFromDockerfile("localhost/testcontainers/mantis_control_plane_server_" + Base58.randomString(4).toLowerCase())
+                .withDockerfile(path);
 
-            GenericContainer<?> master = USE_LOCAL_BUILT_IMAGE ?
-                new GenericContainer<>(controlPlaneDockerFile)
-                    .withEnv(LoggingMetricsPublisher.LOGGING_ENABLED_METRICS_GROUP_ID_LIST_KEY,
-                            LOGGING_ENABLED_METRICS_GROUP)
-                    .withNetwork(network)
-                    .withNetworkAliases(CONTROL_PLANE_ALIAS)
-                    .withExposedPorts(CONTROL_PLANE_API_PORT)
-                :
+        zookeeper =
+            new GenericContainer<>("zookeeper:3.8.0")
+                .withNetwork(network)
+                .withNetworkAliases(ZOOKEEPER_ALIAS)
+                .withExposedPorts(ZOOKEEPER_PORT);
+
+        controlPlaneLeader = USE_LOCAL_BUILT_IMAGE ?
+            new GenericContainer<>(controlPlaneDockerFile)
+                .withEnv(LoggingMetricsPublisher.LOGGING_ENABLED_METRICS_GROUP_ID_LIST_KEY,
+                    LOGGING_ENABLED_METRICS_GROUP)
+                .withNetwork(network)
+                .withNetworkAliases(CONTROL_PLANE_ALIAS)
+                .withExposedPorts(CONTROL_PLANE_API_PORT)
+            :
                 new GenericContainer<>("netflixoss/mantiscontrolplaneserver:latest")
                     .withEnv(LoggingMetricsPublisher.LOGGING_ENABLED_METRICS_GROUP_ID_LIST_KEY,
-                            LOGGING_ENABLED_METRICS_GROUP)
+                        LOGGING_ENABLED_METRICS_GROUP)
                     .withNetwork(network)
                     .withNetworkAliases(CONTROL_PLANE_ALIAS)
                     .withExposedPorts(CONTROL_PLANE_API_PORT);
-        ) {
-            zookeeper.start();
-            zkCheck(zookeeper);
+        zookeeper.start();
+        zkCheck(zookeeper);
 
-            // master.addEnv("MANTIS_ZOOKEEPER_CONNECTSTRING", "zk:2181");
-            master.start();
-            log.info("Finsih start");
+        // master.addEnv("MANTIS_ZOOKEEPER_CONNECTSTRING", "zk:2181");
+        controlPlaneLeader.start();
+        log.info("Finish start controlPlaneLeader");
 
-            String url = String.format(
-                "http://%s:%d/api/", master.getHost(), master.getMappedPort(CONTROL_PLANE_API_PORT));
-            log.info("Using control plane url: " + url);
+        controlPlaneLeaderUrl = String.format(
+            "http://%s:%d/api/", controlPlaneLeader.getHost(), controlPlaneLeader.getMappedPort(CONTROL_PLANE_API_PORT));
+        log.info("Using control plane url: {}", controlPlaneLeaderUrl);
+        controlPlaneHost = controlPlaneLeader.getHost();
+        controlPlanePort = controlPlaneLeader.getMappedPort(CONTROL_PLANE_API_PORT);
 
-            OkHttpClient client = new OkHttpClient();
+        Path agentDockerFilePath = Paths.get("../mantis-server/mantis-server-agent/Dockerfile");
+        log.info("Building agent image from: {}", agentDockerFilePath);
+        agentDockerFile =
+            new ImageFromDockerfile("localhost/testcontainers/mantis_agent_" + Base58.randomString(4).toLowerCase())
+                .withDockerfile(agentDockerFilePath);
 
-            Request request = new Request.Builder()
-                .url(url + "v1/resourceClusters/list")
-                .build();
-            Response response = client.newCall(request).execute();
-            log.info(response.body().string());
-
-            // Create agent(s)
-            Path agentDockerFilePath = Paths.get("../mantis-server/mantis-server-agent/Dockerfile");
-            log.info("Building agent image from: {}", agentDockerFilePath);
-            ImageFromDockerfile agentDockerFile =
-                    new ImageFromDockerfile("localhost/testcontainers/mantis_agent_" + Base58.randomString(4).toLowerCase())
-                            .withDockerfile(agentDockerFilePath);
-
-            final String agentId0 = "agent0";
-            final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
-            GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, agentDockerFile, network);
-
-            String controlPlaneHost = master.getHost();
-            int controlPlanePort = master.getMappedPort(CONTROL_PLANE_API_PORT);
-
-            if (!ensureAgentStarted(
-                controlPlaneHost,
-                controlPlanePort,
-                CLUSTER_ID,
-                agentId0,
-                agent0,
-                5,
-                Duration.ofSeconds(3).toMillis())) {
-                    fail("Failed to register agent: " + agent0.getContainerId());
-            }
-
-            createJobCluster(controlPlaneHost, controlPlanePort);
-            getJobCluster(controlPlaneHost, controlPlanePort);
-            quickSubmitJobCluster(controlPlaneHost, controlPlanePort);
-
-            if (!ensureJobWorkerStarted(
-                controlPlaneHost,
-                controlPlanePort,
-                5,
-                Duration.ofSeconds(2).toMillis())) {
-                    fail("Failed to start job worker.");
-            }
-
-            // test sse
-            // Thread.sleep(Duration.ofSeconds(1).toMillis());
-            String cmd = "curl -N -H \"Accept: text/event-stream\"  \"localhost:5055\" & sleep 3; kill $!";
-            Container.ExecResult lsResult = agent0.execInContainer("bash", "-c", cmd);
-            String stdout = lsResult.getStdout();
-
-            log.info("stdout: {}", stdout);
-            assertTrue(stdout.contains("data: {\"x\":"));
-
-            testTEStates(controlPlaneHost, controlPlanePort);
-
-            /*
-            Uncomment following lines to keep the containers running.
-             */
-            // log.warn("Waiting for exit test.");
-            // Thread.sleep(Duration.ofSeconds(3600).toMillis());
-        }
-
+        assertTrue("Failed to create job cluster", createJobCluster(controlPlaneHost, controlPlanePort));
+        assertTrue("Failed to get job cluster", getJobCluster(controlPlaneHost, controlPlanePort));
     }
 
-    private void zkCheck(GenericContainer<?> zookeeper) throws Exception {
+    @Test
+    public void testQuickSubmitJob() throws IOException, InterruptedException {
+        Request request = new Request.Builder()
+            .url(controlPlaneLeaderUrl + "v1/resourceClusters/list")
+            .build();
+        Response response = client.newCall(request).execute();
+        log.info(response.body().string());
+
+        // Create agent(s)
+        final String agentId0 = "agentquicksubmit";
+        final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
+        GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, agentDockerFile, network);
+
+        if (!ensureAgentStarted(
+            controlPlaneHost,
+            controlPlanePort,
+            CLUSTER_ID,
+            agentId0,
+            agent0,
+            5,
+            Duration.ofSeconds(3).toMillis())) {
+            fail("Failed to register agent: " + agent0.getContainerId());
+        }
+
+        quickSubmitJobCluster(controlPlaneHost, controlPlanePort);
+
+        if (!ensureJobWorkerStarted(
+            controlPlaneHost,
+            controlPlanePort,
+            5,
+            Duration.ofSeconds(2).toMillis())) {
+            fail("Failed to start job worker.");
+        }
+
+        // test sse
+        String cmd = "curl -N -H \"Accept: text/event-stream\"  \"localhost:5055\" & sleep 3; kill $!";
+        Container.ExecResult lsResult = agent0.execInContainer("bash", "-c", cmd);
+        String stdout = lsResult.getStdout();
+
+        log.info("stdout: {}", stdout);
+        assertTrue(stdout.contains("data: {\"x\":"));
+
+        testTEStates(controlPlaneHost, controlPlanePort, agentId0);
+
+        /*
+        Uncomment following lines to keep the containers running.
+         */
+        // log.warn("Waiting for exit test.");
+        // Thread.sleep(Duration.ofSeconds(3600).toMillis());
+    }
+
+    @Test
+    public void testRegularSubmitJob() throws IOException, InterruptedException {
+        Request request = new Request.Builder()
+            .url(controlPlaneLeaderUrl + "v1/resourceClusters/list")
+            .build();
+        Response response = client.newCall(request).execute();
+        log.info(response.body().string());
+
+        // Create agent(s)
+        final String agentId0 = "agentregularsubmit";
+        final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
+        GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, agentDockerFile, network);
+
+        if (!ensureAgentStarted(
+            controlPlaneHost,
+            controlPlanePort,
+            CLUSTER_ID,
+            agentId0,
+            agent0,
+            5,
+            Duration.ofSeconds(3).toMillis())) {
+            fail("Failed to register agent: " + agent0.getContainerId());
+        }
+
+        submitJobCluster(controlPlaneHost, controlPlanePort);
+
+        if (!ensureJobWorkerStarted(
+            controlPlaneHost,
+            controlPlanePort,
+            5,
+            Duration.ofSeconds(2).toMillis())) {
+            fail("Failed to start job worker.");
+        }
+
+        // test sse
+        String cmd = "curl -N -H \"Accept: text/event-stream\"  \"localhost:5055\" & sleep 3; kill $!";
+        Container.ExecResult lsResult = agent0.execInContainer("bash", "-c", cmd);
+        String stdout = lsResult.getStdout();
+
+        log.info("stdout: {}", stdout);
+        assertTrue(stdout.contains("data: {\"x\":"));
+        testTEStates(controlPlaneHost, controlPlanePort, agentId0);
+
+        /*
+        Uncomment following lines to keep the containers running.
+         */
+        // log.warn("Waiting for exit test.");
+        // Thread.sleep(Duration.ofSeconds(3600).toMillis());
+    }
+
+    private static void zkCheck(GenericContainer<?> zookeeper) throws Exception {
         final String path = "/messages/zk-tc";
         final String content = "Running Zookeeper with Testcontainers";
         String connectionString = zookeeper.getHost() + ":" + zookeeper.getMappedPort(ZOOKEEPER_PORT);
@@ -326,13 +392,13 @@ public class TestContainerHelloWorld {
 
                 Thread.sleep(sleepMillis);
             } catch (Exception e) {
-                log.warn("Get registred agent call error", e);
+                log.warn("Get registered agent call error", e);
             }
         }
         return false;
     }
 
-    private boolean createJobCluster(
+    private static boolean createJobCluster(
         String controlPlaneHost,
         int controlPlanePort) {
         HttpUrl reqUrl = new Builder()
@@ -358,20 +424,22 @@ public class TestContainerHelloWorld {
 
         } catch (Exception e) {
             log.warn("Create cluster call error", e);
+            return false;
         }
         return true;
     }
 
     private void testTEStates(
         String controlPlaneHost,
-        int controlPlanePort) {
+        int controlPlanePort,
+        String agentId) {
         try
         {
-            Optional<Response> responseO = checkTeState(controlPlaneHost, controlPlanePort, "agent0");
+            Optional<Response> responseO = checkTeState(controlPlaneHost, controlPlanePort, agentId);
             assertTrue(responseO.isPresent());
             assertTrue(responseO.get().isSuccessful());
             String resBody = responseO.get().body().string();
-            log.info("agent0: {}", resBody);
+            log.info("agent {}: {}", agentId, resBody);
             assertTrue(resBody.contains("\"registered\":true,\"runningTask\":true"));
 
             responseO = checkTeState(controlPlaneHost, controlPlanePort, "invalid");
@@ -443,7 +511,37 @@ public class TestContainerHelloWorld {
         return true;
     }
 
-    private boolean getJobCluster(
+    private boolean submitJobCluster(
+        String controlPlaneHost,
+        int controlPlanePort) {
+        HttpUrl reqUrl = new Builder()
+            .scheme("http")
+            .host(controlPlaneHost)
+            .port(controlPlanePort)
+            .addPathSegments("api/submit")
+            .build();
+        log.info("Req: {}", reqUrl);
+
+        RequestBody body = RequestBody.create(
+            REGULAR_SUBMIT, MediaType.parse("application/json; charset=utf-8"));
+
+        Request request = new Request.Builder()
+            .url(reqUrl)
+            .post(body)
+            .build();
+
+        try {
+            Response response = HTTP_CLIENT.newCall(request).execute();
+            String responseBody = response.body().string();
+            log.info("Regular submit job response: {}.", responseBody);
+
+        } catch (Exception e) {
+            log.warn("Regular submit job call error", e);
+        }
+        return true;
+    }
+
+    private static boolean getJobCluster(
         String controlPlaneHost,
         int controlPlanePort) {
         HttpUrl reqUrl = new Builder()

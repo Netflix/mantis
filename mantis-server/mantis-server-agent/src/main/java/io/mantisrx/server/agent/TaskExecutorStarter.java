@@ -18,7 +18,6 @@ package io.mantisrx.server.agent;
 
 import com.mantisrx.common.utils.Services;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
-import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
@@ -29,7 +28,6 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -106,8 +104,6 @@ public class TaskExecutorStarter extends AbstractIdleService {
         private ClassLoaderHandle classLoaderHandle;
         private final HighAvailabilityServices highAvailabilityServices;
         @Nullable
-        private SinkSubscriptionStateHandler.Factory sinkSubscriptionHandlerFactory;
-        @Nullable
         private TaskFactory taskFactory;
 
         private final List<Tuple2<TaskExecutor.Listener, Executor>> listeners = new ArrayList<>();
@@ -178,24 +174,9 @@ public class TaskExecutorStarter extends AbstractIdleService {
             }
         }
 
-        public TaskExecutorStarterBuilder sinkSubscriptionHandlerFactory(SinkSubscriptionStateHandler.Factory sinkSubscriptionHandlerFactory) {
-            this.sinkSubscriptionHandlerFactory = sinkSubscriptionHandlerFactory;
-            return this;
-        }
-
         public TaskExecutorStarterBuilder addListener(TaskExecutor.Listener listener, Executor executor) {
             this.listeners.add(Tuple.of(listener, executor));
             return this;
-        }
-
-        private SinkSubscriptionStateHandler.Factory getSinkSubscriptionHandlerFactory() {
-            if (this.sinkSubscriptionHandlerFactory == null) {
-                return SinkSubscriptionStateHandler.Factory.forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
-                    highAvailabilityServices.getMasterClientApi(),
-                    Clock.systemDefaultZone());
-            } else {
-                return this.sinkSubscriptionHandlerFactory;
-            }
         }
 
         public TaskExecutorStarter build() throws Exception {
@@ -205,7 +186,6 @@ public class TaskExecutorStarter extends AbstractIdleService {
                     workerConfiguration,
                     highAvailabilityServices,
                     getClassLoaderHandle(),
-                    getSinkSubscriptionHandlerFactory(),
                     this.taskFactory);
 
             for (Tuple2<TaskExecutor.Listener, Executor> listener : listeners) {
