@@ -28,7 +28,6 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
-import rx.Subscriber;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -88,31 +87,29 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
         final Observable wrappedO = merged.lift(new MonitorOperator("worker_sink"));
 
         Observable o = Observable
-                .create(new Observable.OnSubscribe<Object>() {
-                    @Override
-                    public void call(Subscriber subscriber) {
-                        logger.info("Got sink subscription, onSubscribe=" + onSubscribeAction);
-                        wrappedO
-                                .doOnCompleted(observableOnCompleteCallback)
-                                .doOnError(observableOnErrorCallback)
-                                .doOnTerminate(observableTerminatedCallback)
-                                .subscribe(subscriber);
-                        if (onSubscribeAction != null) {
-                            onSubscribeAction.call();
-                        }
+                .create(subscriber -> {
+                    logger.info("Got sink subscription with onSubscribeAction={}", onSubscribeAction);
+                    wrappedO
+                            .doOnCompleted(observableOnCompleteCallback)
+                            .doOnError(observableOnErrorCallback)
+                            .doOnTerminate(observableTerminatedCallback)
+                            .subscribe(subscriber);
+                    if (onSubscribeAction != null) {
+                        onSubscribeAction.call();
                     }
                 })
-                .doOnUnsubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        logger.info("Sink subscriptions clean up, action=" + onUnsubscribeAction);
-                        if (onUnsubscribeAction != null)
-                            onUnsubscribeAction.call();
-                    }
+                .doOnCompleted(() -> logger.info("Sink observable subscription completed."))
+                .doOnError(err -> logger.error("Sink observable subscription onError:", err))
+                .doOnTerminate(() -> logger.info("Sink observable subscription termindated."))
+                .doOnUnsubscribe(() -> {
+                    logger.info("Sink subscriptions clean up, action={}", onUnsubscribeAction);
+                    if (onUnsubscribeAction != null)
+                        onUnsubscribeAction.call();
                 })
                 .share();
         if (context.getWorkerInfo().getDurationType() == MantisJobDurationType.Perpetual) {
             // eager subscribe, don't allow unsubscribe back
+            logger.info("eagerSubscription subscribed for Perpetual job.");
             eagerSubscription = o.subscribe();
         }
         sink.init(context);

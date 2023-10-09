@@ -458,8 +458,7 @@ public class RuntimeTaskImplExecutorTest {
                                    ClassLoaderHandle classLoaderHandle,
                                    SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
                                    Consumer<Status> consumer) {
-            super(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle,
-                subscriptionStateHandlerFactory);
+            super(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle);
         }
 
     }
