@@ -53,7 +53,8 @@ class SubscriptionStateHandlerImpl extends AbstractScheduledService implements S
 
     @Override
     public void startUp() {
-        currentState.set(SubscriptionState.of(clock));
+        currentState.compareAndSet(null, SubscriptionState.of(clock));
+        log.info("SubscriptionStateHandlerImpl service started.");
     }
 
     @Override
@@ -81,11 +82,16 @@ class SubscriptionStateHandlerImpl extends AbstractScheduledService implements S
 
     @Override
     public void onSinkUnsubscribed() {
+        if (currentState.get() == null) {
+            log.error("currentState in SubscriptionStateHandlerImpl is not set onSinkUnsubscribed");
+            return;
+        }
         currentState.updateAndGet(SubscriptionState::onSinkUnsubscribed);
     }
 
     @Override
     public void onSinkSubscribed() {
+        Preconditions.checkNotNull(currentState.get(), "currentState is not intialized onSinkSubscribed.");
         currentState.updateAndGet(SubscriptionState::onSinkSubscribed);
     }
 
