@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -247,6 +248,16 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 .idleInstances(response.getInstanceIds())
                 .build(),
             self());
+
+        // also disable the scale down targets to avoid them being used during the scale down process.
+        response.getInstanceIds().forEach(id ->
+            this.resourceClusterActor.tell(new DisableTaskExecutorsRequest(
+                Collections.emptyMap(),
+                this.clusterId,
+                Instant.now().plus(Duration.ofHours(24)),
+                Optional.of(id)),
+                self()
+        ));
     }
 
     private void onTriggerClusterUsageRequest(TriggerClusterUsageRequest req) {
