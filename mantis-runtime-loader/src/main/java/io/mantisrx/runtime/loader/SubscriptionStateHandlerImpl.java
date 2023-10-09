@@ -53,9 +53,7 @@ class SubscriptionStateHandlerImpl extends AbstractScheduledService implements S
 
     @Override
     public void startUp() {
-        if (currentState.get() == null) {
-            currentState.compareAndSet(null, SubscriptionState.of(clock));
-        }
+        currentState.compareAndSet(null, SubscriptionState.of(clock));
         log.info("SubscriptionStateHandlerImpl service started.");
     }
 
