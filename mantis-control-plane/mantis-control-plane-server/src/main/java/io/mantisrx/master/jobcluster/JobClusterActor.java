@@ -73,6 +73,8 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsR
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastLaunchedJobIdStreamRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastLaunchedJobIdStreamResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
@@ -138,6 +140,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -150,6 +153,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -219,8 +223,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final JobManager jobManager;
     private final MantisSchedulerFactory mantisSchedulerFactory;
     private final LifecycleEventPublisher eventPublisher;
-
-    private BehaviorSubject<JobId> jobIdSubmissionSubject;
+    private final BehaviorSubject<JobId> jobIdSubmissionSubject;
+    private final BehaviorSubject<JobId> jobIdLaunchedSubject;
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
 
 
@@ -238,6 +242,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, costsCalculator);
 
         jobIdSubmissionSubject = BehaviorSubject.create();
+        jobIdLaunchedSubject = BehaviorSubject.create();
 
         initializedBehavior =  buildInitializedBehavior();
         disabledBehavior = buildDisabledBehavior();
@@ -418,6 +423,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetLastSubmittedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastSubmittedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
+            .match(GetLastLaunchedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastLaunchedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(ListJobIdsRequest.class, (x) -> getSender().tell(new ListJobIdsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), new ArrayList()), getSelf()))
             .match(ListJobsRequest.class, (x) -> getSender().tell(new ListJobsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), new ArrayList()), getSelf()))
             .match(ListWorkersRequest.class, (x) -> getSender().tell(new ListWorkersResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), new ArrayList()), getSelf()))
@@ -513,6 +519,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetLastSubmittedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastSubmittedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
+            .match(GetLastLaunchedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastLaunchedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(ListJobIdsRequest.class, (x) -> getSender().tell(new ListJobIdsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
             .match(ListJobsRequest.class, (x) -> getSender().tell(new ListJobsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
             .match(ListWorkersRequest.class, (x) -> getSender().tell(new ListWorkersResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
@@ -609,6 +616,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .match(JobProto.JobInitialized.class, this::onJobInitialized)
                 .match(JobStartedEvent.class, this::onJobStarted)
                 .match(GetLastSubmittedJobIdStreamRequest.class, this::onGetLastSubmittedJobIdSubject)
+                .match(GetLastLaunchedJobIdStreamRequest.class, this::onGetLastLaunchedJobIdSubject)
                 .match(ScaleStageRequest.class, this::onScaleStage)
                  // EXPECTED MESSAGES END //
                  // EXPECTED MESSAGES BEGIN //
@@ -691,9 +699,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     public void onJobClusterInitialize(JobClusterProto.InitializeJobClusterRequest initReq) {
         ActorRef sender = getSender();
         logger.info("In onJobClusterInitialize {}", this.name);
-        if (logger.isDebugEnabled()) {
-            logger.debug("Init Request {}", initReq);
-        }
         jobClusterMetadata = new JobClusterMetadataImpl.Builder()
                 .withLastJobCount(initReq.lastJobNumber)
                 .withIsDisabled(initReq.isDisabled)
@@ -847,11 +852,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                          ,() -> {
                             // Push the last jobId
 
-                             if(initReq.jobList.size() > 0) {
+                             if (initReq.jobList.size() > 0) {
                                  JobId lastJobId = new JobId(this.name, initReq.lastJobNumber);
                                  this.jobIdSubmissionSubject.onNext(lastJobId);
                              }
-
+                             initReq.jobList.stream()
+                                 .filter(m -> m.getState() == JobState.Launched)
+                                 .max(Comparator.comparingLong(m -> m.getJobId().getJobNum()))
+                                 .ifPresent(m -> this.jobIdLaunchedSubject.onNext(m.getJobId()));
 
                              setBookkeepingTimer(BOOKKEEPING_INTERVAL_SECS);
 
@@ -937,7 +945,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     @Override
     public void onJobIdList(final ListJobIdsRequest request) {
-        if(logger.isTraceEnabled()) { logger.trace("Entering JCA:onJobIdList"); }
         final ActorRef sender = getSender();
         Set<JobId> jobIdsFilteredByLabelsSet = new HashSet<>();
         // If labels criterion is given prefilter by labels
@@ -946,7 +953,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             // Found no matching jobs for given labels exit
             if(jobIdsFilteredByLabelsSet.isEmpty()) {
                 sender.tell(new ListJobIdsResponse(request.requestId, SUCCESS, "No JobIds match given Label criterion", new ArrayList<>()), sender);
-                if(logger.isTraceEnabled()) { logger.trace("Exit JCA:onJobIdList"); }
                 return;
             }
         }
@@ -963,7 +969,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         }
 
         sender.tell(new ListJobIdsResponse(request.requestId, SUCCESS, "", jobIdList), sender);
-        if(logger.isTraceEnabled()) { logger.trace("Exit JCA:onJobIdList"); }
     }
 
     @Override
@@ -977,7 +982,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             jobIdsFilteredByLabelsSet = jobManager.getJobsMatchingLabels(request.getCriteria().getMatchingLabels(), request.getCriteria().getLabelsOperand());
             // Found no jobs matching labels exit
             if(jobIdsFilteredByLabelsSet.isEmpty()) {
-                if(logger.isTraceEnabled()) { logger.trace("Exit JCA:onJobList {}" , jobIdsFilteredByLabelsSet.size()); }
                 sender.tell(new ListJobsResponse(request.requestId, SUCCESS, "", new ArrayList<>()), self);
                 return;
             }
@@ -988,7 +992,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         getFilteredNonTerminalJobList(request.getCriteria(),jobIdsFilteredByLabelsSet).mergeWith(getFilteredTerminalJobList(request.getCriteria(),jobIdsFilteredByLabelsSet))
         .collect(() -> Lists.<MantisJobMetadataView>newArrayList(), List::add)
         .doOnNext(resultList -> {
-            if(logger.isTraceEnabled()) { logger.trace("Exit JCA:onJobList {}" , resultList.size()); }
             sender.tell(new ListJobsResponse(request.requestId, SUCCESS, "", resultList), self);
         })
         .subscribe();
@@ -996,13 +999,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     @Override
     public void onListArchivedWorkers(final ListArchivedWorkersRequest request) {
-        if(logger.isTraceEnabled()) { logger.trace("In onListArchiveWorkers {}", request); }
         try {
             List<IMantisWorkerMetadata> workerList = jobStore.getArchivedWorkers(request.getJobId().getId());
             if(workerList.size() > request.getLimit()) {
                 workerList = workerList.subList(0, request.getLimit());
             }
-            if(logger.isTraceEnabled()) { logger.trace("Returning {} archived Workers", workerList.size()); }
             getSender().tell(new ListArchivedWorkersResponse(request.requestId, SUCCESS, "", workerList), getSelf());
         } catch(Exception e) {
             logger.error("Exception listing archived workers", e);
@@ -1011,7 +1012,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     }
 
     public void onListActiveWorkers(final ListWorkersRequest r) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter JobClusterActor:onListActiveWorkers {}", r); }
         Optional<JobInfo> jobInfo = jobManager.getJobInfoForNonTerminalJob(r.getJobId());
 
         if(jobInfo.isPresent()) {
@@ -1020,15 +1020,12 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             logger.warn("No such active job {} ", r.getJobId());
             getSender().tell(new ListWorkersResponse(r.requestId,CLIENT_ERROR,"No such active job " + r.getJobId(), Lists.newArrayList()),getSelf());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:onListActiveWorkers {}", r); }
     }
 
 
     private List<JobIdInfo> getFilteredNonTerminalJobIdList(ListJobCriteria request, Set<JobId> prefilteredJobIdSet) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter JobClusterActor:getFilteredNonTerminalJobIdList {}", request); }
 
         if((request.getJobState().isPresent() && request.getJobState().get().equals(JobState.MetaState.Terminal))) {
-            if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:getFilteredNonTerminalJobIdList with empty"); }
             return Collections.emptyList();
         }
         List<JobInfo> jobInfoList;
@@ -1052,18 +1049,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         .build())
                 .collect(Collectors.toList());;
 
-        if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:getFilteredNonTerminalJobIdList {}", jIdList.size()); }
         return jIdList;
     }
 
     private List<JobIdInfo> getFilteredTerminalJobIdList(ListJobCriteria request, Set<JobId> prefilteredJobIdSet) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter JobClusterActor:getFilteredTerminalJobIdList {}", request); }
-
         if((request.getJobState().isPresent() && !request.getJobState().get().equals(JobState.MetaState.Terminal))) {
-            if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:getFilteredTerminalJobIdList with empty"); }
             return Collections.emptyList();
         } else if(!request.getJobState().isPresent() && (request.getActiveOnly().isPresent() && request.getActiveOnly().get())) {
-            if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:getFilteredTerminalJobIdList with empty"); }
             return Collections.emptyList();
         }
         List<CompletedJob> completedJobsList;
@@ -1087,18 +1079,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:getFilteredTerminalJobIdList {}", completedJobIdList.size()); }
         return completedJobIdList;
     }
 
 
     private Observable<MantisJobMetadataView> getFilteredNonTerminalJobList(ListJobCriteria request, Set<JobId> prefilteredJobIdSet) {
-        if(logger.isTraceEnabled()) { logger.trace("Entering JobClusterActor:getFilteredNonTerminalJobList"); }
         Duration timeout = Duration.ofMillis(500);
 
         if((request.getJobState().isPresent() && request.getJobState().get().equals(JobState.MetaState.Terminal))) {
-
-            if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:getFilteredNonTerminalJobList with empty"); }
             return Observable.empty();
         }
         List<JobInfo> jobInfoList;
@@ -1148,13 +1136,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      */
 
     private Observable<MantisJobMetadataView> getFilteredTerminalJobList(ListJobCriteria request, Set<JobId> jobIdSet) {
-        if(logger.isTraceEnabled()) { logger.trace("JobClusterActor:getFilteredTerminalJobList"); }
-
         if((request.getJobState().isPresent() && !request.getJobState().get().equals(JobState.MetaState.Terminal))) {
-            if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:getFilteredTerminalJobList with empty"); }
             return Observable.empty();
         } else if(!request.getJobState().isPresent() && (request.getActiveOnly().isPresent() && request.getActiveOnly().get())) {
-            if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:getFilteredTerminalJobList with empty"); }
             return Observable.empty();
         }
         List<CompletedJob> jobInfoList;
@@ -1192,18 +1176,15 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     @Override
     public void onJobListCompleted(final ListCompletedJobsInClusterRequest request) {
-        if(logger.isTraceEnabled()) { logger.trace ("Enter onJobListCompleted {}", request); }
         final ActorRef sender = getSender();
         List<CompletedJob> completedJobsList = jobManager.getCompletedJobsList();
         if(request.getLimit() > completedJobsList.size()) {
             completedJobsList = completedJobsList.subList(0, request.getLimit());
         }
         sender.tell(new ListCompletedJobsInClusterResponse(request.requestId, SUCCESS, "", completedJobsList), sender);
-        if(logger.isTraceEnabled()) { logger.trace ("Exit onJobListCompleted {}", completedJobsList.size()); }
     }
     @Override
     public void onJobClusterDisable(final DisableJobClusterRequest req) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onJobClusterDisable {}", req); }
         ActorRef sender = getSender();
         try {
             IJobClusterMetadata  jobClusterMetadata = new JobClusterMetadataImpl.Builder().withIsDisabled(true)
@@ -1244,12 +1225,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             sender.tell(new DisableJobClusterResponse(req.requestId, SERVER_ERROR, errorMsg), getSelf());
             numJobClusterDisableErrors.increment();
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onJobClusterDisable"); }
-
     }
     @Override
     public void onJobClusterEnable(final EnableJobClusterRequest req) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onJobClusterEnable"); }
         ActorRef sender = getSender();
         try {
             IJobClusterMetadata  jobClusterMetadata = new JobClusterMetadataImpl.Builder().withIsDisabled(false)
@@ -1282,19 +1260,16 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             sender.tell(new EnableJobClusterResponse(req.requestId, SERVER_ERROR, errorMsg), getSelf());
             numJobClusterEnableErrors.increment();
         }
-        if(logger.isTraceEnabled()) { logger.trace("Enter onJobClusterEnable"); }
     }
     @Override
     public void onJobClusterGet(final GetJobClusterRequest request) {
         final ActorRef sender = getSender();
-        if(logger.isTraceEnabled()) { logger.trace("In JobCluster Get " + jobClusterMetadata); }
         if(this.name.equals(request.getJobClusterName())) {
             MantisJobClusterMetadataView clusterView = generateJobClusterMetadataView(this.jobClusterMetadata, this.jobClusterMetadata.isDisabled(), ofNullable(this.cronManager).map(x -> x.isCronActive).orElse(false));
             sender.tell(new GetJobClusterResponse(request.requestId, SUCCESS, "", of(clusterView)), getSelf());
         } else {
             sender.tell(new GetJobClusterResponse(request.requestId, CLIENT_ERROR, "Cluster Name " + request.getJobClusterName() + " in request Does not match cluster Name " + this.name + " of Job Cluster Actor", Optional.empty()), getSelf());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onJobClusterGet"); }
     }
 
     private MantisJobClusterMetadataView generateJobClusterMetadataView(IJobClusterMetadata jobClusterMetadata, boolean isDisabled, boolean cronActive) {
@@ -1521,7 +1496,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
     private void submitJob(JobDefinition jobDefinition, ActorRef sender, String user) throws PersistException {
-        if (logger.isTraceEnabled()) { logger.trace("Enter submitJobb"); }
         JobId jId = null;
         try {
             validateJobDefinition(jobDefinition);
@@ -1576,12 +1550,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             cleanUpOnJobSubmitFailure(jId);
             throw new IllegalStateException(e);
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit submitJob"); }
-
     }
     @Override
     public void onJobInitialized(JobProto.JobInitialized jobInited) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onJobInitialized"); }
         jobManager.markJobInitialized(jobInited.jobId, System.currentTimeMillis());
         if(jobInited.responseCode == SUCCESS) {
 
@@ -1598,9 +1569,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             } else {
                 logger.warn("No such job found {}", jobInited.jobId);
             }
-
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onJobInitialized"); }
     }
 
     /**
@@ -1611,18 +1580,17 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     public void onJobStarted(final JobStartedEvent startedEvent) {
         logger.info("job {} started event", startedEvent.jobid);
 
-        Optional<JobInfo> jobInfoOp = jobManager.getJobInfoForNonTerminalJob(startedEvent.jobid);
-
-        if(jobInfoOp.isPresent()) {
-            // enforce SLA
-            jobManager.markJobStarted(jobInfoOp.get());
-            getSelf().tell(new JobClusterProto.EnforceSLARequest(Instant.now(), of(jobInfoOp.get().jobDefinition)), getSelf());
-        }
-
+        jobManager
+            .getJobInfoForNonTerminalJob(startedEvent.jobid)
+            .ifPresent(jobInfo -> {
+                jobIdLaunchedSubject.onNext(startedEvent.jobid);
+                jobManager.markJobStarted(jobInfo);
+                // Enforce SLA
+                getSelf().tell(new JobClusterProto.EnforceSLARequest(Instant.now(), of(jobInfo.jobDefinition)), getSelf());
+            });
     }
 
     private void cleanUpOnJobSubmitFailure(JobId jId) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter cleanUpOnJobSubmitFailure {}", jId); }
         if(jId != null) {
             Optional<JobInfo> jobInfoOp = jobManager.getJobInfoForNonTerminalJob(jId);
             if (jobInfoOp.isPresent()) { // ensure there is a record of this job
@@ -1640,8 +1608,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } else {
             logger.warn("cleanup on Job Submit failure failed as there was no JobId");
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit cleanUpOnJobSubmitFailure {}", jId); }
-
     }
 
     /**
@@ -1699,7 +1665,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     @Override
     public void onWorkerEvent(WorkerEvent r) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onWorkerEvent {}", r); }
         Optional<JobInfo> jobInfo = jobManager.getJobInfoForNonTerminalJob(r.getWorkerId().getJobId());
 
         if(jobInfo.isPresent()) {
@@ -1725,8 +1690,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 logger.warn("Terminal Event from worker {} has no valid running job. Ignoring event ", r.getWorkerId());
             }
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onWorkerEvent {}", r); }
-
     }
 
     /**
@@ -1734,9 +1697,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      */
     @Override
     public void onResubmitWorkerRequest(ResubmitWorkerRequest req) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onResubmitWorkerRequest {}", req); }
         onResubmitWorker(req);
-        if(logger.isTraceEnabled()) { logger.trace("Exit onResubmitWorkerRequest {}", req); }
     }
 
     /**
@@ -1776,7 +1737,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      */
     @Override
     public void onKillJobResponse(JobClusterProto.KillJobResponse resp) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onKillJobResponse {}", resp); }
         if (resp.responseCode == SUCCESS) {
 
             Optional<JobInfo> jInfo = jobManager.getJobInfoForNonTerminalJob(resp.jobId);
@@ -1811,7 +1771,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                                 if (cJob == null || !cJob.isPresent()) {
                                     // else check archived jobs
                                     cJob = jobStore.getArchivedJob(completedJob.get().getJobId());
-
                                 }
                                 if( cJob != null && cJob.isPresent()) {
                                     getSelf().tell(new JobClusterProto.EnforceSLARequest(Instant.now(), of(cJob.get().getJobDefinition())), ActorRef.noSender());
@@ -1846,15 +1805,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         getSelf());
             }
         }
-
-        if(logger.isTraceEnabled()) { logger.trace("Exit onKillJobResponse {}", resp); }
-
     }
 
 
     @Override
     public void onGetJobDetailsRequest(GetJobDetailsRequest req) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter GetJobDetails {}", req); }
         GetJobDetailsResponse response = new GetJobDetailsResponse(req.requestId, CLIENT_ERROR_NOT_FOUND, "Job " + req.getJobId() + "  not found", empty());
         Optional<JobInfo> jInfo = jobManager.getJobInfoForNonTerminalJob(req.getJobId());
         if(jInfo.isPresent()) {
@@ -1885,15 +1840,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
         }
         getSender().tell(response, getSelf());
-        if(logger.isTraceEnabled()) { logger.trace("Exit GetJobDetails {}", req); }
     }
 
     @Override
     public void onGetLatestJobDiscoveryInfo(JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest request) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onGetLatestJobDiscoveryInfo {}", request); }
         ActorRef sender = getSender();
         if(this.name.equals(request.getJobCluster())) {
-            JobId latestJobId = jobIdSubmissionSubject.getValue();
+            JobId latestJobId = jobIdLaunchedSubject.getValue();
             logger.debug("[{}] latest job Id for cluster: {}", name, latestJobId);
             if (latestJobId != null) {
                 Optional<JobInfo> jInfo = jobManager.getJobInfoForNonTerminalJob(latestJobId);
@@ -1921,65 +1874,55 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             logger.warn(msg);
             sender.tell(new JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse(request.requestId, SERVER_ERROR, msg, empty()), getSelf());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onGetLatestJobDiscoveryInfo {}", request); }
-
     }
 
     @Override
     public void onGetJobStatusSubject(GetJobSchedInfoRequest request) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onGetJobStatusSubject {}", request); }
-
         Optional<JobInfo> jInfo = jobManager.getJobInfoForNonTerminalJob(request.getJobId());
-        if(jInfo.isPresent()) {
-            if(logger.isDebugEnabled()) { logger.debug("Forwarding getJobDetails to job actor for {}", request.getJobId()); }
+        if (jInfo.isPresent()) {
             jInfo.get().jobActor.forward(request, getContext());
-
         } else {
             // Could be a terminated job
             GetJobSchedInfoResponse response = new GetJobSchedInfoResponse(request.requestId, CLIENT_ERROR, "Job " + request.getJobId() + "  not found or not active", empty());
             getSender().tell(response, getSelf());
         }
-
-        if(logger.isTraceEnabled()) { logger.trace("Exit onGetJobStatusSubject "); }
-
     }
+
     @Override
     public void onGetLastSubmittedJobIdSubject(GetLastSubmittedJobIdStreamRequest request) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onGetLastSubmittedJobIdSubject {}", request); }
         ActorRef sender = getSender();
         if(this.name.equals(request.getClusterName())) {
-            sender.tell(new GetLastSubmittedJobIdStreamResponse(request.requestId,SUCCESS,"",of(this.jobIdSubmissionSubject)),getSelf());
+            sender.tell(new GetLastSubmittedJobIdStreamResponse(request.requestId, SUCCESS,"", of(this.jobIdSubmissionSubject)),getSelf());
         } else {
             String msg = "Job Cluster " + request.getClusterName() + " In request does not match the name of this actor " + this.name;
             logger.warn(msg);
             sender.tell(new GetLastSubmittedJobIdStreamResponse(request.requestId,CLIENT_ERROR ,msg,empty()),getSelf());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onGetLastSubmittedJobIdSubject {}", request); }
-
     }
 
     @Override
+    public void onGetLastLaunchedJobIdSubject(GetLastLaunchedJobIdStreamRequest request) {
+        ActorRef sender = getSender();
+        if(this.name.equals(request.getClusterName())) {
+            sender.tell(new GetLastLaunchedJobIdStreamResponse(request.requestId, SUCCESS,"", of(this.jobIdLaunchedSubject)),getSelf());
+        } else {
+            String msg = "Job Cluster " + request.getClusterName() + " In request does not match the name of this actor " + this.name;
+            logger.warn(msg);
+            sender.tell(new GetLastLaunchedJobIdStreamResponse(request.requestId, CLIENT_ERROR ,msg,empty()),getSelf());
+        }
+    }
+    @Override
     public void onBookkeepingRequest(JobClusterProto.BookkeepingRequest request) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onBookkeepingRequest for JobCluster {}", this.name); }
         // Enforce SLA if exists
         onEnforceSLARequest(new JobClusterProto.EnforceSLARequest());
         // Tell all child jobs to migrate workers on disabled VMs (if any)
         jobManager.actorToJobIdMap.keySet().forEach(actorRef -> actorRef.tell(new JobProto.MigrateDisabledVmWorkersRequest(request.time), ActorRef.noSender()));
-        if(logger.isTraceEnabled()) { logger.trace("Exit onBookkeepingRequest for JobCluster {}", name); }
     }
 
     @Override
     public void onEnforceSLARequest(JobClusterProto.EnforceSLARequest request) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onEnforceSLA for JobCluster {} with request", this.name, request); }
         numSLAEnforcementExecutions.increment();
         long now = request.timeOfEnforcement.toEpochMilli();
-        List<JobInfo> pendingInitializationJobsPriorToCutoff = jobManager.getJobActorsStuckInInit(now, getExpirePendingInitializeDelayMs());
-
-        List<JobInfo> jobsStuckInAcceptedList = jobManager.getJobsStuckInAccepted(now, getExpireAcceptedDelayMs());
-
-        List<JobInfo> jobsStuckInTerminatingList = jobManager.getJobsStuckInTerminating(now, getExpireAcceptedDelayMs());
-
-
         if(!slaEnforcer.hasSLA()) {
             return;
         }
@@ -1996,10 +1939,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
 
             for(int i=0; i< noOfJobsToLaunch; i++) {
-
                 getSelf().tell(new SubmitJobRequest(name, user, true,request.jobDefinitionOp), getSelf());
             }
-
 
             // enforce max.
         } else  {
@@ -2017,7 +1958,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
 
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onEnforceSLA for JobCluster {}", name); }
     }
 
     private long getExpireAcceptedDelayMs() {
@@ -2047,7 +1987,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             return of(clonedJobDefn);
         } catch (Exception e) {
             logger.warn("Could not clone JobDefinition {} due to {}", jobDefinition, e.getMessage(), e);
-            e.printStackTrace();
         }
         // should not get here
 
@@ -2066,28 +2005,18 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private Optional<JobDefinition> cloneJobDefinitionForQuickSubmitFromArchivedJobs(final List<CompletedJob> completedJobs,
                                                                                      Optional<JobDefinition> jobDefinitionOp,
                                                                                      MantisJobStore store) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters"); }
         Optional<JobDefinition> lastSubmittedJobDefn = getLastSubmittedJobDefinition(completedJobs, jobDefinitionOp, store);
 
-        if(lastSubmittedJobDefn.isPresent()) {
-            if(logger.isTraceEnabled()) { logger.trace("Exit createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters"); }
+        if (lastSubmittedJobDefn.isPresent()) {
             return cloneToNewJobDefinitionWithoutArtifactNameAndVersion(lastSubmittedJobDefn.get());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters empty"); }
         return empty();
     }
 
     @Override
     public void onExpireOldJobs(JobClusterProto.ExpireOldJobsRequest request) {
-        final long tooOldCutOff = System.currentTimeMillis() - (getTerminatedJobToDeleteDelayHours()*3600000L);
+        final long tooOldCutOff = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(getTerminatedJobToDeleteDelayHours());
         jobManager.purgeOldCompletedJobs(tooOldCutOff);
-
-    }
-
-    private long getExpirePendingInitializeDelayMs() {
-
-        // jobs older than 60 secs
-        return 60*1000;
     }
 
     /**
@@ -2098,19 +2027,15 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      */
     @Override
     public void onTriggerCron(JobClusterProto.TriggerCronRequest request) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onTriggerCron for Job Cluster {}", this.name);}
-        if(jobClusterMetadata.getJobClusterDefinition().getSLA().getCronPolicy() != null) {
-
-            if(jobClusterMetadata.getJobClusterDefinition().getSLA().getCronPolicy() == CronPolicy.KEEP_NEW ||
+        if (jobClusterMetadata.getJobClusterDefinition().getSLA().getCronPolicy() != null) {
+            if (jobClusterMetadata.getJobClusterDefinition().getSLA().getCronPolicy() == CronPolicy.KEEP_NEW ||
                     this.jobManager.getAllNonTerminalJobsList().size() == 0) {
                 getSelf().tell(new SubmitJobRequest(name, MANTIS_MASTER_USER, empty(), false), getSelf());
             } else {
-
-                    // A job is already running skip resubmiting
+                // A job is already running skip resubmiting
                 logger.info(name + ": Skipping submitting new job upon cron trigger, one exists already");
             }
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onTriggerCron Triggered for Job Cluster {}", this.name);}
     }
 
     private long getTerminatedJobToDeleteDelayHours() {
@@ -2119,7 +2044,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     @Override
     public void onJobClusterUpdateSLA(UpdateJobClusterSLARequest slaRequest) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onJobClusterUpdateSLA {}", slaRequest); }
         ActorRef sender = getSender();
         try {
             SLA newSla = new SLA(slaRequest.getMin(), slaRequest.getMax(), slaRequest.getCronSpec(), slaRequest.getCronPolicy());
@@ -2127,7 +2051,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     .withSla(newSla)
                     .build();
             boolean isDisabled = jobClusterMetadata.isDisabled();
-            if(slaRequest.isForceEnable() && jobClusterMetadata.isDisabled()) {
+            if (slaRequest.isForceEnable() && jobClusterMetadata.isDisabled()) {
                 isDisabled = false;
             }
             IJobClusterMetadata jobCluster = new JobClusterMetadataImpl.Builder()
@@ -2137,7 +2061,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     .build();
 
             updateAndSaveJobCluster(jobCluster);
-            if(cronManager != null)
+            if (cronManager != null)
                 cronManager.destroyCron();
             this.cronManager = new CronManager(name, getSelf(), newSla);
 
@@ -2148,19 +2072,17 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         jobClusterMetadata.getJobClusterDefinition().getName(), name+" SLA update")
             );
         } catch(IllegalArgumentException e) {
-            logger.error("Invalid arguement job cluster not updated ", e);
+            logger.error("Invalid argument job cluster not updated ", e);
             sender.tell(new UpdateJobClusterSLAResponse(slaRequest.requestId, CLIENT_ERROR, name + " Job cluster SLA updation failed " + e.getMessage()), getSelf());
 
         } catch(Exception e) {
             logger.error("job cluster not updated ", e);
             sender.tell(new UpdateJobClusterSLAResponse(slaRequest.requestId, SERVER_ERROR, name + " Job cluster SLA updation failed " + e.getMessage()), getSelf());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onJobClusterUpdateSLA {}", slaRequest); }
     }
 
     @Override
     public void onJobClusterUpdateLabels(UpdateJobClusterLabelsRequest labelRequest) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter onJobClusterUpdateLabels {}", labelRequest); }
         ActorRef sender = getSender();
         try {
             JobClusterConfig newConfig = new JobClusterConfig.Builder().from(jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig())
@@ -2189,15 +2111,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             logger.error("job cluster labels not updated ", e);
             sender.tell(new UpdateJobClusterLabelsResponse(labelRequest.requestId, SERVER_ERROR, name + " labels updation failed " + e.getMessage()), getSelf());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onJobClusterUpdateLabels {}", labelRequest); }
     }
 
     @Override
     public void onJobClusterUpdateArtifact(UpdateJobClusterArtifactRequest artifactReq) {
-        if(logger.isTraceEnabled()) { logger.trace("Entering JobClusterActor:onJobClusterUpdateArtifact"); }
         ActorRef sender = getSender();
         try {
-            if(!isVersionUnique(artifactReq.getVersion(), jobClusterMetadata.getJobClusterDefinition().getJobClusterConfigs())) {
+            if (!isVersionUnique(artifactReq.getVersion(), jobClusterMetadata.getJobClusterDefinition().getJobClusterConfigs())) {
                 String msg = String.format("job cluster %s not updated as the version %s is not unique", name,artifactReq.getVersion());
                 logger.error(msg);
                 sender.tell(new UpdateJobClusterArtifactResponse(artifactReq.requestId, CLIENT_ERROR, msg), getSelf());
@@ -2218,7 +2138,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             logger.error("job cluster not updated ", e);
             sender.tell(new UpdateJobClusterArtifactResponse(artifactReq.requestId, SERVER_ERROR, name + " Job cluster artifact updation failed " + e.getMessage()), getSelf());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:onJobClusterUpdateArtifact"); }
     }
 
     private void updateJobClusterConfig(JobClusterConfig newConfig) throws Exception {
@@ -2272,7 +2191,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     }
 
     boolean isVersionUnique(String artifactVersion, List<JobClusterConfig> existingConfigs) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter JobClusterActor {} isVersionnique {} existing versions {}",name,artifactVersion,existingConfigs);}
         for(JobClusterConfig config : existingConfigs) {
             if(config.getVersion().equals(artifactVersion)) {
                 logger.info("Given Version {} is not unique during UpdateJobCluster {}",artifactVersion, name);
@@ -2285,7 +2203,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     //TODO validate the migration config json
     @Override
     public void onJobClusterUpdateWorkerMigrationConfig(UpdateJobClusterWorkerMigrationStrategyRequest req) {
-        if(logger.isTraceEnabled()) { logger.trace("Entering JobClusterActor:onJobClusterUpdateWorkerMigrationConfig {}", req); }
         ActorRef sender = getSender();
         try {
 
@@ -2310,11 +2227,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             logger.error("job cluster migration config not updated ", e);
             sender.tell(new UpdateJobClusterWorkerMigrationStrategyResponse(req.requestId, SERVER_ERROR, name + " Job cluster worker migration config updation failed " + e.getMessage()), getSelf());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:onJobClusterUpdateWorkerMigrationConfig {}", req); }
     }
 
     private void updateAndSaveJobCluster(IJobClusterMetadata jobCluster) throws Exception {
-        if(logger.isTraceEnabled()) { logger.trace("Entering JobClusterActor:updateAndSaveJobCluster {}", jobCluster.getJobClusterDefinition().getName()); }
         jobStore.updateJobCluster(jobCluster);
         jobClusterMetadata = jobCluster;
         // enable cluster if
@@ -2323,7 +2238,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         }
         slaEnforcer = new SLAEnforcer(jobClusterMetadata.getJobClusterDefinition().getSLA());
         logger.info("successfully saved job cluster");
-        if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:updateAndSaveJobCluster {}", jobCluster.getJobClusterDefinition().getName()); }
     }
 
     /**
@@ -2340,7 +2254,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private Optional<JobDefinition> getLastSubmittedJobDefinition(final List<CompletedJob> completedJobs,
                                                                   Optional<JobDefinition> jobDefinitionOp,
                                                                   MantisJobStore store) {
-        if(logger.isTraceEnabled()) { logger.trace("Entering getLastSubmittedJobDefinition"); }
         if(jobDefinitionOp.isPresent()) {
             return jobDefinitionOp;
         }
@@ -2352,7 +2265,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 try {
                     Optional<IMantisJobMetadata> archivedJob = store.getArchivedJob(completedJob.get().getJobId());
                     if(archivedJob.isPresent()) {
-                        if(logger.isTraceEnabled()) { logger.trace("Exit getLastSubmittedJobDefinition returning job {} with defn {}", archivedJob.get().getJobId(), archivedJob.get().getJobDefinition()); }
                         return of(archivedJob.get().getJobDefinition());
                     } else {
                         logger.warn("Could not find load archived Job {} for cluster {}", completedJob.get().getJobId(), name);
@@ -2366,7 +2278,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } else {
             logger.warn("Could not find any previous submitted Job for cluster {}", name);
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit getLastSubmittedJobDefinition empty"); }
         return empty();
     }
 
@@ -2379,13 +2290,12 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      * @param terminatedEvent Event describing a job actor was terminated
      */
     private void onTerminated(Terminated terminatedEvent) {
-        if(logger.isDebugEnabled()) { logger.debug("onTerminatedEvent {} ", terminatedEvent); }
+        logger.warn("Received onTerminatedEvent {} for JobClusterActor {}", terminatedEvent, name);
         // TODO relaunch actor ?
     }
 
     @Override
     public void onScaleStage(ScaleStageRequest req) {
-        if(logger.isTraceEnabled()) { logger.trace("Exit onScaleStage {}", req); }
         Optional<JobInfo> jobInfo = jobManager.getJobInfoForNonTerminalJob(req.getJobId());
         ActorRef sender = getSender();
         if(jobInfo.isPresent()) {
@@ -2393,12 +2303,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } else {
             sender.tell(new ScaleStageResponse(req.requestId, CLIENT_ERROR,  "Job " + req.getJobId() + " not found. Could not scale stage to " + req.getNumWorkers(), 0), getSelf());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit onScaleStage {}", req); }
     }
 
     @Override
     public void onResubmitWorker(ResubmitWorkerRequest req) {
-        if(logger.isTraceEnabled()) { logger.trace("Exit JCA:onResubmitWorker {}", req); }
         Optional<JobInfo> jobInfo = jobManager.getJobInfoForNonTerminalJob(req.getJobId());
         ActorRef sender = getSender();
         if(jobInfo.isPresent()) {
@@ -2406,12 +2314,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } else {
             sender.tell(new ResubmitWorkerResponse(req.requestId, CLIENT_ERROR,  "Job " + req.getJobId() + " not found. Could not resubmit worker"), getSelf());
         }
-        if(logger.isTraceEnabled()) { logger.trace("Exit JCA:onResubmitWorker {}", req); }
     }
 
-
     static final class JobInfo  {
-
         final long submittedAt;
         public String version;
         volatile long initializeInitiatedAt = -1;
@@ -2472,8 +2377,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         public void setTerminatedAt(long terminatedAt) {
             this.terminatedAt = terminatedAt;
         }
-
-
 
         JobInfo(JobId jobId, JobDefinition jobDefinition, long submittedAt, ActorRef jobActor, JobState state, String user) {
             this(jobId, jobDefinition, submittedAt, jobActor, state, user, -1, -1);
@@ -2623,9 +2526,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @param tooOldCutOff Current cut off delta
          */
         public void purgeOldCompletedJobs(long tooOldCutOff) {
-
             completedJobsCache.purgeOldCompletedJobs(tooOldCutOff, jobStore);
-
         }
 
         public void cleanupAllCompletedJobs() {
@@ -2683,12 +2584,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             jobInfo.jobActor.tell(new JobProto.InitJob(sender, true), context.self());
 
             markJobInitializeInitiated(jobInfo, System.currentTimeMillis());
-
             return jobInfo;
         }
 
         JobInfo createJobInfoAndActorAndWatchActor(MantisJobMetadataImpl jobMeta, IJobClusterMetadata jobClusterMetadata) {
-
             MantisScheduler scheduler1 = scheduler.forJob(jobMeta.getJobDefinition());
             ActorRef jobActor = context.actorOf(JobActor.props(jobClusterMetadata.getJobClusterDefinition(),
                     jobMeta, jobStore, scheduler1, publisher, costsCalculator), "JobActor-" + jobMeta.getJobId().getId());
@@ -2839,9 +2738,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @return An instance of CompletedJob that would be used to persist to storage.
          */
         Optional<CompletedJob> markCompleted(JobId jId, long completionTime, Optional<IMantisJobMetadata> jobMetadata, JobState state) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Enter markCompleted job {}", jId);
-            }
             Optional<JobInfo> jobInfoOp = getJobInfoForNonTerminalJob(jId);
 
             if (jobInfoOp.isPresent()) {
@@ -2853,10 +2749,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 this.activeJobsMap.remove(jId);
                 this.actorToJobIdMap.remove(jobInfoOp.get().jobActor);
                 this.nonTerminalSortedJobSet.remove(jInfo);
-
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Exit markCompleted job {}", jId);
-                }
 
                 JobState finalState = JobState.Completed;
                 String version = null;
@@ -2876,21 +2768,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
         void markCompletedDuringStartup(JobId jId, long completionTime, IMantisJobMetadata jobMetadata, JobState state) {
-
-            if(logger.isTraceEnabled()) { logger.trace("Enter markCompletedDuringStartup job {}", jId);}
-
             JobState finalState = JobState.isTerminalState(jobMetadata.getState()) ? jobMetadata.getState() : JobState.Completed;
             String version = jobMetadata.getJobDefinition().getVersion();
 
             this.completedJobsCache.markCompleted(jId,of(jobMetadata), jobMetadata.getSubmittedAtInstant().toEpochMilli(), completionTime, jobMetadata.getUser(), version, finalState, jobStore);
-
-
         }
 
         List<JobInfo> getAllNonTerminalJobsList() {
-
             List<JobInfo> allJobsList = new ArrayList<>(this.nonTerminalSortedJobSet);
-            if(logger.isTraceEnabled()) { logger.trace("Exiting JobClusterActor:getAllNonTerminatlJobsList {}", allJobsList); }
             return allJobsList;
         }
 
@@ -2938,7 +2823,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          */
 
         int acceptedJobsCount() {
-
             return  this.acceptedJobsMap.size();
         }
 
@@ -2947,7 +2831,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @return no of active jobs
          */
         int activeJobsCount() {
-
             return this.activeJobsMap.size();
         }
 
@@ -2975,15 +2858,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
         Optional<JobInfo> getJobInfoForNonTerminalJob(JobId jId) {
-            if(logger.isTraceEnabled() ) { logger.trace("In getJobInfo {}", jId); }
             if(acceptedJobsMap.containsKey(jId)) {
-                if(logger.isDebugEnabled() ) { logger.debug("Found {} in accepted state", jId); }
                 return of(acceptedJobsMap.get(jId));
             } else if(activeJobsMap.containsKey(jId)) {
-                if(logger.isDebugEnabled() ) { logger.debug("Found {} in active state", jId); }
                 return of(activeJobsMap.get(jId));
             } else if(this.terminatingJobsMap.containsKey(jId)) {
-                if(logger.isDebugEnabled() ) { logger.debug("Found {} in terminating state", jId); }
                 return of(terminatingJobsMap.get(jId));
             }
             return empty();
@@ -3056,7 +2935,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     final static class LabelCache {
         final Map<Label, Set<JobId>> labelJobIdMap = new HashMap<>();
         final Map<JobId, List<Label>> jobIdToLabelMap = new HashMap<>();
-        private final Logger logger = LoggerFactory.getLogger(LabelCache.class);
 
         /**
          * Invoked in the following ways
@@ -3067,7 +2945,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @param labelList
          */
         void addJobIdToLabelCache(JobId jobId,List<Label> labelList) {
-            if(logger.isTraceEnabled()) { logger.trace("addJobIdToLabelCache " + jobId + " labelList " + labelList + " current map " + labelJobIdMap); }
             if(labelList == null) {
                 return;
             }
@@ -3082,7 +2959,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 }
             }
             jobIdToLabelMap.put(jobId, labelList);
-            if(logger.isTraceEnabled()) { logger.trace("Exit addJobIdToLabelCache " + jobId + " labelList " + labelList + " new map " + labelJobIdMap); }
         }
 
         /**
@@ -3092,7 +2968,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          */
 
         void removeJobIdFromLabelCache(JobId jobId) {
-            if(logger.isTraceEnabled()) { logger.trace("removeJobIdFromLabelCache " + jobId +  " current map " + labelJobIdMap);}
             List<Label> labels = jobIdToLabelMap.get(jobId);
             if(labels != null) {
                 for(Label label : labels) {
@@ -3104,7 +2979,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 }
             }
             jobIdToLabelMap.remove(jobId);
-            if(logger.isTraceEnabled()) { logger.trace("Exit removeJobIdFromLabelCache " + jobId +  " current map " + labelJobIdMap); }
         }
 
         /**
@@ -3117,7 +2991,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @return
          */
         Set<JobId> getJobIdsMatchingLabels(List<Label> labelList, boolean isAnd) {
-            if(logger.isTraceEnabled()) { logger.trace("Entering getJobidsMatchingLabels " + labelList + " is and ? " + isAnd + " with map " + labelJobIdMap); }
             Set<JobId> matchingJobIds = new HashSet<>();
             List<Set<JobId>> matchingSubsets = new ArrayList<>();
             if(labelList == null) {
@@ -3136,9 +3009,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
             }
-            Set<JobId> resu = (isAnd) ? getSetIntersection(matchingSubsets) : getSetUnion(matchingSubsets);
-            if(logger.isTraceEnabled()) { logger.trace("Exiting getJobidsMatchingLabels " + resu); }
-            return resu;
+            return (isAnd) ? getSetIntersection(matchingSubsets) : getSetUnion(matchingSubsets);
 
 
         }
@@ -3149,7 +3020,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @return
          */
         private Set<JobId> getSetUnion(List<Set<JobId>> listOfSets) {
-            if(logger.isTraceEnabled()) { logger.trace("In getSetUnion " + listOfSets); }
             Set<JobId> unionSet = new HashSet<>();
             if(listOfSets == null || listOfSets.isEmpty()) return unionSet;
             int i=0;
@@ -3161,7 +3031,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 i++;
 
             }
-            if(logger.isTraceEnabled()) { logger.trace("Exit  getSetUnion " + unionSet); }
             return unionSet;
         }
 
@@ -3172,7 +3041,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @return
          */
         private Set<JobId> getSetIntersection(List<Set<JobId>> listOfSets) {
-            if(logger.isTraceEnabled()) { logger.trace("In getSetIntersection " + listOfSets); }
             Set<JobId> intersectionSet = new HashSet<>();
             if(listOfSets == null || listOfSets.isEmpty()) return intersectionSet;
             int i=0;
@@ -3184,7 +3052,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 i++;
 
             }
-            if(logger.isTraceEnabled()) { logger.trace("Return getSetIntersection " + intersectionSet); }
             return intersectionSet;
         }
     }
