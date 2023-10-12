@@ -18,6 +18,7 @@ package io.reactivex.mantis.remote.observable;
 
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.common.network.Endpoint;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.LinkedList;
 import java.util.List;
 import junit.framework.Assert;
@@ -61,7 +62,7 @@ public class DynamicConnectionSetTest {
 
         DynamicConnectionSet<Integer> cm
                 = DynamicConnectionSet.create(new ConnectToObservable.Builder<Integer>()
-                .decoder(Codecs.integer()));
+                .decoder(Codecs.integer()), new SimpleMeterRegistry());
         cm.setEndpointInjector(staticEndpoints);
 
         int sum = MathObservable.sumInteger(Observable.merge(cm.observables()))
@@ -93,7 +94,7 @@ public class DynamicConnectionSetTest {
 
         DynamicConnectionSet<Integer> cm
                 = DynamicConnectionSet.create(new ConnectToObservable.Builder<Integer>()
-                .decoder(Codecs.integer()));
+                .decoder(Codecs.integer()), new SimpleMeterRegistry());
         cm.setEndpointInjector(new ToDeltaEndpointInjector(subject));
 
         int sum = MathObservable.sumInteger(Observable.merge(cm.observables()))
@@ -145,7 +146,7 @@ public class DynamicConnectionSetTest {
 
         DynamicConnectionSet<Integer> cm
                 = DynamicConnectionSet.create(new ConnectToObservable.Builder<Integer>()
-                .decoder(Codecs.integer()));
+                .decoder(Codecs.integer()), new SimpleMeterRegistry());
         cm.setEndpointInjector(staticEndpoints);
 
         int sum = MathObservable.sumInteger(Observable.merge(cm.observables()))

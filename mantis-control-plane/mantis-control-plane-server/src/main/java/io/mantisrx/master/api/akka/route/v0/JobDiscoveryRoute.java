@@ -134,12 +134,12 @@ public class JobDiscoveryRoute extends BaseRoute {
                                                     "/namedjobs/{} called",
                                                     jobCluster);
                                             jobClusterInfoStreamGET.increment();
-                                            JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest req =
-                                                    new JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest(
+                                            JobClusterManagerProto.GetLastLaunchedJobIdStreamRequest req =
+                                                    new JobClusterManagerProto.GetLastLaunchedJobIdStreamRequest(
                                                             jobCluster);
 
                                             CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> jobClusterInfoRespCS =
-                                                    jobDiscoveryRouteHandler.lastSubmittedJobIdStream(
+                                                    jobDiscoveryRouteHandler.lastLaunchedJobIdStream(
                                                             req,
                                                             sendHeartbeats.orElse(false));
                                             return completeAsync(

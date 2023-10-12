@@ -27,9 +27,12 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
 import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto;
+import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto.JobClusterInfoResponse;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastLaunchedJobIdStreamRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastLaunchedJobIdStreamResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse;
 import io.mantisrx.server.core.JobSchedulingInfo;
@@ -43,6 +46,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -58,9 +62,10 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
 
     private final Counter schedInfoStreamErrors;
     private final Counter lastSubmittedJobIdStreamErrors;
-
+    private final Counter lastLaunchedJobIdStreamErrors;
     private final AsyncLoadingCache<GetJobSchedInfoRequest, GetJobSchedInfoResponse> schedInfoCache;
     private final AsyncLoadingCache<GetLastSubmittedJobIdStreamRequest, GetLastSubmittedJobIdStreamResponse> lastSubmittedJobIdStreamRespCache;
+    private final AsyncLoadingCache<GetLastLaunchedJobIdStreamRequest, GetLastLaunchedJobIdStreamResponse> lastLaunchedJobIdStreamRespCache;
 
     public JobDiscoveryRouteHandlerAkkaImpl(ActorRef jobClustersManagerActor, Duration serverIdleTimeout) {
         this.jobClustersManagerActor = jobClustersManagerActor;
@@ -77,13 +82,20 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
             .maximumSize(500)
             .buildAsync(this::lastSubmittedJobId);
 
+        lastLaunchedJobIdStreamRespCache = Caffeine.newBuilder()
+            .expireAfterWrite(5, TimeUnit.SECONDS)
+            .maximumSize(500)
+            .buildAsync(this::lastLaunchedJobId);
+
         Metrics m = new Metrics.Builder()
             .id("JobDiscoveryRouteHandlerAkkaImpl")
             .addCounter("schedInfoStreamErrors")
             .addCounter("lastSubmittedJobIdStreamErrors")
+            .addCounter("lastLaunchedJobIdStreamErrors")
             .build();
         this.schedInfoStreamErrors = m.getCounter("schedInfoStreamErrors");
         this.lastSubmittedJobIdStreamErrors = m.getCounter("lastSubmittedJobIdStreamErrors");
+        this.lastLaunchedJobIdStreamErrors = m.getCounter("lastLaunchedJobIdStreamErrors");
     }
 
 
@@ -101,7 +113,8 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
         try {
             AtomicBoolean isJobCompleted = new AtomicBoolean(false);
             final String jobId = request.getJobId().getId();
-            final JobSchedulingInfo completedJobSchedulingInfo = new JobSchedulingInfo(jobId, new HashMap<>());
+            AtomicReference<JobSchedulingInfo> jobSchedulingInfoAtomicRef =
+                new AtomicReference<>(new JobSchedulingInfo(jobId, new HashMap<>()));
             CompletionStage<JobDiscoveryRouteProto.SchedInfoResponse> jobSchedInfoObsCS = response
                 .thenApply(getJobSchedInfoResp -> {
                     Optional<BehaviorSubject<JobSchedulingInfo>> jobStatusSubjectO = getJobSchedInfoResp.getJobSchedInfoSubject();
@@ -114,15 +127,20 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
                                     if(!isJobCompleted.get()) {
                                         return SCHED_INFO_HB_INSTANCE;
                                     } else {
-                                        return completedJobSchedulingInfo;
+                                        return jobSchedulingInfoAtomicRef.get();
                                     }
 
                                 })
                                 .takeWhile(x -> sendHeartbeats == true);
 
+                        Observable<JobSchedulingInfo> jobSchedulingInfoObservable =
+                            jobSchedulingInfoObs
+                                .doOnCompleted(() -> isJobCompleted.set(true))
+                                .doOnNext(jobSchedulingInfoAtomicRef::set);
+
                         // Job SchedulingInfo obs completes on job shutdown. Use the do On completed as a signal to inform the user that there are no workers to connect to.
                         // TODO For future a more explicit key in the payload saying the job is completed.
-                        Observable<JobSchedulingInfo> jobSchedulingInfoWithHBObs = Observable.merge(jobSchedulingInfoObs.doOnCompleted(() -> isJobCompleted.set(true)), heartbeats);
+                        Observable<JobSchedulingInfo> jobSchedulingInfoWithHBObs = Observable.merge(jobSchedulingInfoObservable, heartbeats);
                         return new JobDiscoveryRouteProto.SchedInfoResponse(
                             getJobSchedInfoResp.requestId,
                             getJobSchedInfoResp.responseCode,
@@ -159,47 +177,77 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
     }
 
     @Override
-    public CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> lastSubmittedJobIdStream(final GetLastSubmittedJobIdStreamRequest request,
-                                                                                                   final boolean sendHeartbeats) {
-        CompletionStage<GetLastSubmittedJobIdStreamResponse> response = lastSubmittedJobIdStreamRespCache.get(request);
+    public CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> lastSubmittedJobIdStream(
+        final GetLastSubmittedJobIdStreamRequest request, final boolean sendHeartbeats) {
+
         try {
-            return response
-                .thenApply(lastSubmittedJobIdResp -> {
-                    Optional<BehaviorSubject<JobId>> jobIdSubjectO = lastSubmittedJobIdResp.getjobIdBehaviorSubject();
-                    if (lastSubmittedJobIdResp.responseCode.equals(BaseResponse.ResponseCode.SUCCESS) && jobIdSubjectO.isPresent()) {
-                        Observable<JobClusterInfo> jobClusterInfoObs = jobIdSubjectO.get().map(jobId -> new JobClusterInfo(jobId.getCluster(), jobId.getId()));
-
-                        Observable<JobClusterInfo> heartbeats =
-                            Observable.interval(5, serverIdleConnectionTimeout.getSeconds() - 1, TimeUnit.SECONDS)
-                                .map(x -> JOB_CLUSTER_INFO_HB_INSTANCE)
-                                .takeWhile(x -> sendHeartbeats == true);
-
-                        Observable<JobClusterInfo> jobClusterInfoWithHB = Observable.merge(jobClusterInfoObs, heartbeats);
-                        return new JobDiscoveryRouteProto.JobClusterInfoResponse(
-                            lastSubmittedJobIdResp.requestId,
-                            lastSubmittedJobIdResp.responseCode,
-                            lastSubmittedJobIdResp.message,
-                            jobClusterInfoWithHB
-                        );
-                    } else {
-                        logger.info("Failed to get lastSubmittedJobId stream for job cluster {}", request.getClusterName());
-                        lastSubmittedJobIdStreamErrors.increment();
-                        return new JobDiscoveryRouteProto.JobClusterInfoResponse(
-                            lastSubmittedJobIdResp.requestId,
-                            lastSubmittedJobIdResp.responseCode,
-                            lastSubmittedJobIdResp.message
-                        );
-                    }
-                });
-
+            CompletionStage<GetLastSubmittedJobIdStreamResponse> response = lastSubmittedJobIdStreamRespCache.get(request);
+            return response.thenApply(r -> streamJobIdBehaviorSubject(r, r.getjobIdBehaviorSubject(), sendHeartbeats, lastSubmittedJobIdStreamErrors));
         } catch (Exception e) {
             logger.error("caught exception fetching lastSubmittedJobId stream for {}", request.getClusterName(), e);
             lastSubmittedJobIdStreamErrors.increment();
-            return CompletableFuture.completedFuture(new JobDiscoveryRouteProto.JobClusterInfoResponse(
+            return CompletableFuture.completedFuture(new JobClusterInfoResponse(
                 0,
                 BaseResponse.ResponseCode.SERVER_ERROR,
                 "Failed to get last submitted jobId stream for " + request.getClusterName() + " error: " + e.getMessage()
             ));
+        }
+    }
+
+    private CompletableFuture<GetLastLaunchedJobIdStreamResponse> lastLaunchedJobId(final GetLastLaunchedJobIdStreamRequest request, Executor executor) {
+        return ask(jobClustersManagerActor, request, askTimeout)
+            .thenApply(GetLastLaunchedJobIdStreamResponse.class::cast)
+            .toCompletableFuture();
+    }
+
+    @Override
+    public CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> lastLaunchedJobIdStream(
+        final GetLastLaunchedJobIdStreamRequest request, final boolean sendHeartbeats) {
+
+        try {
+            CompletionStage<GetLastLaunchedJobIdStreamResponse> response = lastLaunchedJobIdStreamRespCache.get(request);
+            return response.thenApply(r -> streamJobIdBehaviorSubject(r, r.getjobIdBehaviorSubject(), sendHeartbeats, lastLaunchedJobIdStreamErrors));
+        } catch (Exception e) {
+            logger.error("caught exception fetching lastSubmittedJobId stream for {}", request.getClusterName(), e);
+            lastLaunchedJobIdStreamErrors.increment();
+            return CompletableFuture.completedFuture(new JobClusterInfoResponse(
+                0,
+                BaseResponse.ResponseCode.SERVER_ERROR,
+                "Failed to get last submitted jobId stream for " + request.getClusterName() + " error: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     *
+     * @param response response from actor
+     * @param jobIdSubjectO BehaviorSubject that exposes latest jobId for a jobCluster in Accepted/Launched state depending on endpoint
+     */
+    private JobClusterInfoResponse streamJobIdBehaviorSubject(
+        BaseResponse response, Optional<BehaviorSubject<JobId>> jobIdSubjectO,
+        boolean sendHeartbeats, Counter counter) {
+        if (response.responseCode.equals(BaseResponse.ResponseCode.SUCCESS) && jobIdSubjectO.isPresent()) {
+            Observable<JobClusterInfo> jobClusterInfoObs = jobIdSubjectO.get().map(jobId -> new JobClusterInfo(jobId.getCluster(), jobId.getId()));
+
+            Observable<JobClusterInfo> heartbeats =
+                Observable.interval(5, serverIdleConnectionTimeout.getSeconds() - 1, TimeUnit.SECONDS)
+                    .map(x -> JOB_CLUSTER_INFO_HB_INSTANCE)
+                    .takeWhile(x -> sendHeartbeats);
+
+            Observable<JobClusterInfo> jobClusterInfoWithHB = Observable.merge(jobClusterInfoObs, heartbeats);
+            return new JobClusterInfoResponse(
+                response.requestId,
+                response.responseCode,
+                response.message,
+                jobClusterInfoWithHB
+            );
+        } else {
+            counter.increment();
+            return new JobClusterInfoResponse(
+                response.requestId,
+                response.responseCode,
+                response.message
+            );
         }
     }
 }
