@@ -18,8 +18,9 @@ package io.mantisrx.runtime.command;
 
 import io.mantisrx.runtime.Job;
 import java.io.File;
+import lombok.extern.slf4j.Slf4j;
 
-
+@Slf4j
 public class LoadValidateCreateZip implements Command {
 
     private final String jobZipFile;
@@ -54,7 +55,13 @@ public class LoadValidateCreateZip implements Command {
             readyForJobMaster = Boolean.parseBoolean(args[4]);
         }
 
-        new LoadValidateCreateZip(jobZipFile, name, version, outputLocation, readyForJobMaster).execute();
+        try {
+            new LoadValidateCreateZip(jobZipFile, name, version, outputLocation, readyForJobMaster).execute();
+        } catch (Exception e) {
+            // print stack trace
+            log.error("Failed with the following exception: ", e);
+            System.exit(1);
+        }
     }
 
     @SuppressWarnings("rawtypes")
