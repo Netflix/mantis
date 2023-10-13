@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      java: [ 8 ]
       matrix:
         include:
           - dockerfile: ./mantis-control-plane/mantis-control-plane-server/build/docker/Dockerfile
