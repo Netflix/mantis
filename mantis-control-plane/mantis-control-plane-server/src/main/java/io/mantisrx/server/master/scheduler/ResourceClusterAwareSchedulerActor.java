@@ -162,9 +162,12 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
                                         event.getScheduleRequestEvent(),
                                         event.getTaskExecutorID()))
                                 .exceptionally(
-                                    throwable -> new FailedToSubmitScheduleRequestEvent(
-                                        event.getScheduleRequestEvent(),
-                                        event.getTaskExecutorID(), throwable))
+                                    throwable ->
+                                        new FailedToSubmitScheduleRequestEvent(
+                                            event.getScheduleRequestEvent(),
+                                            event.getTaskExecutorID(),
+                                            ExceptionUtils.stripCompletionException(throwable))
+                                    )
                                 .whenCompleteAsync((res, err) ->
                                 {
                                     if (err == null) {
@@ -177,9 +180,15 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
 
                         )
                         .exceptionally(
-                            throwable -> new FailedToSubmitScheduleRequestEvent(
-                                event.getScheduleRequestEvent(),
-                                event.getTaskExecutorID(), throwable));
+                            // Note: throwable is the wrapped completable error (inside is akka rpc actor selection
+                            // error).
+                            // On this error, we want to:
+                            // 1) trigger rpc service reconnection (to fix the missing action).
+                            // 2) re-schedule worker node with delay (to avoid a fast loop to exhaust idle TE pool).
+                            throwable ->
+                                event.getScheduleRequestEvent()
+                                    .onFailure(ExceptionUtils.stripCompletionException(throwable))
+                        );
                 pipe(ackFuture, getContext().getDispatcher()).to(self());
             }
         } catch (Exception e) {
@@ -197,11 +206,17 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         if (event.getAttempt() >= this.maxScheduleRetries) {
             log.error("Failed to submit the request {} because of ", event.getScheduleRequestEvent(), event.getThrowable());
         } else {
-            log.error("Failed to submit the request {}; Retrying in {} because of ", event.getScheduleRequestEvent(), intervalBetweenRetries, event.getThrowable());
+            // honor the readyAt attribute from schedule request's rate limiter.
+            Duration timeout = Duration.ofMillis(
+                Math.max(
+                    event.getScheduleRequestEvent().getRequest().getReadyAt() - Instant.now().toEpochMilli(),
+                    intervalBetweenRetries.toMillis()));
+            log.error("Failed to submit the request {}; Retrying in {} because of ",
+                event.getScheduleRequestEvent(), timeout, event.getThrowable());
             getTimers().startSingleTimer(
                 getSchedulingQueueKeyFor(event.getScheduleRequestEvent().getRequest().getWorkerId()),
                 event.onRetry(),
-                intervalBetweenRetries);
+                timeout);
         }
     }
 
@@ -240,23 +255,6 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             event.getScheduleRequestEvent().getRequest().getWorkerId(),
             event.getScheduleRequestEvent().getRequest().getStageNum(),
             Throwables.getStackTraceAsString(event.throwable)));
-
-        try {
-            resourceCluster.reconnectGateway(event.getTaskExecutorID())
-                .whenComplete((res, throwable) -> {
-                    if (throwable != null) {
-                        log.error("Failed to request reconnect to gateway for {}", event.getTaskExecutorID(), throwable);
-                    }
-                    else {
-                        log.debug("Acked from reconnection request for {}", event.getTaskExecutorID());
-                    }
-                });
-        } catch (Exception e) {
-            log.warn(
-                "Failed to establish re-connection with the task executor {} on failed schedule request",
-                event.getTaskExecutorID(), e);
-            connectionFailures.increment();
-        }
     }
 
     private void onCancelRequestEvent(CancelRequestEvent event) {
