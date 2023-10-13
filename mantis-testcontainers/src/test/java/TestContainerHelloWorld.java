@@ -102,7 +102,7 @@ public class TestContainerHelloWorld {
     private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private static final Path path = Paths.get("../mantis-control-plane/Dockerfile");
+    private static final Path path = Paths.get("../mantis-control-plane/mantis-control-plane-server/build/docker/Dockerfile");
     private static ImageFromDockerfile controlPlaneDockerFile;
     private static ImageFromDockerfile agentDockerFile;
     private static Network network = Network.newNetwork();
@@ -155,7 +155,7 @@ public class TestContainerHelloWorld {
         controlPlaneHost = controlPlaneLeader.getHost();
         controlPlanePort = controlPlaneLeader.getMappedPort(CONTROL_PLANE_API_PORT);
 
-        Path agentDockerFilePath = Paths.get("../mantis-server/mantis-server-agent/Dockerfile");
+        Path agentDockerFilePath = Paths.get("../mantis-server/mantis-server-agent/build/docker/Dockerfile");
         log.info("Building agent image from: {}", agentDockerFilePath);
         agentDockerFile =
             new ImageFromDockerfile("localhost/testcontainers/mantis_agent_" + Base58.randomString(4).toLowerCase())

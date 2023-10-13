@@ -19,6 +19,7 @@ plugins {
 }
 
 apply plugin: 'application'
+apply plugin: 'com.bmuschko.docker-java-application'
 
 ext {
     akkaVersion = '2.6.15'
@@ -62,6 +63,43 @@ dependencies {
     testImplementation testFixtures(project(":mantis-control-plane:mantis-control-plane-core"))
     testImplementation libraries.commonsIo
 }
+def installDir = file("${buildDir}/install")
+def controlPlaneState = file("${project.resources}/docker")
+def ci = System.getenv('GITHUB_ACTIONS')
+def imageRepository = ci ? 'netflixoss' : 'localhost:5001/netflixoss'
+
+docker {
+    dockerSyncBuildContext {
+        from installDir
+        from controlPlaneState
+        from('docker') {
+            into 'docker'
+        }
+    }
+
+    dockerCreateDockerfile {
+        instruction 'RUN apt-get update && apt-get install -y curl'
+
+        // instructions to install all the necessary dependencies
+        instruction 'WORKDIR /apps/mantis/mantis-control-plane-server'
+        instruction 'COPY mantis-control-plane-server/bin/* bin/'
+        instruction 'COPY mantis-control-plane-server/lib/* lib/'
+        instruction 'COPY resources/* conf/'
+        instruction 'COPY docker/job-clusters/* job-clusters/'
+        instruction 'COPY docker/scripts/* bin/'
+
+        entryPoint './bin/start.sh'
+    }
+
+    javaApplication {
+        baseImage = 'azul/zulu-openjdk:8-latest'
+        maintainer = 'Mantis Developers "mantis-oss-dev@netflix.com"'
+        mainClassName = 'io.mantisrx.server.master.MasterMain'
+        images = ["$imageRepository/mantiscontrolplaneserver:latest"]
+        ports = [8100]
+    }
+}
+dockerSyncBuildContext.dependsOn(installDist)
 
 mainClassName = "io.mantisrx.server.master.MasterMain"
 
