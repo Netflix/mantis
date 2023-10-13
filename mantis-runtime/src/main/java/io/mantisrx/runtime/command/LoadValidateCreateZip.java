@@ -44,6 +44,12 @@ public class LoadValidateCreateZip implements Command {
         if (args.length < 4) {
             System.err.println("usage: zipFile artifactName version outputLocation");
             System.exit(1);
+        } else {
+            // print all the args
+            log.info("args: ");
+            for (String arg : args) {
+                log.info(arg);
+            }
         }
 
         String jobZipFile = args[0];
