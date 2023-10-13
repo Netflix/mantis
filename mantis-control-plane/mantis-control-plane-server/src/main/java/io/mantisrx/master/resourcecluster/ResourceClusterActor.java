@@ -35,7 +35,6 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.ConnectionFailedException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
@@ -209,7 +208,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(ResourceOverviewRequest.class, this::onResourceOverviewRequest)
                 .match(TaskExecutorInfoRequest.class, this::onTaskExecutorInfoRequest)
                 .match(TaskExecutorGatewayRequest.class, this::onTaskExecutorGatewayRequest)
-                .match(TaskExecutorGatewayReconnectRequest.class, this::onTaskExecutorGatewayReconnectRequest)
                 .match(DisableTaskExecutorsRequest.class, this::onNewDisableTaskExecutorsRequest)
                 .match(CheckDisabledTaskExecutors.class, this::findAndMarkDisabledTaskExecutors)
                 .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
@@ -372,54 +370,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                         clusterID.getResourceID(),
                         "taskExecutor",
                         request.getTaskExecutorID().getResourceId())));
-                try {
-                    // let's try one more time by reconnecting with the gateway.
-                    sender().tell(state.reconnect().join(), self());
-                } catch (Exception e1) {
-                    metrics.incrementCounter(
-                        ResourceClusterActorMetrics.TE_RECONNECTION_FAILURE,
-                        TagList.create(ImmutableMap.of(
-                            "resourceCluster",
-                            clusterID.getResourceID(),
-                            "taskExecutor",
-                            request.getTaskExecutorID().getResourceId())));
-                    sender().tell(new Status.Failure(new ConnectionFailedException(e)), self());
-                }
-            }
-        }
-    }
-
-    private void onTaskExecutorGatewayReconnectRequest(TaskExecutorGatewayReconnectRequest request) {
-        log.info("Requesting to reconnect to TaskExecutor: {}", request);
-        TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
-        if (state == null) {
-            sender().tell(
-                new Status.Failure(new NullPointerException("Null TaskExecutor state: " + request.getTaskExecutorID())),
-                self());
-        } else {
-            try {
-                if (state.isRegistered()) {
-                    state.reconnect().whenComplete((res, throwable) -> {
-                        if (throwable != null) {
-                            log.error("failed to reconnect to {}", request.getTaskExecutorID(), throwable);
-                        }
-                    });
-                    sender().tell(Ack.getInstance(), self());
-                } else {
-                    sender().tell(
-                        new Status.Failure(
-                            new IllegalStateException("Unregistered TaskExecutor: " + request.getTaskExecutorID())),
-                        self());
-                }
-            } catch (Exception e) {
-                metrics.incrementCounter(
-                    ResourceClusterActorMetrics.TE_RECONNECTION_FAILURE,
-                    TagList.create(ImmutableMap.of(
-                        "resourceCluster",
-                        clusterID.getResourceID(),
-                        "taskExecutor",
-                        request.getTaskExecutorID().getResourceId())));
-                sender().tell(new Status.Failure(new ConnectionFailedException(e)), self());
             }
         }
     }
@@ -916,13 +866,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     @Value
     static class TaskExecutorGatewayRequest {
-        TaskExecutorID taskExecutorID;
-
-        ClusterID clusterID;
-    }
-
-    @Value
-    static class TaskExecutorGatewayReconnectRequest {
         TaskExecutorID taskExecutorID;
 
         ClusterID clusterID;

@@ -252,19 +252,24 @@ class TaskExecutorState {
     }
 
     protected CompletableFuture<TaskExecutorGateway> getGatewayAsync() {
+        if (this.registration == null || this.state == RegistrationState.Unregistered) {
+            throw new IllegalStateException("TE is unregistered");
+        }
+
         if (this.gateway == null) {
             throw new IllegalStateException("gateway is null");
         }
-        return this.gateway;
-    }
 
-    protected CompletableFuture<TaskExecutorGateway> reconnect() {
-        this.gateway = rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class)
-            .whenComplete((gateway, throwable) -> {
-                if (throwable != null) {
-                    log.error("Failed to connect to the gateway", throwable);
-                }
-            });
+        if (this.gateway.isCompletedExceptionally()) {
+            log.warn("gateway connection encountered error, reconnect: {}.", registration.getTaskExecutorAddress());
+            this.gateway = rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class)
+                .whenComplete((gateway, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Failed to connect to the gateway", throwable);
+                    }
+                });
+        }
+
         return this.gateway;
     }
 
