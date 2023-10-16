@@ -56,17 +56,19 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
             ActorRef resourceClusterAwareSchedulerActor =
                 actorRefMap.computeIfAbsent(
                     clusterID,
-                    (cid) -> actorSystem.actorOf(
-                        ResourceClusterAwareSchedulerActor.props(
-                            masterConfiguration.getSchedulerMaxRetries(),
-                            masterConfiguration.getSchedulerMaxRetries(),
-                            masterConfiguration.getSchedulerIntervalBetweenRetries(),
-                            resourceClusters.getClusterFor(cid),
-                            executeStageRequestFactory,
-                            jobMessageRouter,
-                            metricsRegistry),
-                        "scheduler-for-" + cid.getResourceID()));
-            log.info("Created scheduler actor for cluster: {}", clusterIDOptional.get().getResourceID());
+                    (cid) -> {
+                        log.info("Created scheduler actor for cluster: {}", clusterIDOptional.get().getResourceID());
+                        return actorSystem.actorOf(
+                            ResourceClusterAwareSchedulerActor.props(
+                                masterConfiguration.getSchedulerMaxRetries(),
+                                masterConfiguration.getSchedulerMaxRetries(),
+                                masterConfiguration.getSchedulerIntervalBetweenRetries(),
+                                resourceClusters.getClusterFor(cid),
+                                executeStageRequestFactory,
+                                jobMessageRouter,
+                                metricsRegistry),
+                            "scheduler-for-" + cid.getResourceID())
+                    });
             return new ResourceClusterAwareScheduler(resourceClusterAwareSchedulerActor);
         } else {
             return mesosSchedulingService;
