@@ -186,8 +186,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
                             // 1) trigger rpc service reconnection (to fix the missing action).
                             // 2) re-schedule worker node with delay (to avoid a fast loop to exhaust idle TE pool).
                             throwable ->
-                                event.getScheduleRequestEvent()
-                                    .onFailure(ExceptionUtils.stripCompletionException(throwable))
+                                event.getScheduleRequestEvent().onFailure(throwable)
                         );
                 pipe(ackFuture, getContext().getDispatcher()).to(self());
             }
@@ -333,7 +332,8 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         }
 
         FailedToScheduleRequestEvent onFailure(Throwable throwable) {
-            return new FailedToScheduleRequestEvent(this, this.attempt, throwable);
+            return new FailedToScheduleRequestEvent(
+                this, this.attempt, ExceptionUtils.stripCompletionException(throwable));
         }
 
         AssignedScheduleRequestEvent onAssignment(TaskExecutorID taskExecutorID) {
