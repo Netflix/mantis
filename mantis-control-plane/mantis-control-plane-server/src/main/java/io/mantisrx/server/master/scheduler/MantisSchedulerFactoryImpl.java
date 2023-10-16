@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
+
     private final ActorSystem actorSystem;
     private final ResourceClusters resourceClusters;
     private final ExecuteStageRequestFactory executeStageRequestFactory;
@@ -42,7 +43,7 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
     private final SchedulingService mesosSchedulingService;
     private final MasterConfiguration masterConfiguration;
     private final MetricsRegistry metricsRegistry;
-    private final Map<ClusterID, ActorRef> actorRefMap = new ConcurrentHashMap<>();
+    private final Map<ClusterID, MantisScheduler> actorRefMap = new ConcurrentHashMap<>();
 
     @Override
     public MantisScheduler forClusterID(@Nullable ClusterID clusterID) {
@@ -53,12 +54,13 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
                 throw new RuntimeException("Empty resourceID in clusterID for MantisScheduler");
             }
 
-            ActorRef resourceClusterAwareSchedulerActor =
+            return
                 actorRefMap.computeIfAbsent(
                     clusterID,
                     (cid) -> {
-                        log.info("Created scheduler actor for cluster: {}", clusterIDOptional.get().getResourceID());
-                        return actorSystem.actorOf(
+                        log.info("Created scheduler actor for cluster: {}",
+                            clusterIDOptional.get().getResourceID());
+                        return new ResourceClusterAwareScheduler(actorSystem.actorOf(
                             ResourceClusterAwareSchedulerActor.props(
                                 masterConfiguration.getSchedulerMaxRetries(),
                                 masterConfiguration.getSchedulerMaxRetries(),
@@ -67,9 +69,8 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
                                 executeStageRequestFactory,
                                 jobMessageRouter,
                                 metricsRegistry),
-                            "scheduler-for-" + cid.getResourceID())
+                            "scheduler-for-" + cid.getResourceID()));
                     });
-            return new ResourceClusterAwareScheduler(resourceClusterAwareSchedulerActor);
         } else {
             return mesosSchedulingService;
         }
