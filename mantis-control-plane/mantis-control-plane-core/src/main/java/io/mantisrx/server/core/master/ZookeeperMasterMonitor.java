@@ -21,10 +21,7 @@ import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
-import io.mantisrx.shaded.org.apache.curator.framework.api.BackgroundCallback;
-import io.mantisrx.shaded.org.apache.curator.framework.api.CuratorEvent;
-import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCache;
-import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCacheListener;
+import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.CuratorCache;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
@@ -44,36 +41,37 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
     private final String masterPath;
     private final BehaviorSubject<MasterDescription> masterSubject;
     private final AtomicReference<MasterDescription> latestMaster = new AtomicReference<>();
-    private final NodeCache nodeMonitor;
+    private final CuratorCache nodeMonitor;
     private final JsonSerializer jsonSerializer;
 
     public ZookeeperMasterMonitor(CuratorFramework curator, String masterPath) {
         this.curator = curator;
         this.masterPath = masterPath;
         this.masterSubject = BehaviorSubject.create();
-        this.nodeMonitor = new NodeCache(curator, masterPath);
+        this.nodeMonitor = CuratorCache.build(curator, masterPath);
         this.jsonSerializer = new JsonSerializer();
     }
 
     @Override
     public void startUp() throws Exception {
-        nodeMonitor.getListenable().addListener(new NodeCacheListener() {
-            @Override
-            public void nodeChanged() throws Exception {
-                retrieveMaster();
+        // set the initial master
+        nodeMonitor.listenable().addListener((type, oldData, newData) -> {
+            try {
+                onMasterNodeUpdated(newData.getData());
+            } catch (Exception e) {
+                logger.error("Failed to retrieve updated master information: " + e.getMessage(), e);
             }
         });
 
-        nodeMonitor.start(true);
-
-        onMasterNodeUpdated(nodeMonitor.getCurrentData() == null ? null : nodeMonitor.getCurrentData().getData());
+        nodeMonitor.start();
         logger.info("The ZK master monitor has started");
     }
 
     private void onMasterNodeUpdated(@Nullable byte[] data) throws Exception {
         if (data != null) {
             logger.info("value was {}", new String(data));
-            MasterDescription description = DefaultObjectMapper.getInstance().readValue(data, MasterDescription.class);
+            MasterDescription description = DefaultObjectMapper.getInstance()
+                .readValue(data, MasterDescription.class);
             logger.info("new master description = {}", description);
             latestMaster.set(description);
             masterSubject.onNext(description);
@@ -82,42 +80,19 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
         }
     }
 
-    private void retrieveMaster() {
-        try {
-            curator
-                .sync()  // sync with ZK before reading
-                .inBackground(
-                    curator
-                        .getData()
-                        .inBackground(new BackgroundCallback() {
-                            @Override
-                            public void processResult(CuratorFramework client, CuratorEvent event) throws Exception {
-                                onMasterNodeUpdated(event.getData());
-                            }
-                        })
-                        .forPath(masterPath)
-                )
-                .forPath(masterPath);
-
-        } catch (Exception e) {
-            logger.error("Failed to retrieve updated master information: " + e.getMessage(), e);
-        }
-
-    }
-
     @Override
     public Observable<MasterDescription> getMasterObservable() {
         return masterSubject;
     }
 
     /**
-     *
      * @return
      */
     @Override
     @Nullable
     public MasterDescription getLatestMaster() {
-        Preconditions.checkState(isRunning(), "ZookeeperMasterMonitor is currently not running but instead is at state %s", state());
+        Preconditions.checkState(isRunning(),
+            "ZookeeperMasterMonitor is currently not running but instead is at state %s", state());
         return latestMaster.get();
     }
 
