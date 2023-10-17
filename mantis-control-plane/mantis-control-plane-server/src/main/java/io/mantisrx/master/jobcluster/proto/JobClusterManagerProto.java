@@ -1838,13 +1838,23 @@ public class JobClusterManagerProto {
     public static final class GetJobSchedInfoRequest extends BaseRequest {
 
         private final JobId jobId;
+        private final String clientIp;
+
+        public GetJobSchedInfoRequest(final JobId jobId, final String clietIp) {
+            this.jobId = jobId;
+            this.clientIp = clietIp;
+        }
 
         public GetJobSchedInfoRequest(final JobId jobId) {
             this.jobId = jobId;
+            this.clientIp = "";
         }
 
         public JobId getJobId() {
             return jobId;
+        }
+        public String getClientIp() {
+            return clientIp;
         }
 
         @Override

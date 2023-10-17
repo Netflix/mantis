@@ -131,7 +131,8 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
 
                         );
                     } else {
-                        logger.info("Failed to get Sched info stream for {}", request.getJobId().getId());
+                        logger.info("Failed to get Sched info stream for {} from {}", request.getJobId().getId(),
+                            request.getClientIp());
                         schedInfoStreamErrors.increment();
                         return new JobDiscoveryRouteProto.SchedInfoResponse(
                             getJobSchedInfoResp.requestId,
