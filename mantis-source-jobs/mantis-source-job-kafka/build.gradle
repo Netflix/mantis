@@ -24,4 +24,5 @@ dependencies {
     implementation project(":mantis-connectors:mantis-connector-kafka")
 
     implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    implementation libraries.micrometerCore
 }

@@ -146,18 +146,6 @@ public class MantisClient {
         final AtomicReference<String> lastJobIdRef = new AtomicReference<>();
         return clientWrapper.getNamedJobsIds(jobName)
                 .doOnUnsubscribe(() -> lastJobIdRef.set(null))
-                //                .lift(new Observable.Operator<String, String>() {
-                //                    @Override
-                //                    public Subscriber<? super String> call(Subscriber<? super String> subscriber) {
-                //                        subscriber.add(Subscriptions.create(new Action0() {
-                //                            @Override
-                //                            public void call() {
-                //                                lastJobIdRef.set(null);
-                //                            }
-                //                        }));
-                //                        return subscriber;
-                //                    }
-                //                })
                 .filter((String newJobId) -> {
                     logger.info("Got job cluster's new jobId=" + newJobId);
                     return newJobIdIsGreater(lastJobIdRef.get(), newJobId);
