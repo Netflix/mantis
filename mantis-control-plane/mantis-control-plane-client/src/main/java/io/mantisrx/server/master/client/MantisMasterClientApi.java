@@ -80,7 +80,7 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.functions.Func2;
-import rx.subjects.BehaviorSubject;
+
 
 /**
  *
@@ -698,11 +698,8 @@ public class MantisMasterClientApi implements MantisMasterGateway {
      * @param jobId
      * @return
      */
-    @Override
     public Observable<JobSchedulingInfo> schedulingChanges(final String jobId) {
-        BehaviorSubject<JobSchedulingInfo> behaviorSubject = BehaviorSubject.create();
-
-        masterMonitor.getMasterObservable()
+        return masterMonitor.getMasterObservable()
                 .filter(masterDescription -> masterDescription != null)
                 .retryWhen(retryLogic)
                 .switchMap((Func1<MasterDescription,
@@ -731,8 +728,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                         }))
                 .repeatWhen(repeatLogic)
                 .retryWhen(retryLogic)
-                .subscribe(behaviorSubject);
-        return behaviorSubject;
+                ;
     }
 
     /**
