@@ -279,7 +279,15 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         //Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).switchMap((e) -> Observable.just(e).repeatWhen(x -> x.delay(5 , TimeUnit.SECONDS))).subscribeOn(Schedulers.io()).share();
 
         // JobSchedulingInfo has metadata around which stage runs on which set of workers
-        Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).subscribeOn(Schedulers.io()).share();
+        Observable<JobSchedulingInfo> selfSchedulingInfo =
+            mantisMasterApi.schedulingChanges(executionRequest.getJobId())
+                .subscribeOn(Schedulers.io())
+                .replay(1)
+                .refCount()
+                .doOnSubscribe(() -> logger.info("mantisApi schedulingChanges subscribe"))
+                .doOnUnsubscribe(() -> logger.info("mantisApi schedulingChanges stream unsub."))
+                .doOnError(e -> logger.warn("mantisApi schedulingChanges stream error:", e))
+                .doOnCompleted(() -> logger.info("mantisApi schedulingChanges stream completed."));
         // represents datastructure that has the current worker information and what it represents in the overall operator DAG
         WorkerInfo workerInfo = generateWorkerInfo(executionRequest.getJobName(), executionRequest.getJobId(),
                 executionRequest.getStage(), executionRequest.getWorkerIndex(),
