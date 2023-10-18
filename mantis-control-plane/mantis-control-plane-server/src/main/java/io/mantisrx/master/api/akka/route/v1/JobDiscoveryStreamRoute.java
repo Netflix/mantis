@@ -30,7 +30,6 @@ import akka.stream.javadsl.Source;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto;
 import io.mantisrx.master.api.akka.route.utils.StreamingUtils;
-import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.domain.JobId;
@@ -84,52 +83,43 @@ import rx.RxReactiveStreams;
     private Route getJobDiscoveryStreamRoute(String jobId) {
         return parameterOptional(
                 StringUnmarshallers.BOOLEAN, ParamName.SEND_HEARTBEAT,
-                (sendHeartbeats) ->
-                    extractClientIP(clientIP -> {
+                (sendHeartbeats) -> {
 
                     logger.info("GET /api/v1/jobStatusStream/{} called", jobId);
                     CompletionStage<JobDiscoveryRouteProto.SchedInfoResponse> schedulingInfoRespCS =
-                        jobDiscoveryRouteHandler.schedulingInfoStream(
-                            new JobClusterManagerProto
-                                .GetJobSchedInfoRequest(JobId.fromId(jobId).get(), clientIP.toString()),
-                            sendHeartbeats.orElse(false));
+                            jobDiscoveryRouteHandler.schedulingInfoStream(
+                                    new JobClusterManagerProto
+                                            .GetJobSchedInfoRequest(JobId.fromId(jobId).get()),
+                                    sendHeartbeats.orElse(false));
 
                     return completeAsync(
-                        schedulingInfoRespCS,
-                        resp -> {
-                            if (!resp.responseCode.equals(ResponseCode.SUCCESS)) {
-                                logger.warn(
-                                    "[non-success code] Failed to getJobDiscoveryStreamRoute for "
-                                        + "job {} from caller {}",
-                                    jobId, clientIP);
-                            }
+                            schedulingInfoRespCS,
+                            resp -> {
+                                Optional<Observable<JobSchedulingInfo>> siStream = resp.getSchedInfoStream();
+                                if (siStream.isPresent()) {
+                                    Observable<JobSchedulingInfo> schedulingInfoObs = siStream.get();
 
-                            Optional<Observable<JobSchedulingInfo>> siStream = resp.getSchedInfoStream();
-                            if (siStream.isPresent()) {
-                                Observable<JobSchedulingInfo> schedulingInfoObs = siStream.get();
-
-                                Source<ServerSentEvent, NotUsed> schedInfoSource =
-                                    Source.fromPublisher(RxReactiveStreams.toPublisher(
-                                            schedulingInfoObs))
-                                        .map(j -> StreamingUtils.from(j).orElse(null))
-                                        .filter(Objects::nonNull);
-                                return completeOK(
-                                    schedInfoSource,
-                                    EventStreamMarshalling.toEventStream());
-                            } else {
-                                logger.warn(
-                                    "Failed to get sched info stream for job {} from caller {}",
-                                    jobId, clientIP);
-                                return complete(
-                                    StatusCodes.INTERNAL_SERVER_ERROR,
-                                    "Failed to get sched info stream for job " +
-                                        jobId);
-                            }
-                        },
-                        HttpRequestMetrics.Endpoints.JOB_STATUS_STREAM,
-                        HttpRequestMetrics.HttpVerb.GET
-                    );
-
-                }));
+                                    Source<ServerSentEvent, NotUsed> schedInfoSource =
+                                            Source.fromPublisher(RxReactiveStreams.toPublisher(
+                                                    schedulingInfoObs))
+                                                  .map(j -> StreamingUtils.from(j).orElse(null))
+                                                  .filter(Objects::nonNull);
+                                    return completeOK(
+                                            schedInfoSource,
+                                            EventStreamMarshalling.toEventStream());
+                                } else {
+                                    logger.warn(
+                                            "Failed to get sched info stream for job {}",
+                                            jobId);
+                                    return complete(
+                                            StatusCodes.INTERNAL_SERVER_ERROR,
+                                            "Failed to get sched info stream for job " +
+                                            jobId);
+                                }
+                            },
+                            HttpRequestMetrics.Endpoints.JOB_STATUS_STREAM,
+                            HttpRequestMetrics.HttpVerb.GET
+                            );
+                });
     }
 }
