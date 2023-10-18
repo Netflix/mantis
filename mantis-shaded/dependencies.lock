@@ -74,10 +74,10 @@
             "locked": "5.1.0"
         },
         "org.apache.zookeeper:zookeeper": {
-            "locked": "3.5.7"
+            "locked": "3.6.0"
         },
         "org.apache.zookeeper:zookeeper-jute": {
-            "locked": "3.5.7"
+            "locked": "3.6.0"
         }
     },
     "testAnnotationProcessor": {
