@@ -129,4 +129,3 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
         logger.info("ZK master monitor is shut down");
     }
 }
-
