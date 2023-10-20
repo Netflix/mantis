@@ -51,6 +51,7 @@ import org.testcontainers.utility.MountableFile;
 
 @Slf4j
 public class TestContainerHelloWorld {
+
     private static final int ZOOKEEPER_PORT = 2181;
     private static final int CONTROL_PLANE_API_PORT = 8100;
 
@@ -103,6 +104,7 @@ public class TestContainerHelloWorld {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private static final Path path = Paths.get("../mantis-control-plane/mantis-control-plane-server/build/docker/Dockerfile");
+    public static final String JAVA_OPTS = "--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.net.util=ALL-UNNAMED";
     private static ImageFromDockerfile controlPlaneDockerFile;
     private static ImageFromDockerfile agentDockerFile;
     private static Network network = Network.newNetwork();
@@ -132,6 +134,7 @@ public class TestContainerHelloWorld {
             new GenericContainer<>(controlPlaneDockerFile)
                 .withEnv(LoggingMetricsPublisher.LOGGING_ENABLED_METRICS_GROUP_ID_LIST_KEY,
                     LOGGING_ENABLED_METRICS_GROUP)
+                .withEnv("JAVA_OPTS", JAVA_OPTS)
                 .withNetwork(network)
                 .withNetworkAliases(CONTROL_PLANE_ALIAS)
                 .withExposedPorts(CONTROL_PLANE_API_PORT)
@@ -139,6 +142,7 @@ public class TestContainerHelloWorld {
                 new GenericContainer<>("netflixoss/mantiscontrolplaneserver:latest")
                     .withEnv(LoggingMetricsPublisher.LOGGING_ENABLED_METRICS_GROUP_ID_LIST_KEY,
                         LOGGING_ENABLED_METRICS_GROUP)
+                    .withEnv("JAVA_OPTS", JAVA_OPTS)
                     .withNetwork(network)
                     .withNetworkAliases(CONTROL_PLANE_ALIAS)
                     .withExposedPorts(CONTROL_PLANE_API_PORT);
@@ -298,6 +302,7 @@ public class TestContainerHelloWorld {
                 .withEnv("mantis_taskexecutor_cluster_id".toUpperCase(), resourceClusterId)
                 .withEnv("mantis_taskexecutor_id".toUpperCase(), agentId)
                 .withEnv("MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS", hostname)
+                .withEnv("JAVA_OPTS", JAVA_OPTS)
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network)
                 .withCreateContainerCmdModifier(it -> it.withName(hostname))
@@ -306,6 +311,7 @@ public class TestContainerHelloWorld {
                 .withEnv("mantis_taskexecutor_cluster_id".toUpperCase(), resourceClusterId)
                 .withEnv("mantis_taskexecutor_id".toUpperCase(), agentId)
                 .withEnv("MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS", hostname)
+                .withEnv("JAVA_OPTS", JAVA_OPTS)
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network)
                 .withCreateContainerCmdModifier(it -> it.withName(hostname));

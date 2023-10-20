@@ -92,7 +92,7 @@ docker {
     }
 
     javaApplication {
-        baseImage = 'azul/zulu-openjdk:8-latest'
+        baseImage = 'azul/zulu-openjdk:17-latest'
         maintainer = 'Mantis Developers "mantis-oss-dev@netflix.com"'
         mainClassName = 'io.mantisrx.server.master.MasterMain'
         images = ["$imageRepository/mantiscontrolplaneserver:latest"]

@@ -108,7 +108,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     },
     "compileClasspath": {
@@ -161,7 +161,7 @@
             "locked": "1.7.0"
         },
         "org.xerial.snappy:snappy-java": {
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     },
     "lombok": {
@@ -219,7 +219,7 @@
             "locked": "1.7.0"
         },
         "org.xerial.snappy:snappy-java": {
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     },
     "testAnnotationProcessor": {
@@ -332,7 +332,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     },
     "testFixturesAnnotationProcessor": {
@@ -418,7 +418,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     },
     "testFixturesRuntimeClasspath": {
@@ -514,7 +514,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     },
     "testRuntimeClasspath": {
@@ -631,7 +631,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     }
 }
