@@ -21,6 +21,7 @@ import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -130,8 +131,8 @@ public class Sinks {
         };
     }
 
-    public static <T> ServerSentEventsSink<T> sse(Func1<T, String> encoder) {
-        return new ServerSentEventsSink<>(encoder);
+    public static <T> ServerSentEventsSink<T> sse(Func1<T, String> encoder, MeterRegistry meterRegistry) {
+        return new ServerSentEventsSink<>(encoder, meterRegistry);
     }
 
     public static <T> Sink<T> sysout() {

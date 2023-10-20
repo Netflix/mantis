@@ -31,6 +31,7 @@ import io.mantisrx.runtime.computation.ToKeyComputation;
 import io.mantisrx.runtime.computation.ToScalarComputation;
 import io.mantisrx.runtime.sink.Sink;
 import io.mantisrx.runtime.source.Sources;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.reactivx.mantis.operators.GroupedObservableUtils;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,7 +47,7 @@ public class TestGroupByJob extends MantisJobProvider<Pair> {
     private List<Pair> itemsWritten = new LinkedList<>();
 
     public static void main(String[] args) {
-        LocalJobExecutorNetworked.execute(new TestGroupByJob().getJobInstance());
+        LocalJobExecutorNetworked.execute(new TestGroupByJob().getJobInstance(), new SimpleMeterRegistry());
     }
 
     public List<Pair> getItemsWritten() {

@@ -757,8 +757,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                                     .timeout(3 * MASTER_SCHED_INFO_HEARTBEAT_INTERVAL_SECS,
                                             TimeUnit.SECONDS)
                                     .filter(namedJobInfo -> namedJobInfo != null
-                                            && !JobSchedulingInfo.HB_JobId.equals(namedJobInfo.getName()))
-                                    ;
+                                            && !JobSchedulingInfo.HB_JobId.equals(namedJobInfo.getName()));
                         }))
                 .repeatWhen(repeatLogic)
                 .retryWhen(retryLogic)

@@ -27,6 +27,7 @@ import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.sink.Sink;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +40,7 @@ public class TestJob extends MantisJobProvider<Integer> {
     private final List<Integer> itemsWritten = new LinkedList<Integer>();
 
     public static void main(String[] args) {
-        LocalJobExecutorNetworked.execute(new TestJob().getJobInstance());
+        LocalJobExecutorNetworked.execute(new TestJob().getJobInstance(), new SimpleMeterRegistry());
     }
 
     public List<Integer> getItemsWritten() {

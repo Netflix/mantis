@@ -16,9 +16,9 @@
 
 package io.mantisrx.runtime.executor;
 
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+
 import io.mantisrx.runtime.*;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.mantis.remote.observable.ConnectToGroupedObservable;
 import io.reactivex.mantis.remote.observable.ConnectToObservable;
 import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
@@ -38,11 +38,13 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
 
     private DynamicConnectionSet<T> connectionSet;
     private Reconciliator<T> reconciliator;
-
+    private MeterRegistry meterRegistry;
     public WorkerConsumerRemoteObservable(String name,
-                                          EndpointInjector endpointInjector) {
+                                          EndpointInjector endpointInjector,
+                                          MeterRegistry meterRegistry) {
         this.name = name;
         this.injector = endpointInjector;
+        this.meterRegistry = meterRegistry;
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -58,7 +60,7 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
                             .valueDecoder(stage.getInputCodec())
                             .subscribeAttempts(30); // max retry before failure
 
-            connectionSet = DynamicConnectionSet.createMGO(connectToBuilder);
+            connectionSet = DynamicConnectionSet.createMGO(connectToBuilder, meterRegistry);
 
         } else if (stage instanceof ScalarToScalar || stage instanceof ScalarToKey || stage instanceof ScalarToGroup) {
 
@@ -68,7 +70,7 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
                     .decoder(stage.getInputCodec())
                     .subscribeAttempts(30); // max retry before failure
 
-            connectionSet = DynamicConnectionSet.create(connectToBuilder);
+            connectionSet = DynamicConnectionSet.create(connectToBuilder, meterRegistry);
         } else {
             throw new RuntimeException("Unsupported stage type: " + stage);
         }
@@ -79,13 +81,7 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
                 .injector(injector)
                 .build();
 
-        registerMetrics(reconciliator.getMetrics());
-        registerMetrics(connectionSet.getConnectionMetrics());
         return reconciliator.observables();
-    }
-
-    private void registerMetrics(Metrics metrics) {
-        MetricsRegistry.getInstance().registerAndGet(metrics);
     }
 
     @Override

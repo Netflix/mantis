@@ -26,6 +26,7 @@ dependencies {
     api libraries.slf4jApi
     compileOnly libraries.jsr305
     compileOnly libraries.spectatorApi
+    implementation libraries.micrometerCore
     testImplementation libraries.spectatorApi
     testImplementation libraries.junit4
     testImplementation libraries.mockitoCore
