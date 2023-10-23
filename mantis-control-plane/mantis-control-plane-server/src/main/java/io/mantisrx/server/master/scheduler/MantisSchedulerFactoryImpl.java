@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.master.scheduler;
 
-import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
@@ -35,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
+
     private final ActorSystem actorSystem;
     private final ResourceClusters resourceClusters;
     private final ExecuteStageRequestFactory executeStageRequestFactory;
@@ -42,7 +42,7 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
     private final SchedulingService mesosSchedulingService;
     private final MasterConfiguration masterConfiguration;
     private final MetricsRegistry metricsRegistry;
-    private final Map<ClusterID, ActorRef> actorRefMap = new ConcurrentHashMap<>();
+    private final Map<ClusterID, MantisScheduler> actorRefMap = new ConcurrentHashMap<>();
 
     @Override
     public MantisScheduler forClusterID(@Nullable ClusterID clusterID) {
@@ -53,21 +53,23 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
                 throw new RuntimeException("Empty resourceID in clusterID for MantisScheduler");
             }
 
-            ActorRef resourceClusterAwareSchedulerActor =
+            return
                 actorRefMap.computeIfAbsent(
                     clusterID,
-                    (cid) -> actorSystem.actorOf(
-                        ResourceClusterAwareSchedulerActor.props(
-                            masterConfiguration.getSchedulerMaxRetries(),
-                            masterConfiguration.getSchedulerMaxRetries(),
-                            masterConfiguration.getSchedulerIntervalBetweenRetries(),
-                            resourceClusters.getClusterFor(cid),
-                            executeStageRequestFactory,
-                            jobMessageRouter,
-                            metricsRegistry),
-                        "scheduler-for-" + cid.getResourceID()));
-            log.info("Created scheduler actor for cluster: {}", clusterIDOptional.get().getResourceID());
-            return new ResourceClusterAwareScheduler(resourceClusterAwareSchedulerActor);
+                    (cid) -> {
+                        log.info("Created scheduler actor for cluster: {}",
+                            clusterIDOptional.get().getResourceID());
+                        return new ResourceClusterAwareScheduler(actorSystem.actorOf(
+                            ResourceClusterAwareSchedulerActor.props(
+                                masterConfiguration.getSchedulerMaxRetries(),
+                                masterConfiguration.getSchedulerMaxRetries(),
+                                masterConfiguration.getSchedulerIntervalBetweenRetries(),
+                                resourceClusters.getClusterFor(cid),
+                                executeStageRequestFactory,
+                                jobMessageRouter,
+                                metricsRegistry),
+                            "scheduler-for-" + cid.getResourceID()));
+                    });
         } else {
             return mesosSchedulingService;
         }

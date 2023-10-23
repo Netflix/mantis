@@ -26,7 +26,6 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import io.mantisrx.runtime.loader.RuntimeTask;
-import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
@@ -94,7 +93,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private final WorkerConfiguration workerConfiguration;
     private final HighAvailabilityServices highAvailabilityServices;
     private final ClassLoaderHandle classLoaderHandle;
-    private final SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory;
     private final TaskExecutorRegistration taskExecutorRegistration;
     private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
     private final ExecutorService ioExecutor;
@@ -122,10 +120,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         RpcService rpcService,
         WorkerConfiguration workerConfiguration,
         HighAvailabilityServices highAvailabilityServices,
-        ClassLoaderHandle classLoaderHandle,
-        SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory) {
-        this(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle,
-            subscriptionStateHandlerFactory, null);
+        ClassLoaderHandle classLoaderHandle) {
+        this(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle, null);
     }
 
     public TaskExecutor(
@@ -133,7 +129,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         WorkerConfiguration workerConfiguration,
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
-        SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
         @Nullable TaskFactory taskFactory) {
         super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
@@ -146,7 +141,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         this.workerConfiguration = workerConfiguration;
         this.highAvailabilityServices = highAvailabilityServices;
         this.classLoaderHandle = classLoaderHandle;
-        this.subscriptionStateHandlerFactory = subscriptionStateHandlerFactory;
         WorkerPorts workerPorts = new WorkerPorts(workerConfiguration.getMetricsPort(),
             workerConfiguration.getDebugPort(), workerConfiguration.getConsolePort(),
             workerConfiguration.getCustomPort(),

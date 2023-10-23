@@ -16,15 +16,14 @@
 
 package io.mantisrx.runtime.source;
 
-import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
 
-@Slf4j
+
 public class Index {
 
     private final int workerIndex;
-    private final BehaviorSubject<Integer> totalNumWorkersObservable;
+    private final Observable<Integer> totalNumWorkersObservable;
 
 
     public Index(int offset, int total) {
@@ -35,8 +34,7 @@ public class Index {
 
     public Index(int offset, final Observable<Integer> totalWorkerAtStageObservable) {
         this.workerIndex = offset;
-        this.totalNumWorkersObservable = BehaviorSubject.create();
-        totalWorkerAtStageObservable.subscribe(this.totalNumWorkersObservable);
+        this.totalNumWorkersObservable = totalWorkerAtStageObservable;
     }
 
     public int getWorkerIndex() {
@@ -44,12 +42,6 @@ public class Index {
     }
 
     public int getTotalNumWorkers() {
-        Integer workerNum = this.totalNumWorkersObservable.getValue();
-        if (workerNum != null) {
-            return workerNum;
-        }
-
-        log.info("totalNumWorkersObservable is not ready yet, waiting.");
         return totalNumWorkersObservable.take(1).toBlocking().first();
     }
 

@@ -29,7 +29,7 @@ ext {
     guavaFailureAccessVersion = '1.0.1'
     guavaVersion = '31.1-jre'
     curatorVersion = '5.1.+'
-    zookeeperVersion = '3.5.7'
+    zookeeperVersion = '3.6.0'
     jlineVersion = '0.9.94'
     nettyVersion = '3.7.0.Final'
 }
@@ -60,7 +60,9 @@ dependencies {
     shaded "org.apache.curator:curator-recipes:$curatorVersion"
     shaded "org.apache.curator:curator-framework:$curatorVersion"
     shaded "org.apache.curator:curator-client:$curatorVersion"
-    shaded "org.apache.zookeeper:zookeeper:$zookeeperVersion"
+    shaded ("org.apache.zookeeper:zookeeper:$zookeeperVersion")  {
+        exclude group: 'log4j', module: 'log4j'
+    }
     shaded "org.apache.zookeeper:zookeeper-jute:$zookeeperVersion"
     shaded "jline:jline:$jlineVersion"
     shaded "io.netty:netty:$nettyVersion"

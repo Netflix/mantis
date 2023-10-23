@@ -64,6 +64,8 @@ import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
 import java.io.Closeable;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -77,6 +79,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -262,9 +265,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
     private void signalStarted(RunningWorker rw) {
         rw.signalStarted();
-        if (subscriptionStateHandler != null) {
-            subscriptionStateHandler.startAsync().awaitRunning();
-        }
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -279,7 +279,15 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         //Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).switchMap((e) -> Observable.just(e).repeatWhen(x -> x.delay(5 , TimeUnit.SECONDS))).subscribeOn(Schedulers.io()).share();
 
         // JobSchedulingInfo has metadata around which stage runs on which set of workers
-        Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).subscribeOn(Schedulers.io()).share();
+        Observable<JobSchedulingInfo> selfSchedulingInfo =
+            mantisMasterApi.schedulingChanges(executionRequest.getJobId())
+                .subscribeOn(Schedulers.io())
+                .replay(1)
+                .refCount()
+                .doOnSubscribe(() -> logger.info("mantisApi schedulingChanges subscribe"))
+                .doOnUnsubscribe(() -> logger.info("mantisApi schedulingChanges stream unsub."))
+                .doOnError(e -> logger.warn("mantisApi schedulingChanges stream error:", e))
+                .doOnCompleted(() -> logger.info("mantisApi schedulingChanges stream completed."));
         // represents datastructure that has the current worker information and what it represents in the overall operator DAG
         WorkerInfo workerInfo = generateWorkerInfo(executionRequest.getJobName(), executionRequest.getJobId(),
                 executionRequest.getStage(), executionRequest.getWorkerIndex(),
@@ -478,6 +486,12 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         };
 
         this.subscriptionStateHandler = subscriptionStateHandler;
+        try {
+            this.subscriptionStateHandler.startAsync().awaitRunning(Duration.of(5, ChronoUnit.SECONDS));
+        } catch (TimeoutException e) {
+            logger.error("Failed to start subscriptionStateHandler: ", e);
+            throw new RuntimeException(e);
+        }
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -629,7 +643,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
         if (subscriptionStateHandler != null) {
             try {
-                subscriptionStateHandler.stopAsync().awaitTerminated(30, TimeUnit.SECONDS);
+                subscriptionStateHandler.stopAsync();
             } catch (Exception e) {
                 logger.error("Failed to stop subscription state handler successfully", e);
             } finally {

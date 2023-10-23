@@ -32,6 +32,7 @@ buildscript {
         classpath("gradle.plugin.com.github.jengelman.gradle.plugins:shadow:7.0.0")
         classpath 'gradle.plugin.org.inferred:gradle-processors:3.3.0'
         classpath 'com.palantir.baseline:gradle-baseline-java:4.0.0'
+        classpath 'com.bmuschko:gradle-docker-plugin:6.7.0'
     }
 }
 
@@ -73,7 +74,7 @@ ext.libraries = [
                 "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}",
                 "org.junit.jupiter:junit-jupiter-params:${versions.junit5}",
         ],
-        mantisShaded   : "io.mantisrx:mantis-shaded:2.0.8",
+        mantisShaded   : "io.mantisrx:mantis-shaded:2.0.97",
         micrometerCore    : "io.micrometer:micrometer-core:${versions.micrometer}",
         mockitoAll     : "org.mockito:mockito-all:${versions.mockito}",
         mockitoCore    : "org.mockito:mockito-core:${versions.mockito}",

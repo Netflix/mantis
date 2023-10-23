@@ -11,6 +11,9 @@
             ],
             "locked": "3.0.1"
         },
+        "com.netflix.spectator:spectator-api": {
+            "locked": "1.3.10"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -111,7 +114,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     },
     "baseline-exact-dependencies-test": {
@@ -125,6 +128,9 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "3.0.1"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "locked": "1.3.10"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -229,7 +235,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     },
     "lombok": {
@@ -250,6 +256,9 @@
             ],
             "locked": "0.20.6"
         },
+        "com.netflix.spectator:spectator-api": {
+            "locked": "1.3.10"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -362,7 +371,7 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.6"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -375,7 +384,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     },
     "testAnnotationProcessor": {
@@ -389,6 +398,9 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "3.0.1"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "locked": "1.3.10"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -496,7 +508,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     },
     "testRuntimeClasspath": {
@@ -511,6 +523,9 @@
                 "io.mantisrx:mantis-remote-observable"
             ],
             "locked": "0.20.6"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "locked": "1.3.10"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -627,7 +642,7 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.6"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -640,7 +655,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.2"
+            "locked": "1.1.10.5"
         }
     }
 }

@@ -194,6 +194,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final Counter numJobClusterDeleteErrors;
     private final Counter numJobClusterUpdate;
     private final Counter numJobClusterUpdateErrors;
+    private final Counter numJobsStuckInAccepted;
     private final Counter numSLAEnforcementExecutions;
 
 
@@ -261,6 +262,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .addCounter("numJobClusterUpdate")
             .addCounter("numJobClusterUpdateErrors")
             .addCounter("numSLAEnforcementExecutions")
+            .addCounter("numJobsStuckInAccepted")
             .addGauge(new GaugeCallback(metricGroupId, "acceptedJobsGauge", () -> 1.0 * this.jobManager.acceptedJobsCount()))
             .addGauge(new GaugeCallback(metricGroupId, "activeJobsGauge", () -> 1.0 * this.jobManager.activeJobsCount()))
             .addGauge(new GaugeCallback(metricGroupId, "terminatingJobsGauge", () -> 1.0 * this.jobManager.terminatingJobsMap.size()))
@@ -284,6 +286,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         this.numJobClusterDeleteErrors = m.getCounter("numJobClusterDeleteErrors");
         this.numJobClusterUpdateErrors = m.getCounter("numJobClusterUpdateErrors");
         this.numSLAEnforcementExecutions = m.getCounter("numSLAEnforcementExecutions");
+        this.numJobsStuckInAccepted = m.getCounter("numJobsStuckInAccepted");
     }
 
 
@@ -1976,6 +1979,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         List<JobInfo> pendingInitializationJobsPriorToCutoff = jobManager.getJobActorsStuckInInit(now, getExpirePendingInitializeDelayMs());
 
         List<JobInfo> jobsStuckInAcceptedList = jobManager.getJobsStuckInAccepted(now, getExpireAcceptedDelayMs());
+        numJobsStuckInAccepted.increment(jobsStuckInAcceptedList.size());
 
         List<JobInfo> jobsStuckInTerminatingList = jobManager.getJobsStuckInTerminating(now, getExpireAcceptedDelayMs());
 

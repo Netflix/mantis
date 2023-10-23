@@ -34,7 +34,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,9 +53,6 @@ class TaskExecutorState {
     @Nullable
     private TaskExecutorRegistration registration;
 
-    @Nullable
-    private CompletableFuture<TaskExecutorGateway> gateway;
-
     // availabilityState being null here represents that we don't know about the actual state of the task executor
     // and are waiting for more information
     @Nullable
@@ -71,7 +67,6 @@ class TaskExecutorState {
     static TaskExecutorState of(Clock clock, RpcService rpcService, JobMessageRouter jobMessageRouter) {
         return new TaskExecutorState(
             RegistrationState.Unregistered,
-            null,
             null,
             null,
             false,
@@ -99,13 +94,6 @@ class TaskExecutorState {
         } else {
             this.state = RegistrationState.Registered;
             this.registration = registration;
-            this.gateway =
-                rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class)
-                    .whenComplete((gateway, throwable) -> {
-                        if (throwable != null) {
-                            log.error("Failed to connect to the gateway", throwable);
-                        }
-                    });
             updateTicker();
             return true;
         }
@@ -118,7 +106,6 @@ class TaskExecutorState {
             state = RegistrationState.Unregistered;
             registration = null;
             setAvailabilityState(null);
-            gateway = null;
             updateTicker();
             return true;
         }
@@ -252,21 +239,22 @@ class TaskExecutorState {
         return this.registration;
     }
 
-    protected TaskExecutorGateway getGateway() throws ExecutionException, InterruptedException {
-        if (this.gateway == null) {
-            throw new IllegalStateException("gateway is null");
+    protected CompletableFuture<TaskExecutorGateway> getGatewayAsync() {
+        if (this.registration == null || this.state == RegistrationState.Unregistered) {
+            throw new IllegalStateException("TE is unregistered");
         }
-        return this.gateway.get();
-    }
 
-    protected CompletableFuture<TaskExecutorGateway> reconnect() {
-        this.gateway = rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class)
-            .whenComplete((gateway, throwable) -> {
-                if (throwable != null) {
-                    log.error("Failed to connect to the gateway", throwable);
-                }
-            });
-        return this.gateway;
+        // [Note] here the gateway connection is re-created every time it's requested to avoid corrupted state that
+        // can block the connection to TE.
+        // To be able to store and re-use the gateway, we probably need to make a chain of callbacks so taht the TE
+        // is only marked as available after this gateway connection is successfully established with proper retry
+        // loops (since the TE only register once and take the ack as success on API response).
+        return rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class)
+                .whenComplete((gateway, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Failed to connect to the gateway", throwable);
+                    }
+                });
     }
 
     boolean containsAttributes(Map<String, String> attributes) {

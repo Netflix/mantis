@@ -47,6 +47,7 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -172,7 +173,9 @@ public class ResourceClusterScalerActorTests {
                 .build()));
 
         // Test callback from fetch idle list.
-        ImmutableList<TaskExecutorID> idleInstances = ImmutableList.of(TaskExecutorID.of("agent1"));
+        ImmutableList<TaskExecutorID> idleInstances = ImmutableList.of(
+            TaskExecutorID.of("agent1"),
+            TaskExecutorID.of("agent2"));
         scalerActor.tell(
             GetClusterIdleInstancesResponse.builder()
                 .clusterId(CLUSTER_ID)
@@ -191,6 +194,17 @@ public class ResourceClusterScalerActorTests {
                 .idleInstances(idleInstances)
                 .build(),
             hostActorProbe.expectMsgClass(ScaleResourceRequest.class));
+
+        // validate the idle intances are disabled
+        io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest disableTEReq =
+            clusterActorProbe.expectMsgClass(io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest.class);
+        io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest disableTEReq2 =
+            clusterActorProbe.expectMsgClass(io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest.class);
+        assertTrue(disableTEReq.getTaskExecutorID().isPresent());
+        assertTrue(disableTEReq2.getTaskExecutorID().isPresent());
+        assertEquals(
+            ImmutableSet.of(disableTEReq2.getTaskExecutorID().get(), disableTEReq.getTaskExecutorID().get()),
+            ImmutableSet.copyOf(idleInstances));
 
         // Test trigger again
         GetClusterUsageRequest req2 = clusterActorProbe.expectMsgClass(GetClusterUsageRequest.class);

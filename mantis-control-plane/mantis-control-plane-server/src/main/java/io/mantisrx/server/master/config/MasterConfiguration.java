@@ -378,6 +378,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("")
     String getJobClustersWithArtifactCachingEnabled();
 
+    @Config("mantis.artifactCaching.enabled")
+    @Default("true")
+    boolean isJobArtifactCachingEnabled();
+
     // rate limit actions on resource cluster actor to control backlog.
     @Config("mantis.master.resource.cluster.actions.permitsPerSecond")
     @Default("2000")

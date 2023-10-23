@@ -80,7 +80,6 @@ public class MetricsServer {
                         long timestamp = System.currentTimeMillis();
                         List<Measurements> measurements = new ArrayList<>();
 
-
                         for (Meter meter: microRegistry.getMeters()) {
                             Collection<MicrometerMeasurement> micrometers = new LinkedList<>();
                             micrometers.add(new MicrometerMeasurement(meter.getId().getType(), meter.measure().iterator().next().getValue()));
