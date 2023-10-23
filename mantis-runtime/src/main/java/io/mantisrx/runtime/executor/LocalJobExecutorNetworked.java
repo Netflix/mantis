@@ -155,16 +155,19 @@ public class LocalJobExecutorNetworked {
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    public static void execute(Job job, MeterRegistry registry, Parameter... parameters) throws IllegalMantisJobException {
+    public static void execute(Job job, Parameter... parameters) throws IllegalMantisJobException {
         List<StageConfig> stages = job.getStages();
         SchedulingInfo.Builder builder = new SchedulingInfo.Builder();
         for (@SuppressWarnings("unused") StageConfig stage : stages) {
             builder.singleWorkerStage(MachineDefinitions.micro());
         }
         builder.numberOfStages(stages.size());
-        execute(job, builder.build(), registry, parameters);
+        execute(job, builder.build(), parameters);
     }
 
+    public static void execute(Job job, SchedulingInfo schedulingInfo, Parameter... parameters) throws IllegalMantisJobException {
+        execute(job, schedulingInfo, new CompositeMeterRegistry(), parameters);
+    }
     @SuppressWarnings( {"rawtypes", "unchecked"})
     public static void execute(Job job, SchedulingInfo schedulingInfo, MeterRegistry registry, Parameter... parameters) throws IllegalMantisJobException {
         // validate job
@@ -181,7 +184,7 @@ public class LocalJobExecutorNetworked {
         final PortSelector portSelector = new PortSelectorInRange(8000, 9000);
 
         // register netty metrics
-        RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory(registry));
+        RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         // start our metrics server
         MetricsServer metricsServer = new MetricsServer(portSelector.acquirePort(), 1, Collections.EMPTY_MAP, registry);
         metricsServer.start();

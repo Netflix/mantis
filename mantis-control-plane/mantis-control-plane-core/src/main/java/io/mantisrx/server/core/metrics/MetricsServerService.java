@@ -29,7 +29,7 @@ public class MetricsServerService implements Service {
 
     public MetricsServerService(final int port, final int publishRateInSeconds,
                                 final Map<String, String> tags, MeterRegistry registry) {
-        server = new MetricsServer(port, publishRateInSeconds, tags,registry);
+        server = new MetricsServer(port, publishRateInSeconds, tags, registry);
     }
 
     @Override

@@ -34,6 +34,8 @@ import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.server.worker.mesos.VirualMachineWorkerServiceMesosImpl;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -138,7 +140,9 @@ public class MantisWorker extends BaseService {
                     .first()
                     .subscribe(wrappedRequest -> {
                         try {
-                            runtimeTaskImpl = new RuntimeTaskImpl();
+                            // TODO(hmit): Correctly initialize this based on config
+                            MeterRegistry meterRegistry = new CompositeMeterRegistry();
+                            runtimeTaskImpl = new RuntimeTaskImpl(meterRegistry);
 
                             // invoke internal runtimeTaskImpl initialize to inject the wrapped request.
                             runtimeTaskImpl.initialize(

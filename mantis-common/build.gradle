@@ -30,17 +30,16 @@ dependencies {
     api "org.xerial.snappy:snappy-java:$snappyVersion"
     api "org.jctools:jctools-core:$jctoolsVersion"
 
-
-
     api libraries.jsr305
     api libraries.mantisShaded
     api libraries.rxNettyShaded
     api libraries.rxJava
     api libraries.slf4jApi
     api libraries.slf4jLog4j12
+    api libraries.micrometerCore
+
     implementation libraries.commonsIo
     implementation 'net.jcip:jcip-annotations:1.0'
-    implementation libraries.micrometerCore
     implementation libraries.spectatorApi
 
     testImplementation libraries.spectatorApi

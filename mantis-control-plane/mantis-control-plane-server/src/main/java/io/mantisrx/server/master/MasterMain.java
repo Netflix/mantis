@@ -18,7 +18,6 @@ package io.mantisrx.server.master;
 
 import static org.apache.flink.configuration.GlobalConfiguration.loadConfiguration;
 
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
