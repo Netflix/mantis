@@ -18,6 +18,7 @@ package com.netflix.control.clutch;
 
 import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.assertj.core.data.Offset;
 import org.junit.Test;
 import rx.Observable;
@@ -27,6 +28,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class ClutchConfiguratorTest {
@@ -57,5 +59,17 @@ public class ClutchConfiguratorTest {
         assertNotNull(configurator.getConfig());
     }
 
+    @Test
+    public void testPercentileCalculation() {
+
+        DescriptiveStatistics stats = new DescriptiveStatistics(100);
+        UpdateDoublesSketch sketch = UpdateDoublesSketch.builder().build(1024);
+        for (int i = 0; i < 200; ++i) {
+            sketch.update(i);
+            stats.addValue(i);
+        }
+        assertEquals(sketch.getQuantile(0.8), 160, 0);
+        assertEquals(stats.getPercentile(80), 180, 1);
+    }
     // TODO: What guarantees do I want to make about the configurator?
 }
