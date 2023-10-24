@@ -69,6 +69,7 @@ docker {
         baseImage = 'azul/zulu-openjdk:17-latest'
         maintainer = 'Mantis Developers "mantis-oss-dev@netflix.com"'
         mainClassName = 'io.mantisrx.server.agent.AgentV2Main'
+        applicationDefaultJvmArgs = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/sun.net.util=ALL-UNNAMED']
         images = ["$imageRepository/mantisagent:latest"]
         ports = [5050]
     }
