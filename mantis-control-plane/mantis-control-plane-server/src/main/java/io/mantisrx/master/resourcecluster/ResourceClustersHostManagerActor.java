@@ -287,11 +287,12 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
         log.info("Entering onProvisionResourceClusterRequest: " + req);
 
         // For now only full spec is supported during provision stage.
-        if (!validateClusterSpec(req)) {
+        Optional<String> validationResultO = validateClusterSpec(req);
+        if (validationResultO.isPresent()) {
             pipe(
                 CompletableFuture.completedFuture(GetResourceClusterResponse.builder()
                     .responseCode(ResponseCode.CLIENT_ERROR)
-                    .message("No cluster spec found in provision request.")
+                    .message(validationResultO.get())
                     .build()),
                 getContext().dispatcher())
                 .to(getSender());
@@ -382,27 +383,38 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
         pipe(upgradeFut, getContext().dispatcher()).to(getSender());
     }
 
-    private static boolean validateClusterSpec(ProvisionResourceClusterRequest req) {
+    private static Optional<String> validateClusterSpec(ProvisionResourceClusterRequest req) {
         if (req.getClusterSpec() == null) {
-            log.info("Empty request without cluster spec: {}", req.getClusterId());
-            return false;
+            log.error("Empty request without cluster spec: {}", req.getClusterId());
+            return Optional.of("cluster spec cannot be null");
         }
 
         if (!req.getClusterId().equals(req.getClusterSpec().getId())) {
-            log.info("Mismatch cluster id: {}, {}", req.getClusterId(), req.getClusterSpec().getId());
-            return false;
+            log.error("Mismatch cluster id: {}, {}", req.getClusterId(), req.getClusterSpec().getId());
+            return Optional.of("cluster spec id doesn't match cluster id");
         }
 
         Optional<SkuTypeSpec> invalidSku = req.getClusterSpec().getSkuSpecs().stream().filter(sku ->
             sku.getSkuId() == null || sku.getCapacity() == null || sku.getCpuCoreCount() < 1 ||
                 sku.getDiskSizeInMB() < 1 || sku.getMemorySizeInMB() < 1 || sku.getNetworkMbps() < 1 ||
-                Strings.isNullOrEmpty(sku.getImageId())).findAny();
+                Strings.isNullOrEmpty(sku.getImageId()))
+            .findAny();
 
         if (invalidSku.isPresent()) {
-            log.info("Empty request without cluster spec: {}, {}", req.getClusterId(), invalidSku.get());
-            return false;
+            log.error("Invalid request for cluster spec: {}, {}", req.getClusterId(), invalidSku.get());
+            return Optional.of("Invalid sku definition");
         }
 
-        return true;
+        Optional<SkuTypeSpec> invalidSkuNameSpec = req.getClusterSpec().getSkuSpecs().stream().filter(sku ->
+                Character.isDigit(sku.getSkuId().getResourceID().charAt(sku.getSkuId().getResourceID().length() - 1)))
+            .findAny();
+
+        if (invalidSkuNameSpec.isPresent()) {
+            log.error("Invalid request for cluster spec sku id (cannot end with number): {}, {}", req.getClusterId(),
+                invalidSkuNameSpec.get());
+            return Optional.of("Invalid skuID (cannot end with number): " + invalidSkuNameSpec.get().getSkuId());
+        }
+
+        return Optional.empty();
     }
 }
