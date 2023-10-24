@@ -77,6 +77,7 @@ dependencies {
     implementation "com.google.guava:guava:$guavaVersion"
     implementation "com.yahoo.datasketches:sketches-core:$sketchesVersion"
     implementation "io.reactivex:rxjava:$rxJavaVersion"
+    implementation "org.apache.commons:commons-math3:3.6.1"
 
     compileOnly "org.projectlombok:lombok:$lombokVersion"
     annotationProcessor "org.projectlombok:lombok:$lombokVersion"

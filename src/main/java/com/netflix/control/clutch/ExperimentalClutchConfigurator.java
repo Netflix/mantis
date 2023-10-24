@@ -21,6 +21,7 @@ import com.yahoo.sketches.quantiles.DoublesSketch;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
 import io.vavr.Function1;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import rx.Observable;
 
 import java.util.Map;
@@ -31,12 +32,14 @@ import java.util.concurrent.TimeUnit;
 public class ExperimentalClutchConfigurator implements Observable.Transformer<Event, ClutchConfiguration>  {
     private static int DEFAULT_K = 1024;
 
+    private static int NUM_STATS_DATA_POINTS = (int) TimeUnit.DAYS.toMinutes(7) * 2;
     private IClutchMetricsRegistry metricsRegistry;
     private final Observable<Long> timer;
     private final long initialConfigMilis;
     private final Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator;
 
     private static ConcurrentHashMap<Clutch.Metric, UpdateDoublesSketch> sketches = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Clutch.Metric, DescriptiveStatistics> stats = new ConcurrentHashMap<>();
     static {
         sketches.put(Clutch.Metric.CPU, UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
         sketches.put(Clutch.Metric.MEMORY, UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
@@ -46,6 +49,15 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
         sketches.put(Clutch.Metric.UserDefined, UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
         sketches.put(Clutch.Metric.RPS, UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
         sketches.put(Clutch.Metric.SOURCEJOB_DROP, UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
+
+        stats.put(Clutch.Metric.CPU, new DescriptiveStatistics(NUM_STATS_DATA_POINTS));
+        stats.put(Clutch.Metric.MEMORY, new DescriptiveStatistics(NUM_STATS_DATA_POINTS));
+        stats.put(Clutch.Metric.NETWORK, new DescriptiveStatistics(NUM_STATS_DATA_POINTS));
+        stats.put(Clutch.Metric.LAG, new DescriptiveStatistics(NUM_STATS_DATA_POINTS));
+        stats.put(Clutch.Metric.DROPS, new DescriptiveStatistics(NUM_STATS_DATA_POINTS));
+        stats.put(Clutch.Metric.UserDefined, new DescriptiveStatistics(NUM_STATS_DATA_POINTS));
+        stats.put(Clutch.Metric.RPS, new DescriptiveStatistics(NUM_STATS_DATA_POINTS));
+        stats.put(Clutch.Metric.SOURCEJOB_DROP, new DescriptiveStatistics(NUM_STATS_DATA_POINTS));
     }
 
     public ExperimentalClutchConfigurator(IClutchMetricsRegistry metricsRegistry, Observable<Long> timer,
@@ -87,6 +99,10 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
                     UpdateDoublesSketch sketch = sketches.computeIfAbsent(event.metric, metric ->
                             UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
                     sketch.update(event.value);
+
+                    DescriptiveStatistics stat = stats.computeIfAbsent(event.metric, metric ->
+                            new DescriptiveStatistics(NUM_STATS_DATA_POINTS));
+                    stat.addValue(event.value);
                     return null;
                 }).subscribe();
 
@@ -94,7 +110,13 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
                 .concatWith(configs)
                 .distinctUntilChanged()
                 .doOnNext(__ -> log.info("RPS Sketch State: {}", sketches.get(Clutch.Metric.RPS)))
-                .doOnNext(__ -> logSketchSummary(sketches.get(Clutch.Metric.RPS)))
+                .doOnNext(__ -> {
+                    logSketchSummary(sketches.get(Clutch.Metric.RPS));
+                    logStatsSummary(stats.get(Clutch.Metric.RPS), "Stats RPS metric: ");
+                    logStatsSummary(stats.get(Clutch.Metric.CPU), "Stats CPU metric: ");
+                    logStatsSummary(stats.get(Clutch.Metric.MEMORY), "Stats Memory metric: ");
+                    logStatsSummary(stats.get(Clutch.Metric.NETWORK), "Stats Network metric: ");
+                })
                 .doOnNext(config -> log.info("Clutch switched to config: {}", config));
     }
 
@@ -107,6 +129,18 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
                 quantiles[3],
                 quantiles[4],
                 quantiles[5]
+        );
+    }
+
+    private static void logStatsSummary(DescriptiveStatistics stat, String prefix) {
+        log.info("{} RPS Sketch Quantiles -- Min: {}, 25th: {}, 50th: {}, 75th: {}, 99th: {}, Max: {}",
+                prefix,
+                stat.getPercentile(0),
+                stat.getPercentile(25),
+                stat.getPercentile(50),
+                stat.getPercentile(75),
+                stat.getPercentile(99),
+                stat.getPercentile(100)
         );
     }
 }
