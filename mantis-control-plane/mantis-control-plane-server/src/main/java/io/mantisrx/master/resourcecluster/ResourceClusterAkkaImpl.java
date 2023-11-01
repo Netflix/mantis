@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements ResourceCluster {
 
@@ -68,7 +69,7 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
         Duration askTimeout,
         ClusterID clusterID,
         ResourceClusterTaskExecutorMapper mapper,
-        int rateLimitPerSecond) {
+        Supplier<Integer> rateLimitPerSecond) {
         super(resourceClusterManagerActor, askTimeout, mapper, rateLimitPerSecond);
         this.clusterID = clusterID;
         this.mapper = mapper;
