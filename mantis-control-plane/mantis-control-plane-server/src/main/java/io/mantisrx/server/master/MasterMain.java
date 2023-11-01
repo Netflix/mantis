@@ -190,7 +190,7 @@ public class MasterMain implements Service {
                 RpcUtils.createRemoteRpcService(rpcSystem, configuration, null, "6123", null, Optional.empty());
             final ResourceClusters resourceClusters =
                 ResourceClustersAkkaImpl.load(
-                    getConfig(),
+                    configFactory,
                     rpcService,
                     system,
                     mantisJobStore,
