@@ -25,10 +25,12 @@ import com.netflix.spectator.api.Timer;
 import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.CacheJobArtifactsOnTaskExecutorRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.HeartbeatTimeout;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.InitializeTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
@@ -86,7 +88,9 @@ class ResourceClusterActorMetrics {
             TaskExecutorAssignmentRequest.class, getBoth("TaskExecutorAssignmentRequest"),
             TaskExecutorGatewayRequest.class, getBoth("TaskExecutorGatewayRequest"),
             CacheJobArtifactsOnTaskExecutorRequest.class,
-            getBoth("CacheJobArtifactsOnTaskExecutorRequest")
+            getBoth("CacheJobArtifactsOnTaskExecutorRequest"),
+            GetClusterUsageRequest.class, getBoth("GetClusterUsageRequest"),
+            GetClusterIdleInstancesRequest.class, getBoth("GetClusterIdleInstancesRequest")
         );
         this.unknownMessageMetrics = getBoth("UnknownMessage");
     }

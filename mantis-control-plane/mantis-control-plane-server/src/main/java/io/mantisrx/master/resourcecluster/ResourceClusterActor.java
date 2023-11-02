@@ -190,9 +190,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(GetActiveJobsRequest.class, this::getActiveJobs)
                 .match(GetTaskExecutorStatusRequest.class, this::getTaskExecutorStatus)
                 .match(GetClusterUsageRequest.class,
-                    req -> sender().tell(this.executorStateManager.getClusterUsage(req), self()))
+                    metrics.withTracking(req ->
+                        sender().tell(this.executorStateManager.getClusterUsage(req), self())))
                 .match(GetClusterIdleInstancesRequest.class,
-                    req -> sender().tell(onGetClusterIdleInstancesRequest(req), self()))
+                    metrics.withTracking(req ->
+                            sender().tell(onGetClusterIdleInstancesRequest(req), self())))
                 .match(GetAssignedTaskExecutorRequest.class, this::onAssignedTaskExecutorRequest)
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
