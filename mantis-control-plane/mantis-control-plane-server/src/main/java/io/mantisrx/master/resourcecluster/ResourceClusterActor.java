@@ -26,7 +26,6 @@ import akka.japi.pf.ReceiveBuilder;
 import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
-import io.mantisrx.master.resourcecluster.metrics.ResourceClusterActorMetrics;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
@@ -191,34 +190,38 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(GetActiveJobsRequest.class, this::getActiveJobs)
                 .match(GetTaskExecutorStatusRequest.class, this::getTaskExecutorStatus)
                 .match(GetClusterUsageRequest.class,
-                    req -> sender().tell(this.executorStateManager.getClusterUsage(req), self()))
+                    metrics.withTracking(req ->
+                        sender().tell(this.executorStateManager.getClusterUsage(req), self())))
                 .match(GetClusterIdleInstancesRequest.class,
-                    req -> sender().tell(onGetClusterIdleInstancesRequest(req), self()))
+                    metrics.withTracking(req ->
+                            sender().tell(onGetClusterIdleInstancesRequest(req), self())))
                 .match(GetAssignedTaskExecutorRequest.class, this::onAssignedTaskExecutorRequest)
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
                 .match(TaskExecutorAssignmentTimeout.class, this::onTaskExecutorAssignmentTimeout)
-                .match(TaskExecutorRegistration.class, this::onTaskExecutorRegistration)
-                .match(InitializeTaskExecutorRequest.class, this::onTaskExecutorInitialization)
-                .match(TaskExecutorHeartbeat.class, this::onHeartbeat)
+                .match(TaskExecutorRegistration.class, metrics.withTracking(this::onTaskExecutorRegistration))
+                .match(InitializeTaskExecutorRequest.class, metrics.withTracking(this::onTaskExecutorInitialization))
+                .match(TaskExecutorHeartbeat.class, metrics.withTracking(this::onHeartbeat))
                 .match(TaskExecutorStatusChange.class, this::onTaskExecutorStatusChange)
-                .match(TaskExecutorDisconnection.class, this::onTaskExecutorDisconnection)
-                .match(HeartbeatTimeout.class, this::onTaskExecutorHeartbeatTimeout)
-                .match(TaskExecutorAssignmentRequest.class, this::onTaskExecutorAssignmentRequest)
+                .match(TaskExecutorDisconnection.class, metrics.withTracking(this::onTaskExecutorDisconnection))
+                .match(HeartbeatTimeout.class, metrics.withTracking(this::onTaskExecutorHeartbeatTimeout))
+                .match(TaskExecutorAssignmentRequest.class, metrics.withTracking(this::onTaskExecutorAssignmentRequest))
                 .match(ResourceOverviewRequest.class, this::onResourceOverviewRequest)
                 .match(TaskExecutorInfoRequest.class, this::onTaskExecutorInfoRequest)
-                .match(TaskExecutorGatewayRequest.class, this::onTaskExecutorGatewayRequest)
+                .match(TaskExecutorGatewayRequest.class, metrics.withTracking(this::onTaskExecutorGatewayRequest))
                 .match(DisableTaskExecutorsRequest.class, this::onNewDisableTaskExecutorsRequest)
                 .match(CheckDisabledTaskExecutors.class, this::findAndMarkDisabledTaskExecutors)
                 .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
                 .match(GetTaskExecutorWorkerMappingRequest.class, req -> sender().tell(getTaskExecutorWorkerMapping(req.getAttributes()), self()))
                 .match(PublishResourceOverviewMetricsRequest.class, this::onPublishResourceOverviewMetricsRequest)
-                .match(CacheJobArtifactsOnTaskExecutorRequest.class, this::onCacheJobArtifactsOnTaskExecutorRequest)
+                .match(CacheJobArtifactsOnTaskExecutorRequest.class, metrics.withTracking(this::onCacheJobArtifactsOnTaskExecutorRequest))
                 .match(AddNewJobArtifactsToCacheRequest.class, this::onAddNewJobArtifactsToCacheRequest)
                 .match(RemoveJobArtifactsToCacheRequest.class, this::onRemoveJobArtifactsToCacheRequest)
                 .match(GetJobArtifactsToCacheRequest.class, req -> sender().tell(new ArtifactList(new ArrayList<>(jobArtifactsToCache)), self()))
                 .build();
     }
+
+
 
     private void onAddNewJobArtifactsToCacheRequest(AddNewJobArtifactsToCacheRequest req) {
         try {
@@ -813,7 +816,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     @Value
-    private static class HeartbeatTimeout {
+    static class HeartbeatTimeout {
 
         TaskExecutorID taskExecutorID;
         Instant lastActivity;
