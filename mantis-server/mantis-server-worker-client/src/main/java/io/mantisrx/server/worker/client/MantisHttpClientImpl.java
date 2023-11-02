@@ -24,6 +24,8 @@ import io.netty.channel.Channel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import mantis.io.reactivex.netty.client.ClientChannelFactory;
@@ -42,6 +44,8 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
 
     private Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConection;
     private List<Channel> connectionTracker;
+
+    private AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Gauge numConnectionsTracked;
     private final static String connectionTrackerMetricgroup = "ConnectionMonitor";
     private final static String metricName = "numConnectionsTracked";
@@ -79,20 +83,29 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
 
     protected void trackConnection(Channel channel) {
         log.info("Tracking connection: {}", channel.toString());
-        this.connectionTracker.add(channel);
-        numConnectionsTracked.increment();
+        synchronized (connectionTracker) {
+            if (isClosed.get()) {
+                log.info("Http client is already closed. Close the channel immediately. {}", channel);
+                channel.close();
+            } else {
+                this.connectionTracker.add(channel);
+                numConnectionsTracked.increment();
+            }
+        }
     }
 
     protected void closeConn() {
-        Channel channel;
-        for (Channel value : this.connectionTracker) {
-            channel = value;
-            log.info("Closing connection: {}. Status at close: isActive: {}, isOpen: {}, isWritable: {}",
+        synchronized (connectionTracker) {
+            isClosed.set(true);
+            for (Channel value : this.connectionTracker) {
+                Channel channel = value;
+                log.info("Closing connection: {}. Status at close: isActive: {}, isOpen: {}, isWritable: {}",
                     channel.toString(), channel.isActive(), channel.isOpen(), channel.isWritable());
-            channel.close();
-            numConnectionsTracked.decrement();
+                channel.close();
+                numConnectionsTracked.decrement();
+            }
+            this.connectionTracker.clear();
         }
-        this.connectionTracker.clear();
     }
 
     protected int connectionTrackerSize() {
