@@ -18,6 +18,8 @@ package io.mantisrx.server.agent;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
+import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.agent.config.ConfigurationFactory;
@@ -44,12 +46,13 @@ public class AgentV2Main implements Service {
     private final TaskExecutorStarter taskExecutorStarter;
     private final AtomicBoolean stopping = new AtomicBoolean(false);
 
-    public AgentV2Main(ConfigurationFactory configFactory) throws Exception {
+    public AgentV2Main(ConfigurationFactory configFactory, MantisPropertiesLoader propertiesLoader) throws Exception {
         WorkerConfiguration workerConfiguration = configFactory.getConfig();
 
         this.taskExecutorStarter =
             TaskExecutorStarter.builder(workerConfiguration)
                 .taskFactory(new SingleTaskOnlyFactory())
+                .propertiesLoader(propertiesLoader)
                 .addListener(
                     new TaskExecutor.Listener() {
                         @Override
@@ -103,7 +106,8 @@ public class AgentV2Main implements Service {
             props.putAll(System.getProperties());
             props.putAll(loadProperties(propFile));
             StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
-            AgentV2Main agent = new AgentV2Main(factory);
+            DefaultMantisPropertiesLoader propertiesLoader = new DefaultMantisPropertiesLoader(props);
+            AgentV2Main agent = new AgentV2Main(factory, propertiesLoader);
             agent.start(); // blocks until shutdown hook (ctrl-c)
         } catch (Exception e) {
             // unexpected to get a RuntimeException, will exit

@@ -22,6 +22,8 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
+import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
@@ -91,6 +93,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @Getter
     private final ClusterID clusterID;
     private final WorkerConfiguration workerConfiguration;
+    private final MantisPropertiesLoader dynamicPropertiesLoader;
     private final HighAvailabilityServices highAvailabilityServices;
     private final ClassLoaderHandle classLoaderHandle;
     private final TaskExecutorRegistration taskExecutorRegistration;
@@ -121,12 +124,18 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         WorkerConfiguration workerConfiguration,
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle) {
-        this(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle, null);
+        this(rpcService,
+            workerConfiguration,
+            new DefaultMantisPropertiesLoader(System.getProperties()),
+            highAvailabilityServices,
+            classLoaderHandle,
+            null);
     }
 
     public TaskExecutor(
         RpcService rpcService,
         WorkerConfiguration workerConfiguration,
+        MantisPropertiesLoader propertiesLoader,
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
         @Nullable TaskFactory taskFactory) {
@@ -139,6 +148,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 .orElseGet(TaskExecutorID::generate);
         this.clusterID = ClusterID.of(workerConfiguration.getClusterId());
         this.workerConfiguration = workerConfiguration;
+        this.dynamicPropertiesLoader = propertiesLoader;
         this.highAvailabilityServices = highAvailabilityServices;
         this.classLoaderHandle = classLoaderHandle;
         WorkerPorts workerPorts = new WorkerPorts(workerConfiguration.getMetricsPort(),
@@ -309,6 +319,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         ResourceClusterGateway resourceManagerGateway = resourceClusterGatewaySupplier.getCurrent();
 
         // let's register ourselves with the resource manager
+        // todo: move timeout/retry to apply values from this.dynamicPropertiesLoader
         return new ResourceManagerGatewayCxn(
             resourceManagerCxnIdx++,
             taskExecutorRegistration,

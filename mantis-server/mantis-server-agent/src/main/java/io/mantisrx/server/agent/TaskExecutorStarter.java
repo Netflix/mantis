@@ -17,6 +17,7 @@
 package io.mantisrx.server.agent;
 
 import com.mantisrx.common.utils.Services;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
@@ -96,6 +97,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
     public static class TaskExecutorStarterBuilder {
         private final WorkerConfiguration workerConfiguration;
         private Configuration configuration;
+        private MantisPropertiesLoader propertiesLoader;
         @Nullable
         private RpcSystem rpcSystem;
         @Nullable
@@ -179,11 +181,17 @@ public class TaskExecutorStarter extends AbstractIdleService {
             return this;
         }
 
+        public TaskExecutorStarterBuilder propertiesLoader(MantisPropertiesLoader propertiesLoader) {
+            this.propertiesLoader = propertiesLoader;
+            return this;
+        }
+
         public TaskExecutorStarter build() throws Exception {
             final TaskExecutor taskExecutor =
                 new TaskExecutor(
                     getRpcService(),
-                    workerConfiguration,
+                    Preconditions.checkNotNull(workerConfiguration, "WorkerConfiguration for TaskExecutor is null"),
+                    Preconditions.checkNotNull(propertiesLoader, "propertiesLoader for TaskExecutor is null"),
                     highAvailabilityServices,
                     getClassLoaderHandle(),
                     this.taskFactory);
