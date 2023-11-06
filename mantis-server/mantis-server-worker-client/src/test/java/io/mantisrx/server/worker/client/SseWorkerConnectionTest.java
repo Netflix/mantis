@@ -142,5 +142,10 @@ public class SseWorkerConnectionTest {
 
         logger.info("Connection tracker size: {}", client.connectionTrackerSize());
         assertEquals(0, client.connectionTrackerSize());
+
+        // Test cannot add more channels after the client is closed.
+        client.trackConnection(dummyChannel);
+        logger.info("Connection tracker size: {}", client.connectionTrackerSize());
+        assertEquals(0, client.connectionTrackerSize());
     }
 }
