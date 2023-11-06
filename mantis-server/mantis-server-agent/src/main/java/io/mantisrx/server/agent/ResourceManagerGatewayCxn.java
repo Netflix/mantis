@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.time.Time;
@@ -49,7 +50,8 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     private final int idx;
     private final TaskExecutorRegistration taskExecutorRegistration;
     @Getter
-    private final ResourceClusterGateway gateway;
+    @Setter
+    private volatile ResourceClusterGateway gateway;
     private final Time heartBeatInterval;
     private final Time heartBeatTimeout;
     private final Time timeout = Time.of(1000, TimeUnit.MILLISECONDS);
