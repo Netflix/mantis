@@ -28,6 +28,7 @@ import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.server.agent.utils.DurableBooleanState;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -77,7 +78,8 @@ public class ResourceManagerGatewayCxnTest {
         report = TaskExecutorReport.available();
         heartbeat = new TaskExecutorHeartbeat(taskExecutorID, clusterID, report);
         cxn = new ResourceManagerGatewayCxn(0, registration, gateway, Time.milliseconds(10),
-            Time.milliseconds(100), dontCare -> CompletableFuture.completedFuture(report), 3, 1000, 5000, 50, 2, 0.5, 3);
+            Time.milliseconds(100), dontCare -> CompletableFuture.completedFuture(report), 3, 1000,
+            5000, 50, 2, 0.5, 3, new DurableBooleanState("test.txt"));
     }
 
 

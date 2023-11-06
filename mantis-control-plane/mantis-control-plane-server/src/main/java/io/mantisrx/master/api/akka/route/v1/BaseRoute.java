@@ -43,7 +43,7 @@ import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorNotFoundException;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorNotFoundException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.FilterProvider;

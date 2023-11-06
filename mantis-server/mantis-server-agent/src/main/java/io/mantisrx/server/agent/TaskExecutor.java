@@ -31,6 +31,7 @@ import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
+import io.mantisrx.server.agent.utils.DurableBooleanState;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
@@ -53,6 +54,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
+import java.io.File;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -333,7 +335,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             workerConfiguration.registrationRetryInitialDelayMillis(),
             workerConfiguration.registrationRetryMultiplier(),
             workerConfiguration.registrationRetryRandomizationFactor(),
-            workerConfiguration.registrationRetryMaxAttempts());
+            workerConfiguration.registrationRetryMaxAttempts(),
+            new DurableBooleanState(new File(workerConfiguration.getLocalStorageDir(), "rmCxnState.txt").getAbsolutePath()));
     }
 
     private ExecutorService getIOExecutor() {
