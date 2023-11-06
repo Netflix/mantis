@@ -202,7 +202,7 @@ public class ResourceClusterActorTest {
                 Duration.ofSeconds(1),
                 CLUSTER_ID,
                 mapper,
-                () -> 100);
+                () -> 10000);
     }
 
     @Test
