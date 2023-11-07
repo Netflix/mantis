@@ -16,9 +16,10 @@
 
 package io.mantisrx.master.resourcecluster;
 
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.BestFit;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatchAssignmentRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
@@ -29,7 +30,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * A component to manage the states of {@link TaskExecutorState} for a given {@link ResourceClusterActor}.
@@ -79,11 +79,14 @@ interface ExecutorStateManager {
         Predicate<Entry<TaskExecutorID, TaskExecutorState>> predicate);
 
     /**
-     * Find a matched task executor best fitting the given assignment request.
+     * Finds set of matched task executors best fitting the given assignment requests.
+     *
      * @param request Assignment request.
-     * @return Optional of matched task executor.
+     * @return Optional of matched task executors.
      */
-    Optional<Pair<TaskExecutorID, TaskExecutorState>> findBestFit(TaskExecutorAssignmentRequest request);
+    Optional<BestFit> findBestFit(TaskExecutorBatchAssignmentRequest request);
+
+    void unscheduleJob(String jobId);
 
     Set<Entry<TaskExecutorID, TaskExecutorState>> getActiveExecutorEntry();
 

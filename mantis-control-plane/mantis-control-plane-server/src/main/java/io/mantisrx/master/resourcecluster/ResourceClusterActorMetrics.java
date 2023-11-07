@@ -28,7 +28,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.CacheJobArtifacts
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.HeartbeatTimeout;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.InitializeTaskExecutorRequest;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatchAssignmentRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -85,7 +85,7 @@ class ResourceClusterActorMetrics {
             TaskExecutorHeartbeat.class, getBoth("TaskExecutorHeartbeat"),
             TaskExecutorDisconnection.class, getBoth("TaskExecutorDisconnection"),
             HeartbeatTimeout.class, getBoth("HeartbeatTimeout"),
-            TaskExecutorAssignmentRequest.class, getBoth("TaskExecutorAssignmentRequest"),
+            TaskExecutorBatchAssignmentRequest.class, getBoth("TaskExecutorBatchAssignmentRequest"),
             TaskExecutorGatewayRequest.class, getBoth("TaskExecutorGatewayRequest"),
             CacheJobArtifactsOnTaskExecutorRequest.class,
             getBoth("CacheJobArtifactsOnTaskExecutorRequest"),

@@ -1317,6 +1317,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private void initializeRunningWorkers() {
             // Scan for the list of all corrupted workers to be resubmitted.
             List<JobWorker> workersToResubmit = markCorruptedWorkers();
+            List<IMantisWorkerMetadata> workersToSubmit = new ArrayList<>();
 
             // publish a refresh before enqueuing tasks to the Scheduler, as there is a potential race between
             // WorkerRegistryV2 getting updated and isWorkerValid being called from SchedulingService loop
@@ -1357,7 +1358,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                         scheduler.initializeRunningWorker(scheduleRequest, wm.getSlave(), wm.getSlaveID());
                     } else if (wm.getState().equals(WorkerState.Accepted)) {
-                        queueTask(wm);
+
+                        // If the job is in accepted state, queue all its pending workers at once in a batch request.
+                        // This is important when before master failover there were pending batch requests
+                        if (JobState.isAcceptedState(mantisJobMetaData.getState())) {
+                            workersToSubmit.add(wm);
+                        } else {
+                            queueTask(wm);
+                        }
                     }
                 }
 
@@ -1365,6 +1373,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     stageAssignments.put(stageMeta.getStageNum(), new WorkerAssignments(stageMeta.getStageNum(),
                             stageMeta.getNumWorkers(), workerHosts));
                 }
+            }
+
+            if (JobState.isAcceptedState(mantisJobMetaData.getState()) && !workersToSubmit.isEmpty()) {
+                queueTasks(workersToSubmit, empty());
             }
 
             // publish another update after queuing tasks to Fenzo (in case some workers were marked Started
@@ -1475,40 +1487,37 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     mantisJobMetaData.getJobDefinition(),
                     System.currentTimeMillis());
 
-            int beg = 0;
-            while (true) {
-                if (beg >= workers.size()) {
-                    break;
-                }
-                int en = beg + Math.min(workerWritesBatchSize, workers.size() - beg);
-                final List<IMantisWorkerMetadata> workerRequests = workers.subList(beg, en);
-                try {
-                    jobStore.storeNewWorkers(jobMgr.getJobDetails(), workerRequests);
-                    LOGGER.info("Stored workers {} for Job {}", workerRequests, jobId);
-                    // refresh Worker Registry state before enqueuing task to Scheduler
-                    markStageAssignmentsChanged(true);
+            try {
+                jobStore.storeNewWorkers(jobMgr.getJobDetails(), workers);
+                LOGGER.info("Stored workers {} for Job {}", workers, jobId);
+                // refresh Worker Registry state before enqueuing task to Scheduler
+                markStageAssignmentsChanged(true);
+
+                if (!workers.isEmpty()) {
                     // queue to scheduler
-                    workerRequests.forEach(this::queueTask);
-                } catch (Exception e) {
-                    LOGGER.error("Error {} storing workers of job {}", e.getMessage(), jobId.getId(), e);
-                    throw new RuntimeException("Exception saving worker for Job " + jobId, e);
+                    queueTasks(workers, empty());
                 }
-                beg = en;
+            } catch (Exception e) {
+                LOGGER.error("Error {} storing workers of job {}", e.getMessage(), jobId.getId(), e);
+                throw new RuntimeException("Exception saving worker for Job " + jobId, e);
             }
         }
 
-        private void queueTask(final IMantisWorkerMetadata workerRequest, final Optional<Long> readyAt) {
-            final ScheduleRequest schedulingRequest = createSchedulingRequest(workerRequest, readyAt);
-            LOGGER.info("Queueing up scheduling request {} ", schedulingRequest);
+        private void queueTasks(final List<IMantisWorkerMetadata> workerRequests, final Optional<Long> readyAt) {
+            final List<ScheduleRequest> scheduleRequests = workerRequests
+                .stream()
+                .map(wR -> createSchedulingRequest(wR, readyAt))
+                .collect(Collectors.toList());
+            LOGGER.info("Queueing up batch schedule request for {} workers", workerRequests.size());
             try {
-                scheduler.scheduleWorker(schedulingRequest);
+                scheduler.scheduleWorkers(new BatchScheduleRequest(scheduleRequests));
             } catch (Exception e) {
-                LOGGER.error("Exception queueing task", e);
+                LOGGER.error("Exception queueing tasks", e);
             }
         }
 
         private void queueTask(final IMantisWorkerMetadata workerRequest) {
-            queueTask(workerRequest, empty());
+            queueTasks(Collections.singletonList(workerRequest), empty());
         }
 
         private ScheduleRequest createSchedulingRequest(
@@ -1672,6 +1681,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         @Override
         public void shutdown() {
+            scheduler.unscheduleJob(jobId.getId());
             // if workers have not already completed
             if (!allWorkerCompleted()) {
                 // kill workers
@@ -1805,6 +1815,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         Instant acceptedAt = Instant.ofEpochMilli(workerMeta.getAcceptedAt());
                         if (Duration.between(acceptedAt, currentTime).getSeconds() > stuckInSubmitToleranceSecs) {
                             // worker stuck in accepted
+                            LOGGER.info("Job {}, Worker {} stuck in accepted state for {}", this.jobMgr.getJobId(),
+                                    workerMeta.getWorkerId(), Duration.between(acceptedAt, currentTime).getSeconds());
+
                             workersToResubmit.add(worker);
                             eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(
                                 WARN,
@@ -2016,6 +2029,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     if (allWorkerStarted()) {
                         allWorkersStarted = true;
                         jobMgr.onAllWorkersStarted();
+                        scheduler.unscheduleJob(jobId.getId());
                         markStageAssignmentsChanged(true);
                     } else if (allWorkerCompleted()) {
                         LOGGER.info("Job {} All workers completed1", jobId);
@@ -2169,7 +2183,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // publish a refresh before enqueuing new Task to Scheduler
                 markStageAssignmentsChanged(true);
                 // queue the new worker for execution
-                queueTask(newWorker.getMetadata(), delayDuration);
+                queueTasks(Collections.singletonList(newWorker.getMetadata()), delayDuration);
                 LOGGER.info("Worker {} successfully queued for scheduling", newWorker);
                 numWorkerResubmissions.increment();
             } else {
