@@ -45,8 +45,11 @@ public class DurableBooleanState {
             new File(fileName).createNewFile();
         }
 
-        byte[] contents = new byte[]{0};
-        Files.write(new File(fileName).toPath(), contents, StandardOpenOption.TRUNCATE_EXISTING);
+        // initialize the file to 1 byte if it is empty
+        if (new File(fileName).length() == 0) {
+            byte[] contents = new byte[]{0};
+            Files.write(new File(fileName).toPath(), contents, StandardOpenOption.TRUNCATE_EXISTING);
+        }
     }
 
     public void setState(boolean state) throws IOException {

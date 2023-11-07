@@ -44,5 +44,9 @@ public class DurableBooleanStateTest {
 
         durableBooleanState.setState(true);
         assertTrue(durableBooleanState.getState());
+
+
+        DurableBooleanState anotherBooleanState = new DurableBooleanState(absolutePath);
+        assertTrue(anotherBooleanState.getState());
     }
 }
