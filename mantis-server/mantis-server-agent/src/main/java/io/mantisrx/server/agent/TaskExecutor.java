@@ -121,6 +121,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private ExecuteStageRequest currentRequest;
     private final DurableBooleanState registeredState;
 
+    @VisibleForTesting
     public TaskExecutor(
         RpcService rpcService,
         WorkerConfiguration workerConfiguration,
@@ -213,7 +214,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         resourceClusterGatewaySupplier =
             highAvailabilityServices.connectWithResourceManager(clusterID);
-        resourceClusterGatewaySupplier.register((oldGateway, newGateway) -> setNewResourceClusterGateway(newGateway));
+        resourceClusterGatewaySupplier.register((oldGateway, newGateway) -> TaskExecutor.this.runAsync(() -> setNewResourceClusterGateway(newGateway)));
         establishNewResourceManagerCxnSync();
     }
 

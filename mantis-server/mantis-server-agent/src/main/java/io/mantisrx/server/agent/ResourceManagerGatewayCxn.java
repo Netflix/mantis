@@ -133,10 +133,12 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
 
     @Override
     public void startUp() throws Exception {
-        log.info("Trying to register with resource manager {}", gateway);
         try {
             if (!alreadyRegistered.getState()) {
+                log.info("Trying to register with resource manager {}", gateway);
                 registerTaskExecutorWithRetry();
+            } else {
+                log.info("Registered with resource manager {} already", gateway);
             }
 
             registered = true;
