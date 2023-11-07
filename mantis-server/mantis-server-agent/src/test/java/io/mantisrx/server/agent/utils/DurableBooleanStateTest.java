@@ -34,6 +34,7 @@ public class DurableBooleanStateTest {
         File tempFile = tempFolder.newFile("myTempFile.txt");
         String absolutePath = tempFile.getAbsolutePath();
         DurableBooleanState durableBooleanState = new DurableBooleanState(absolutePath);
+        assertFalse(durableBooleanState.getState());
         durableBooleanState.setState(true);
         boolean state = durableBooleanState.getState();
         assertTrue(state);

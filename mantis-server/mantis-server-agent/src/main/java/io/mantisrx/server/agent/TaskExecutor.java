@@ -119,6 +119,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private RuntimeTask currentTask;
     private ExecuteStageRequest currentRequest;
+    private final DurableBooleanState registeredState;
 
     public TaskExecutor(
         RpcService rpcService,
@@ -189,6 +190,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         this.resourceManagerCxnIdx = 0;
         this.taskFactory = taskFactory == null ? new SingleTaskOnlyFactory() : taskFactory;
+        this.registeredState = new DurableBooleanState(new File(workerConfiguration.getLocalStorageDir(), "rmCxnState.txt").getAbsolutePath());
     }
 
     @Override
@@ -317,7 +319,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             workerConfiguration.registrationRetryMultiplier(),
             workerConfiguration.registrationRetryRandomizationFactor(),
             workerConfiguration.registrationRetryMaxAttempts(),
-            new DurableBooleanState(new File(workerConfiguration.getLocalStorageDir(), "rmCxnState.txt").getAbsolutePath()));
+            registeredState);
     }
 
     private ExecutorService getIOExecutor() {

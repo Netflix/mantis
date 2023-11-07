@@ -561,8 +561,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     return;
                 }
             }
-            state.onHeartbeat(heartbeat);
-            if (state.isAvailable()) {
+            boolean stateChange = state.onHeartbeat(heartbeat);
+            if (stateChange && state.isAvailable()) {
                 this.executorStateManager.tryMarkAvailable(taskExecutorID);
             }
 

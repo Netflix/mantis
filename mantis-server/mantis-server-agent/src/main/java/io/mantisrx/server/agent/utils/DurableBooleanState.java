@@ -16,24 +16,44 @@
 
 package io.mantisrx.server.agent.utils;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DurableBooleanState {
+
     private final String fileName;
 
     public DurableBooleanState(String fileName) {
         this.fileName = fileName;
+        try {
+            init();
+        } catch (IOException e) {
+            log.error("Failed to initialize the state file", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void init() throws IOException {
+        // create file if it does not exist
+        if (!new File(fileName).exists()) {
+            new File(fileName).createNewFile();
+        }
+
+        byte[] contents = new byte[]{0};
+        Files.write(new File(fileName).toPath(), contents, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     public void setState(boolean state) throws IOException {
         try (FileOutputStream fos = new FileOutputStream(fileName)) {
             fos.write(state ? 1 : 0);
             fos.flush();
-            log.info("The state has been stored successfully!");
+            log.info("Set the state to {} successfully", state);
         }
     }
 
