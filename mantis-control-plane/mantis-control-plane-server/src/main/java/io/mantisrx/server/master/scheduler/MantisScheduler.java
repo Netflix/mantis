@@ -30,7 +30,9 @@ public interface MantisScheduler {
      *
      * @param scheduleRequest worker to schedule
      */
-    void scheduleWorker(final ScheduleRequest scheduleRequest);
+    void scheduleWorkers(final BatchScheduleRequest scheduleRequest);
+
+    void unscheduleJob(final String jobId);
 
     /**
      * Mark the worker to be removed from the Scheduling queue. This is expected to be called for all tasks that were added to the Scheduler, whether or

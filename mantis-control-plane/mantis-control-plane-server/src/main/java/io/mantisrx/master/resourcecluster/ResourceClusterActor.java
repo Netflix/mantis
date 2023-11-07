@@ -28,6 +28,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
+import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -205,7 +206,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(TaskExecutorStatusChange.class, this::onTaskExecutorStatusChange)
                 .match(TaskExecutorDisconnection.class, metrics.withTracking(this::onTaskExecutorDisconnection))
                 .match(HeartbeatTimeout.class, metrics.withTracking(this::onTaskExecutorHeartbeatTimeout))
-                .match(TaskExecutorAssignmentRequest.class, metrics.withTracking(this::onTaskExecutorAssignmentRequest))
+                .match(TaskExecutorBatchAssignmentRequest.class, metrics.withTracking(this::onTaskExecutorBatchAssignmentRequest))
+                .match(UnscheduleJobRequest.class, this::onUnscheduleJobRequest)
                 .match(ResourceOverviewRequest.class, this::onResourceOverviewRequest)
                 .match(TaskExecutorInfoRequest.class, this::onTaskExecutorInfoRequest)
                 .match(TaskExecutorGatewayRequest.class, metrics.withTracking(this::onTaskExecutorGatewayRequest))
@@ -585,42 +587,48 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         }
     }
 
-    private void onTaskExecutorAssignmentRequest(TaskExecutorAssignmentRequest request) {
-        Optional<Pair<TaskExecutorID, TaskExecutorState>> matchedExecutor =
-            this.executorStateManager.findBestFit(request);
+    private void onUnscheduleJobRequest(UnscheduleJobRequest request) {
+        this.executorStateManager.unscheduleJob(request.jobId);
+    }
 
-        if (matchedExecutor.isPresent()) {
-            log.info("matched executor {} for request {}", matchedExecutor.get().getKey(), request);
+    private void onTaskExecutorBatchAssignmentRequest(TaskExecutorBatchAssignmentRequest request) {
+        Optional<BestFit> matchedExecutors = this.executorStateManager.findBestFit(request);
 
-            // trigger job artifact cache if needed
-            if(shouldCacheJobArtifacts(request)) {
-                self().tell(new AddNewJobArtifactsToCacheRequest(clusterID, Collections.singletonList(request.getAllocationRequest().getJobMetadata().getJobArtifact())), self());
-            }
-
-            matchedExecutor.get().getValue().onAssignment(request.getAllocationRequest().getWorkerId());
-            // let's give some time for the assigned executor to be scheduled work. otherwise, the assigned executor
-            // will be returned back to the pool.
-            getTimers().startSingleTimer(
-                "Assignment-" + matchedExecutor.get().getKey().toString(),
-                new TaskExecutorAssignmentTimeout(matchedExecutor.get().getKey()),
-                assignmentTimeout);
-            sender().tell(matchedExecutor.get().getKey(), self());
+        if (matchedExecutors.isPresent()) {
+            log.info("Matched all executors {} for request {}", matchedExecutors.get(), request);
+            matchedExecutors.get().getBestFit().forEach((allocationRequest, taskExecutorToState) -> assignTaskExecutor(
+                allocationRequest, taskExecutorToState.getLeft(), taskExecutorToState.getRight(), request));
+            sender().tell(new TaskExecutorsAllocation(matchedExecutors.get().getRequestToTaskExecutorMap()), self());
         } else {
-            metrics.incrementCounter(
+            request.allocationRequests.forEach(req -> metrics.incrementCounter(
                 ResourceClusterActorMetrics.NO_RESOURCES_AVAILABLE,
                 TagList.create(ImmutableMap.of(
                     "resourceCluster",
                     clusterID.getResourceID(),
                     "workerId",
-                    request.getAllocationRequest().getWorkerId().getId(),
+                    req.getWorkerId().getId(),
                     "jobCluster",
-                    request.getAllocationRequest().getWorkerId().getJobCluster(),
+                    req.getWorkerId().getJobCluster(),
                     "cpuCores",
-                    String.valueOf(request.getAllocationRequest().getMachineDefinition().getCpuCores()))));
+                    String.valueOf(req.getMachineDefinition().getCpuCores())))));
             sender().tell(new Status.Failure(new NoResourceAvailableException(
                 String.format("No resource available for request %s: resource overview: %s", request,
                     getResourceOverview()))), self());
         }
+    }
+
+    private void assignTaskExecutor(TaskExecutorAllocationRequest allocationRequest, TaskExecutorID taskExecutorID, TaskExecutorState taskExecutorState, TaskExecutorBatchAssignmentRequest request) {
+        if(shouldCacheJobArtifacts(allocationRequest)) {
+            self().tell(new AddNewJobArtifactsToCacheRequest(clusterID, Collections.singletonList(allocationRequest.getJobMetadata().getJobArtifact())), self());
+        }
+
+        taskExecutorState.onAssignment(allocationRequest.getWorkerId());
+        // let's give some time for the assigned executor to be scheduled work. otherwise, the assigned executor
+        // will be returned back to the pool.
+        getTimers().startSingleTimer(
+            "Assignment-" + taskExecutorID.toString(),
+            new TaskExecutorAssignmentTimeout(taskExecutorID),
+            assignmentTimeout);
     }
 
     private void onTaskExecutorAssignmentTimeout(TaskExecutorAssignmentTimeout request) {
@@ -801,9 +809,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
      * (this is to reduce the work in master) and if the job cluster is enabled (via config
      * for now)
      */
-    private boolean shouldCacheJobArtifacts(TaskExecutorAssignmentRequest request) {
-        final WorkerId workerId = request.getAllocationRequest().getWorkerId();
-        final boolean isFirstWorkerOfFirstStage = request.getAllocationRequest().getStageNum() == 1 && workerId.getWorkerIndex() == 0;
+    private boolean shouldCacheJobArtifacts(TaskExecutorAllocationRequest allocationRequest) {
+        final WorkerId workerId = allocationRequest.getWorkerId();
+        final boolean isFirstWorkerOfFirstStage = allocationRequest.getStageNum() == 1 && workerId.getWorkerIndex() == 0;
         if (isFirstWorkerOfFirstStage) {
             final Set<String> jobClusters = getJobClustersWithArtifactCachingEnabled();
             return jobClusters.contains(workerId.getJobCluster());
@@ -823,9 +831,38 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     @Value
-    static class TaskExecutorAssignmentRequest {
-        TaskExecutorAllocationRequest allocationRequest;
+    static class UnscheduleJobRequest {
+        String jobId;
         ClusterID clusterID;
+    }
+
+    @Value
+    static class TaskExecutorBatchAssignmentRequest {
+        Set<TaskExecutorAllocationRequest> allocationRequests;
+        ClusterID clusterID;
+
+        public Map<MachineDefinition, List<TaskExecutorAllocationRequest>> getGroupedByMachineDef() {
+            return allocationRequests
+                .stream()
+                .collect(Collectors.groupingBy(TaskExecutorAllocationRequest::getMachineDefinition));
+        }
+
+        public Map<Double, Integer> getGroupedByCoresCount() {
+            return allocationRequests
+                .stream()
+                .collect(Collectors.groupingBy(TaskExecutorAllocationRequest::getMachineDefinition))
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                    e -> e.getKey().getCpuCores(),
+                    e -> e.getValue().size(),
+                    Integer::sum
+                ));
+        }
+
+        public String getJobId() {
+            return allocationRequests.iterator().next().getWorkerId().getJobId();
+        }
     }
 
     @Value
@@ -939,6 +976,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     @Value
+    static class TaskExecutorsAllocation {
+        Map<TaskExecutorAllocationRequest, TaskExecutorID> allocations;
+    }
+
+    @Value
     static class ArtifactList {
         List<ArtifactID> artifacts;
     }
@@ -988,6 +1030,25 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     static class GetJobArtifactsToCacheRequest {
         ClusterID clusterID;
     }
+
+
+    @Value
+    @Builder
+    static class BestFit {
+        Map<TaskExecutorAllocationRequest, Pair<TaskExecutorID, TaskExecutorState>> bestFit;
+
+        public Map<TaskExecutorAllocationRequest, TaskExecutorID> getRequestToTaskExecutorMap() {
+            return bestFit
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                    Entry::getKey,
+                    e -> e.getValue().getKey()
+                ));
+        }
+    }
+
+
 
     /**
      * Represents the Availability of a given node in the resource cluster.

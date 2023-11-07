@@ -66,10 +66,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import org.apache.flink.util.ExceptionUtils;
 import org.junit.AfterClass;
@@ -232,9 +235,10 @@ public class ResourceClusterActorTest {
                         TASK_EXECUTOR_ID,
                         CLUSTER_ID,
                         TaskExecutorReport.available())).get());
+        final Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0));
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
+            resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).get());
@@ -328,9 +332,10 @@ public class ResourceClusterActorTest {
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID_3, TASK_EXECUTOR_ID_2), idleInstancesResponse.getInstanceIds());
         assertEquals(CONTAINER_DEF_ID_2, idleInstancesResponse.getSkuId());
 
+        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0));
         assertEquals(
             TASK_EXECUTOR_ID_3,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)).get());
+            resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
 
         probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetClusterUsageRequest(
@@ -362,9 +367,10 @@ public class ResourceClusterActorTest {
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), idleInstancesResponse.getInstanceIds());
         assertEquals(CONTAINER_DEF_ID_1, idleInstancesResponse.getSkuId());
 
+        requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0));
         assertEquals(
             TASK_EXECUTOR_ID_2,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
+            resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
         probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetClusterUsageRequest(
                 CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
@@ -417,19 +423,24 @@ public class ResourceClusterActorTest {
                         TASK_EXECUTOR_ID,
                         CLUSTER_ID,
                         TaskExecutorReport.available())).get());
+        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0));
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
+            resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
         assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
         Thread.sleep(2000);
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getAvailableTaskExecutors().get());
+        requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0));
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
+            resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
     }
 
     @Test
     public void testGetMultipleActiveJobs() throws ExecutionException, InterruptedException {
+
+        final Set<TaskExecutorAllocationRequest> requests = new HashSet<>();
+        final Set<TaskExecutorID> expectedTaskExecutorIds = new HashSet<>();
         final int n = 10;
         List<String> expectedJobIdList = new ArrayList<>(n);
         for (int i = 0; i < n * 2; i ++) {
@@ -464,11 +475,12 @@ public class ResourceClusterActorTest {
                 expectedJobIdList.add(String.format("late-sine-function-tutorial-%d", idx));
             }
 
-            assertEquals(
-                taskExecutorID,
-                resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(workerId, MACHINE_DEFINITION, null, 0))
-                    .get());
+            expectedTaskExecutorIds.add(taskExecutorID);
+            requests.add(TaskExecutorAllocationRequest.of(workerId, MACHINE_DEFINITION, null, 0));
         }
+        assertEquals(
+            expectedTaskExecutorIds,
+            new HashSet<>(resourceCluster.getTaskExecutorsFor(requests).get().values()));
 
         TestKit probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetActiveJobsRequest(
@@ -577,9 +589,10 @@ public class ResourceClusterActorTest {
             resourceCluster.heartBeatFromTaskExecutor(
                 new TaskExecutorHeartbeat(TASK_EXECUTOR_ID_2, CLUSTER_ID, TaskExecutorReport.available())).get());
         resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
+        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0));
         assertEquals(
             TASK_EXECUTOR_ID_2,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
+            resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
     }
 
     @Test
@@ -610,9 +623,11 @@ public class ResourceClusterActorTest {
             resourceCluster.heartBeatFromTaskExecutor(
                 new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).join());
 
+
+        final Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0));
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).join());
+            resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
         assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join());
         assertEquals(Ack.getInstance(), resourceCluster.notifyTaskExecutorStatusChange(
             new TaskExecutorStatusChange(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID))).join());
@@ -621,7 +636,7 @@ public class ResourceClusterActorTest {
             new TaskExecutorStatusChange(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).join());
 
         try {
-            TaskExecutorID result = resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join();
+            resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join();
 
         } catch (Exception e) {
             throw ExceptionUtils.stripCompletionException(e);

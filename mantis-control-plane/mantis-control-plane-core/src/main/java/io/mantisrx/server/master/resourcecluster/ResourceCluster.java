@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import lombok.Value;
@@ -100,14 +101,13 @@ public interface ResourceCluster extends ResourceClusterGateway {
 
     /**
      * Can throw {@link NoResourceAvailableException} wrapped within the CompletableFuture in case there
-     * are no task executors.
+     * are no enough available task executors.
      *
-     * @param machineDefinition machine definition that's requested for the worker
-     * @param workerId          worker id of the task that's going to run on the node.
-     * @return task executor assigned for the particular task.
+     * @param allocationRequests set of machine definitions requested for 1 or more workers
+     * @return task executors assigned for the particular request
      */
-    CompletableFuture<TaskExecutorID> getTaskExecutorFor(
-        TaskExecutorAllocationRequest allocationRequest);
+    CompletableFuture<Map<TaskExecutorAllocationRequest, TaskExecutorID>> getTaskExecutorsFor(
+        Set<TaskExecutorAllocationRequest> allocationRequests);
 
     /**
      * Returns the Gateway instance to talk to the task executor. If unable to make connection with
@@ -187,6 +187,13 @@ public interface ResourceCluster extends ResourceClusterGateway {
      */
     CompletableFuture<Map<TaskExecutorID, WorkerId>> getTaskExecutorWorkerMapping(
         Map<String, String> attributes);
+
+    /**
+     * Signals that the given job id has been killed.
+     *
+     * @param jobId id of the job killed
+     */
+    CompletableFuture<Ack> unscheduleJob(String jobId);
 
     class NoResourceAvailableException extends Exception {
 

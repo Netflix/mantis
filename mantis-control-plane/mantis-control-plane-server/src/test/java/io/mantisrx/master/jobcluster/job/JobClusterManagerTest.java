@@ -496,6 +496,18 @@ public class JobClusterManagerTest {
                 0,
                 1));
 
+        jobClusterManagerActor.tell(new GetJobDetailsRequest(
+                "user",
+                JobId.fromId("testBootStrapJobClustersAndJobs3-1")
+                        .get()), probe.getRef());
+        GetJobDetailsResponse acceptedResponse = probe.expectMsgClass(Duration.of(10, ChronoUnit.MINUTES),
+                GetJobDetailsResponse.class);
+
+        System.out.println("[fdc-92] acceptedResponse -> " + acceptedResponse);
+        // Ensure its Accepted
+        assertEquals(SUCCESS, acceptedResponse.responseCode);
+        assertEquals(JobState.Accepted, acceptedResponse.getJobMetadata().get().getState());
+
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
@@ -541,7 +553,7 @@ public class JobClusterManagerTest {
         GetJobDetailsResponse resp2 = probe.expectMsgClass(GetJobDetailsResponse.class);
 
         // Ensure its launched
-        System.out.println("Resp2 -> " + resp2.message);
+        System.out.println("Resp2 -> " + resp2);
         assertEquals(SUCCESS, resp2.responseCode);
         assertEquals(JobState.Launched, resp2.getJobMetadata().get().getState());
 
@@ -565,6 +577,7 @@ public class JobClusterManagerTest {
         resp2 = probe.expectMsgClass(Duration.of(10, ChronoUnit.MINUTES),
             GetJobDetailsResponse.class);
 
+        System.out.println("[fdc-92] resp -> " + resp2);
         // Ensure its Accepted
         assertEquals(SUCCESS, resp2.responseCode);
         assertEquals(JobState.Accepted, resp2.getJobMetadata().get().getState());
@@ -619,7 +632,7 @@ public class JobClusterManagerTest {
             any());
 
         // 2 worker schedule requests
-        verify(schedulerMock, timeout(100_000).times(4)).scheduleWorker(any());
+        verify(schedulerMock, timeout(100_000).times(4)).scheduleWorkers(any());
 
         try {
             Mockito.verify(jobStoreSpied).loadAllArchivedJobsAsync();
@@ -795,7 +808,7 @@ public class JobClusterManagerTest {
             });
 
         // Two schedules: one for the initial success, one for a resubmit from corrupted worker ports.
-        verify(schedulerMock, times(2)).scheduleWorker(any());
+        verify(schedulerMock, times(2)).scheduleWorkers(any());
         // One unschedule from corrupted worker ID 1 (before the resubmit).
         verify(schedulerMock, times(1)).unscheduleAndTerminateWorker(eq(workerId), any());
 

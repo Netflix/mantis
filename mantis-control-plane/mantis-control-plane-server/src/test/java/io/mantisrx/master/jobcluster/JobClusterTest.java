@@ -2425,6 +2425,8 @@ public class JobClusterTest {
             jobClusterActor.tell(new SubmitJobRequest(clusterName, "user", jobDefn), probe.getRef());
             SubmitJobResponse submitResponse = probe.expectMsgClass(SubmitJobResponse.class);
 
+            System.out.println("SUBMIT RESP: " + submitResponse);
+
             JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobClusterActor, jobId, 0, new WorkerId(clusterName, jobId, 0, 1));
             JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobClusterActor, jobId, 1, new WorkerId(clusterName, jobId, 0, 2));
 
@@ -2448,7 +2450,7 @@ public class JobClusterTest {
             verify(jobStoreMock, times(3)).updateJob(any());
 
             // initial worker and scale up worker
-            verify(schedulerMock, times(3)).scheduleWorker(any());
+            verify(schedulerMock, times(2)).scheduleWorkers(any());
 
 
 
@@ -2956,7 +2958,7 @@ public class JobClusterTest {
             }
 
             // 2 initial schedules and 1 replacement
-            verify(schedulerMock, timeout(1_000).times(2)).scheduleWorker(any());
+            verify(schedulerMock, timeout(1_000).times(2)).scheduleWorkers(any());
 
             // archive worker should get called once for the dead worker
             //	verify(jobStoreMock, timeout(1_000).times(1)).archiveWorker(any());
