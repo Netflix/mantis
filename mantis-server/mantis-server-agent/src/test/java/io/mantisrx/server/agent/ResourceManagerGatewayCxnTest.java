@@ -38,12 +38,15 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import org.apache.flink.api.common.time.Time;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Matchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -57,8 +60,11 @@ public class ResourceManagerGatewayCxnTest {
     private ResourceManagerGatewayCxn cxn;
     private TaskExecutorReport report;
 
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
     @Before
-    public void setup() {
+    public void setup() throws IOException {
         WorkerPorts workerPorts = new WorkerPorts(100, 101, 102, 103, 104);
         TaskExecutorID taskExecutorID = TaskExecutorID.of("taskExecutor");
         ClusterID clusterID = ClusterID.of("cluster");
@@ -79,7 +85,7 @@ public class ResourceManagerGatewayCxnTest {
         heartbeat = new TaskExecutorHeartbeat(taskExecutorID, clusterID, report);
         cxn = new ResourceManagerGatewayCxn(0, registration, gateway, Time.milliseconds(10),
             Time.milliseconds(100), dontCare -> CompletableFuture.completedFuture(report), 3, 1000,
-            5000, 50, 2, 0.5, 3, new DurableBooleanState("test.txt"));
+            5000, 50, 2, 0.5, 3, new DurableBooleanState(tempFolder.newFile().getAbsolutePath()));
     }
 
 
