@@ -18,30 +18,27 @@ package io.mantisrx.server.agent.utils;
 
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
 import java.util.concurrent.ThreadLocalRandom;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-@Getter
 @Slf4j
 public abstract class ExponentialBackoffAbstractScheduledService extends AbstractScheduledService {
-    private final int maxRetryCount;
+
     private final long initialDelayMillis;
     private final long maxDelayMillis;
 
-    @Getter
     private int retryCount = 0;
     private long nextRunTime = 0;
 
-    protected ExponentialBackoffAbstractScheduledService(int maxRetryCount, long initialDelayMillis, long maxDelayMillis) {
-        this.maxRetryCount = maxRetryCount;
-        this.initialDelayMillis = Math.min(initialDelayMillis, 50);
-        this.maxDelayMillis = Math.min(maxDelayMillis, 1000);
+    protected ExponentialBackoffAbstractScheduledService(long initialDelayMillis,
+        long maxDelayMillis) {
+        this.initialDelayMillis = initialDelayMillis;
+        this.maxDelayMillis = maxDelayMillis;
     }
 
     protected abstract void runIteration() throws Exception;
 
     @Override
-    protected void runOneIteration() throws Exception {
+    protected void runOneIteration() {
         if (!isTimeForNextRun()) {
             log.debug("Skipping runIteration due to retry delay. Next run after: {}", nextRunTime);
             return;
@@ -49,12 +46,12 @@ public abstract class ExponentialBackoffAbstractScheduledService extends Abstrac
         runNow();
     }
 
-    private void runNow() throws Exception {
+    private void runNow() {
         try {
             runIteration();
             resetRetryCount();
         } catch (Exception e) {
-            setNextRunTime(e);
+            onFailure();
         }
     }
 
@@ -62,13 +59,11 @@ public abstract class ExponentialBackoffAbstractScheduledService extends Abstrac
         return System.currentTimeMillis() >= nextRunTime;
     }
 
-    private void setNextRunTime(Exception e) throws Exception {
-        // If max retries reached, rethrow exception
-        if (retryCount >= maxRetryCount) {
-            throw e;
-        }
+    private void onFailure() {
         // Reschedule task with backoff
-        long delay = (long) Math.min(initialDelayMillis * Math.pow(2, retryCount++), maxDelayMillis);
+        retryCount++;
+        long delay = (long) Math.min(initialDelayMillis * Math.pow(2, Math.max(20, retryCount)),
+            maxDelayMillis);
         long jitter = ThreadLocalRandom.current().nextLong(delay / 2);
         nextRunTime = System.currentTimeMillis() + delay + jitter;
     }
@@ -78,7 +73,7 @@ public abstract class ExponentialBackoffAbstractScheduledService extends Abstrac
         nextRunTime = 0;
     }
 
-    public boolean noMoreRetryLeft() {
-        return retryCount >= maxRetryCount - 1;
+    protected int getRetryCount() {
+        return retryCount;
     }
 }

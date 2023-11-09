@@ -312,7 +312,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             resourceManagerGateway,
             workerConfiguration.getHeartbeatInterval(),
             workerConfiguration.getHeartbeatTimeout(),
-            this::getCurrentReport,
+            this,
             workerConfiguration.getTolerableConsecutiveHeartbeatFailures(),
             workerConfiguration.heartbeatRetryInitialDelayMs(),
             workerConfiguration.heartbeatRetryMaxDelayMs(),
@@ -331,14 +331,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         return this.runtimeTaskExecutor;
     }
 
-    private CompletableFuture<TaskExecutorReport> getCurrentReport(Time timeout) {
+    CompletableFuture<TaskExecutorReport> getCurrentReport() {
         return callAsync(() -> {
             if (this.currentTask == null) {
                 return TaskExecutorReport.available();
             } else {
                 return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
             }
-        }, timeout);
+        }, DEFAULT_TIMEOUT);
     }
 
     @VisibleForTesting

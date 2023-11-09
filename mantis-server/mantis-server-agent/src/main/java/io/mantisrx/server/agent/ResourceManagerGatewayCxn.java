@@ -31,12 +31,9 @@ import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -59,7 +56,8 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     private final double registrationRetryMultiplier;
     private final double registrationRetryRandomizationFactor;
     private final int registrationRetryMaxAttempts;
-    private final Function<Time, CompletableFuture<TaskExecutorReport>> currentReportSupplier;
+    private final int tolerableConsecutiveHeartbeatFailures;
+    private final TaskExecutor taskExecutor;
     // flag representing if the task executor has been registered with the resource manager
     @Getter
     private volatile boolean registered = false;
@@ -78,7 +76,7 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         ResourceClusterGateway gateway,
         Time heartBeatInterval,
         Time heartBeatTimeout,
-        Function<Time, CompletableFuture<TaskExecutorReport>> currentReportSupplier,
+        TaskExecutor taskExecutor,
         int tolerableConsecutiveHeartbeatFailures,
         long heartbeatRetryInitialDelayMillis,
         long heartbeatRetryMaxDelayMillis,
@@ -87,13 +85,14 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         double registrationRetryRandomizationFactor,
         int registrationRetryMaxAttempts,
         DurableBooleanState alreadyRegistered) {
-        super(tolerableConsecutiveHeartbeatFailures, heartbeatRetryInitialDelayMillis, heartbeatRetryMaxDelayMillis);
+        super(heartbeatRetryInitialDelayMillis, heartbeatRetryMaxDelayMillis);
+        this.tolerableConsecutiveHeartbeatFailures = tolerableConsecutiveHeartbeatFailures;
         this.idx = idx;
         this.taskExecutorRegistration = taskExecutorRegistration;
         this.gateway = gateway;
         this.heartBeatInterval = heartBeatInterval;
         this.heartBeatTimeout = heartBeatTimeout;
-        this.currentReportSupplier = currentReportSupplier;
+        this.taskExecutor = taskExecutor;
         this.registrationRetryInitialDelayMillis = registrationRetryInitialDelayMillis;
         this.registrationRetryMultiplier = registrationRetryMultiplier;
         this.registrationRetryRandomizationFactor = registrationRetryRandomizationFactor;
@@ -139,6 +138,8 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
                 registerTaskExecutorWithRetry();
             } else {
                 log.info("Registered with resource manager {} already", gateway);
+                // sending heartbeat instead
+                runIteration();
             }
 
             registered = true;
@@ -198,9 +199,9 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         }
     }
 
-    public void runIteration() throws Exception {
+    protected void runIteration() throws Exception {
         try {
-            currentReportSupplier.apply(timeout)
+            taskExecutor.getCurrentReport()
                     .thenComposeAsync(report -> {
                         log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
                         return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
@@ -223,11 +224,11 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     private void handleHeartbeatFailure(Exception e) throws Exception {
         log.error("Failed to send heartbeat to gateway {}", gateway, e);
        // if there are no more retries then clear the registered flag
-        if (noMoreRetryLeft()) {
+        if (getRetryCount() >= tolerableConsecutiveHeartbeatFailures) {
             registered = false;
         } else {
             log.info("Ignoring heartbeat failure to gateway {} due to failed heartbeats {} <= {}",
-                    gateway, getRetryCount(), getMaxRetryCount());
+                    gateway, getRetryCount(), tolerableConsecutiveHeartbeatFailures);
         }
     }
 
