@@ -133,6 +133,8 @@ public class RuntimeTaskImplExecutorTest {
         props.setProperty("mantis.taskexecutor.registration.retry.initial-delay.ms", "10");
         props.setProperty("mantis.taskexecutor.registration.retry.mutliplier", "1");
         props.setProperty("mantis.taskexecutor.registration.retry.randomization-factor", "0.5");
+        props.setProperty("mantis.taskexecutor.heartbeats.retry.initial-delay.ms", "100");
+        props.setProperty("mantis.taskexecutor.heartbeats.retry.max-delay.ms", "500");
 
         props.setProperty("mantis.localmode", "true");
         props.setProperty("mantis.zookeeper.connectString", "localhost:8100");
