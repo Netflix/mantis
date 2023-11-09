@@ -36,12 +36,12 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
@@ -550,16 +550,25 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         try {
             final TaskExecutorID taskExecutorID = heartbeat.getTaskExecutorID();
             final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
-            boolean stateChange = state.onHeartbeat(heartbeat);
-            if (stateChange) {
-                if (state.isAvailable()) {
-                    this.executorStateManager.tryMarkAvailable(taskExecutorID);
+            if (state.getRegistration() == null || !state.isRegistered()) {
+                TaskExecutorRegistration registration = this.mantisJobStore.getTaskExecutor(heartbeat.getTaskExecutorID());
+                if (registration != null) {
+                    state.onRegistration(registration);
+                } else {
+//                  TODO(sundaram): add a metric
+                    log.warn("Received heartbeat from unknown task executor {}", heartbeat.getTaskExecutorID());
+                    sender().tell(new Status.Failure(new TaskExecutorNotFoundException(taskExecutorID)), self());
+                    return;
                 }
+            }
+            boolean stateChange = state.onHeartbeat(heartbeat);
+            if (stateChange && state.isAvailable()) {
+                this.executorStateManager.tryMarkAvailable(taskExecutorID);
             }
 
             updateHeartbeatTimeout(heartbeat.getTaskExecutorID());
             sender().tell(Ack.getInstance(), self());
-        } catch (IllegalStateException e) {
+        } catch (Exception e) {
             sender().tell(new Status.Failure(e), self());
         }
     }
@@ -689,8 +698,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         if (state == null) {
             log.info("Unknown executorID: {}", taskExecutorID);
             getSender().tell(
-                new Status.Failure(new TaskExecutorNotFoundException(String.format("%s not found",
-                    taskExecutorID.getResourceId()))),
+                new Status.Failure(new TaskExecutorNotFoundException(taskExecutorID)),
                 self());
         }
         else {

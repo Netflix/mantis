@@ -39,7 +39,6 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import io.mantisrx.runtime.loader.RuntimeTask;
-import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.source.http.HttpServerProvider;
 import io.mantisrx.runtime.source.http.HttpSources;
@@ -83,7 +82,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -94,7 +92,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import rx.Observable;
 import rx.Subscription;
 
@@ -117,19 +117,24 @@ public class RuntimeTaskImplExecutorTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private CollectingTaskLifecycleListener listener;
 
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
     @Before
     public void setUp() throws IOException {
         final Properties props = new Properties();
         props.setProperty("mantis.zookeeper.root", "");
 
         props.setProperty("mantis.taskexecutor.cluster.storage-dir", "");
-        props.setProperty("mantis.taskexecutor.local.storage-dir", "");
+        props.setProperty("mantis.taskexecutor.blob-store.local-cache", tempFolder.newFolder().getAbsolutePath());
         props.setProperty("mantis.taskexecutor.cluster-id", "default");
         props.setProperty("mantis.taskexecutor.heartbeats.interval", "100");
         props.setProperty("mantis.taskexecutor.metrics.collector", "io.mantisrx.server.agent.DummyMetricsCollector");
         props.setProperty("mantis.taskexecutor.registration.retry.initial-delay.ms", "10");
         props.setProperty("mantis.taskexecutor.registration.retry.mutliplier", "1");
         props.setProperty("mantis.taskexecutor.registration.retry.randomization-factor", "0.5");
+        props.setProperty("mantis.taskexecutor.heartbeats.retry.initial-delay.ms", "100");
+        props.setProperty("mantis.taskexecutor.heartbeats.retry.max-delay.ms", "500");
 
         props.setProperty("mantis.localmode", "true");
         props.setProperty("mantis.zookeeper.connectString", "localhost:8100");
@@ -143,7 +148,7 @@ public class RuntimeTaskImplExecutorTest {
 
         masterClientApi = mock(MantisMasterGateway.class);
         classLoaderHandle = ClassLoaderHandle.fixed(getClass().getClassLoader());
-        resourceManagerGateway = getHealthyGateway("gateway 1");
+        resourceManagerGateway = getHealthyGateway("gateway1");
         resourceManagerGatewayCxn = new SimpleResourceLeaderConnection<>(resourceManagerGateway);
 
         // worker and task executor do not share the same HA instance.
@@ -156,17 +161,6 @@ public class RuntimeTaskImplExecutorTest {
     }
 
     private void start() throws Exception {
-        Consumer<Status> updateTaskExecutionStatusFunction = status -> {
-            log.info("Task Status = {}", status.getState());
-            if (status.getState() == MantisJobState.Started) {
-                startedSignal.countDown();
-            }
-
-            if (status.getState().isTerminalState()) {
-                finalStatus = status;
-                terminatedSignal.countDown();
-            }
-        };
 
         listener = new CollectingTaskLifecycleListener();
         taskExecutor =
@@ -174,9 +168,8 @@ public class RuntimeTaskImplExecutorTest {
                 rpcService,
                 workerConfiguration,
                 highAvailabilityServices,
-                classLoaderHandle,
-                executeStageRequest -> SinkSubscriptionStateHandler.noop(),
-                updateTaskExecutionStatusFunction);
+                classLoaderHandle
+            );
         taskExecutor.addListener(listener, MoreExecutors.directExecutor());
         taskExecutor.start();
         taskExecutor.awaitRunning().get(2, TimeUnit.SECONDS);
@@ -317,7 +310,7 @@ public class RuntimeTaskImplExecutorTest {
 
     @Test
     public void testWhenSuccessiveHeartbeatsFail() throws Exception {
-        ResourceClusterGateway resourceManagerGateway = mock(ResourceClusterGateway.class);
+        ResourceClusterGateway resourceManagerGateway = mock(ResourceClusterGateway.class, "gateway2");
         when(resourceManagerGateway.registerTaskExecutor(any())).thenReturn(
             CompletableFuture.completedFuture(null));
         when(resourceManagerGateway.heartBeatFromTaskExecutor(any()))
@@ -332,7 +325,7 @@ public class RuntimeTaskImplExecutorTest {
 
         start();
         Thread.sleep(1000);
-        verify(resourceManagerGateway, times(2)).registerTaskExecutor(any());
+        verify(resourceManagerGateway, times(1)).registerTaskExecutor(any());
         Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
@@ -352,10 +345,8 @@ public class RuntimeTaskImplExecutorTest {
 
         // check if the switch has been made
         verify(resourceManagerGateway, times(1)).registerTaskExecutor(any());
-        verify(resourceManagerGateway, times(1)).disconnectTaskExecutor(any());
         verify(resourceManagerGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
-        verify(newResourceClusterGateway, times(1)).registerTaskExecutor(any());
         verify(newResourceClusterGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
         // check if the task executor is registered
@@ -378,18 +369,13 @@ public class RuntimeTaskImplExecutorTest {
 
         // check if the switch has been made
         verify(resourceManagerGateway, times(1)).registerTaskExecutor(any());
-        verify(resourceManagerGateway, times(1)).disconnectTaskExecutor(any());
         verify(resourceManagerGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
-
-        verify(newResourceManagerGateway1, atLeastOnce()).registerTaskExecutor(any());
-        verify(newResourceManagerGateway1, atLeastOnce()).disconnectTaskExecutor(any());
-        verify(newResourceManagerGateway1, never()).heartBeatFromTaskExecutor(any());
+        verify(newResourceManagerGateway1, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
         ResourceClusterGateway newResourceManagerGateway2 = getHealthyGateway("gateway 3");
         resourceManagerGatewayCxn.newLeaderIs(newResourceManagerGateway2);
         Thread.sleep(1000);
 
-        verify(newResourceManagerGateway2, times(1)).registerTaskExecutor(any());
         verify(newResourceManagerGateway2, never()).disconnectTaskExecutor(any());
         verify(newResourceManagerGateway2, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
@@ -398,7 +384,7 @@ public class RuntimeTaskImplExecutorTest {
     }
 
     private static ResourceClusterGateway getHealthyGateway(String name) {
-        ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
+        ResourceClusterGateway gateway = mock(ResourceClusterGateway.class, name);
         when(gateway.registerTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         when(gateway.heartBeatFromTaskExecutor(any())).thenReturn(
             CompletableFuture.completedFuture(Ack.getInstance()));
@@ -406,7 +392,6 @@ public class RuntimeTaskImplExecutorTest {
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         when(gateway.disconnectTaskExecutor(any()))
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
-        when(gateway.toString()).thenReturn(name);
         return gateway;
     }
 
@@ -455,9 +440,7 @@ public class RuntimeTaskImplExecutorTest {
         public TestingTaskExecutor(RpcService rpcService,
                                    WorkerConfiguration workerConfiguration,
                                    HighAvailabilityServices highAvailabilityServices,
-                                   ClassLoaderHandle classLoaderHandle,
-                                   SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
-                                   Consumer<Status> consumer) {
+                                   ClassLoaderHandle classLoaderHandle) {
             super(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle);
         }
 

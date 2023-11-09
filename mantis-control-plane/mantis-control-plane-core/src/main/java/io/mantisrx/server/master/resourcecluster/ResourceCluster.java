@@ -229,4 +229,16 @@ public interface ResourceCluster extends ResourceClusterGateway {
         WorkerId workerId;
         long lastHeartbeatInMs;
     }
+
+    /**
+     * Exception when asked {@link TaskExecutorID} cannot be found in control plane.
+     */
+    static class TaskExecutorNotFoundException extends Exception {
+
+        private static final long serialVersionUID = 2913026730940135991L;
+
+        public TaskExecutorNotFoundException(TaskExecutorID taskExecutorID) {
+            super("TaskExecutor " + taskExecutorID + " not found");
+        }
+    }
 }

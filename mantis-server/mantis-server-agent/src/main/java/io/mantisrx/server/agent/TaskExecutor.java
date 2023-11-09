@@ -31,6 +31,7 @@ import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
+import io.mantisrx.server.agent.utils.DurableBooleanState;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
@@ -39,7 +40,6 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
-import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderChangeListener;
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
@@ -53,6 +53,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
+import java.io.File;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -118,7 +119,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private RuntimeTask currentTask;
     private ExecuteStageRequest currentRequest;
+    private final DurableBooleanState registeredState;
 
+    @VisibleForTesting
     public TaskExecutor(
         RpcService rpcService,
         WorkerConfiguration workerConfiguration,
@@ -188,6 +191,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         this.resourceManagerCxnIdx = 0;
         this.taskFactory = taskFactory == null ? new SingleTaskOnlyFactory() : taskFactory;
+        this.registeredState = new DurableBooleanState(new File(workerConfiguration.getLocalStorageDir(), "rmCxnState.txt").getAbsolutePath());
     }
 
     @Override
@@ -210,12 +214,24 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         resourceClusterGatewaySupplier =
             highAvailabilityServices.connectWithResourceManager(clusterID);
-        resourceClusterGatewaySupplier.register(new ResourceManagerChangeListener());
+        resourceClusterGatewaySupplier.register((oldGateway, newGateway) -> TaskExecutor.this.runAsync(() -> setNewResourceClusterGateway(newGateway)));
         establishNewResourceManagerCxnSync();
     }
 
     public CompletableFuture<Void> awaitRunning() {
         return startFuture;
+    }
+
+    private void setNewResourceClusterGateway(ResourceClusterGateway gateway) {
+        // check if we are running on the main thread first
+        validateRunsInMainThread();
+        Preconditions.checkArgument(
+            this.currentResourceManagerCxn != null,
+            String.format("resource manager connection does not exist %s",
+                this.currentResourceManagerCxn));
+
+        log.info("Setting new resource cluster gateway {}", gateway);
+        this.currentResourceManagerCxn.setGateway(gateway);
     }
 
     private void establishNewResourceManagerCxnSync() {
@@ -259,36 +275,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }, getMainThreadExecutor());
     }
 
-    private CompletableFuture<Void> reestablishResourceManagerCxnAsync() {
-        // check if we are running on the main thread first
-        validateRunsInMainThread();
-        CompletableFuture<Void> previousCxn;
-        if (currentResourceManagerCxn != null) {
-            previousCxn = Services.stopAsync(currentResourceManagerCxn, getIOExecutor());
-        } else {
-            previousCxn = CompletableFuture.completedFuture(null);
-        }
-        // clear the connection so that no one else will try to stop the same connection again
-        TaskExecutor.this.currentResourceManagerCxn = null;
-
-        return previousCxn
-            // ignoring any closing issues for the time being
-            .exceptionally(throwable -> {
-                log.error("Closing the previous connection failed; Ignoring the error", throwable);
-                return null;
-            })
-            .thenComposeAsync(dontCare -> {
-                // only establish a new connection if there is none already
-                // It could be the case that someone already went ahead and created a connection ahead of
-                // us in which case we can resort to a no-op.
-                if (this.currentResourceManagerCxn == null) {
-                    return establishNewResourceManagerCxnAsync();
-                } else {
-                    return CompletableFuture.completedFuture(null);
-                }
-            }, getMainThreadExecutor());
-    }
-
     private void setResourceManagerCxn(ResourceManagerGatewayCxn cxn) {
         // check if we are running on the main thread first since we are operating on
         // shared mutable state
@@ -326,14 +312,15 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             resourceManagerGateway,
             workerConfiguration.getHeartbeatInterval(),
             workerConfiguration.getHeartbeatTimeout(),
-            this::getCurrentReport,
+            this,
             workerConfiguration.getTolerableConsecutiveHeartbeatFailures(),
             workerConfiguration.heartbeatRetryInitialDelayMs(),
             workerConfiguration.heartbeatRetryMaxDelayMs(),
             workerConfiguration.registrationRetryInitialDelayMillis(),
             workerConfiguration.registrationRetryMultiplier(),
             workerConfiguration.registrationRetryRandomizationFactor(),
-            workerConfiguration.registrationRetryMaxAttempts());
+            workerConfiguration.registrationRetryMaxAttempts(),
+            registeredState);
     }
 
     private ExecutorService getIOExecutor() {
@@ -344,24 +331,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         return this.runtimeTaskExecutor;
     }
 
-    private CompletableFuture<TaskExecutorReport> getCurrentReport(Time timeout) {
+    CompletableFuture<TaskExecutorReport> getCurrentReport() {
         return callAsync(() -> {
             if (this.currentTask == null) {
                 return TaskExecutorReport.available();
             } else {
                 return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
             }
-        }, timeout);
-    }
-
-    private class ResourceManagerChangeListener implements
-        ResourceLeaderChangeListener<ResourceClusterGateway> {
-
-        @Override
-        public void onResourceLeaderChanged(ResourceClusterGateway previousResourceLeader,
-                                            ResourceClusterGateway newResourceLeader) {
-            runAsync(TaskExecutor.this::reestablishResourceManagerCxnAsync);
-        }
+        }, DEFAULT_TIMEOUT);
     }
 
     @VisibleForTesting
