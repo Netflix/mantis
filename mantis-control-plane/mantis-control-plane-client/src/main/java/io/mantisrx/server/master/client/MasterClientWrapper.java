@@ -242,7 +242,7 @@ public class MasterClientWrapper {
                                                     .getHosts()
                                                     .values()
                                                     .stream()
-                                                    .filter(e -> MantisJobState.isRunningState(e.getState()))
+                                                    .filter(e -> MantisJobState.isOnStartedState(e.getState()))
                                                     .count();
                                                 numSinkWorkersSubject.onNext(new JobSinkNumWorkers(jobId, totalFromPartitions, runningWorkers));
                                                 if (usePartition(workerIndex, totalFromPartitions, forPartition, totalPartitions)) {

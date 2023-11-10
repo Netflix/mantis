@@ -109,4 +109,7 @@ public enum MantisJobState {
         }
     }
 
+    public static boolean isOnStartedState(MantisJobState state) {
+        return state == MantisJobState.Started;
+    }
 }
