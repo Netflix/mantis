@@ -251,11 +251,6 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
     }
 
     @Override
-    public void unscheduleJob(String jobId) {
-        pendingJobRequests.invalidate(jobId);
-    }
-
-    @Override
     public Optional<BestFit> findBestFit(TaskExecutorBatchAssignmentRequest request) {
 
         if (request.getAllocationRequests().isEmpty()) {
@@ -274,9 +269,9 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findTaskExecutorsFor(request, machineDefinition, allocationRequests, isJobIdAlreadyPending);
 
             // Mark noResourcesAvailable if we can't find enough TEs for a given machine def
-            if (!taskExecutors.isPresent() || noResourcesAvailable) {
+            if (!taskExecutors.isPresent()) {
                 noResourcesAvailable = true;
-                continue;
+                break;
             }
 
             // Map each TE to a given allocation request

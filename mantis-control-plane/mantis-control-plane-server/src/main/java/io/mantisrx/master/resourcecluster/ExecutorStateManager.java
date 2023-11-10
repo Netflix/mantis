@@ -86,8 +86,6 @@ interface ExecutorStateManager {
      */
     Optional<BestFit> findBestFit(TaskExecutorBatchAssignmentRequest request);
 
-    void unscheduleJob(String jobId);
-
     Set<Entry<TaskExecutorID, TaskExecutorState>> getActiveExecutorEntry();
 
     Predicate<Entry<TaskExecutorID, TaskExecutorState>> isRegistered =

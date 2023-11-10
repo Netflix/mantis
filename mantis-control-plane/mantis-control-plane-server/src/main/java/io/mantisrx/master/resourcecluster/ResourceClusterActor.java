@@ -207,7 +207,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(TaskExecutorDisconnection.class, metrics.withTracking(this::onTaskExecutorDisconnection))
                 .match(HeartbeatTimeout.class, metrics.withTracking(this::onTaskExecutorHeartbeatTimeout))
                 .match(TaskExecutorBatchAssignmentRequest.class, metrics.withTracking(this::onTaskExecutorBatchAssignmentRequest))
-                .match(UnscheduleJobRequest.class, this::onUnscheduleJobRequest)
                 .match(ResourceOverviewRequest.class, this::onResourceOverviewRequest)
                 .match(TaskExecutorInfoRequest.class, this::onTaskExecutorInfoRequest)
                 .match(TaskExecutorGatewayRequest.class, metrics.withTracking(this::onTaskExecutorGatewayRequest))
@@ -602,10 +601,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         }
     }
 
-    private void onUnscheduleJobRequest(UnscheduleJobRequest request) {
-        this.executorStateManager.unscheduleJob(request.jobId);
-    }
-
     private void onTaskExecutorBatchAssignmentRequest(TaskExecutorBatchAssignmentRequest request) {
         Optional<BestFit> matchedExecutors = this.executorStateManager.findBestFit(request);
 
@@ -842,12 +837,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         TaskExecutorID taskExecutorID;
         Instant lastActivity;
-    }
-
-    @Value
-    static class UnscheduleJobRequest {
-        String jobId;
-        ClusterID clusterID;
     }
 
     @Value

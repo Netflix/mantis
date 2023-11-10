@@ -39,7 +39,6 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatew
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsAllocation;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsList;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.UnscheduleJobRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
@@ -180,15 +179,6 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
                 .thenApply(TaskExecutorsAllocation.class::cast)
                 .toCompletableFuture()
                 .thenApply(l -> l.getAllocations());
-    }
-
-    @Override
-    public CompletableFuture<Ack> unscheduleJob(String jobId) {
-        return
-            Patterns
-                .ask(resourceClusterManagerActor, new UnscheduleJobRequest(jobId, clusterID), askTimeout)
-                .thenApply(Ack.class::cast)
-                .toCompletableFuture();
     }
 
     @Override

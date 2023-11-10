@@ -188,13 +188,6 @@ public interface ResourceCluster extends ResourceClusterGateway {
     CompletableFuture<Map<TaskExecutorID, WorkerId>> getTaskExecutorWorkerMapping(
         Map<String, String> attributes);
 
-    /**
-     * Signals that the given job id has been killed.
-     *
-     * @param jobId id of the job killed
-     */
-    CompletableFuture<Ack> unscheduleJob(String jobId);
-
     class NoResourceAvailableException extends Exception {
 
         public NoResourceAvailableException(String message) {

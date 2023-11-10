@@ -379,7 +379,6 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     }
 
     private void onCancelBatchRequestEvent(CancelBatchRequestEvent event) {
-        resourceCluster.unscheduleJob(event.getJobId());
         getTimers().cancel(getBatchSchedulingQueueKeyFor(event.getJobId()));
     }
 
