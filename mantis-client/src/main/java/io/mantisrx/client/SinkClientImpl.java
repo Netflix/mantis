@@ -53,13 +53,14 @@ public class SinkClientImpl<T> implements SinkClient<T> {
     private final Gauge sinkReceivingDataGauge;
     private final Gauge clientNotConnectedToAllSourcesGauge;
     private final AtomicInteger numSinkWorkers = new AtomicInteger();
+    private final AtomicInteger numSinkRunningWorkers = new AtomicInteger();
     private final Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver;
     private final long dataRecvTimeoutSecs;
     private final Metrics metrics;
     private final boolean disablePingFiltering;
 
     SinkClientImpl(String jobId, SinkConnectionFunc<T> sinkConnectionFunc, JobSinkLocator jobSinkLocator,
-                   Observable<Integer> numSinkWorkersObservable,
+                   Observable<MasterClientWrapper.JobSinkNumWorkers> numSinkWorkersObservable,
                    Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, long dataRecvTimeoutSecs) {
         this(jobId, sinkConnectionFunc, jobSinkLocator, numSinkWorkersObservable, sinkConnectionsStatusObserver,
                 dataRecvTimeoutSecs, false);
@@ -67,7 +68,7 @@ public class SinkClientImpl<T> implements SinkClient<T> {
     }
 
     SinkClientImpl(String jobId, SinkConnectionFunc<T> sinkConnectionFunc, JobSinkLocator jobSinkLocator,
-                   Observable<Integer> numSinkWorkersObservable,
+                   Observable<MasterClientWrapper.JobSinkNumWorkers> numSinkWorkersObservable,
                    Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, long dataRecvTimeoutSecs,
                    boolean disablePingFiltering) {
         this.jobId = jobId;
@@ -87,7 +88,11 @@ public class SinkClientImpl<T> implements SinkClient<T> {
         sinkReceivingDataGauge = metrics.getGauge(sinkReceivingDataGaugeName);
         clientNotConnectedToAllSourcesGauge = metrics.getGauge(clientNotConnectedToAllSourcesGaugeName);
         numSinkWorkersObservable
-                .doOnNext((integer) -> numSinkWorkers.set(integer))
+                .doOnNext((jobSinkNumWorkers) -> {
+                    numSinkWorkers.set(jobSinkNumWorkers.getNumSinkWorkers());
+                    numSinkRunningWorkers.set(jobSinkNumWorkers.getNumSinkRunningWorkers());
+
+                })
                 .takeWhile((integer) -> !nowClosed.get())
                 .subscribe();
         this.sinkConnectionsStatusObserver = sinkConnectionsStatusObserver;
@@ -229,7 +234,7 @@ public class SinkClientImpl<T> implements SinkClient<T> {
         }
         if (sinkConnectionsStatusObserver != null) {
             synchronized (sinkConnectionsStatusObserver) {
-                sinkConnectionsStatusObserver.onNext(new SinkConnectionsStatus(sinkReceivingDataGauge.value(), sinkGauge.value(), numSinkWorkers.get()));
+                sinkConnectionsStatusObserver.onNext(new SinkConnectionsStatus(sinkReceivingDataGauge.value(), sinkGauge.value(), numSinkWorkers.get(), numSinkRunningWorkers.get()));
             }
         }
     }
@@ -247,7 +252,7 @@ public class SinkClientImpl<T> implements SinkClient<T> {
         }
         if (sinkConnectionsStatusObserver != null) {
             synchronized (sinkConnectionsStatusObserver) {
-                sinkConnectionsStatusObserver.onNext(new SinkConnectionsStatus(sinkReceivingDataGauge.value(), sinkGauge.value(), numSinkWorkers.get()));
+                sinkConnectionsStatusObserver.onNext(new SinkConnectionsStatus(sinkReceivingDataGauge.value(), sinkGauge.value(), numSinkWorkers.get(), numSinkRunningWorkers.get()));
             }
         }
     }

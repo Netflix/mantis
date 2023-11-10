@@ -45,8 +45,6 @@ public class MantisClient {
 
     private static final String ENABLE_PINGS_KEY = "mantis.sse.disablePingFiltering";
     private final boolean disablePingFiltering;
-    // TODO: make this configurable + default false
-    private final boolean useRunningWorkers = true;
 
     private final MasterClientWrapper clientWrapper;
     private final JobSinkLocator jobSinkLocator = new JobSinkLocator() {
@@ -226,13 +224,7 @@ public class MantisClient {
         clientWrapper.addNumSinkWorkersObserver(numSinkWrkrsSubject);
         return new SinkClientImpl<T>(jobId, sinkConnectionFunc, getSinkLocator(),
                 numSinkWrkrsSubject
-                        .filter((jobSinkNumWorkers) -> jobId.equals(jobSinkNumWorkers.getJobId()))
-                        .map((jobSinkNumWorkers -> {
-                            if (useRunningWorkers) {
-                                return jobSinkNumWorkers.getNumSinkRunningWorkers();
-                            }
-                            return jobSinkNumWorkers.getNumSinkWorkers();
-                        })),
+                        .filter((jobSinkNumWorkers) -> jobId.equals(jobSinkNumWorkers.getJobId())),
                 sinkConnectionsStatusObserver, dataRecvTimeoutSecs, this.disablePingFiltering);
     }
 
