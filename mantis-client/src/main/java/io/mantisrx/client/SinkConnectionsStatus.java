@@ -21,11 +21,13 @@ public class SinkConnectionsStatus {
     private final long numConnected;
     private final long total;
     private final long recevingDataFrom;
+    private final long runningCount;
 
-    public SinkConnectionsStatus(long recevingDataFrom, long numConnected, long total) {
+    public SinkConnectionsStatus(long recevingDataFrom, long numConnected, long total, long runningCount) {
         this.recevingDataFrom = recevingDataFrom;
         this.numConnected = numConnected;
         this.total = total;
+        this.runningCount = runningCount;
     }
 
     public long getRecevingDataFrom() {
@@ -39,4 +41,6 @@ public class SinkConnectionsStatus {
     public long getTotal() {
         return total;
     }
+
+    public long getRunningCount() { return runningCount; }
 }

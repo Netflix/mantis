@@ -224,8 +224,7 @@ public class MantisClient {
         clientWrapper.addNumSinkWorkersObserver(numSinkWrkrsSubject);
         return new SinkClientImpl<T>(jobId, sinkConnectionFunc, getSinkLocator(),
                 numSinkWrkrsSubject
-                        .filter((jobSinkNumWorkers) -> jobId.equals(jobSinkNumWorkers.getJobId()))
-                        .map((jobSinkNumWorkers) -> jobSinkNumWorkers.getNumSinkWorkers()),
+                        .filter((jobSinkNumWorkers) -> jobId.equals(jobSinkNumWorkers.getJobId())),
                 sinkConnectionsStatusObserver, dataRecvTimeoutSecs, this.disablePingFiltering);
     }
 
