@@ -32,7 +32,6 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.Getter;
 import lombok.Setter;
@@ -51,7 +50,6 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     private volatile ResourceClusterGateway gateway;
     private final Time heartBeatInterval;
     private final Time heartBeatTimeout;
-    private final Time timeout = Time.of(1000, TimeUnit.MILLISECONDS);
     private final long registrationRetryInitialDelayMillis;
     private final double registrationRetryMultiplier;
     private final double registrationRetryRandomizationFactor;

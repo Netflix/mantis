@@ -126,7 +126,7 @@ public class RuntimeTaskImplExecutorTest {
         props.setProperty("mantis.zookeeper.root", "");
 
         props.setProperty("mantis.taskexecutor.cluster.storage-dir", "");
-        props.setProperty("mantis.taskexecutor.blob-store.local-cache", tempFolder.newFolder().getAbsolutePath());
+        props.setProperty("mantis.taskexecutor.registration.store", tempFolder.newFolder().getAbsolutePath());
         props.setProperty("mantis.taskexecutor.cluster-id", "default");
         props.setProperty("mantis.taskexecutor.heartbeats.interval", "100");
         props.setProperty("mantis.taskexecutor.metrics.collector", "io.mantisrx.server.agent.DummyMetricsCollector");

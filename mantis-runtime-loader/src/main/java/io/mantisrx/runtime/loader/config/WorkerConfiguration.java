@@ -109,6 +109,10 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Default("5")
     int registrationRetryMaxAttempts();
 
+    @Config("mantis.taskexecutor.registration.store")
+    @DefaultNull
+    File getRegistrationStoreDir();
+
     default Time getHeartbeatTimeout() {
         return Time.milliseconds(heartbeatTimeoutMs());
     }

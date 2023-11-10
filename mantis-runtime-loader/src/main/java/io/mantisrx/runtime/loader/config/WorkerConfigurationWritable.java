@@ -252,4 +252,9 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     public String taskExecutorAttributes() {
         return this.taskExecutorAttributesStr;
     }
+
+    @Override
+    public File getRegistrationStoreDir() {
+        return null;
+    }
 }
