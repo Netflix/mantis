@@ -51,7 +51,6 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     private volatile ResourceClusterGateway gateway;
     private final Time heartBeatInterval;
     private final Time heartBeatTimeout;
-    private final Time timeout = Time.of(1000, TimeUnit.MILLISECONDS);
     private final long registrationRetryInitialDelayMillis;
     private final double registrationRetryMultiplier;
     private final double registrationRetryRandomizationFactor;

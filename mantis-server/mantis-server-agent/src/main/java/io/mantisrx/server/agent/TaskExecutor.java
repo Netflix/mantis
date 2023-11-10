@@ -191,7 +191,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         this.resourceManagerCxnIdx = 0;
         this.taskFactory = taskFactory == null ? new SingleTaskOnlyFactory() : taskFactory;
-        this.registeredState = new DurableBooleanState(new File(workerConfiguration.getLocalStorageDir(), "rmCxnState.txt").getAbsolutePath());
+        this.registeredState = new DurableBooleanState(
+            new File(workerConfiguration.getRegistrationStoreDir(),
+                "rmCxnState.txt").getAbsolutePath());
     }
 
     @Override
