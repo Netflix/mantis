@@ -60,7 +60,7 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
     }
 
     private Optional<LogEntry> onRequestRejection(HttpRequest request, List<Rejection> rejections) {
-
+        return Optional.empty();
     }
 
     @Override
@@ -103,7 +103,7 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
                         post(() -> disconnectTaskExecutor(getClusterID(clusterName)))
                     ))
                 )
-            ));
+            )));
     }
 
     private Route registerTaskExecutor(ClusterID clusterID) {
