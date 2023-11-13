@@ -553,6 +553,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             if (state.getRegistration() == null || !state.isRegistered()) {
                 TaskExecutorRegistration registration = this.mantisJobStore.getTaskExecutor(heartbeat.getTaskExecutorID());
                 if (registration != null) {
+                    log.debug("Found registration {} for task executor {}", registration, heartbeat.getTaskExecutorID());
                     Preconditions.checkState(state.onRegistration(registration));
                 } else {
 //                  TODO(sundaram): add a metric
