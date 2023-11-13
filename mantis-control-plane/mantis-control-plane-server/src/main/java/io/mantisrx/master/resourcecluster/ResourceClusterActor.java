@@ -561,6 +561,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     sender().tell(new Status.Failure(new TaskExecutorNotFoundException(taskExecutorID)), self());
                     return;
                 }
+            } else {
+                log.debug("Found registration {} for registered task executor {}",
+                    state.getRegistration(), heartbeat.getTaskExecutorID());
             }
             boolean stateChange = state.onHeartbeat(heartbeat);
             if (stateChange && state.isAvailable()) {
