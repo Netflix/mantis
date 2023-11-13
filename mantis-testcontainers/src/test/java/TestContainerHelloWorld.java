@@ -54,6 +54,7 @@ public class TestContainerHelloWorld {
 
     private static final int ZOOKEEPER_PORT = 2181;
     private static final int CONTROL_PLANE_API_PORT = 8100;
+    private static final int DEBUGGER_PORT = 5005;
 
     private static final String ZOOKEEPER_ALIAS = "zookeeper";
 
@@ -104,7 +105,8 @@ public class TestContainerHelloWorld {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private static final Path path = Paths.get("../mantis-control-plane/mantis-control-plane-server/build/docker/Dockerfile");
-    public static final String JAVA_OPTS = "--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.net.util=ALL-UNNAMED";
+    public static final String JAVA_OPTS = "--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.net"
+        + ".util=ALL-UNNAMED -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005";
     private static ImageFromDockerfile controlPlaneDockerFile;
     private static ImageFromDockerfile agentDockerFile;
     private static Network network = Network.newNetwork();
@@ -137,7 +139,7 @@ public class TestContainerHelloWorld {
                 .withEnv("JAVA_OPTS", JAVA_OPTS)
                 .withNetwork(network)
                 .withNetworkAliases(CONTROL_PLANE_ALIAS)
-                .withExposedPorts(CONTROL_PLANE_API_PORT)
+                .withExposedPorts(CONTROL_PLANE_API_PORT, DEBUGGER_PORT)
             :
                 new GenericContainer<>("netflixoss/mantiscontrolplaneserver:latest")
                     .withEnv(LoggingMetricsPublisher.LOGGING_ENABLED_METRICS_GROUP_ID_LIST_KEY,

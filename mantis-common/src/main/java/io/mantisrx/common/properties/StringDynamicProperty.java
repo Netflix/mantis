@@ -17,7 +17,9 @@
 package io.mantisrx.common.properties;
 
 import java.time.Clock;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StringDynamicProperty extends DynamicProperty<String> {
 
     public StringDynamicProperty(MantisPropertiesLoader propertiesLoader, String propertyName, String defaultValue) {
@@ -31,7 +33,11 @@ public class StringDynamicProperty extends DynamicProperty<String> {
     @Override
     public String getValue() {
         if (shouldRefresh()) {
-            this.lastValue = this.getStringValue();
+            String newVal = this.getStringValue();
+            if (this.lastValue != newVal) {
+                log.info("[DP: {}] value changed from {} to {}", this.propertyName, this.lastValue, newVal);
+            }
+            this.lastValue = newVal;
         }
 
         return this.lastValue;

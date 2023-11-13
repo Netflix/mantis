@@ -87,16 +87,13 @@ import rx.subjects.PublishSubject;
  */
 @Slf4j
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
-
-
-    public static final Time DEFAULT_TIMEOUT = Time.seconds(5);
-
     @Getter
     private final TaskExecutorID taskExecutorID;
     @Getter
     private final ClusterID clusterID;
     private final WorkerConfiguration workerConfiguration;
     private final MantisPropertiesLoader dynamicPropertiesLoader;
+    private final LongDynamicProperty rpcCallTimeoutMsDp;
     private final HighAvailabilityServices highAvailabilityServices;
     private final ClassLoaderHandle classLoaderHandle;
     private final TaskExecutorRegistration taskExecutorRegistration;
@@ -196,6 +193,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         this.registeredState = new DurableBooleanState(
             new File(workerConfiguration.getRegistrationStoreDir(),
                 "rmCxnState.txt").getAbsolutePath());
+        this.rpcCallTimeoutMsDp =
+            ConfigUtils.getDynamicPropertyLong("heartbeatTimeoutMs", WorkerConfiguration.class,
+                workerConfiguration.heartbeatTimeoutMs(), this.dynamicPropertiesLoader);
     }
 
     @Override
@@ -309,24 +309,21 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         ResourceClusterGateway resourceManagerGateway = resourceClusterGatewaySupplier.getCurrent();
 
         // let's register ourselves with the resource manager
-        // todo: move timeout/retry to apply values from this.dynamicPropertiesLoader
         LongDynamicProperty heartbeatIntervalDp =
             ConfigUtils.getDynamicPropertyLong("heartbeatInternalInMs", WorkerConfiguration.class,
                 workerConfiguration.heartbeatInternalInMs(), this.dynamicPropertiesLoader);
 
-        LongDynamicProperty heartbeatTimeoutDp =
-            ConfigUtils.getDynamicPropertyLong("heartbeatTimeoutMs", WorkerConfiguration.class,
-                workerConfiguration.heartbeatTimeoutMs(), this.dynamicPropertiesLoader);
-
-        log.info("starting ResourceManagerGatewayCxn with interval {} and timeout {}.",
-            heartbeatIntervalDp.getValue(), heartbeatTimeoutDp.getValue());
+        log.info("Starting ResourceManagerGatewayCxn with interval {} from default {} and timeout {}.",
+            heartbeatIntervalDp.getValue(),
+            workerConfiguration.heartbeatInternalInMs(),
+            this.rpcCallTimeoutMsDp.getValue());
 
         return new ResourceManagerGatewayCxn(
             resourceManagerCxnIdx++,
             taskExecutorRegistration,
             resourceManagerGateway,
             heartbeatIntervalDp,
-            heartbeatTimeoutDp,
+            this.rpcCallTimeoutMsDp,
             this,
             workerConfiguration.getTolerableConsecutiveHeartbeatFailures(),
             workerConfiguration.heartbeatRetryInitialDelayMs(),
@@ -353,7 +350,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             } else {
                 return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
             }
-        }, DEFAULT_TIMEOUT);
+        }, Time.milliseconds(this.rpcCallTimeoutMsDp.getValue()));
     }
 
     @VisibleForTesting
@@ -566,7 +563,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     @Override
     public CompletableFuture<Boolean> isRegistered() {
-        return callAsync(() -> this.currentResourceManagerCxn != null && this.currentResourceManagerCxn.isRegistered(), DEFAULT_TIMEOUT);
+        return callAsync(() -> this.currentResourceManagerCxn != null && this.currentResourceManagerCxn.isRegistered(),
+            Time.milliseconds(this.rpcCallTimeoutMsDp.getValue()));
     }
 
     CompletableFuture<Boolean> isRegistered(Time timeout) {

@@ -63,6 +63,7 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     @Getter
     private volatile boolean registered = false;
 
+    private boolean hasRan = false;
     private final Counter heartbeatTimeoutCounter;
     private final Counter heartbeatFailureCounter;
     private final Counter taskExecutorRegistrationFailureCounter;
@@ -128,8 +129,9 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         return new CustomScheduler() {
             @Override
             protected Schedule getNextSchedule() {
+                // no delay on first run.
                 return new Schedule(
-                    ResourceManagerGatewayCxn.this.heartBeatIntervalDp.getValue(),
+                    hasRan ? ResourceManagerGatewayCxn.this.heartBeatIntervalDp.getValue() : 0,
                     TimeUnit.MILLISECONDS);
             }
         };
@@ -206,6 +208,9 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
 
     protected void runIteration() throws Exception {
         try {
+            if (!hasRan) {
+                hasRan = true;
+            }
             taskExecutor.getCurrentReport()
                     .thenComposeAsync(report -> {
                         log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);

@@ -17,7 +17,9 @@
 package io.mantisrx.common.properties;
 
 import java.time.Clock;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class LongDynamicProperty extends DynamicProperty<Long> {
     public LongDynamicProperty(MantisPropertiesLoader propertiesLoader, String propertyName, Long defaultValue) {
         super(propertiesLoader, propertyName, defaultValue);
@@ -32,7 +34,11 @@ public class LongDynamicProperty extends DynamicProperty<Long> {
         if (shouldRefresh()) {
             String strV = this.getStringValue();
             try {
-                this.lastValue = Long.parseLong(strV);
+                long newVal = Long.parseLong(strV);
+                if (this.lastValue != newVal) {
+                    log.info("[DP: {}] value changed from {} to {}", this.propertyName, this.lastValue, newVal);
+                }
+                this.lastValue = newVal;
             } catch (NumberFormatException e) {
                 throw new RuntimeException("invalid long value: " + strV);
             }
