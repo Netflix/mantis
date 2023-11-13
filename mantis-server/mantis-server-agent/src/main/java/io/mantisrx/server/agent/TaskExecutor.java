@@ -23,6 +23,7 @@ import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
+import io.mantisrx.common.properties.LongDynamicProperty;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobState;
@@ -37,6 +38,7 @@ import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.utils.ConfigUtils;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
@@ -308,12 +310,23 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         // let's register ourselves with the resource manager
         // todo: move timeout/retry to apply values from this.dynamicPropertiesLoader
+        LongDynamicProperty heartbeatIntervalDp =
+            ConfigUtils.getDynamicPropertyLong("heartbeatInternalInMs", WorkerConfiguration.class,
+                workerConfiguration.heartbeatInternalInMs(), this.dynamicPropertiesLoader);
+
+        LongDynamicProperty heartbeatTimeoutDp =
+            ConfigUtils.getDynamicPropertyLong("heartbeatTimeoutMs", WorkerConfiguration.class,
+                workerConfiguration.heartbeatTimeoutMs(), this.dynamicPropertiesLoader);
+
+        log.info("starting ResourceManagerGatewayCxn with interval {} and timeout {}.",
+            heartbeatIntervalDp.getValue(), heartbeatTimeoutDp.getValue());
+
         return new ResourceManagerGatewayCxn(
             resourceManagerCxnIdx++,
             taskExecutorRegistration,
             resourceManagerGateway,
-            workerConfiguration.getHeartbeatInterval(),
-            workerConfiguration.getHeartbeatTimeout(),
+            heartbeatIntervalDp,
+            heartbeatTimeoutDp,
             this,
             workerConfiguration.getTolerableConsecutiveHeartbeatFailures(),
             workerConfiguration.heartbeatRetryInitialDelayMs(),

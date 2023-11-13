@@ -28,6 +28,9 @@ import static org.mockito.Mockito.when;
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
+import io.mantisrx.common.properties.LongDynamicProperty;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.agent.utils.DurableBooleanState;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -44,7 +47,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.api.common.time.Time;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -89,8 +91,19 @@ public class ResourceManagerGatewayCxnTest {
         heartbeat = new TaskExecutorHeartbeat(taskExecutorID, clusterID, report);
         TaskExecutor taskExecutor = mock(TaskExecutor.class);
         when(taskExecutor.getCurrentReport()).thenReturn(CompletableFuture.completedFuture(report));
-        cxn = new ResourceManagerGatewayCxn(0, registration, gateway, Time.milliseconds(100),
-            Time.milliseconds(100), taskExecutor, 3, 200,
+
+        MantisPropertiesLoader loader = new DefaultMantisPropertiesLoader(System.getProperties());
+        LongDynamicProperty intervalDp = new LongDynamicProperty(
+            loader,
+            "mantis.resourcemanager.connection.interval",
+            100L);
+        LongDynamicProperty timeoutDp = new LongDynamicProperty(
+            loader,
+            "mantis.resourcemanager.connection.timeout",
+            100L);
+
+        cxn = new ResourceManagerGatewayCxn(0, registration, gateway, intervalDp,
+            timeoutDp, taskExecutor, 3, 200,
             1000, 50, 2, 0.5, 3, new DurableBooleanState(tempFolder.newFile().getAbsolutePath()));
     }
 

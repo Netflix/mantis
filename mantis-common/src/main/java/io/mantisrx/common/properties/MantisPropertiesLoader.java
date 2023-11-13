@@ -18,10 +18,10 @@ package io.mantisrx.common.properties;
 
 public interface MantisPropertiesLoader {
 
-    public abstract void initalize();
+    void initalize();
 
-    public abstract void shutdown();
+    void shutdown();
 
-    public abstract String getStringValue(String name, String defaultVal);
+    String getStringValue(String name, String defaultVal);
 
 }

@@ -25,6 +25,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.mantisrx.common.properties.LongDynamicProperty;
 import io.mantisrx.server.agent.utils.DurableBooleanState;
 import io.mantisrx.server.agent.utils.ExponentialBackoffAbstractScheduledService;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
@@ -32,12 +33,12 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.api.common.time.Time;
 
 @Slf4j
 @ToString(of = "gateway")
@@ -48,8 +49,10 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     @Getter
     @Setter
     private volatile ResourceClusterGateway gateway;
-    private final Time heartBeatInterval;
-    private final Time heartBeatTimeout;
+
+    private final LongDynamicProperty heartBeatIntervalDp;
+    private final LongDynamicProperty heartBeatTimeoutDp;
+
     private final long registrationRetryInitialDelayMillis;
     private final double registrationRetryMultiplier;
     private final double registrationRetryRandomizationFactor;
@@ -72,8 +75,8 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         int idx,
         TaskExecutorRegistration taskExecutorRegistration,
         ResourceClusterGateway gateway,
-        Time heartBeatInterval,
-        Time heartBeatTimeout,
+        LongDynamicProperty heartBeatIntervalDp,
+        LongDynamicProperty heartBeatTimeoutDp,
         TaskExecutor taskExecutor,
         int tolerableConsecutiveHeartbeatFailures,
         long heartbeatRetryInitialDelayMillis,
@@ -88,8 +91,8 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         this.idx = idx;
         this.taskExecutorRegistration = taskExecutorRegistration;
         this.gateway = gateway;
-        this.heartBeatInterval = heartBeatInterval;
-        this.heartBeatTimeout = heartBeatTimeout;
+        this.heartBeatIntervalDp = heartBeatIntervalDp;
+        this.heartBeatTimeoutDp = heartBeatTimeoutDp;
         this.taskExecutor = taskExecutor;
         this.registrationRetryInitialDelayMillis = registrationRetryInitialDelayMillis;
         this.registrationRetryMultiplier = registrationRetryMultiplier;
@@ -122,10 +125,14 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
 
     @Override
     protected Scheduler scheduler() {
-        return Scheduler.newFixedDelaySchedule(
-                0,
-                heartBeatInterval.getSize(),
-                heartBeatInterval.getUnit());
+        return new CustomScheduler() {
+            @Override
+            protected Schedule getNextSchedule() {
+                return new Schedule(
+                    ResourceManagerGatewayCxn.this.heartBeatIntervalDp.getValue(),
+                    TimeUnit.MILLISECONDS);
+            }
+        };
     }
 
     @Override
@@ -180,7 +187,7 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         taskExecutorRegistrationCounter.increment();
         return gateway
                 .registerTaskExecutor(taskExecutorRegistration)
-                .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                .get(heartBeatTimeoutDp.getValue(), TimeUnit.MILLISECONDS);
     }
 
     private void disconnectTaskExecutor() throws ExecutionException, InterruptedException, TimeoutException {
@@ -189,7 +196,7 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
             gateway.disconnectTaskExecutor(
                             new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
                                     taskExecutorRegistration.getClusterID()))
-                    .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                    .get(2 * heartBeatTimeoutDp.getValue(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             log.error("Disconnection has failed", e);
             taskExecutorDisconnectionFailureCounter.increment();
@@ -204,7 +211,7 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
                         log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
                         return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
                     })
-                    .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                    .get(heartBeatTimeoutDp.getValue(), TimeUnit.MILLISECONDS);
 
             // the heartbeat was successful, let's reset the counter and set the registered flag
             registered = true;
