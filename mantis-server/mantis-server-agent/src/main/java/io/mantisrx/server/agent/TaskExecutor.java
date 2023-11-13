@@ -344,13 +344,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     CompletableFuture<TaskExecutorReport> getCurrentReport() {
-        return callAsync(() -> {
-            if (this.currentTask == null) {
-                return TaskExecutorReport.available();
-            } else {
-                return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
-            }
-        }, Time.milliseconds(this.rpcCallTimeoutMsDp.getValue()));
+
+        if (this.currentTask == null) {
+            return CompletableFuture.completedFuture(TaskExecutorReport.available());
+        } else {
+            return CompletableFuture.completedFuture(
+                TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId())));
+        }
     }
 
     @VisibleForTesting
