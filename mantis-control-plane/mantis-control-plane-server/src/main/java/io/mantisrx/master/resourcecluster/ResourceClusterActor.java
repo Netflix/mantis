@@ -546,6 +546,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void onHeartbeat(TaskExecutorHeartbeat heartbeat) {
+        log.debug("Received heartbeat {} from task executor {}", heartbeat, heartbeat.getTaskExecutorID());
         setupTaskExecutorStateIfNecessary(heartbeat.getTaskExecutorID());
         try {
             final TaskExecutorID taskExecutorID = heartbeat.getTaskExecutorID();
@@ -571,6 +572,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             }
 
             updateHeartbeatTimeout(heartbeat.getTaskExecutorID());
+            log.debug("Successfully processed heartbeat {} from task executor {}", heartbeat, heartbeat.getTaskExecutorID());
             sender().tell(Ack.getInstance(), self());
         } catch (Exception e) {
             sender().tell(new Status.Failure(e), self());
