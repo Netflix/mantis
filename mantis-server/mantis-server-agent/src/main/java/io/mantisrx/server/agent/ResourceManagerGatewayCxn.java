@@ -139,28 +139,7 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
 
     @Override
     public void startUp() throws Exception {
-        try {
-            if (!alreadyRegistered.getState()) {
-                log.info("Trying to register with resource manager {}", gateway);
-                registerTaskExecutorWithRetry();
-            } else {
-                log.info("Registered with resource manager {} already", gateway);
-                // sending heartbeat instead
-                runIteration();
-            }
-
-            registered = true;
-            alreadyRegistered.setState(true);
-        } catch (Exception e) {
-            // the registration may or may not have succeeded. Since we don't know let's just
-            // do the disconnection just to be safe.
-            log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway,
-                    e);
-            try {
-                disconnectTaskExecutor();
-            } catch (Exception ignored) {}
-            throw e;
-        }
+        log.info("ResourceManagerGatewayCxn starting");
     }
 
     private void onRegistrationRetry(RetryOnRetryEvent event) {
@@ -206,18 +185,27 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         }
     }
 
+    @Override
     protected void runIteration() throws Exception {
         try {
             if (!hasRan) {
                 hasRan = true;
             }
+
+            if (!registered || !alreadyRegistered.getState()) {
+                log.info("Trying to register with resource manager {}", gateway);
+                registerTaskExecutorWithRetry();
+                registered = true;
+                alreadyRegistered.setState(true);
+            }
+
             log.debug("[DEBUG] start TE HB with timeout: {}", heartBeatTimeoutDp.getValue());
             taskExecutor.getCurrentReport()
-                    .thenComposeAsync(report -> {
-                        log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
-                        return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
-                    })
-                    .get(heartBeatTimeoutDp.getValue(), TimeUnit.MILLISECONDS);
+                .thenComposeAsync(report -> {
+                    log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
+                    return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
+                })
+                .get(heartBeatTimeoutDp.getValue(), TimeUnit.MILLISECONDS);
 
             // the heartbeat was successful, let's reset the counter and set the registered flag
             registered = true;
