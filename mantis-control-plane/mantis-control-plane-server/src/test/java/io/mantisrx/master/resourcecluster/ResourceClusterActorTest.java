@@ -48,7 +48,6 @@ import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
-import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
@@ -155,7 +154,6 @@ public class ResourceClusterActorTest {
     private final TaskExecutorGateway gateway = mock(TaskExecutorGateway.class);
 
     private MantisJobStore mantisJobStore;
-    private ResourceClusterTaskExecutorMapper mapper;
     private ActorRef resourceClusterActor;
     private ResourceCluster resourceCluster;
     private JobMessageRouter jobMessageRouter;
@@ -175,7 +173,6 @@ public class ResourceClusterActorTest {
     public void setupRpcService() {
         rpcService.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
         mantisJobStore = mock(MantisJobStore.class);
-        mapper = ResourceClusterTaskExecutorMapper.inMemory();
         jobMessageRouter = mock(JobMessageRouter.class);
     }
 
@@ -201,7 +198,6 @@ public class ResourceClusterActorTest {
                 resourceClusterActor,
                 Duration.ofSeconds(1),
                 CLUSTER_ID,
-                mapper,
                 () -> 10000);
     }
 

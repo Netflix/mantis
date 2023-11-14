@@ -546,6 +546,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void onHeartbeat(TaskExecutorHeartbeat heartbeat) {
+        log.debug("Received heartbeat {} from task executor {}", heartbeat, heartbeat.getTaskExecutorID());
         setupTaskExecutorStateIfNecessary(heartbeat.getTaskExecutorID());
         try {
             final TaskExecutorID taskExecutorID = heartbeat.getTaskExecutorID();
@@ -553,13 +554,17 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             if (state.getRegistration() == null || !state.isRegistered()) {
                 TaskExecutorRegistration registration = this.mantisJobStore.getTaskExecutor(heartbeat.getTaskExecutorID());
                 if (registration != null) {
-                    state.onRegistration(registration);
+                    log.debug("Found registration {} for task executor {}", registration, heartbeat.getTaskExecutorID());
+                    Preconditions.checkState(state.onRegistration(registration));
                 } else {
 //                  TODO(sundaram): add a metric
                     log.warn("Received heartbeat from unknown task executor {}", heartbeat.getTaskExecutorID());
                     sender().tell(new Status.Failure(new TaskExecutorNotFoundException(taskExecutorID)), self());
                     return;
                 }
+            } else {
+                log.debug("Found registration {} for registered task executor {}",
+                    state.getRegistration(), heartbeat.getTaskExecutorID());
             }
             boolean stateChange = state.onHeartbeat(heartbeat);
             if (stateChange && state.isAvailable()) {
@@ -567,6 +572,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             }
 
             updateHeartbeatTimeout(heartbeat.getTaskExecutorID());
+            log.debug("Successfully processed heartbeat {} from task executor {}", heartbeat, heartbeat.getTaskExecutorID());
             sender().tell(Ack.getInstance(), self());
         } catch (Exception e) {
             sender().tell(new Status.Failure(e), self());
