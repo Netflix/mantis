@@ -15,7 +15,6 @@
  */
 package io.mantisrx.server.agent;
 
-import static org.apache.flink.util.ExceptionUtils.stripExecutionException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -153,7 +152,7 @@ public class ResourceManagerGatewayCxnTest {
         cxn.stopAsync().awaitTerminated();
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testWhenRegistrationFailsContinuously() throws Throwable {
         when(gateway.heartBeatFromTaskExecutor(Matchers.eq(heartbeat)))
             .thenReturn(CompletableFuture.completedFuture(null));
@@ -166,22 +165,13 @@ public class ResourceManagerGatewayCxnTest {
                 @Override
                 public CompletableFuture<Void> answer(InvocationOnMock invocation) {
                     count++;
-                    if (count >= 5) {
-                        return CompletableFuture.completedFuture(null);
-                    } else {
-                        return CompletableFutures.exceptionallyCompletedFuture(
-                            new UnknownError("exception"));
-                    }
+                    return CompletableFutures.exceptionallyCompletedFuture(
+                        new UnknownError("exception"));
                 }
             });
         cxn.startAsync();
-        CompletableFuture<Void> result = Services.awaitAsync(cxn,
-            Executors.newSingleThreadExecutor());
-        try {
-            result.get();
-        } catch (Exception e) {
-            throw stripExecutionException(e);
-        }
+        Services.stopAsync(cxn, Executors.newSingleThreadExecutor()).join();
+        Assert.assertFalse(cxn.isRegistered());
     }
 
     @Test
