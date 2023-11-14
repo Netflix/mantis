@@ -40,8 +40,7 @@ public class DynamicPropertyTest {
         final String val3 = "val3";
         when(mockloader.getStringValue(eq(DynamicProperty.DYNAMICPROPERTY_REFRESH_SECONDS_KEY), ArgumentMatchers.any()))
             .thenReturn("10");
-        when(mockloader.getStringValue(key1, defaultVal1)).thenReturn(val2);
-        when(mockloader.getStringValue(key1, val2)).thenReturn(val3);
+        when(mockloader.getStringValue(key1, defaultVal1)).thenReturn(defaultVal1);
 
         final AtomicReference<Clock> clock = new AtomicReference<>(
             Clock.fixed(Instant.ofEpochSecond(1), ZoneId.systemDefault()));
@@ -49,6 +48,9 @@ public class DynamicPropertyTest {
         StringDynamicProperty stringFP = new StringDynamicProperty(mockloader, key1, defaultVal1,
             new DelegateClock(clock));
         assertEquals(defaultVal1, stringFP.getValue());
+
+        when(mockloader.getStringValue(key1, defaultVal1)).thenReturn(val2);
+        when(mockloader.getStringValue(key1, val2)).thenReturn(val3);
 
         clock.updateAndGet(c -> Clock.offset(c, Duration.ofSeconds(1)));
         assertEquals(defaultVal1, stringFP.getValue());
@@ -71,8 +73,7 @@ public class DynamicPropertyTest {
         final Long val3 = 3L;
         when(mockloader.getStringValue(eq(DynamicProperty.DYNAMICPROPERTY_REFRESH_SECONDS_KEY), ArgumentMatchers.any()))
             .thenReturn("10");
-        when(mockloader.getStringValue(key1, defaultVal1.toString())).thenReturn(val2.toString());
-        when(mockloader.getStringValue(key1, val2.toString())).thenReturn(val3.toString());
+        when(mockloader.getStringValue(key1, defaultVal1.toString())).thenReturn(defaultVal1.toString());
 
         final AtomicReference<Clock> clock = new AtomicReference<>(
             Clock.fixed(Instant.ofEpochSecond(1), ZoneId.systemDefault()));
@@ -80,6 +81,9 @@ public class DynamicPropertyTest {
         LongDynamicProperty longFP = new LongDynamicProperty(mockloader, key1, defaultVal1,
             new DelegateClock(clock));
         assertEquals(defaultVal1, longFP.getValue());
+
+        when(mockloader.getStringValue(key1, defaultVal1.toString())).thenReturn(val2.toString());
+        when(mockloader.getStringValue(key1, val2.toString())).thenReturn(val3.toString());
 
         clock.updateAndGet(c -> Clock.offset(c, Duration.ofSeconds(1)));
         assertEquals(defaultVal1, longFP.getValue());

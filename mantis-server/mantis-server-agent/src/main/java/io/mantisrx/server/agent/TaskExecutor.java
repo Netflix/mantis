@@ -344,7 +344,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     CompletableFuture<TaskExecutorReport> getCurrentReport() {
-
         if (this.currentTask == null) {
             return CompletableFuture.completedFuture(TaskExecutorReport.available());
         } else {

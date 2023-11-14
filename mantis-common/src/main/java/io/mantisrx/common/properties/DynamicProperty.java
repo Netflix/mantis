@@ -35,7 +35,7 @@ public abstract class DynamicProperty<T>  {
         this.defaultValue = defaultValue;
         this.lastValue = defaultValue;
         this.clock = clock;
-        this.lastRefreshTime = this.clock.instant();
+        this.lastRefreshTime = Instant.MIN;
 
         try
         {
@@ -45,7 +45,6 @@ public abstract class DynamicProperty<T>  {
         catch (NumberFormatException ex) {
             throw new RuntimeException("invalid refresh secs for dynamic property: " + propertyName);
         }
-
     }
 
     public DynamicProperty(MantisPropertiesLoader propertiesLoader, String propertyName, T defaultValue) {
@@ -58,7 +57,7 @@ public abstract class DynamicProperty<T>  {
     }
 
     protected boolean shouldRefresh() {
-        return this.clock.instant().isAfter(lastRefreshTime.plusSeconds(this.refreshDuration));
+        return this.clock.instant().isAfter(this.lastRefreshTime.plusSeconds(this.refreshDuration));
     }
 
     public abstract T getValue();
