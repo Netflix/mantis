@@ -18,9 +18,13 @@ package io.mantisrx.master.api.akka.route.v1;
 
 import static akka.http.javadsl.server.PathMatchers.segment;
 
+import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.PathMatchers;
+import akka.http.javadsl.server.Rejection;
 import akka.http.javadsl.server.Route;
+import akka.http.javadsl.server.directives.LogEntry;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
@@ -28,6 +32,8 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,16 +48,26 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
+
     private static final PathMatcher0 RESOURCECLUSTERS_API_PREFIX =
         segment("api").slash("v1").slash("resourceClusters");
 
     private final ResourceClusters gateway;
 
+    private Optional<LogEntry> onRequestCompletion(HttpRequest request, HttpResponse response) {
+        log.debug("ResourceClustersLeaderExclusiveRoute: {} {}", request, response);
+        return Optional.empty();
+    }
+
+    private Optional<LogEntry> onRequestRejection(HttpRequest request, List<Rejection> rejections) {
+        return Optional.empty();
+    }
+
     @Override
     protected Route constructRoutes() {
         return pathPrefix(
             RESOURCECLUSTERS_API_PREFIX,
-            () -> concat(
+            () -> logRequestResultOptional(this::onRequestCompletion, this::onRequestRejection, () -> concat(
                 // /{}/actions/registerTaskExecutor
                 path(
                     PathMatchers.segment().slash("actions").slash("registerTaskExecutor"),
@@ -87,7 +103,7 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
                         post(() -> disconnectTaskExecutor(getClusterID(clusterName)))
                     ))
                 )
-            ));
+            )));
     }
 
     private Route registerTaskExecutor(ClusterID clusterID) {
@@ -127,7 +143,8 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
                 clusterID.getResourceID(),
                 request);
 
-            return withFuture(gateway.getClusterFor(clusterID).notifyTaskExecutorStatusChange(request));
+            return withFuture(
+                gateway.getClusterFor(clusterID).notifyTaskExecutorStatusChange(request));
         });
     }
 

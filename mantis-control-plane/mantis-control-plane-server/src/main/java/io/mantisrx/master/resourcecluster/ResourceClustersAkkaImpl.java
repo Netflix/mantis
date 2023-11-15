@@ -25,7 +25,6 @@ import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
-import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import java.time.Clock;
@@ -48,7 +47,6 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
 
     private final ActorRef resourceClustersManagerActor;
     private final Duration askTimeout;
-    private final ResourceClusterTaskExecutorMapper mapper;
     private final Supplier<Integer> rateLimitPerSecond;
     private final ConcurrentMap<ClusterID, ResourceCluster> cache =
         new ConcurrentHashMap<>();
@@ -62,8 +60,7 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
                     resourceClustersManagerActor,
                     askTimeout,
                     clusterID,
-                    mapper,
-                        rateLimitPerSecond));
+                    rateLimitPerSecond));
         return cache.get(clusterID);
     }
 
@@ -90,12 +87,10 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
                 ResourceClustersManagerActor.props(masterConfiguration.getConfig(), Clock.systemDefaultZone(),
                     rpcService, mantisJobStore, resourceClusterHostActorRef, persistenceProvider,
                     jobMessageRouter));
-        final ResourceClusterTaskExecutorMapper globalMapper =
-            ResourceClusterTaskExecutorMapper.inMemory();
 
         final Duration askTimeout = java.time.Duration.ofMillis(
             ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs());
         final Supplier<Integer> rateLimitPerSecond = () -> masterConfiguration.getConfig().getResourceClusterActionsPermitsPerSecond();
-        return new ResourceClustersAkkaImpl(resourceClusterManagerActor, askTimeout, globalMapper, rateLimitPerSecond);
+        return new ResourceClustersAkkaImpl(resourceClusterManagerActor, askTimeout, rateLimitPerSecond);
     }
 }

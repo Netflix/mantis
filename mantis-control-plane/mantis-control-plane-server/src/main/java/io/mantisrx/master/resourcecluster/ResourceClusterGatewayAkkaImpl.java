@@ -25,7 +25,6 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
-import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
@@ -44,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     protected final ActorRef resourceClusterManagerActor;
     protected final Duration askTimeout;
-    private final ResourceClusterTaskExecutorMapper mapper;
     private final Counter registrationCounter;
     private final Counter heartbeatCounter;
     private final Counter disconnectionCounter;
@@ -58,11 +56,9 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     ResourceClusterGatewayAkkaImpl(
             ActorRef resourceClusterManagerActor,
             Duration askTimeout,
-            ResourceClusterTaskExecutorMapper mapper,
-            Supplier<Integer> maxConcurrentRequestCount) {
+        Supplier<Integer> maxConcurrentRequestCount) {
         this.resourceClusterManagerActor = resourceClusterManagerActor;
         this.askTimeout = askTimeout;
-        this.mapper = mapper;
 
         log.info("Setting maxConcurrentRequestCount for resourceCluster gateway {}", maxConcurrentRequestCount);
         this.rateLimiter = RateLimiter.create(maxConcurrentRequestCount.get());
@@ -109,11 +105,7 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
         return Patterns
                 .ask(resourceClusterManagerActor, registration, askTimeout)
                 .thenApply(Ack.class::cast)
-                .toCompletableFuture()
-                .whenComplete((dontCare, throwable) ->
-                        mapper.onTaskExecutorDiscovered(
-                                registration.getClusterID(),
-                                registration.getTaskExecutorID()));
+                .toCompletableFuture();
     }
 
     @Override

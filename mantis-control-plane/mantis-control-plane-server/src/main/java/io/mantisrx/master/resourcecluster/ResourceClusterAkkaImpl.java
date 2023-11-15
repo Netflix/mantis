@@ -45,7 +45,6 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
-import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
@@ -62,17 +61,14 @@ import java.util.function.Supplier;
 class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements ResourceCluster {
 
     private final ClusterID clusterID;
-    private final ResourceClusterTaskExecutorMapper mapper;
 
     public ResourceClusterAkkaImpl(
         ActorRef resourceClusterManagerActor,
         Duration askTimeout,
         ClusterID clusterID,
-        ResourceClusterTaskExecutorMapper mapper,
         Supplier<Integer> rateLimitPerSecond) {
-        super(resourceClusterManagerActor, askTimeout, mapper, rateLimitPerSecond);
+        super(resourceClusterManagerActor, askTimeout, rateLimitPerSecond);
         this.clusterID = clusterID;
-        this.mapper = mapper;
     }
 
     @Override
@@ -87,9 +83,7 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
                 new InitializeTaskExecutorRequest(taskExecutorID, workerId),
                 askTimeout)
             .thenApply(Ack.class::cast)
-            .toCompletableFuture()
-            .whenComplete((ack, dontCare) ->
-                mapper.onTaskExecutorDiscovered(clusterID, taskExecutorID));
+            .toCompletableFuture();
     }
 
     @Override
