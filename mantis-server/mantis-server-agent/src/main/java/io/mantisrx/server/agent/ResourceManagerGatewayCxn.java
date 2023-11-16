@@ -25,7 +25,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
-import io.mantisrx.common.properties.LongDynamicProperty;
+import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.server.agent.utils.DurableBooleanState;
 import io.mantisrx.server.agent.utils.ExponentialBackoffAbstractScheduledService;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;

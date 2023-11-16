@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,17 +41,5 @@ public class DefaultMantisPropertiesLoader implements MantisPropertiesLoader {
             return MantisProperties.getProperty("JOB_PARAM_" + name, MantisProperties.getProperty(name, defaultVal));
         }
         return defaultVal;
-    }
-
-    @Override
-    public void initalize() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void shutdown() {
-        // TODO Auto-generated method stub
-
     }
 }

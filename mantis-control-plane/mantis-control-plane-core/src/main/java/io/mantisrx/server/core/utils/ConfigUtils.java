@@ -16,9 +16,9 @@
 
 package io.mantisrx.server.core.utils;
 
-import io.mantisrx.common.properties.LongDynamicProperty;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
-import io.mantisrx.common.properties.StringDynamicProperty;
+import io.mantisrx.config.dynamic.LongDynamicProperty;
+import io.mantisrx.config.dynamic.StringDynamicProperty;
 import io.mantisrx.server.core.CoreConfiguration;
 import java.lang.reflect.Method;
 import org.skife.config.Config;

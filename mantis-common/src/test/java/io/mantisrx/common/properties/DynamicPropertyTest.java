@@ -22,6 +22,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.mantisrx.common.util.DelegateClock;
+import io.mantisrx.config.dynamic.DynamicProperty;
+import io.mantisrx.config.dynamic.LongDynamicProperty;
+import io.mantisrx.config.dynamic.StringDynamicProperty;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -38,7 +41,7 @@ public class DynamicPropertyTest {
         final String defaultVal1 = "defaultVal1";
         final String val2 = "val2";
         final String val3 = "val3";
-        when(mockloader.getStringValue(eq(DynamicProperty.DYNAMICPROPERTY_REFRESH_SECONDS_KEY), ArgumentMatchers.any()))
+        when(mockloader.getStringValue(eq(DynamicProperty.DYNAMIC_PROPERTY_REFRESH_SECONDS_KEY), ArgumentMatchers.any()))
             .thenReturn("10");
         when(mockloader.getStringValue(key1, defaultVal1)).thenReturn(defaultVal1);
 
@@ -71,7 +74,7 @@ public class DynamicPropertyTest {
         final Long defaultVal1 = 1L;
         final Long val2 = 2L;
         final Long val3 = 3L;
-        when(mockloader.getStringValue(eq(DynamicProperty.DYNAMICPROPERTY_REFRESH_SECONDS_KEY), ArgumentMatchers.any()))
+        when(mockloader.getStringValue(eq(DynamicProperty.DYNAMIC_PROPERTY_REFRESH_SECONDS_KEY), ArgumentMatchers.any()))
             .thenReturn("10");
         when(mockloader.getStringValue(key1, defaultVal1.toString())).thenReturn(defaultVal1.toString());
 

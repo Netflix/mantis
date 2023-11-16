@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package io.mantisrx.common.properties;
+package io.mantisrx.config.dynamic;
 
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import java.time.Clock;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,20 +27,14 @@ public class StringDynamicProperty extends DynamicProperty<String> {
         super(propertiesLoader, propertyName, defaultValue);
     }
 
-    public StringDynamicProperty(MantisPropertiesLoader propertiesLoader, String propertyName, String defaultValue,
+    public StringDynamicProperty(
+        MantisPropertiesLoader propertiesLoader, String propertyName, String defaultValue,
         Clock clock) {
         super(propertiesLoader, propertyName, defaultValue, clock);
     }
-    @Override
-    public String getValue() {
-        if (shouldRefresh()) {
-            String newVal = this.getStringValue();
-            if (this.lastValue != newVal) {
-                log.info("[DP: {}] value changed from {} to {}", this.propertyName, this.lastValue, newVal);
-            }
-            this.lastValue = newVal;
-        }
 
-        return this.lastValue;
+    @Override
+    protected String convertFromString(String newStrVal) {
+        return newStrVal;
     }
 }

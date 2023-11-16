@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package io.mantisrx.common.properties;
+package io.mantisrx.config.dynamic;
 
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import java.time.Clock;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,21 +30,13 @@ public class LongDynamicProperty extends DynamicProperty<Long> {
         Clock clock) {
         super(propertiesLoader, propertyName, defaultValue, clock);
     }
-    @Override
-    public Long getValue() {
-        if (shouldRefresh()) {
-            String strV = this.getStringValue();
-            try {
-                long newVal = Long.parseLong(strV);
-                if (this.lastValue != newVal) {
-                    log.info("[DP: {}] value changed from {} to {}", this.propertyName, this.lastValue, newVal);
-                }
-                this.lastValue = newVal;
-            } catch (NumberFormatException e) {
-                throw new RuntimeException("invalid long value: " + strV);
-            }
-        }
 
-        return this.lastValue;
+    @Override
+    protected Long convertFromString(String newStrVal) {
+        try {
+            return Long.parseLong(newStrVal);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("invalid long value: " + newStrVal);
+        }
     }
 }

@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-package io.mantisrx.common.properties;
+package io.mantisrx.config.dynamic;
 
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public abstract class DynamicProperty<T>  {
-    public static final String DYNAMICPROPERTY_REFRESH_SECONDS_KEY = "mantis.dynamicproperty.refreshSecs";
+    public static final String DYNAMIC_PROPERTY_REFRESH_SECONDS_KEY = "mantis.config.dynamic.refreshSecs";
     protected final MantisPropertiesLoader propertiesLoader;
     protected final String propertyName;
     protected final T defaultValue;
     protected T lastValue;
     protected Instant lastRefreshTime;
-    private final long refreshDuration;
+    private final Duration refreshDuration;
     private final Clock clock;
 
     public DynamicProperty(MantisPropertiesLoader propertiesLoader, String propertyName, T defaultValue, Clock clock) {
@@ -39,10 +44,9 @@ public abstract class DynamicProperty<T>  {
 
         try
         {
-            this.refreshDuration = Long.parseLong(
-                propertiesLoader.getStringValue(DYNAMICPROPERTY_REFRESH_SECONDS_KEY, "30"));
-        }
-        catch (NumberFormatException ex) {
+            this.refreshDuration = Duration.ofSeconds(Long.parseLong(
+                propertiesLoader.getStringValue(DYNAMIC_PROPERTY_REFRESH_SECONDS_KEY, "30")));
+        } catch (NumberFormatException ex) {
             throw new RuntimeException("invalid refresh secs for dynamic property: " + propertyName);
         }
     }
@@ -56,9 +60,22 @@ public abstract class DynamicProperty<T>  {
         return this.propertiesLoader.getStringValue(this.propertyName, this.lastValue.toString());
     }
 
-    protected boolean shouldRefresh() {
-        return this.clock.instant().isAfter(this.lastRefreshTime.plusSeconds(this.refreshDuration));
+    private boolean shouldRefresh() {
+        return this.clock.instant().isAfter(this.lastRefreshTime.plus(this.refreshDuration));
     }
 
-    public abstract T getValue();
+    protected abstract T convertFromString(String newStrVal);
+
+    public T getValue() {
+        if (shouldRefresh()) {
+            String newStrVal = this.getStringValue();
+            T newVal = convertFromString(newStrVal);
+            if (!Objects.equals(this.lastValue, newVal)) {
+                log.info("[DP: {}] value changed from {} to {}", this.propertyName, this.lastValue, newVal);
+            }
+            this.lastValue = newVal;
+        }
+
+        return this.lastValue;
+    }
 }
