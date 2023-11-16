@@ -24,6 +24,7 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
+import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
@@ -37,6 +38,7 @@ import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.utils.ConfigUtils;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
@@ -85,16 +87,13 @@ import rx.subjects.PublishSubject;
  */
 @Slf4j
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
-
-
-    public static final Time DEFAULT_TIMEOUT = Time.seconds(5);
-
     @Getter
     private final TaskExecutorID taskExecutorID;
     @Getter
     private final ClusterID clusterID;
     private final WorkerConfiguration workerConfiguration;
     private final MantisPropertiesLoader dynamicPropertiesLoader;
+    private final LongDynamicProperty rpcCallTimeoutMsDp;
     private final HighAvailabilityServices highAvailabilityServices;
     private final ClassLoaderHandle classLoaderHandle;
     private final TaskExecutorRegistration taskExecutorRegistration;
@@ -194,6 +193,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         this.registeredState = new DurableBooleanState(
             new File(workerConfiguration.getRegistrationStoreDir(),
                 "rmCxnState.txt").getAbsolutePath());
+        this.rpcCallTimeoutMsDp =
+            ConfigUtils.getDynamicPropertyLong("heartbeatTimeoutMs", WorkerConfiguration.class,
+                workerConfiguration.heartbeatTimeoutMs(), this.dynamicPropertiesLoader);
     }
 
     @Override
@@ -307,13 +309,21 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         ResourceClusterGateway resourceManagerGateway = resourceClusterGatewaySupplier.getCurrent();
 
         // let's register ourselves with the resource manager
-        // todo: move timeout/retry to apply values from this.dynamicPropertiesLoader
+        LongDynamicProperty heartbeatIntervalDp =
+            ConfigUtils.getDynamicPropertyLong("heartbeatInternalInMs", WorkerConfiguration.class,
+                workerConfiguration.heartbeatInternalInMs(), this.dynamicPropertiesLoader);
+
+        log.info("Starting ResourceManagerGatewayCxn with interval {} from default {} and timeout {}.",
+            heartbeatIntervalDp.getValue(),
+            workerConfiguration.heartbeatInternalInMs(),
+            this.rpcCallTimeoutMsDp.getValue());
+
         return new ResourceManagerGatewayCxn(
             resourceManagerCxnIdx++,
             taskExecutorRegistration,
             resourceManagerGateway,
-            workerConfiguration.getHeartbeatInterval(),
-            workerConfiguration.getHeartbeatTimeout(),
+            heartbeatIntervalDp,
+            this.rpcCallTimeoutMsDp,
             this,
             workerConfiguration.getTolerableConsecutiveHeartbeatFailures(),
             workerConfiguration.heartbeatRetryInitialDelayMs(),
@@ -340,7 +350,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             } else {
                 return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
             }
-        }, DEFAULT_TIMEOUT);
+        }, Time.milliseconds(this.rpcCallTimeoutMsDp.getValue()));
     }
 
     @VisibleForTesting
@@ -553,7 +563,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     @Override
     public CompletableFuture<Boolean> isRegistered() {
-        return callAsync(() -> this.currentResourceManagerCxn != null && this.currentResourceManagerCxn.isRegistered(), DEFAULT_TIMEOUT);
+        return callAsync(() -> this.currentResourceManagerCxn != null && this.currentResourceManagerCxn.isRegistered(),
+            Time.milliseconds(this.rpcCallTimeoutMsDp.getValue()));
     }
 
     CompletableFuture<Boolean> isRegistered(Time timeout) {

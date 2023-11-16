@@ -25,6 +25,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.server.agent.utils.DurableBooleanState;
 import io.mantisrx.server.agent.utils.ExponentialBackoffAbstractScheduledService;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
@@ -32,12 +33,12 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.api.common.time.Time;
 
 @Slf4j
 @ToString(of = "gateway")
@@ -48,8 +49,10 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     @Getter
     @Setter
     private volatile ResourceClusterGateway gateway;
-    private final Time heartBeatInterval;
-    private final Time heartBeatTimeout;
+
+    private final LongDynamicProperty heartBeatIntervalInMsDp;
+    private final LongDynamicProperty heartBeatTimeoutInMsDp;
+
     private final long registrationRetryInitialDelayMillis;
     private final double registrationRetryMultiplier;
     private final double registrationRetryRandomizationFactor;
@@ -60,6 +63,7 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     @Getter
     private volatile boolean registered = false;
 
+    private boolean hasRan = false;
     private final Counter heartbeatTimeoutCounter;
     private final Counter heartbeatFailureCounter;
     private final Counter taskExecutorRegistrationFailureCounter;
@@ -72,8 +76,8 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         int idx,
         TaskExecutorRegistration taskExecutorRegistration,
         ResourceClusterGateway gateway,
-        Time heartBeatInterval,
-        Time heartBeatTimeout,
+        LongDynamicProperty heartBeatIntervalInMsDp,
+        LongDynamicProperty heartBeatTimeoutInMsDp,
         TaskExecutor taskExecutor,
         int tolerableConsecutiveHeartbeatFailures,
         long heartbeatRetryInitialDelayMillis,
@@ -88,8 +92,8 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         this.idx = idx;
         this.taskExecutorRegistration = taskExecutorRegistration;
         this.gateway = gateway;
-        this.heartBeatInterval = heartBeatInterval;
-        this.heartBeatTimeout = heartBeatTimeout;
+        this.heartBeatIntervalInMsDp = heartBeatIntervalInMsDp;
+        this.heartBeatTimeoutInMsDp = heartBeatTimeoutInMsDp;
         this.taskExecutor = taskExecutor;
         this.registrationRetryInitialDelayMillis = registrationRetryInitialDelayMillis;
         this.registrationRetryMultiplier = registrationRetryMultiplier;
@@ -122,36 +126,20 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
 
     @Override
     protected Scheduler scheduler() {
-        return Scheduler.newFixedDelaySchedule(
-                0,
-                heartBeatInterval.getSize(),
-                heartBeatInterval.getUnit());
+        return new CustomScheduler() {
+            @Override
+            protected Schedule getNextSchedule() {
+                // no delay on first run.
+                return new Schedule(
+                    hasRan ? ResourceManagerGatewayCxn.this.heartBeatIntervalInMsDp.getValue() : 0,
+                    TimeUnit.MILLISECONDS);
+            }
+        };
     }
 
     @Override
     public void startUp() throws Exception {
-        try {
-            if (!alreadyRegistered.getState()) {
-                log.info("Trying to register with resource manager {}", gateway);
-                registerTaskExecutorWithRetry();
-            } else {
-                log.info("Registered with resource manager {} already", gateway);
-                // sending heartbeat instead
-                runIteration();
-            }
-
-            registered = true;
-            alreadyRegistered.setState(true);
-        } catch (Exception e) {
-            // the registration may or may not have succeeded. Since we don't know let's just
-            // do the disconnection just to be safe.
-            log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway,
-                    e);
-            try {
-                disconnectTaskExecutor();
-            } catch (Exception ignored) {}
-            throw e;
-        }
+        log.info("ResourceManagerGatewayCxn starting");
     }
 
     private void onRegistrationRetry(RetryOnRetryEvent event) {
@@ -180,7 +168,7 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         taskExecutorRegistrationCounter.increment();
         return gateway
                 .registerTaskExecutor(taskExecutorRegistration)
-                .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                .get(heartBeatTimeoutInMsDp.getValue(), TimeUnit.MILLISECONDS);
     }
 
     private void disconnectTaskExecutor() throws ExecutionException, InterruptedException, TimeoutException {
@@ -189,7 +177,7 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
             gateway.disconnectTaskExecutor(
                             new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
                                     taskExecutorRegistration.getClusterID()))
-                    .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                    .get(2 * heartBeatTimeoutInMsDp.getValue(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             log.error("Disconnection has failed", e);
             taskExecutorDisconnectionFailureCounter.increment();
@@ -197,14 +185,30 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         }
     }
 
+    @Override
     protected void runIteration() throws Exception {
+        hasRan = true;
+
+        if (!registered && !alreadyRegistered.getState()) {
+            log.info("Trying to register with resource manager {}", gateway);
+            try {
+                registerTaskExecutorWithRetry();
+                registered = true;
+                alreadyRegistered.setState(true);
+            } catch (Exception e) {
+                log.error("Failed to register TE: ", e);
+                throw e;
+            }
+        }
+
         try {
+            log.debug("Start TE HB with timeout: {}", heartBeatTimeoutInMsDp.getValue());
             taskExecutor.getCurrentReport()
-                    .thenComposeAsync(report -> {
-                        log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
-                        return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
-                    })
-                    .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                .thenComposeAsync(report -> {
+                    log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
+                    return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
+                })
+                .get(heartBeatTimeoutInMsDp.getValue(), TimeUnit.MILLISECONDS);
 
             // the heartbeat was successful, let's reset the counter and set the registered flag
             registered = true;
