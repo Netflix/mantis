@@ -67,7 +67,7 @@ public class StreamManager {
         this.streamMetricsMap = new ConcurrentHashMap<>();
     }
 
-    synchronized Optional<BlockingQueue<Event>> registerStream(
+    Optional<BlockingQueue<Event>> registerStream(
             final String streamName) {
 
         if (!streamQueuesMap.containsKey(streamName)) {
@@ -84,11 +84,13 @@ public class StreamManager {
             int qSize = config.streamQueueSize(streamName);
 
             LOG.info("creating queue for stream {} (size: {})", streamName, qSize);
-            streamQueuesMap.putIfAbsent(streamName, new LinkedBlockingQueue<>(qSize));
-            // Stream metrics are created and registered only after
-            // an app tries to emit an event to that stream.
-            // Having a subscription for a stream does not create the StreamMetrics.
-            streamMetricsMap.putIfAbsent(streamName, new StreamMetrics(registry, streamName));
+            synchronized (streamQueuesMap) {
+                streamQueuesMap.putIfAbsent(streamName, new LinkedBlockingQueue<>(qSize));
+                // Stream metrics are created and registered only after
+                // an app tries to emit an event to that stream.
+                // Having a subscription for a stream does not create the StreamMetrics.
+                streamMetricsMap.putIfAbsent(streamName, new StreamMetrics(registry, streamName));
+            }
         }
 
         return Optional.ofNullable(streamQueuesMap.get(streamName));
@@ -117,8 +119,10 @@ public class StreamManager {
                 );
 
         streamsToRemove.stream().forEach(stream -> {
-            streamQueuesMap.remove(stream);
-            streamMetricsMap.remove(stream);
+            synchronized (streamQueuesMap) {
+                streamQueuesMap.remove(stream);
+                streamMetricsMap.remove(stream);
+            }
         });
     }
 
