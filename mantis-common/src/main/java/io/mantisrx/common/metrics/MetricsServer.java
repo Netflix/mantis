@@ -19,14 +19,18 @@ package io.mantisrx.common.metrics;
 import io.mantisrx.common.metrics.measurement.CounterMeasurement;
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import io.mantisrx.common.metrics.measurement.Measurements;
+import io.mantisrx.common.metrics.measurement.MicrometerMeasurement;
 import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -53,41 +57,50 @@ public class MetricsServer {
     private int port;
     private Map<String, String> tags;
     private long publishRateInSeconds;
+    private MeterRegistry micrometerRegistry;
 
-    public MetricsServer(int port, long publishRateInSeconds, Map<String, String> tags) {
+    public MetricsServer(int port, long publishRateInSeconds, Map<String, String> tags, MeterRegistry micrometerRegistry) {
         this.port = port;
         this.publishRateInSeconds = publishRateInSeconds;
         this.tags = tags;
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(new Jdk8Module());
+        this.micrometerRegistry = micrometerRegistry;
     }
 
     private Observable<Measurements> measurements(long timeFrequency) {
+        final MeterRegistry microRegistry = this.micrometerRegistry;
         final MetricsRegistry registry = MetricsRegistry.getInstance();
         return
-                Observable.interval(0, timeFrequency, TimeUnit.SECONDS)
-                        .flatMap(new Func1<Long, Observable<Measurements>>() {
-                            @Override
-                            public Observable<Measurements> call(Long t1) {
-                                long timestamp = System.currentTimeMillis();
-                                List<Measurements> measurements = new ArrayList<>();
-                                for (Metrics metrics : registry.metrics()) {
-                                    Collection<CounterMeasurement> counters = new LinkedList<>();
-                                    Collection<GaugeMeasurement> gauges = new LinkedList<>();
+            Observable.interval(0, timeFrequency, TimeUnit.SECONDS)
+                .flatMap(new Func1<Long, Observable<Measurements>>() {
+                    @Override
+                    public Observable<Measurements> call(Long t1) {
+                        long timestamp = System.currentTimeMillis();
+                        List<Measurements> measurements = new ArrayList<>();
 
-                                    for (Entry<MetricId, Counter> counterEntry : metrics.counters().entrySet()) {
-                                        Counter counter = counterEntry.getValue();
-                                        counters.add(new CounterMeasurement(counterEntry.getKey().metricName(), counter.value()));
-                                    }
-                                    for (Entry<MetricId, Gauge> gaugeEntry : metrics.gauges().entrySet()) {
-                                        gauges.add(new GaugeMeasurement(gaugeEntry.getKey().metricName(), gaugeEntry.getValue().doubleValue()));
-                                    }
-                                    measurements.add(new Measurements(metrics.getMetricGroupId().id(),
-                                            timestamp, counters, gauges, tags));
-                                }
-                                return Observable.from(measurements);
+                        for (Meter meter: microRegistry.getMeters()) {
+                            Collection<MicrometerMeasurement> micrometers = new LinkedList<>();
+                            micrometers.add(new MicrometerMeasurement(meter.getId().getType(), meter.measure().iterator().next().getValue()));
+                            measurements.add(new Measurements(meter.getId().getName(), timestamp, Collections.emptyList(), Collections.emptyList(), micrometers, tags));
+                        }
+
+                        for (io.mantisrx.common.metrics.Metrics metrics : registry.metrics()) {
+                            Collection<CounterMeasurement> counters = new LinkedList<>();
+                            Collection<GaugeMeasurement> gauges = new LinkedList<>();
+                            for (Entry<MetricId, Counter> counterEntry : metrics.counters().entrySet()) {
+                                Counter counter = counterEntry.getValue();
+                                counters.add(new CounterMeasurement(counterEntry.getKey().metricName(), counter.value()));
                             }
-                        });
+                            for (Entry<MetricId, Gauge> gaugeEntry : metrics.gauges().entrySet()) {
+                                gauges.add(new GaugeMeasurement(gaugeEntry.getKey().metricName(), gaugeEntry.getValue().doubleValue()));
+                            }
+                            measurements.add(new Measurements(metrics.getMetricGroupId().name(),
+                                timestamp, counters, gauges, Collections.emptyList(),tags));
+                        }
+                        return Observable.from(measurements);
+                    }
+                });
     }
 
     public void start() {

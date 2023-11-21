@@ -40,6 +40,8 @@ import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.ParameterUtils;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.EndpointChange.Type;
 import io.reactivex.mantis.remote.observable.EndpointInjector;
@@ -70,8 +72,13 @@ public class LocalJobExecutorNetworked {
     private static final Logger logger = LoggerFactory.getLogger(LocalJobExecutorNetworked.class);
     private static final int numPartitions = 1;
     private static final Action0 nullAction = () -> System.exit(0);
+    private final MeterRegistry registry;
 
-    private LocalJobExecutorNetworked() {}
+
+    private LocalJobExecutorNetworked(MeterRegistry registry) {
+        this.registry = registry;
+    }
+
 
     @SuppressWarnings("rawtypes")
     private static void startSource(int index, int port, int workersAtNextStage, SourceHolder source, StageConfig stage,
@@ -158,8 +165,11 @@ public class LocalJobExecutorNetworked {
         execute(job, builder.build(), parameters);
     }
 
-    @SuppressWarnings( {"rawtypes", "unchecked"})
     public static void execute(Job job, SchedulingInfo schedulingInfo, Parameter... parameters) throws IllegalMantisJobException {
+        execute(job, schedulingInfo, new CompositeMeterRegistry(), parameters);
+    }
+    @SuppressWarnings( {"rawtypes", "unchecked"})
+    public static void execute(Job job, SchedulingInfo schedulingInfo, MeterRegistry registry, Parameter... parameters) throws IllegalMantisJobException {
         // validate job
         try {
             new ValidateJob(job).execute();
@@ -176,7 +186,7 @@ public class LocalJobExecutorNetworked {
         // register netty metrics
         RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         // start our metrics server
-        MetricsServer metricsServer = new MetricsServer(portSelector.acquirePort(), 1, Collections.EMPTY_MAP);
+        MetricsServer metricsServer = new MetricsServer(portSelector.acquirePort(), 1, Collections.EMPTY_MAP, registry);
         metricsServer.start();
 
         Lifecycle lifecycle = job.getLifecycle();

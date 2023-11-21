@@ -35,6 +35,8 @@ import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ import rx.subjects.PublishSubject;
 @Slf4j
 public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask {
 
+    private final MeterRegistry meterRegistry;
     private WrappedExecuteStageRequest wrappedExecuteStageRequest;
 
     private WorkerConfiguration config;
@@ -75,12 +78,14 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
 
     private ExecuteStageRequest executeStageRequest;
 
-    public RuntimeTaskImpl() {
+    public RuntimeTaskImpl(MeterRegistry meterRegistry) {
         this.tasksStatusSubject = PublishSubject.create();
+        this.meterRegistry = meterRegistry;
     }
 
-    public RuntimeTaskImpl(PublishSubject<Observable<Status>> tasksStatusSubject) {
+    public RuntimeTaskImpl(PublishSubject<Observable<Status>> tasksStatusSubject, MeterRegistry meterRegistry) {
         this.tasksStatusSubject = tasksStatusSubject;
+        this.meterRegistry = meterRegistry;
     }
 
     @Override
@@ -171,7 +176,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         // shared state
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
 
-        mantisServices.add(MetricsFactory.newMetricsServer(config, executeStageRequest));
+        mantisServices.add(MetricsFactory.newMetricsServer(config, executeStageRequest, meterRegistry));
 
         // [TODO:andyz] disable noOp publisher for now. Need to fix the full publisher injection.
         // mantisServices.add(MetricsFactory.newMetricsPublisher(config, executeStageRequest));

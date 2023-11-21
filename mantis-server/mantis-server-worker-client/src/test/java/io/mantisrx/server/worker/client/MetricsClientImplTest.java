@@ -22,6 +22,7 @@ import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.metrics.measurement.CounterMeasurement;
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import io.mantisrx.common.metrics.measurement.Measurements;
+import io.mantisrx.common.metrics.measurement.MicrometerMeasurement;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.common.network.WorkerEndpoint;
 import io.mantisrx.runtime.parameter.SinkParameters;
@@ -58,6 +59,7 @@ public class MetricsClientImplTest {
                 Collections.<CounterMeasurement>emptyList(),
                 Arrays.asList(new GaugeMeasurement(MetricStringConstants.CPU_PCT_USAGE_CURR, 20),
                         new GaugeMeasurement(MetricStringConstants.TOT_MEM_USAGE_CURR, 123444)),
+                Collections.<MicrometerMeasurement>emptyList(),
                 Collections.<String, String>emptyMap()));
     }
 

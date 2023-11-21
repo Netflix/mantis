@@ -19,6 +19,7 @@ package io.mantisrx.common.metrics.measurement;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.micrometer.core.instrument.Meter;
 import java.util.Collection;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ public class Measurements {
     private long timestamp;
     private Collection<CounterMeasurement> counters;
     private Collection<GaugeMeasurement> gauges;
+    private Collection<MicrometerMeasurement> micrometers;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -38,11 +40,13 @@ public class Measurements {
             @JsonProperty("timestamp") long timestamp,
             @JsonProperty("counters") Collection<CounterMeasurement> counters,
             @JsonProperty("gauges") Collection<GaugeMeasurement> gauges,
+            @JsonProperty("micrometers") Collection<MicrometerMeasurement> micrometers,
             @JsonProperty("tags") Map<String, String> tags) {
         this.name = name;
         this.timestamp = timestamp;
         this.counters = counters;
         this.gauges = gauges;
+        this.micrometers = micrometers;
         this.tags = tags;
     }
 
@@ -62,6 +66,10 @@ public class Measurements {
         return gauges;
     }
 
+    public Collection<MicrometerMeasurement> getMicrometers() {
+        return micrometers;
+    }
+
     public Map<String, String> getTags() {
         return tags;
     }
@@ -74,6 +82,7 @@ public class Measurements {
                 ", tags=" + tags +
                 ", counters=" + counters +
                 ", gauges=" + gauges +
+                ", micrometers=" + micrometers +
                 '}';
     }
 }

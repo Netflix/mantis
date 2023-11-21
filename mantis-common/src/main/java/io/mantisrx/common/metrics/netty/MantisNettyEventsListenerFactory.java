@@ -15,6 +15,7 @@
  */
 package io.mantisrx.common.metrics.netty;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import mantis.io.reactivex.netty.client.ClientMetricsEvent;
 import mantis.io.reactivex.netty.client.RxClient;
 import mantis.io.reactivex.netty.metrics.MetricEventsListener;

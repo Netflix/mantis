@@ -18,6 +18,7 @@ package io.mantisrx.server.master;
 
 import static org.apache.flink.configuration.GlobalConfiguration.loadConfiguration;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.DeadLetter;
@@ -79,6 +80,7 @@ import io.mantisrx.server.master.scheduler.MantisSchedulerFactoryImpl;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -119,16 +121,16 @@ public class MasterMain implements Service {
     private MasterConfiguration config;
     private SchedulingService schedulingService;
     private ILeadershipManager leadershipManager;
+    private final MeterRegistry micrometerRegistry;
 
-    public MasterMain(ConfigurationFactory configFactory, AuditEventSubscriber auditEventSubscriber) {
-
+    public MasterMain(ConfigurationFactory configFactory, AuditEventSubscriber auditEventSubscriber, MeterRegistry micrometerRegistry) {
+        this.micrometerRegistry = micrometerRegistry;
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
-
         Metrics metrics = new Metrics.Builder()
-                .id("MasterMain")
-                .addCounter("masterInitSuccess")
-                .addCounter("masterInitError")
-                .build();
+            .id("MasterMain")
+            .addCounter("masterInitSuccess")
+            .addCounter("masterInitError")
+            .build();
         Metrics m = MetricsRegistry.getInstance().registerAndGet(metrics);
         try {
             ConfigurationProvider.initialize(configFactory);
@@ -238,7 +240,7 @@ public class MasterMain implements Service {
 
             // start serving metrics
             if (config.getMasterMetricsPort() > 0) {
-                new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap()).start();
+                new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap(), micrometerRegistry).start();
             }
             new MetricsPublisherService(config.getMetricsPublisher(), config.getMetricsPublisherFrequencyInSeconds(),
                     new HashMap<>()).start();
@@ -375,7 +377,8 @@ public class MasterMain implements Service {
             StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
             setupDummyAgentClusterAutoScaler();
             final AuditEventSubscriber auditEventSubscriber = new AuditEventSubscriberLoggingImpl();
-            MasterMain master = new MasterMain(factory, auditEventSubscriber);
+            MeterRegistry registry = new CompositeMeterRegistry();
+            MasterMain master = new MasterMain(factory, auditEventSubscriber,registry);
             master.start(); // blocks until shutdown hook (ctrl-c)
         } catch (Exception e) {
             // unexpected to get a RuntimeException, will exit
