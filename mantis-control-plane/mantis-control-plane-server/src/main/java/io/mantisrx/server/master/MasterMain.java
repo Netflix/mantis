@@ -31,6 +31,8 @@ import com.sampullara.cli.Argument;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
+import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.master.DeadLetterActor;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.JobClustersManagerService;
@@ -119,9 +121,13 @@ public class MasterMain implements Service {
     private MasterConfiguration config;
     private SchedulingService schedulingService;
     private ILeadershipManager leadershipManager;
+    private final MantisPropertiesLoader dynamicPropertiesLoader;
 
-    public MasterMain(ConfigurationFactory configFactory, AuditEventSubscriber auditEventSubscriber) {
-
+    public MasterMain(
+        ConfigurationFactory configFactory,
+        MantisPropertiesLoader dynamicPropertiesLoader,
+        AuditEventSubscriber auditEventSubscriber) {
+        this.dynamicPropertiesLoader = dynamicPropertiesLoader;
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
 
         Metrics metrics = new Metrics.Builder()
@@ -196,7 +202,8 @@ public class MasterMain implements Service {
                     mantisJobStore,
                     jobMessageRouter,
                     resourceClustersHostActor,
-                    storageProvider);
+                    storageProvider,
+                    this.dynamicPropertiesLoader);
 
             // end of new stuff
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;
@@ -375,7 +382,8 @@ public class MasterMain implements Service {
             StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
             setupDummyAgentClusterAutoScaler();
             final AuditEventSubscriber auditEventSubscriber = new AuditEventSubscriberLoggingImpl();
-            MasterMain master = new MasterMain(factory, auditEventSubscriber);
+            final MantisPropertiesLoader propertiesLoader = new DefaultMantisPropertiesLoader(System.getProperties());
+            MasterMain master = new MasterMain(factory, propertiesLoader, auditEventSubscriber);
             master.start(); // blocks until shutdown hook (ctrl-c)
         } catch (Exception e) {
             // unexpected to get a RuntimeException, will exit
