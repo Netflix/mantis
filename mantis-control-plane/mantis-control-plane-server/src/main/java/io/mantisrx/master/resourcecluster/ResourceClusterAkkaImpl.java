@@ -19,6 +19,7 @@ package io.mantisrx.master.resourcecluster;
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
 import io.mantisrx.common.Ack;
+import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ArtifactList;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
@@ -56,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements ResourceCluster {
 
@@ -66,8 +66,8 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
         ActorRef resourceClusterManagerActor,
         Duration askTimeout,
         ClusterID clusterID,
-        Supplier<Integer> rateLimitPerSecond) {
-        super(resourceClusterManagerActor, askTimeout, rateLimitPerSecond);
+        LongDynamicProperty rateLimitPerSecondDp) {
+        super(resourceClusterManagerActor, askTimeout, rateLimitPerSecondDp);
         this.clusterID = clusterID;
     }
 

@@ -23,6 +23,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -36,7 +37,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -56,14 +56,14 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     ResourceClusterGatewayAkkaImpl(
             ActorRef resourceClusterManagerActor,
             Duration askTimeout,
-        Supplier<Integer> maxConcurrentRequestCount) {
+        LongDynamicProperty maxConcurrentRequestCountDp) {
         this.resourceClusterManagerActor = resourceClusterManagerActor;
         this.askTimeout = askTimeout;
 
-        log.info("Setting maxConcurrentRequestCount for resourceCluster gateway {}", maxConcurrentRequestCount);
-        this.rateLimiter = RateLimiter.create(maxConcurrentRequestCount.get());
+        log.info("Setting maxConcurrentRequestCountDp for resourceCluster gateway {}", maxConcurrentRequestCountDp);
+        this.rateLimiter = RateLimiter.create(maxConcurrentRequestCountDp.getValue());
         semaphoreResetScheduler.scheduleAtFixedRate(() -> {
-            int newRate = maxConcurrentRequestCount.get();
+            long newRate = maxConcurrentRequestCountDp.getValue();
             log.info("Setting the rate limiter rate to {}", newRate);
             rateLimiter.setRate(newRate);
         }, 1, 1, TimeUnit.MINUTES);

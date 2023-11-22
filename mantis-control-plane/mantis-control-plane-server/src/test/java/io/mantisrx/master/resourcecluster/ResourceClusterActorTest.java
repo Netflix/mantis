@@ -30,6 +30,9 @@ import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
+import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
@@ -157,6 +160,8 @@ public class ResourceClusterActorTest {
     private ActorRef resourceClusterActor;
     private ResourceCluster resourceCluster;
     private JobMessageRouter jobMessageRouter;
+    private final MantisPropertiesLoader propertiesLoader =
+        new DefaultMantisPropertiesLoader(System.getProperties());
 
     @BeforeClass
     public static void setup() {
@@ -198,7 +203,7 @@ public class ResourceClusterActorTest {
                 resourceClusterActor,
                 Duration.ofSeconds(1),
                 CLUSTER_ID,
-                () -> 10000);
+                new LongDynamicProperty(propertiesLoader, "rate.limite.perSec", 10000L));
     }
 
     @Test
