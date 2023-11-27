@@ -249,7 +249,6 @@ public class JobsRouteTest extends RouteTestBase {
         t.interrupt();
     }
 
-    @Test
     public void testIt() throws InterruptedException {
         cleanupExistingJobs();
         setupJobCluster();

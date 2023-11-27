@@ -21,9 +21,10 @@ import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.scheduler.ResourceClusterAwareSchedulerActor.BatchScheduleRequestEvent;
+import io.mantisrx.server.master.scheduler.ResourceClusterAwareSchedulerActor.CancelBatchRequestEvent;
 import io.mantisrx.server.master.scheduler.ResourceClusterAwareSchedulerActor.CancelRequestEvent;
 import io.mantisrx.server.master.scheduler.ResourceClusterAwareSchedulerActor.InitializeRunningWorkerRequestEvent;
-import io.mantisrx.server.master.scheduler.ResourceClusterAwareSchedulerActor.ScheduleRequestEvent;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
@@ -37,8 +38,13 @@ public class ResourceClusterAwareScheduler implements MantisScheduler {
     private final ActorRef schedulerActor;
 
     @Override
-    public void scheduleWorker(ScheduleRequest scheduleRequest) {
-        schedulerActor.tell(ScheduleRequestEvent.of(scheduleRequest), null);
+    public void scheduleWorkers(BatchScheduleRequest scheduleRequest) {
+        schedulerActor.tell(BatchScheduleRequestEvent.of(scheduleRequest), null);
+    }
+
+    @Override
+    public void unscheduleJob(String jobId) {
+        schedulerActor.tell(CancelBatchRequestEvent.of(jobId),null);
     }
 
     @Override

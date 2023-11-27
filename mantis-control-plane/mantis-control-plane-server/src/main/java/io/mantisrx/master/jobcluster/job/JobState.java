@@ -181,4 +181,21 @@ public enum JobState {
             return false;
         }
     }
+
+    /**
+     * Returns true if the job is accepted.
+     *
+     * @param state
+     *
+     * @return
+     */
+    public static boolean isAcceptedState(JobState state) {
+        switch (state) {
+            case Accepted:
+
+            return true;
+        default:
+            return false;
+        }
+    }
 }

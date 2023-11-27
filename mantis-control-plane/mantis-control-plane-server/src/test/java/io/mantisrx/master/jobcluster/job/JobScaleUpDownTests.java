@@ -127,25 +127,25 @@ public class JobScaleUpDownTests {
 		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
 
 		// send scale up request
-		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName+"-1", 1, 2, "", ""), probe.getRef());
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName+"-1", 1, 3, "", ""), probe.getRef());
 		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
 		System.out.println("ScaleupResp " + scaleResp.message);
 		assertEquals(SUCCESS, scaleResp.responseCode);
-		assertEquals(2,scaleResp.getActualNumWorkers());
+		assertEquals(3,scaleResp.getActualNumWorkers());
 
 		verify(jobStoreMock, times(1)).storeNewJob(any());
 		// initial worker
 		verify(jobStoreMock, times(1)).storeNewWorkers(any(),any());
 
 		//scale up worker
-		verify(jobStoreMock, times(1)).storeNewWorker(any());
+		verify(jobStoreMock, times(2)).storeNewWorker(any());
 
 		verify(jobStoreMock, times(6)).updateWorker(any());
 
 		verify(jobStoreMock, times(3)).updateJob(any());
 
 		// initial worker + job master and scale up worker
-		verify(schedulerMock, times(3)).scheduleWorker(any());
+		verify(schedulerMock, times(3)).scheduleWorkers(any());
 
 	}
 
@@ -190,7 +190,7 @@ public class JobScaleUpDownTests {
 		verify(schedulerMock, times(1)).unscheduleAndTerminateWorker(any(), any());
 
 		// 1 job master + 2 workers
-		verify(schedulerMock, times(3)).scheduleWorker(any());
+		verify(schedulerMock, times(1)).scheduleWorkers(any());
 
 	}
 
@@ -528,7 +528,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		verify(jobStoreMock, times(3)).updateJob(any());
 
 		// initial worker only
-		verify(schedulerMock, times(1)).scheduleWorker(any());
+		verify(schedulerMock, times(1)).scheduleWorkers(any());
 	}
 
 	@Test
@@ -571,7 +571,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		verify(jobStoreMock, times(3)).updateJob(any());
 
 		// initial worker only
-		verify(schedulerMock, times(1)).scheduleWorker(any());
+		verify(schedulerMock, times(1)).scheduleWorkers(any());
 	}
 	@Test
 	public void stageScalingPolicyTest() {

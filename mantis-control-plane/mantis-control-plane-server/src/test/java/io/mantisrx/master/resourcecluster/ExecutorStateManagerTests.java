@@ -28,7 +28,8 @@ import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.util.DelegateClock;
 import io.mantisrx.master.resourcecluster.ExecutorStateManagerImpl.TaskExecutorHolder;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.BestFit;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatchAssignmentRequest;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -45,11 +46,11 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -129,9 +130,9 @@ public class ExecutorStateManagerTests {
 
     @Test
     public void testGetBestFit() {
-        Optional<Pair<TaskExecutorID, TaskExecutorState>> bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0),
+        Optional<BestFit> bestFitO =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)),
                 CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
@@ -153,26 +154,26 @@ public class ExecutorStateManagerTests {
 
         // test machine def 1
         bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0), CLUSTER_ID));
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)), CLUSTER_ID));
         assertTrue(bestFitO.isPresent());
-        assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getLeft());
-        assertEquals(state1, bestFitO.get().getRight());
+        assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
+        assertEquals(state1, bestFitO.get().getBestFit().values().stream().findFirst().get().getRight());
 
         bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0), CLUSTER_ID));
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)), CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
-        assertEquals(TASK_EXECUTOR_ID_2, bestFitO.get().getLeft());
-        assertEquals(state2, bestFitO.get().getRight());
+        assertEquals(TASK_EXECUTOR_ID_2, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
+        assertEquals(state2, bestFitO.get().getBestFit().values().stream().findFirst().get().getRight());
 
         // disable e1 and should get nothing
         state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TASK_EXECUTOR_ID_1, CLUSTER_ID,
             TaskExecutorReport.occupied(WORKER_ID)));
         bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0), CLUSTER_ID));
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)), CLUSTER_ID));
         assertFalse(bestFitO.isPresent());
 
         // enable e3 and disable e2
@@ -183,18 +184,18 @@ public class ExecutorStateManagerTests {
             TaskExecutorReport.occupied(WORKER_ID)));
 
         bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0), CLUSTER_ID));
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)), CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
-        assertEquals(TASK_EXECUTOR_ID_3, bestFitO.get().getLeft());
-        assertEquals(state3, bestFitO.get().getRight());
+        assertEquals(TASK_EXECUTOR_ID_3, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
+        assertEquals(state3, bestFitO.get().getBestFit().values().stream().findFirst().get().getRight());
 
         // test mark as unavailable
         stateManager.tryMarkUnavailable(TASK_EXECUTOR_ID_3);
         bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
-                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0), CLUSTER_ID));
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)), CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
     }
@@ -232,10 +233,10 @@ public class ExecutorStateManagerTests {
 
     @Test
     public void testGetBestFit_WithGenerationFromScaleGroup() {
-        Optional<Pair<TaskExecutorID, TaskExecutorState>> bestFitO =
+        Optional<BestFit> bestFitO =
             stateManager.findBestFit(
-                new TaskExecutorAssignmentRequest(
-                    TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0),
+                new TaskExecutorBatchAssignmentRequest(
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)),
                     CLUSTER_ID));
         assertFalse(bestFitO.isPresent());
 
@@ -267,13 +268,13 @@ public class ExecutorStateManagerTests {
         // should get te1 with group2
         bestFitO =
             stateManager.findBestFit(
-                new TaskExecutorAssignmentRequest(
-                    TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0),
+                new TaskExecutorBatchAssignmentRequest(
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
-        assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getLeft());
-        assertEquals(teState1, bestFitO.get().getRight());
+        assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
+        assertEquals(teState1, bestFitO.get().getBestFit().values().stream().findFirst().get().getRight());
 
         // add new TE in group1 doesn't affect result.
         TaskExecutorState teState4 = registerNewTaskExecutor(TaskExecutorID.of("te4"),
@@ -283,13 +284,13 @@ public class ExecutorStateManagerTests {
 
         bestFitO =
             stateManager.findBestFit(
-                new TaskExecutorAssignmentRequest(
-                    TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0),
+                new TaskExecutorBatchAssignmentRequest(
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
-        assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getLeft());
-        assertEquals(teState1, bestFitO.get().getRight());
+        assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
+        assertEquals(teState1, bestFitO.get().getBestFit().values().stream().findFirst().get().getRight());
 
         // remove te1 and add new te in both groups
         teState1.onTaskExecutorStatusChange(
@@ -308,28 +309,28 @@ public class ExecutorStateManagerTests {
 
         bestFitO =
             stateManager.findBestFit(
-                new TaskExecutorAssignmentRequest(
-                    TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0),
+                new TaskExecutorBatchAssignmentRequest(
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
-        assertEquals(te5Id, bestFitO.get().getLeft());
-        assertEquals(teState5, bestFitO.get().getRight());
+        assertEquals(te5Id, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
+        assertEquals(teState5, bestFitO.get().getBestFit().values().stream().findFirst().get().getRight());
 
         // disable all group2 TEs and allow bestFit from group1
         teState5.onTaskExecutorStatusChange(
             new TaskExecutorStatusChange(te5Id, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID)));
         bestFitO =
             stateManager.findBestFit(
-                new TaskExecutorAssignmentRequest(
-                    TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0),
+                new TaskExecutorBatchAssignmentRequest(
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
-        assertNotEquals(te5Id, bestFitO.get().getLeft());
-        assertNotEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getLeft());
+        assertNotEquals(te5Id, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
+        assertNotEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
         assertEquals(SCALE_GROUP_1,
-            Objects.requireNonNull(bestFitO.get().getRight().getRegistration())
+            Objects.requireNonNull(bestFitO.get().getBestFit().values().stream().findFirst().get().getRight().getRegistration())
                 .getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).orElse("invalid"));
 
         assertNotNull(stateManager.get(TASK_EXECUTOR_ID_1));

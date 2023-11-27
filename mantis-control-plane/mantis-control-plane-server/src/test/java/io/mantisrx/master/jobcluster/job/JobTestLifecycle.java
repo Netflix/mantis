@@ -58,6 +58,7 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.scheduler.BatchScheduleRequest;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.store.FileBasedStore;
@@ -65,6 +66,7 @@ import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -296,13 +298,14 @@ public class JobTestLifecycle {
 
 			//verify(jobStoreMock, times(3))
 
-            verify(schedulerMock,times(1)).scheduleWorker(any());
+            verify(schedulerMock,times(1)).scheduleWorkers(any());
 
             JobMetadata jobMetadata = new JobMetadata(jobId, new URL("http://myart" +
                     ""),1,"njoshi",schedInfo,Lists.newArrayList(),0,10, 0);
-            ScheduleRequest expectedScheduleRequest = new ScheduleRequest(workerId,
+            ScheduleRequest scheduleRequest = new ScheduleRequest(workerId,
                     1,4, jobMetadata,MantisJobDurationType.Perpetual,machineDefinition,Lists.newArrayList(),Lists.newArrayList(),0,empty());
-            verify(schedulerMock).scheduleWorker(expectedScheduleRequest);
+            BatchScheduleRequest expectedRequest = new BatchScheduleRequest(Collections.singletonList(scheduleRequest));
+            verify(schedulerMock).scheduleWorkers(expectedRequest);
 
 
             //assertEquals(jobActor, probe.getLastSender());
@@ -721,7 +724,7 @@ public class JobTestLifecycle {
 		JobTestHelper.sendWorkerTerminatedEvent(probe,jobActor,jId.getId(),new WorkerId(jId.getId(),0,1));
 		Thread.sleep(1000);
 		verify(schedulerMock, times(1)).unscheduleAndTerminateWorker(any(), any());
-		verify(schedulerMock, times(1)).scheduleWorker(any());
+		verify(schedulerMock, times(1)).scheduleWorkers(any());
 		verify(jobStoreMock, times(1)).storeNewJob(any());
 		verify(jobStoreMock, times(1)).storeNewWorkers(any(),any());
 		verify(jobStoreMock, times(2)).updateJob(any());
@@ -807,7 +810,7 @@ public class JobTestLifecycle {
 			Thread.sleep(1000);
 
 			// 2 original submissions and 2 resubmits because of HB timeouts
-			verify(schedulerMock, times(4)).scheduleWorker(any());
+			verify(schedulerMock, times(3)).scheduleWorkers(any());
 			// 2 kills due to resubmits
 			verify(schedulerMock, times(2)).unscheduleAndTerminateWorker(any(), any());
 
@@ -919,7 +922,7 @@ public class JobTestLifecycle {
             }
 
             // 2 initial schedules and 1 replacement
-			verify(schedulerMock, timeout(1_000).times(3)).scheduleWorker(any());
+			verify(schedulerMock, timeout(1_000).times(2)).scheduleWorkers(any());
 
 			// archive worker should get called once for the dead worker
 		//	verify(jobStoreMock, timeout(1_000).times(1)).archiveWorker(any());
