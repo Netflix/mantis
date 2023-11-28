@@ -147,6 +147,7 @@ public class TestHelpers {
         props.setProperty("mesos.lease.offer.expiry.secs", "1");
         props.setProperty("mantis.master.stage.assignment.refresh.interval.ms","-1");
         props.setProperty("mantis.master.api.cache.ttl.milliseconds","0");
+        props.setProperty("mantis.scheduler.enable-batch","true");
 
         ConfigurationProvider.initialize(new StaticPropertiesConfigurationFactory(props));
     }
