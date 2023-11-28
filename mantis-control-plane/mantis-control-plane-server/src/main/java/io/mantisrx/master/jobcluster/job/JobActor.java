@@ -1259,6 +1259,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .expireAfterWrite(1, TimeUnit.HOURS)
                 .build();
         private volatile boolean stageAssignmentPotentiallyChanged;
+        private final boolean batchSchedulingEnabled = ConfigurationProvider.getConfig().isBatchSchedulingEnabled();
 
         /**
          * Creates an instance of this class.
@@ -1361,7 +1362,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                         // If the job is in accepted state, queue all its pending workers at once in a batch request.
                         // This is important when before master failover there were pending batch requests
-                        if (JobState.isAcceptedState(mantisJobMetaData.getState())) {
+                        if (batchSchedulingEnabled && JobState.isAcceptedState(mantisJobMetaData.getState())) {
                             workersToSubmit.add(wm);
                         } else {
                             queueTask(wm);
@@ -1495,7 +1496,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 if (!workers.isEmpty()) {
                     // queue to scheduler
-                    queueTasks(workers, empty());
+                    if (batchSchedulingEnabled) {
+                        workers.forEach(this::queueTask);
+                    } else {
+                        queueTasks(workers, empty());
+                    }
                 }
             } catch (Exception e) {
                 LOGGER.error("Error {} storing workers of job {}", e.getMessage(), jobId.getId(), e);

@@ -387,6 +387,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("5000")
     int getResourceClusterActionsPermitsPerSecond();
 
+    @Config("mantis.batchScheduling.enabled")
+    @Default("false")
+    boolean isBatchSchedulingEnabled();
+
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());
     }
