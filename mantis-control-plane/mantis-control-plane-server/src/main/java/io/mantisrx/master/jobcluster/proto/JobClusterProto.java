@@ -209,7 +209,7 @@ public class JobClusterProto {
         public final ActorRef requestor;
         public final JobState state;
         public final String user;
-        public final Optional<IMantisJobMetadata> jobMetadata;
+        public final IMantisJobMetadata jobMetadata;
         public KillJobResponse(long requestId, ResponseCode responseCode, JobState state, String message, JobId jobId, IMantisJobMetadata jobMeta, String user,
                                final ActorRef requestor) {
             super(requestId, responseCode, message);
@@ -217,7 +217,7 @@ public class JobClusterProto {
             this.requestor = requestor;
             this.state = state;
             this.user = user;
-            this.jobMetadata = ofNullable(jobMeta);
+            this.jobMetadata = jobMeta;
         }
 
         @Override
