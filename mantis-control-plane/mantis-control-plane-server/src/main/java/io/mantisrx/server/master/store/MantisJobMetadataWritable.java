@@ -177,11 +177,17 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
         return stageMetadataMap.putIfAbsent(msmd.getStageNum(), msmd) == null;
     }
 
-    public boolean addWorkerMedata(int stageNum, MantisWorkerMetadata workerMetadata, MantisWorkerMetadata replacedWorker)
-            throws InvalidJobException {
+    /**
+     * Add the given MantisWorkerMetadata instance to the corresponding stage.
+     * If the stage worker index already exists, replace it only when the given worker has higher worker number.
+     * @param stageNum target stage number.
+     * @param workerMetadata new worker metadata instance.
+     * @return true if the given worker metadata instance is added to this job.
+     */
+    public boolean addWorkerMedata(int stageNum, MantisWorkerMetadata workerMetadata) {
         final boolean result =
             stageMetadataMap.get(stageNum)
-                .replaceWorkerIndex(workerMetadata, replacedWorker);
+                .replaceWorkerIndex(workerMetadata);
 
         if (result) {
             Integer integer = workerNumberToStageMap.put(workerMetadata.getWorkerNumber(), stageNum);
