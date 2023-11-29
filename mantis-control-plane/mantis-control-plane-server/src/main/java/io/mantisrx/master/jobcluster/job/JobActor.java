@@ -262,7 +262,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         LOGGER.info("Stored mantis job");
 
         this.workerManager = new WorkerManager(this, jobClusterDefinition.getWorkerMigrationConfig(),
-                this.mantisScheduler, isSubmit);
+                this.mantisScheduler, isSubmit, ConfigurationProvider.getConfig().isBatchSchedulingEnabled());
 
         long checkAgainInSeconds = getWorkerTimeoutSecs();
         long refreshStageAssignementsDurationMs = ConfigurationProvider.getConfig()
@@ -1259,7 +1259,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .expireAfterWrite(1, TimeUnit.HOURS)
                 .build();
         private volatile boolean stageAssignmentPotentiallyChanged;
-        private final boolean batchSchedulingEnabled = ConfigurationProvider.getConfig().isBatchSchedulingEnabled();
+        private final boolean batchSchedulingEnabled;
 
         /**
          * Creates an instance of this class.
@@ -1272,12 +1272,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          */
         WorkerManager(
                 IMantisJobManager jobMgr, WorkerMigrationConfig migrationConfig, MantisScheduler scheduler,
-                boolean isSubmit) throws Exception {
+                boolean isSubmit, boolean batchSchedulingEnabled) throws Exception {
 
             workerNumberGenerator = new WorkerNumberGenerator((isSubmit) ? 0
                     : jobMgr.getJobDetails().getNextWorkerNumberToUse(), WorkerNumberGenerator.DEFAULT_INCREMENT_STEP);
             this.scheduler = scheduler;
             this.jobMgr = jobMgr;
+            this.batchSchedulingEnabled = batchSchedulingEnabled;
             migrationStrategy = MigrationStrategyFactory.getStrategy(jobId.getId(), migrationConfig);
             int noOfStages = mantisJobMetaData.getStageMetadata().size();
             if (noOfStages == 1) {
@@ -1497,9 +1498,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 if (!workers.isEmpty()) {
                     // queue to scheduler
                     if (batchSchedulingEnabled) {
-                        workers.forEach(this::queueTask);
-                    } else {
                         queueTasks(workers, empty());
+                    } else {
+                        workers.forEach(this::queueTask);
                     }
                 }
             } catch (Exception e) {

@@ -387,7 +387,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("5000")
     int getResourceClusterActionsPermitsPerSecond();
 
-    @Config("mantis.batchScheduling.enabled")
+    @Config("mantis.scheduler.enable-batch")
     @Default("false")
     boolean isBatchSchedulingEnabled();
 
