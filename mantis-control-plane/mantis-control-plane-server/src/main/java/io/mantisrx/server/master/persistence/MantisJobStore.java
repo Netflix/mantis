@@ -35,6 +35,7 @@ import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -103,8 +104,8 @@ public class MantisJobStore {
         return mantisJobMetadataList;
     }
 
-    public List<CompletedJob> loadAllCompletedJobs() throws IOException {
-        return storageProvider.loadAllCompletedJobs();
+    public List<CompletedJob> loadCompletedJobsForCluster(String clusterName, Instant start, Instant end) throws IOException {
+        return storageProvider.loadCompletedJobsForCluster(clusterName, start, end);
     }
 
     public void createJobCluster(IJobClusterMetadata jobCluster) throws Exception {
@@ -125,8 +126,8 @@ public class MantisJobStore {
         storageProvider.deleteJob(jobId);
     }
 
-    public void deleteCompletedJob(String clusterName, String jobId) throws IOException {
-        storageProvider.removeCompletedJobForCluster(clusterName, jobId);
+    public void deleteCompletedJob(String clusterName, CompletedJob completedJob) throws IOException {
+        storageProvider.removeCompletedJobForCluster(clusterName, completedJob);
     }
 
     public void storeCompletedJobForCluster(String name, CompletedJob completedJob) throws IOException {

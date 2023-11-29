@@ -17,14 +17,23 @@
 package io.mantisrx.server.master.store;
 
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
@@ -144,6 +153,54 @@ public interface KeyValueStore {
      */
     boolean upsertAll(String tableName, String partitionKey, Map<String, String> all, Duration ttl) throws IOException;
 
+    default boolean upsertOrdered(String tableName, String partitionKey, String secondaryKey, Instant orderingTimestamp, String value, Duration ttl) throws IOException {
+        return upsertOrdered(tableName, partitionKey, ImmutableMap.of(Tuple.of(secondaryKey, orderingTimestamp), value), ttl);
+    }
+
+    /**
+     * Adds all rows corresponding to partition key in an ordered manner determined by the secondary key.
+     * @param tableName
+     * @param partitionKey
+     * @param all
+     * @param ttl
+     * @return
+     * @throws IOException
+     */
+    default boolean upsertOrdered(String tableName, String partitionKey, Map<Tuple2<String, Instant>, String> all, Duration ttl) throws IOException {
+        Map<String, String> items =
+            all.entrySet().stream()
+                .map(entry -> {
+                    String key = entry.getKey()._2.toEpochMilli() + "," + entry.getKey()._1;
+                    return Tuple.of(
+                        key,
+                        entry.getValue());
+                }).collect(Collectors.toMap(Tuple2::_1, Tuple2::_2));
+        return upsertAll(tableName, partitionKey, items, ttl);
+    }
+
+    default Map<String, String> getAllOrdered(String tableName, String partitionKey, Instant from, Instant to) throws IOException {
+        Map<String, String> items = getAll(tableName, partitionKey);
+        if (items == null || items.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Pattern pattern = Pattern.compile("^(\\d+),(.*)$");
+
+        Map<String, String> results = new LinkedHashMap<>();
+        items.entrySet().stream()
+            .filter(entry -> {
+                Matcher matcher = pattern.matcher(entry.getKey());
+                if (matcher.matches()) {
+                    return false;
+                }
+
+                long ts = Long.parseLong(matcher.group(1));
+                return ts >= from.toEpochMilli() && ts < to.toEpochMilli();
+            })
+            .forEach(entry -> results.put(entry.getKey(), entry.getValue()));
+        return results;
+    }
+
     /**
      * Deletes a row corresponding to the primary key (partitionKey, secondaryKey)
      * @param tableName the tableName/table to read from
@@ -152,6 +209,10 @@ public interface KeyValueStore {
      * @return boolean if row was deleted
      */
     boolean delete(String tableName, String partitionKey, String secondaryKey) throws IOException;
+
+    default boolean deleteOrdered(String tableName, String partitionKey, String secondaryKey, Instant orderingTimestamp) throws IOException {
+        return delete(tableName, partitionKey, orderingTimestamp.toEpochMilli() + "," + secondaryKey);
+    }
 
     /**
      * Deletes all rows corresponding to a partition key
@@ -229,7 +290,7 @@ public interface KeyValueStore {
     class InMemoryStore implements KeyValueStore {
 
         // table -> partitionKey -> secondaryKey -> data
-        private final Map<String, Map<String, Map<String, String>>> store = new ConcurrentHashMap<>();
+        private final Map<String, Map<String, SortedMap<String, String>>> store = new ConcurrentHashMap<>();
 
         @Override
         public List<String> getAllPartitionKeys(String tableName) {
@@ -256,7 +317,9 @@ public interface KeyValueStore {
         public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all,
             Duration ttl) throws IOException {
             store.putIfAbsent(tableName, new ConcurrentHashMap<>());
-            store.get(tableName).put(partitionKey, new ConcurrentHashMap<>(all));
+            SortedMap<String, String> items = new ConcurrentSkipListMap<>(Comparator.reverseOrder());
+            items.putAll(all);
+            store.get(tableName).put(partitionKey, items);
             return true;
         }
 

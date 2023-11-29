@@ -54,6 +54,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -117,7 +118,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     private static final int WORKER_BATCH_SIZE = 1000;
     private static final int WORKER_MAX_INDEX = 30000;
-    private static final long TTL_IN_MS = TimeUnit.DAYS.toMillis(7);
+    private static final long DEFAULT_TTL_IN_MS = TimeUnit.DAYS.toMillis(7);
 
     static {
         mapper
@@ -164,7 +165,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     protected Duration getArchiveDataTtlInMs() {
-        return Duration.ofMillis(TTL_IN_MS);
+        return Duration.ofMillis(DEFAULT_TTL_IN_MS);
     }
 
     protected String getJobStageFieldName(int stageNum) {
@@ -458,33 +459,6 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     @Override
-    public List<CompletedJob> loadAllCompletedJobs() throws IOException {
-        AtomicInteger failedCount = new AtomicInteger();
-        AtomicInteger successCount = new AtomicInteger();
-        final List<CompletedJob> completedJobsList = kvStore.getAllRows(NAMED_COMPLETEDJOBS_NS)
-            .values().stream()
-            .flatMap(x -> x.values().stream())
-            .map(data -> {
-                try {
-                    NamedJob.CompletedJob cj = mapper.readValue(data, NamedJob.CompletedJob.class);
-                    CompletedJob completedJob = DataFormatAdapter.convertNamedJobCompletedJobToCompletedJob(cj);
-                    successCount.getAndIncrement();
-                    return completedJob;
-                } catch (JsonProcessingException e) {
-                    logger.warn("failed to parse CompletedJob from {}", data, e);
-                    failedCount.getAndIncrement();
-                }
-                return null;
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-
-        logger.info("Read and converted job clusters. Successful - {}, Failed - {}", successCount.get(), failedCount.get());
-        return completedJobsList;
-    }
-
-
-    @Override
     public void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException {
         MantisWorkerMetadataWritable worker = DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(mwmd);
         String pkey = makeBucketizedPartitionKey(worker.getJobId(), worker.getWorkerNumber());
@@ -545,16 +519,8 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     @Override
     public void deleteJobCluster(String name) throws Exception {
-        NamedJob namedJob = getJobCluster(NAMED_JOBS_NS, name);
         kvStore.deleteAll(NAMED_JOBS_NS, name);
-        rangeOperation((int) namedJob.getNextJobNumber(),
-            idx -> {
-                try {
-                    removeCompletedJobForCluster(name, makeBucketizedPartitionKey(name, idx));
-                } catch (IOException e) {
-                    logger.warn("failed to completed job for named job {} with index {}", name, idx, e);
-                }
-            });
+        kvStore.deleteAll(NAMED_COMPLETEDJOBS_NS, name);
     }
 
 
@@ -574,20 +540,40 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     @Override
     public void storeCompletedJobForCluster(String name, CompletedJob job) throws IOException {
-        int jobIdx = parseJobId(job.getJobId());
         NamedJob.CompletedJob completedJob = DataFormatAdapter.convertCompletedJobToNamedJobCompletedJob(job);
-        kvStore.upsert(NAMED_COMPLETEDJOBS_NS,
-            makeBucketizedPartitionKey(name, jobIdx),
-            String.valueOf(jobIdx),
-            mapper.writeValueAsString(completedJob));
+        kvStore.upsertOrdered(NAMED_COMPLETEDJOBS_NS,
+            name,
+            job.getJobId(),
+            Instant.ofEpochMilli(job.getTerminatedAt()),
+            mapper.writeValueAsString(completedJob),
+            getArchiveDataTtlInMs());
     }
 
     @Override
-    public void removeCompletedJobForCluster(String name, String jobId) throws IOException {
-        int jobIdx = parseJobId(jobId);
-        kvStore.deleteAll(NAMED_COMPLETEDJOBS_NS,
-            makeBucketizedPartitionKey(name, jobIdx));
+    public void removeCompletedJobForCluster(String name, CompletedJob completedJob) throws IOException {
+        kvStore.deleteOrdered(
+            NAMED_COMPLETEDJOBS_NS,
+            name,
+            completedJob.getJobId(),
+            Instant.ofEpochMilli(completedJob.getTerminatedAt()));
     }
+
+    @Override
+    public List<CompletedJob> loadCompletedJobsForCluster(String name, Instant start, Instant end)
+        throws IOException {
+        return kvStore.getAllOrdered(NAMED_COMPLETEDJOBS_NS, name, start, end).values().stream()
+            .map(
+                value -> {
+                    try {
+                        return mapper.readValue(value, NamedJob.CompletedJob.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+            .map(DataFormatAdapter::convertNamedJobCompletedJobToCompletedJob)
+            .collect(Collectors.toList());
+    }
+
 
     @Override
     public Optional<IMantisJobMetadata> loadArchivedJob(String jobId) throws IOException {

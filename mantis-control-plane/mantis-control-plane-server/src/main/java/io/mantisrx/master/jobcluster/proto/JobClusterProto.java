@@ -16,7 +16,6 @@
 
 package io.mantisrx.master.jobcluster.proto;
 
-import static java.util.Optional.ofNullable;
 
 import akka.actor.ActorRef;
 import com.netflix.spectator.impl.Preconditions;
@@ -257,18 +256,6 @@ public class JobClusterProto {
             this.timeOfEnforcement = now;
             this.jobDefinitionOp = jobDefnOp;
 
-        }
-    }
-
-    public static final class ExpireOldJobsRequest {
-        public final Instant timeOfEnforcement;
-
-        public ExpireOldJobsRequest() {
-            this(Instant.now());
-        }
-
-        public ExpireOldJobsRequest(Instant now) {
-            this.timeOfEnforcement = now;
         }
     }
 

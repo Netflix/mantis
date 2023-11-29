@@ -401,7 +401,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(JobClusterProto.KillJobResponse.class, this::onKillJobResponse)
             .match(GetJobDetailsRequest.class, this::onGetJobDetailsRequest)
             .match(WorkerEvent.class, this::onWorkerEvent)
-            .match(JobClusterProto.ExpireOldJobsRequest.class, this::onExpireOldJobs)
             .match(EnableJobClusterRequest.class, this::onJobClusterEnable)
             .match(Terminated.class, this::onTerminated)
 
@@ -504,7 +503,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(JobClusterProto.KillJobResponse.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(GetJobDetailsRequest.class, (x) -> getSender().tell(new GetJobDetailsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(WorkerEvent.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
-            .match(JobClusterProto.ExpireOldJobsRequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(EnableJobClusterRequest.class, (x) -> getSender().tell(new EnableJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(SubmitJobRequest.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
             .match(GetJobDefinitionUpdatedFromJobActorResponse.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
@@ -520,7 +518,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(ListJobsRequest.class, (x) -> getSender().tell(new ListJobsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
             .match(ListWorkersRequest.class, (x) -> getSender().tell(new ListWorkersResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
             .match(JobClusterProto.EnforceSLARequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
-            .match(JobClusterProto.ExpireOldJobsRequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(JobClusterProto.TriggerCronRequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(DisableJobClusterRequest.class, (x) -> getSender().tell(new DisableJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
 
@@ -593,7 +590,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .match(ListArchivedWorkersRequest.class, this::onListArchivedWorkers)
                 .match(ListCompletedJobsInClusterRequest.class, this::onJobListCompleted)
                 .match(JobClusterProto.KillJobResponse.class, this::onKillJobResponse)
-                .match(JobClusterProto.ExpireOldJobsRequest.class, this::onExpireOldJobs)
                 .match(WorkerEvent.class, this::onWorkerEvent)
                 .match(DisableJobClusterRequest.class, this::onJobClusterDisable)
                 .match(JobClusterProto.EnforceSLARequest.class, this::onEnforceSLARequest)
@@ -636,6 +632,12 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     public void preStart() throws Exception {
         logger.info("JobClusterActor {} started", name);
         super.preStart();
+
+        // let's load 1 page of completed jobs from DB and then let the rest be loaded lazily
+        // todo(sundaram): Use a clock here
+        Instant end = Instant.now();
+        List<CompletedJob> completedJobs = jobStore.loadCompletedJobsForCluster(name, end.minus(Duration.ofDays(7)), end);
+        jobManager.addCompletedJobsToCache(completedJobs);
     }
 
     @Override
@@ -671,11 +673,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     private void setBookkeepingTimer(long checkAgainInSecs) {
         getTimers().startPeriodicTimer(BOOKKEEPING_TIMER_KEY, new JobClusterProto.BookkeepingRequest(),
-                Duration.ofSeconds(checkAgainInSecs));
-    }
-
-    private void setExpiredJobsTimer(long checkAgainInSecs) {
-        getTimers().startPeriodicTimer(CHECK_EXPIRED_TIMER_KEY, new JobClusterProto.ExpireOldJobsRequest(),
                 Duration.ofSeconds(checkAgainInSecs));
     }
 
@@ -743,7 +740,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                             initReq.jobClusterDefinition.getName()),initReq.jobClusterDefinition.getName(),
                     initReq.requestor), getSelf());
             logger.info("Job expiry check frequency set to {}", expireFrequency);
-            setExpiredJobsTimer(expireFrequency);
 
             getContext().become(disabledBehavior);
 
@@ -790,8 +786,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 logger.warn("Exception initializing cron", e);
             }
             initRunningJobs(initReq, sender);
-
-            setExpiredJobsTimer(expireFrequency);
 
             logger.info("Job expiry check frequency set to {}", expireFrequency);
             try {
@@ -2088,13 +2082,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         return empty();
     }
 
-    @Override
-    public void onExpireOldJobs(JobClusterProto.ExpireOldJobsRequest request) {
-        final long tooOldCutOff = System.currentTimeMillis() - (getTerminatedJobToDeleteDelayHours()*3600000L);
-        jobManager.purgeOldCompletedJobs(tooOldCutOff);
-
-    }
-
     private long getExpirePendingInitializeDelayMs() {
 
         // jobs older than 60 secs
@@ -2626,17 +2613,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             this.publisher = publisher;
             this.completedJobsCache = new CompletedJobCache(name, labelCache, jobStore);
             this.costsCalculator = costsCalculator;
-        }
-
-        /**
-         * Invoked in a scheduled timer on the JobClusterActor to purge expired jobs
-         *
-         * @param tooOldCutOff Current cut off delta
-         */
-        public void purgeOldCompletedJobs(long tooOldCutOff) {
-
-            completedJobsCache.purgeOldCompletedJobs(tooOldCutOff);
-
         }
 
         public void cleanupAllCompletedJobs() {

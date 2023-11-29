@@ -33,6 +33,7 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -122,7 +123,7 @@ public interface IMantisPersistenceProvider {
     //  */
     List<IJobClusterMetadata> loadAllJobClusters() throws IOException;
 
-    List<CompletedJob> loadAllCompletedJobs() throws IOException;
+    List<CompletedJob> loadCompletedJobsForCluster(String name, Instant start, Instant end) throws IOException;
 
     void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException;
 
@@ -138,7 +139,7 @@ public interface IMantisPersistenceProvider {
     void storeCompletedJobForCluster(String name, CompletedJob job) throws IOException;
 
 
-    void removeCompletedJobForCluster(String name, String jobId) throws IOException;
+    void removeCompletedJobForCluster(String name, CompletedJob job) throws IOException;
 
     Optional<IMantisJobMetadata> loadArchivedJob(String jobId) throws IOException;
 

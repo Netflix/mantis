@@ -22,7 +22,6 @@ import io.mantisrx.common.Label;
 import io.mantisrx.master.jobcluster.JobClusterActor.LabelCache;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -147,56 +146,6 @@ class CompletedJobCache {
         return Optional.of(completedJob);
     }
 
-        /**
-         * Completely delete jobs that are older than cut off
-         *
-         * @param tooOldCutOff timestamp, all jobs having an older timestamp should be deleted
-         */
-    public void purgeOldCompletedJobs(long tooOldCutOff) {
-        long numDeleted = 0;
-        int maxJobsToPurge = ConfigurationProvider.getConfig().getMaxJobsToPurge();
-        final long startNanos = System.nanoTime();
-
-        for (Iterator<CompletedJob> it = completedJobs.values().iterator(); it.hasNext(); ) {
-            if (numDeleted == maxJobsToPurge) {
-                logger.info("{} Max clean up limit of {} reached. Stop clean up", name,
-                    maxJobsToPurge);
-                break;
-            }
-            CompletedJob completedJob = it.next();
-            if (completedJob.getTerminatedAt() < tooOldCutOff) {
-                try {
-                    logger.info(
-                        "Purging Job {} as it was terminated at {} which is older than cutoff {}",
-                        completedJob, completedJob.getTerminatedAt(), tooOldCutOff);
-                    terminalSortedJobSet.remove(completedJob);
-                    jobStore.deleteJob(completedJob.getJobId());
-                    jobStore.deleteCompletedJob(name, completedJob.getJobId());
-                    it.remove();
-                    Optional<JobId> jobId = JobId.fromId(completedJob.getJobId());
-                    if (jobId.isPresent()) {
-                        this.jobIdToMetadataMap.remove(jobId.get());
-                        labelsCache.removeJobIdFromLabelCache(jobId.get());
-                    }
-
-                } catch (Exception e) {
-                    logger.warn("Unable to purge job {} due to {}", completedJob, e);
-                }
-                numDeleted++;
-            } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Job {} was terminated at {} which is not older than cutoff {}",
-                        completedJob, completedJob.getTerminatedAt(), tooOldCutOff);
-                }
-            }
-        }
-        if (numDeleted > 0) {
-            final long endNanos = System.nanoTime();
-            logger.info("Took {} micros to clean up {} jobs in cluster {} ",
-                (endNanos - startNanos) / 1000, numDeleted, this.name);
-        }
-    }
-
     /**
      * During Job Cluster delete, purge all records of completed jobs
      */
@@ -209,7 +158,7 @@ class CompletedJobCache {
                 logger.info("Purging Job {} during job cluster cleanup", completedJob);
                 terminalSortedJobSet.remove(completedJob);
                 jobStore.deleteJob(completedJob.getJobId());
-                jobStore.deleteCompletedJob(name, completedJob.getJobId());
+                jobStore.deleteCompletedJob(name, completedJob);
                 it.remove();
                 Optional<JobId> jobId = JobId.fromId(completedJob.getJobId());
                 if (jobId.isPresent()) {
