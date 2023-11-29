@@ -402,7 +402,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                     // If there are duplicate workers on the same stage index, only attach the one with latest
                     // worker number. The stale workers will not present in the stage metadata thus gets terminated
                     // when it sends heartbeats to its JobActor.
-                    boolean addedWorker = jobMeta.addWorkerMedata(workerMeta.getStageNum(), workerMeta);
+                    boolean addedWorker = jobMeta.tryAddOrReplaceWorker(workerMeta.getStageNum(), workerMeta);
                     if (!addedWorker) {
                         staleWorkersFoundCounter.increment();
                     }

@@ -184,7 +184,7 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
      * @param workerMetadata new worker metadata instance.
      * @return true if the given worker metadata instance is added to this job.
      */
-    public boolean addWorkerMedata(int stageNum, MantisWorkerMetadata workerMetadata) {
+    public boolean tryAddOrReplaceWorker(int stageNum, MantisWorkerMetadata workerMetadata) {
         final boolean result =
             stageMetadataMap.get(stageNum)
                 .replaceWorkerIndex(workerMetadata);
