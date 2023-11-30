@@ -41,6 +41,7 @@ import io.mantisrx.server.master.store.KeyValueStore;
 import io.mantisrx.server.master.store.MantisJobMetadataWritable;
 import io.mantisrx.server.master.store.MantisStageMetadata;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
+import io.mantisrx.server.master.store.MantisWorkerMetadata;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
 import io.mantisrx.server.master.store.NamedJob;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
@@ -402,8 +403,10 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                     // If there are duplicate workers on the same stage index, only attach the one with latest
                     // worker number. The stale workers will not present in the stage metadata thus gets terminated
                     // when it sends heartbeats to its JobActor.
-                    boolean addedWorker = jobMeta.tryAddOrReplaceWorker(workerMeta.getStageNum(), workerMeta);
-                    if (!addedWorker) {
+                    MantisWorkerMetadata existedWorker =
+                        jobMeta.tryAddOrReplaceWorker(workerMeta.getStageNum(), workerMeta);
+                    if (existedWorker != null) {
+                        logger.error("Encountered duplicate worker {} when adding {}", existedWorker, workerMeta);
                         staleWorkersFoundCounter.increment();
                     }
                 }

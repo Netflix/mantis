@@ -182,9 +182,10 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
      * If the stage worker index already exists, replace it only when the given worker has higher worker number.
      * @param stageNum target stage number.
      * @param workerMetadata new worker metadata instance.
-     * @return true if the given worker metadata instance is added to this job.
+     * @return null if the given worker metadata is added to this job. Otherwise, return the existing worker with
+     * newer number.
      */
-    public boolean tryAddOrReplaceWorker(int stageNum, MantisWorkerMetadata workerMetadata) {
+    public MantisWorkerMetadata tryAddOrReplaceWorker(int stageNum, MantisWorkerMetadata workerMetadata) {
         final boolean result =
             stageMetadataMap.get(stageNum)
                 .replaceWorkerIndex(workerMetadata);
@@ -195,8 +196,15 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
                 logger.error(String.format("Unexpected to put worker number mapping from %d to stage %d for job %s, prev mapping to stage %d",
                     workerMetadata.getWorkerNumber(), stageNum, workerMetadata.getJobId(), integer));
             }
+            return null;
+        } else {
+            try {
+                return stageMetadataMap.get(stageNum).getWorkerByIndex(workerMetadata.getWorkerIndex());
+            } catch (InvalidJobException e) {
+                logger.error("Failed to fetch existing worker when new worker got rejected: {}", workerMetadata, e);
+                throw new RuntimeException("Failed to fetch existing worker when new worker got rejected", e);
+            }
         }
-        return result;
     }
 
     @JsonIgnore
