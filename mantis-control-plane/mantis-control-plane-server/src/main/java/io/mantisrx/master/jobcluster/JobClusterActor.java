@@ -632,12 +632,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     public void preStart() throws Exception {
         logger.info("JobClusterActor {} started", name);
         super.preStart();
-
-        // let's load 1 page of completed jobs from DB and then let the rest be loaded lazily
-        // todo(sundaram): Use a clock here
-        Instant end = Instant.now();
-        List<CompletedJob> completedJobs = jobStore.loadCompletedJobsForCluster(name, end.minus(Duration.ofDays(7)), end);
-        jobManager.addCompletedJobsToCache(completedJobs);
     }
 
     @Override
@@ -707,8 +701,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(jobClusterMetadata.isDisabled()) {
             logger.info("Cluster {} initialized but is Disabled", jobClusterMetadata
                     .getJobClusterDefinition().getName());
-            // add completed jobs to cache to use when / if cluster is reenabled
-            jobManager.addCompletedJobsToCache(initReq.completedJobsList);
+            try {
+                fetchCompletedJobs();
+            } catch (IOException e) {
+                logger.warn("Failed to load completed jobs for cluster {} due to {}", name, e.getMessage(), e);
+            }
             int count = 50;
             if(!initReq.jobList.isEmpty()) {
                 logger.info("Cluster {} is disabled however it has {} active/accepted jobs",
@@ -789,13 +786,22 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             logger.info("Job expiry check frequency set to {}", expireFrequency);
             try {
-                jobManager.addCompletedJobsToCache(initReq.completedJobsList);
+                fetchCompletedJobs();
             } catch(Exception e) {
-                logger.warn("Exception initializing completed jobs " + e.getMessage(), e);
+                logger.warn("Failed to load completed jobs for cluster {} due to {}", name, e.getMessage(), e);
 
             }
         }
 
+    }
+
+    private void fetchCompletedJobs() throws IOException {
+        // add completed jobs to cache to use when / if cluster is reenabled
+        // let's load 1 page of completed jobs from DB and then let the rest be loaded lazily
+        // todo(sundaram): Use a clock here
+        Instant end = Instant.now();
+        List<CompletedJob> completedJobs = jobStore.loadCompletedJobsForCluster(name, end.minus(Duration.ofDays(7)), end);
+        jobManager.addCompletedJobsToCache(completedJobs);
     }
 
     /**

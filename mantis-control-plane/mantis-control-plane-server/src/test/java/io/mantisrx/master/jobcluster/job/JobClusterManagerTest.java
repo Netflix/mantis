@@ -497,11 +497,12 @@ public class JobClusterManagerTest {
                 1));
 
         jobClusterManagerActor.tell(new GetJobDetailsRequest(
-                "user",
-                JobId.fromId("testBootStrapJobClustersAndJobs3-1")
-                        .get()), probe.getRef());
-        GetJobDetailsResponse acceptedResponse = probe.expectMsgClass(Duration.of(10, ChronoUnit.MINUTES),
-                GetJobDetailsResponse.class);
+            "user",
+            JobId.fromId("testBootStrapJobClustersAndJobs3-1")
+                .get()), probe.getRef());
+        GetJobDetailsResponse acceptedResponse = probe.expectMsgClass(
+            Duration.of(10, ChronoUnit.MINUTES),
+            GetJobDetailsResponse.class);
 
         System.out.println("[fdc-92] acceptedResponse -> " + acceptedResponse);
         // Ensure its Accepted
@@ -567,8 +568,8 @@ public class JobClusterManagerTest {
 
         //TODO(hmitnflx): Need to fix this test after support completed jobs async loading
         // Ensure its completed
-        assertEquals(CLIENT_ERROR_NOT_FOUND, resp2.responseCode);
-        // assertEquals(JobState.Completed, resp2.getJobMetadata().get().getState());
+        assertEquals(SUCCESS, resp2.responseCode);
+        assertEquals(JobState.Completed, resp2.getJobMetadata().get().getState());
 
         jobClusterManagerActor.tell(new GetJobDetailsRequest(
             "user",

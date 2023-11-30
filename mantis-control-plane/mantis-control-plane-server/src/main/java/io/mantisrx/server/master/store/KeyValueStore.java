@@ -190,7 +190,7 @@ public interface KeyValueStore {
         items.entrySet().stream()
             .filter(entry -> {
                 Matcher matcher = pattern.matcher(entry.getKey());
-                if (matcher.matches()) {
+                if (!matcher.matches()) {
                     return false;
                 }
 
