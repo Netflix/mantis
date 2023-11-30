@@ -41,6 +41,7 @@ import io.mantisrx.server.master.store.KeyValueStore;
 import io.mantisrx.server.master.store.MantisJobMetadataWritable;
 import io.mantisrx.server.master.store.MantisStageMetadata;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
+import io.mantisrx.server.master.store.MantisWorkerMetadata;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
 import io.mantisrx.server.master.store.NamedJob;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
@@ -49,7 +50,6 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
@@ -129,7 +129,9 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     private final KeyValueStore kvStore;
     private final LifecycleEventPublisher eventPublisher;
     private final Counter noWorkersFoundCounter;
+    private final Counter staleWorkersFoundCounter;
     private final Counter workersFoundCounter;
+    private final Counter failedToLoadJobCounter;
 
     public KeyValueBasedPersistenceProvider(KeyValueStore kvStore, LifecycleEventPublisher eventPublisher) {
         this.kvStore = kvStore;
@@ -137,12 +139,16 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         Metrics m = new Metrics.Builder()
             .id("storage")
             .addCounter("noWorkersFound")
+            .addCounter("staleWorkerFound")
             .addCounter("workersFound")
+            .addCounter("failedToLoadJobCount")
             .build();
 
         m = MetricsRegistry.getInstance().registerAndGet(m);
         this.noWorkersFoundCounter = m.getCounter("noWorkersFound");
+        this.staleWorkersFoundCounter = m.getCounter("staleWorkerFound");
         this.workersFoundCounter = m.getCounter("workersFound");
+        this.failedToLoadJobCounter = m.getCounter("failedToLoadJobCount");
     }
 
     protected String getJobMetadataFieldName() {
@@ -394,18 +400,20 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
                 workersFoundCounter.increment();
                 for (MantisWorkerMetadataWritable workerMeta : workersByJobId.get(jobId)) {
-                    Preconditions.checkState(
-                        jobMeta.addWorkerMedata(workerMeta.getStageNum(), workerMeta, null),
-                        "JobID=%s stage=%d workerIdx=%d has existing worker, existing=%s, new=%s",
-                        workerMeta.getJobId(),
-                        workerMeta.getStageNum(),
-                        workerMeta.getWorkerIndex(),
-                        jobMeta.getWorkerByIndex(workerMeta.getStageNum(), workerMeta.getWorkerIndex()).getWorkerId(),
-                        workerMeta.getWorkerId());
+                    // If there are duplicate workers on the same stage index, only attach the one with latest
+                    // worker number. The stale workers will not present in the stage metadata thus gets terminated
+                    // when it sends heartbeats to its JobActor.
+                    MantisWorkerMetadata existedWorker =
+                        jobMeta.tryAddOrReplaceWorker(workerMeta.getStageNum(), workerMeta);
+                    if (existedWorker != null) {
+                        logger.error("Encountered duplicate worker {} when adding {}", existedWorker, workerMeta);
+                        staleWorkersFoundCounter.increment();
+                    }
                 }
                 jobMetas.add(DataFormatAdapter.convertMantisJobWriteableToMantisJobMetadata(jobMeta, eventPublisher));
             } catch (Exception e) {
-                logger.warn("Exception loading job {}", jobId, e);
+                logger.error("Exception loading job {}", jobId, e);
+                this.failedToLoadJobCounter.increment();
             }
         }
         // need to load all workers for the jobMeta and then ensure they are added to jobMetas!

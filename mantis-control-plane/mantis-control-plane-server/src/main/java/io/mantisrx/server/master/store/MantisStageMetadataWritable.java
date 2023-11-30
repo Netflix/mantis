@@ -208,35 +208,37 @@ public class MantisStageMetadataWritable implements MantisStageMetadata {
         return removedWorkers;
     }
 
-    public boolean replaceWorkerIndex(MantisWorkerMetadata newWorker, MantisWorkerMetadata oldWorker)
-            throws InvalidJobException {
+    /**
+     * Use the given new worker to add or replace the target index.
+     * If the stage worker index already exists, replace it only when the given worker has higher worker number.
+     * @param newWorker new worker metadata instance.
+     * @return true if the new worker is used in this stage.
+     */
+    public boolean replaceWorkerIndex(MantisWorkerMetadata newWorker) {
         int index = newWorker.getWorkerIndex();
         boolean result = true;
-        if (!MantisJobState.isErrorState(newWorker.getState())) {
-            if (oldWorker == null) {
-                if (workerByIndexMetadataSet.putIfAbsent(index, newWorker) != null) {
-                    result = false;
-                }
-            } else {
-                if (oldWorker.getWorkerIndex() != index) {
-                    throw new InvalidJobException(newWorker.getJobId(), stageNum, oldWorker.getWorkerIndex());
-                }
-                MantisWorkerMetadata mwmd = workerByIndexMetadataSet.put(index, newWorker);
-                if (mwmd.getWorkerNumber() != oldWorker.getWorkerNumber()) {
-                    workerByIndexMetadataSet.put(index, mwmd);
-                    result = false;
-                    logger.info("Did not replace worker " + oldWorker.getWorkerNumber() + " with " +
-                            newWorker.getWorkerNumber() + " for index " + newWorker.getWorkerIndex() + " of job " +
-                            jobId + ", different worker " + mwmd.getWorkerNumber() + " exists already");
-                }
-                //                    else
-                //                        logger.info("Replaced worker " + oldWorker.getWorkerNumber() + " with " + newWorker.getWorkerNumber() +
-                //                                " for index " + newWorker.getWorkerIndex() + " of job " + jobId);
+
+        if (workerByIndexMetadataSet.containsKey(index)) {
+            MantisWorkerMetadata existingWorker = workerByIndexMetadataSet.get(index);
+            int existingWorkerNum = existingWorker.getWorkerNumber();
+            if (existingWorkerNum >= newWorker.getWorkerNumber()) {
+                logger.warn("Encounter stale worker: {} when newer worker exist: {}, ignore.", newWorker,
+                    existingWorker);
+                result = false;
             }
-        } else if (oldWorker != null)
-            result = false;
-        if (result)
-            workerByNumberMetadataSet.put(newWorker.getWorkerNumber(), newWorker);
+            else {
+                logger.warn("Replace stale worker {} with {}.", existingWorker, newWorker);
+                addNewWorker(newWorker);
+            }
+        } else {
+            addNewWorker(newWorker);
+        }
+
         return result;
+    }
+
+    private void addNewWorker(MantisWorkerMetadata newWorker) {
+        workerByIndexMetadataSet.put(newWorker.getWorkerIndex(), newWorker);
+        workerByNumberMetadataSet.put(newWorker.getWorkerNumber(), newWorker);
     }
 }
