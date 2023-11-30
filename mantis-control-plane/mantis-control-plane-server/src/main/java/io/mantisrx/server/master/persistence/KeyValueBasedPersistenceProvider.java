@@ -544,7 +544,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         kvStore.upsertOrdered(NAMED_COMPLETEDJOBS_NS,
             name,
             job.getJobId(),
-            Instant.ofEpochMilli(job.getTerminatedAt()),
+            Instant.ofEpochMilli(job.getSubmittedAt()),
             mapper.writeValueAsString(completedJob),
             getArchiveDataTtlInMs());
     }
