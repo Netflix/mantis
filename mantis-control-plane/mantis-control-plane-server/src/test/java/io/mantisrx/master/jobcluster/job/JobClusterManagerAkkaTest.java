@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import static io.mantisrx.master.jobcluster.JobClusterTest.DEFAULT_JOB_OWNER;
-import static io.mantisrx.master.jobcluster.JobClusterTest.NO_OP_SLA;
-import static io.mantisrx.master.jobcluster.JobClusterTest.TWO_WORKER_SCHED_INFO;
+import static io.mantisrx.master.jobcluster.JobClusterAkkaTest.DEFAULT_JOB_OWNER;
+import static io.mantisrx.master.jobcluster.JobClusterAkkaTest.NO_OP_SLA;
+import static io.mantisrx.master.jobcluster.JobClusterAkkaTest.TWO_WORKER_SCHED_INFO;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_CONFLICT;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_NOT_FOUND;
@@ -119,7 +119,7 @@ import org.mockito.Mockito;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
-public class JobClusterManagerTest {
+public class JobClusterManagerAkkaTest {
 
     static ActorSystem system;
     private MantisJobStore jobStoreMock;

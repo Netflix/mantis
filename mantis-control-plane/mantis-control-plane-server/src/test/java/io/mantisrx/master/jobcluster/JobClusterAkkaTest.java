@@ -146,7 +146,7 @@ import org.mockito.stubbing.Answer;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
-public class JobClusterTest {
+public class JobClusterAkkaTest {
     public static final SLA NO_OP_SLA = new SLA(0, 0, null, null);
 
     public static final MachineDefinition DEFAULT_MACHINE_DEFINITION = new MachineDefinition(1, 10, 10, 10, 2);
