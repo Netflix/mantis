@@ -557,6 +557,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 if (registration != null) {
                     log.debug("Found registration {} for task executor {}", registration, heartbeat.getTaskExecutorID());
                     Preconditions.checkState(state.onRegistration(registration));
+
+                    // check if the task executor has been marked as 'Disabled'
+                    if (isTaskExecutorDisabled(registration)) {
+                        log.info("Reconnected task executor {} was already marked for disabling.", registration.getTaskExecutorID());
+                        state.onNodeDisabled();
+                    }
                 } else {
 //                  TODO(sundaram): add a metric
                     log.warn("Received heartbeat from unknown task executor {}", heartbeat.getTaskExecutorID());

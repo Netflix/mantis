@@ -52,6 +52,7 @@ import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOvervie
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
@@ -642,5 +643,19 @@ public class ResourceClusterActorTest {
         } catch (Exception e) {
             throw ExceptionUtils.stripCompletionException(e);
         }
+    }
+
+    @Test
+    public void testTaskExecutorIsDisabledEvenAfterRestart() throws Exception {
+        when(mantisJobStore.getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID))).thenReturn(TASK_EXECUTOR_REGISTRATION);
+
+        resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get();
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
+        assertTrue(resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get().isDisabled());
+
+        resourceCluster.disconnectTaskExecutor(new TaskExecutorDisconnection(TASK_EXECUTOR_ID, CLUSTER_ID)).get();
+        resourceCluster.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get();
+
+        assertTrue(resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get().isDisabled());
     }
 }
