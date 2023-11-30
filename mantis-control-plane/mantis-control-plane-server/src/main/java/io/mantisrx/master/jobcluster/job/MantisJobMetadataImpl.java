@@ -174,6 +174,9 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
             throw new InvalidJobStateChangeException(jobId.getId(), this.state, state);
         }
         this.state = state;
+        if (this.state.isTerminal()) {
+            this.endedAt = System.currentTimeMillis();
+        }
         store.updateJob(this);
     }
 
