@@ -112,7 +112,7 @@ class CompletedJobCache {
             jobMetadata.getJobDefinition().getVersion(),
             jobMetadata.getState(),
             jobMetadata.getSubmittedAtInstant().toEpochMilli(),
-            jobMetadata.getEndedAtInstant().orElse(Instant.EPOCH).toEpochMilli(),
+            jobMetadata.getEndedAtInstant().get().toEpochMilli(),
             jobMetadata.getUser(),
             jobMetadata.getLabels());
     }
