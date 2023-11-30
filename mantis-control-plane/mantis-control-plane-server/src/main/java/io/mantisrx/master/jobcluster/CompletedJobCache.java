@@ -25,7 +25,6 @@ import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
