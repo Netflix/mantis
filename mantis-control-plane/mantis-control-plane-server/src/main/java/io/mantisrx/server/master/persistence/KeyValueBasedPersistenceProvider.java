@@ -103,7 +103,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     private static final String WORKERS_NS = "MantisWorkers";
     private static final String ARCHIVED_WORKERS_NS = "MantisArchivedWorkers";
     private static final String NAMED_JOBS_NS = "MantisNamedJobs";
-    private static final String NAMED_COMPLETEDJOBS_NS = "MantisNamedJobCompletedJobs";
+    private static final String NAMED_COMPLETEDJOBS_NS = "MantisNamedJobCompletedJobsV2";
     private static final String ACTIVE_ASGS_NS = "MantisActiveASGs";
     private static final String TASK_EXECUTOR_REGISTRATION = "TaskExecutorRegistration";
     private static final String DISABLE_TASK_EXECUTOR_REQUESTS = "MantisDisableTaskExecutorRequests";
