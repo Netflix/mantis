@@ -23,7 +23,9 @@ import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +65,7 @@ class CompletedJobStore implements ICompletedJobsStore {
 
     // Set of sorted terminal jobs ordered by the most recent first
     private final Set<CompletedJob> terminalSortedJobSet =
-        new TreeSet<>((o1, o2) -> Long.compare(o2.getSubmittedAt(), o1.getSubmittedAt()));
+        new TreeSet<>(Comparator.comparingLong(CompletedJob::getSubmittedAt).reversed().thenComparing(CompletedJob::getJobId));
 
     // cluster name
     private final String name;
@@ -73,13 +75,23 @@ class CompletedJobStore implements ICompletedJobsStore {
     // Labels lookup map
     private final LabelCache labelsCache;
     private final MantisJobStore jobStore;
-    private final int initialNumberOfJobsToCache = 100;
+    private final int initialNumberOfJobsToCache;
     private JobId cachedUpto;
+
+    @VisibleForTesting
+    public CompletedJobStore(String clusterName, LabelCache labelsCache, MantisJobStore jobStore,
+        int initialNumberOfJobsToCache) {
+        this.name = clusterName;
+        this.labelsCache = labelsCache;
+        this.jobStore = jobStore;
+        this.initialNumberOfJobsToCache = initialNumberOfJobsToCache;
+    }
 
     public CompletedJobStore(String clusterName, LabelCache labelsCache, MantisJobStore jobStore) {
         this.name = clusterName;
         this.labelsCache = labelsCache;
         this.jobStore = jobStore;
+        this.initialNumberOfJobsToCache = 100;
     }
 
     private int getCachedSize() {
@@ -197,7 +209,6 @@ class CompletedJobStore implements ICompletedJobsStore {
             submittedAt, completionTime, user, labels);
         jobStore.storeCompletedJobForCluster(name, completedJob);
         addCompletedJobToCache(completedJob, null);
-//        onJobCompletion(completedJob, null);
         return completedJob;
     }
 
@@ -224,6 +235,7 @@ class CompletedJobStore implements ICompletedJobsStore {
             });
         completedJobs.clear();
         terminalSortedJobSet.clear();
+        cachedUpto = null;
     }
 
     private void addCompletedJobToCache(CompletedJob completedJob,
