@@ -34,6 +34,7 @@ import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
+import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
@@ -54,7 +55,6 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -72,6 +72,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -269,7 +270,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     @Override
-    public void deleteJob(String jobId) throws Exception {
+    public void deleteJob(String jobId) throws IOException {
         MantisJobMetadataWritable jobMeta = readJobStageData(JOB_STAGEDATA_NS, jobId);
         int workerMaxPartitionKey = workerMaxPartitionKey(jobMeta);
 
@@ -541,27 +542,30 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     @Override
     public void storeCompletedJobForCluster(String name, CompletedJob job) throws IOException {
         NamedJob.CompletedJob completedJob = DataFormatAdapter.convertCompletedJobToNamedJobCompletedJob(job);
+        JobId jobId = JobId.fromId(job.getJobId()).get();
         kvStore.upsertOrdered(NAMED_COMPLETEDJOBS_NS,
             name,
-            job.getJobId(),
-            Instant.ofEpochMilli(job.getSubmittedAt()),
+            jobId.getJobNum(),
             mapper.writeValueAsString(completedJob),
             getArchiveDataTtlInMs());
     }
 
     @Override
-    public void removeCompletedJobForCluster(String name, CompletedJob completedJob) throws IOException {
-        kvStore.deleteOrdered(
-            NAMED_COMPLETEDJOBS_NS,
-            name,
-            completedJob.getJobId(),
-            Instant.ofEpochMilli(completedJob.getTerminatedAt()));
+    public void deleteCompletedJobsForCluster(String name) throws IOException {
+        kvStore.deleteAll(NAMED_COMPLETEDJOBS_NS, name);
     }
 
     @Override
-    public List<CompletedJob> loadCompletedJobsForCluster(String name, Instant start, Instant end)
+    public List<CompletedJob> loadCompletedJobsForCluster(String name, int limit, @Nullable JobId endExclusive)
         throws IOException {
-        return kvStore.getAllOrdered(NAMED_COMPLETEDJOBS_NS, name, start, end).values().stream()
+        final Map<Long, String> items;
+        if (endExclusive != null) {
+            items = kvStore.getAllOrdered(NAMED_COMPLETEDJOBS_NS, name, limit, endExclusive.getJobNum());
+        } else {
+            items = kvStore.getAllOrdered(NAMED_COMPLETEDJOBS_NS, name, limit);
+        }
+
+        return items.values().stream()
             .map(
                 value -> {
                     try {

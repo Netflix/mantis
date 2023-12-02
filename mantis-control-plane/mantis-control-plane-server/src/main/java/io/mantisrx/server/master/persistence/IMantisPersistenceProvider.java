@@ -28,12 +28,12 @@ import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
+import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +61,7 @@ public interface IMantisPersistenceProvider {
      */
     void archiveJob(final String jobId) throws IOException;
 
-    void deleteJob(String jobId) throws Exception;
+    void deleteJob(String jobId) throws IOException;
 
     void storeMantisStage(final IMantisStageMetadata msmd) throws IOException;
 
@@ -123,7 +123,7 @@ public interface IMantisPersistenceProvider {
     //  */
     List<IJobClusterMetadata> loadAllJobClusters() throws IOException;
 
-    List<CompletedJob> loadCompletedJobsForCluster(String name, Instant start, Instant end) throws IOException;
+    List<CompletedJob> loadCompletedJobsForCluster(String name, int limit, @Nullable JobId endJobId) throws IOException;
 
     void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException;
 
@@ -138,8 +138,7 @@ public interface IMantisPersistenceProvider {
 
     void storeCompletedJobForCluster(String name, CompletedJob job) throws IOException;
 
-
-    void removeCompletedJobForCluster(String name, CompletedJob job) throws IOException;
+    void deleteCompletedJobsForCluster(String name) throws IOException;
 
     Optional<IMantisJobMetadata> loadArchivedJob(String jobId) throws IOException;
 

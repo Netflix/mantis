@@ -20,7 +20,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import akka.actor.AbstractActor;
 import com.netflix.mantis.master.scheduler.TestHelpers;
@@ -32,6 +35,7 @@ import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
+import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -88,7 +92,7 @@ public class JobManagerTest {
     }
 
     @Test
-    public void acceptedToCompleted() {
+    public void acceptedToCompleted() throws IOException {
         JobClusterActor.JobManager jm = new JobManager("name", context, schedulerFactory, publisher,
             jobStore, costsCalculator);
         JobId jId1 = new JobId("name", 1);
@@ -98,20 +102,20 @@ public class JobManagerTest {
 
         assertEquals(1, jm.acceptedJobsCount());
 
-        assertTrue(jm.getCompletedJobsList().size() == 0);
+        assertTrue(jm.getCompletedJobsList(100, null).size() == 0);
 
         assertTrue(
             jm.markCompleted(jId1, System.currentTimeMillis(), JobState.Completed).isPresent());
 
         assertEquals(0, jm.acceptedJobsCount());
-        assertEquals(1, jm.getCompletedJobsList().size());
+        assertEquals(1, jm.getCompletedJobsList(100, null).size());
         assertEquals(0, jm.activeJobsCount());
 
         assertFalse(jm.getAllNonTerminalJobsList().contains(jInfo1));
 
-        assertTrue(jm.getCompletedJobsList().size() == 1);
+        assertTrue(jm.getCompletedJobsList(100, null).size() == 1);
 
-        JobClusterDefinitionImpl.CompletedJob completedJob = jm.getCompletedJobsList().get(0);
+        JobClusterDefinitionImpl.CompletedJob completedJob = jm.getCompletedJobsList(100, null).get(0);
 
         assertEquals(jId1.getId(), completedJob.getJobId());
 
@@ -251,8 +255,8 @@ public class JobManagerTest {
     }
 
     @Test
-    public void testPurgeOldJobs() {
-        String clusterName = "testPurgeOldJobs";
+    public void testPurgeOldJobs() throws IOException {
+        final String clusterName = "testPurgeOldJobs";
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         JobClusterActor.JobManager jm = new JobManager(clusterName, context, schedulerFactory,
             publisher, jobStoreMock, costsCalculator);
@@ -281,14 +285,17 @@ public class JobManagerTest {
         Instant completionInstant = Instant.now().minusSeconds(5);
         jm.markCompleted(jId1, completionInstant.toEpochMilli(), JobState.Completed);
 
-        assertEquals(1, jm.getCompletedJobsList().size());
-        assertEquals(jId1.getId(), jm.getCompletedJobsList().get(0).getJobId());
+        assertEquals(1, jm.getCompletedJobsList(100, null).size());
+        assertEquals(jId1.getId(), jm.getCompletedJobsList(100, null).get(0).getJobId());
 
-        jm.cleanupAllCompletedJobs();
-        assertEquals(0, jm.getCompletedJobsList().size());
+        List<CompletedJob> completedJobs = jm.getCompletedJobsList(100, null);
+        when(jobStoreMock.loadCompletedJobsForCluster(clusterName, 100, null))
+            .thenReturn(completedJobs);
+        jm.onJobClusterDeletion();
+        assertEquals(0, jm.getCompletedJobsList(100, null).size());
 
         try {
-            verify(jobStoreMock, times(1)).deleteCompletedJob(any(), any());
+            verify(jobStoreMock, times(1)).deleteCompletedJobsForCluster(clusterName);
             verify(jobStoreMock, times(1)).deleteJob(jId1.getId());
         } catch (IOException e) {
             e.printStackTrace();
@@ -302,7 +309,7 @@ public class JobManagerTest {
     }
 
     @Test
-    public void testJobListSortedCorrectly() {
+    public void testJobListSortedCorrectly() throws IOException {
         String clusterName = "testJobListSortedCorrectly";
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         JobClusterActor.JobManager jm = new JobManager(clusterName, context, schedulerFactory,
@@ -332,17 +339,17 @@ public class JobManagerTest {
         Instant completionInstant = Instant.now().minusSeconds(5);
         jm.markCompleted(jId1, completionInstant.toEpochMilli(), JobState.Completed);
 
-        assertEquals(1, jm.getCompletedJobsList().size());
-        assertEquals(jId1.getId(), jm.getCompletedJobsList().get(0).getJobId());
+        assertEquals(1, jm.getCompletedJobsList(100, null).size());
+        assertEquals(jId1.getId(), jm.getCompletedJobsList(100, null).get(0).getJobId());
 
         jm.markJobTerminating(jInfo1, JobState.Terminating_abnormal);
 
         completionInstant = Instant.now().minusSeconds(2);
         jm.markCompleted(jId2, completionInstant.toEpochMilli(), JobState.Completed);
 
-        assertEquals(2, jm.getCompletedJobsList().size());
-        assertEquals(jId2.getId(), jm.getCompletedJobsList().get(0).getJobId());
-        assertEquals(jId1.getId(), jm.getCompletedJobsList().get(1).getJobId());
+        assertEquals(2, jm.getCompletedJobsList(100, null).size());
+        assertEquals(jId2.getId(), jm.getCompletedJobsList(100, null).get(0).getJobId());
+        assertEquals(jId1.getId(), jm.getCompletedJobsList(100, null).get(1).getJobId());
 
 
     }

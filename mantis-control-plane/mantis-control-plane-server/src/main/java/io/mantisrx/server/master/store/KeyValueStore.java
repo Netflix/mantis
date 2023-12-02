@@ -17,23 +17,18 @@
 package io.mantisrx.server.master.store;
 
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
@@ -153,8 +148,8 @@ public interface KeyValueStore {
      */
     boolean upsertAll(String tableName, String partitionKey, Map<String, String> all, Duration ttl) throws IOException;
 
-    default boolean upsertOrdered(String tableName, String partitionKey, String secondaryKey, Instant orderingTimestamp, String value, Duration ttl) throws IOException {
-        return upsertOrdered(tableName, partitionKey, ImmutableMap.of(Tuple.of(secondaryKey, orderingTimestamp), value), ttl);
+    default boolean upsertOrdered(String tableName, String partitionKey, Long orderingId, String value, Duration ttl) throws IOException {
+        return upsertOrdered(tableName, partitionKey, ImmutableMap.of(orderingId, value), ttl);
     }
 
     /**
@@ -166,39 +161,36 @@ public interface KeyValueStore {
      * @return
      * @throws IOException
      */
-    default boolean upsertOrdered(String tableName, String partitionKey, Map<Tuple2<String, Instant>, String> all, Duration ttl) throws IOException {
-        Map<String, String> items =
-            all.entrySet().stream()
-                .map(entry -> {
-                    String key = entry.getKey()._2.toEpochMilli() + "," + entry.getKey()._1;
-                    return Tuple.of(
-                        key,
-                        entry.getValue());
-                }).collect(Collectors.toMap(Tuple2::_1, Tuple2::_2));
+    default boolean upsertOrdered(String tableName, String partitionKey, Map<Long, String> all, Duration ttl) throws IOException {
+        Map<String, String> items = all.entrySet().stream()
+            .map(e -> new Tuple2<>(Long.toString(e.getKey()), e.getValue()))
+            .collect(Collectors.toMap(Tuple2::_1, Tuple2::_2));
         return upsertAll(tableName, partitionKey, items, ttl);
     }
 
-    default Map<String, String> getAllOrdered(String tableName, String partitionKey, Instant from, Instant to) throws IOException {
+    default Map<Long, String> getAllOrdered(String tableName, String partitionKey, int limit) throws IOException {
         Map<String, String> items = getAll(tableName, partitionKey);
-        if (items == null || items.isEmpty()) {
-            return Collections.emptyMap();
-        }
+        Comparator<Tuple2<Long, String>> longOrder = Comparator.comparing(Tuple2::_1);
+        Comparator<Tuple2<Long, String>> reverseOrder = longOrder.reversed();
+        return items.entrySet().stream()
+            .map(e -> new Tuple2<>(Long.parseLong(e.getKey()), e.getValue()))
+            // reversed order
+            .sorted(reverseOrder)
+            .limit(limit)
+            .collect(Collectors.toMap(Tuple2::_1, Tuple2::_2));
+    }
 
-        Pattern pattern = Pattern.compile("^(\\d+),(.*)$");
-
-        Map<String, String> results = new LinkedHashMap<>();
-        items.entrySet().stream()
-            .filter(entry -> {
-                Matcher matcher = pattern.matcher(entry.getKey());
-                if (!matcher.matches()) {
-                    return false;
-                }
-
-                long ts = Long.parseLong(matcher.group(1));
-                return ts >= from.toEpochMilli() && ts < to.toEpochMilli();
-            })
-            .forEach(entry -> results.put(entry.getKey(), entry.getValue()));
-        return results;
+    default Map<Long, String> getAllOrdered(String tableName, String partitionKey, int limit, long endExclusive) throws IOException {
+        Map<String, String> items = getAll(tableName, partitionKey);
+        Comparator<Tuple2<Long, String>> longOrder = Comparator.comparing(Tuple2::_1);
+        Comparator<Tuple2<Long, String>> reverseOrder = longOrder.reversed();
+        return items.entrySet().stream()
+            .map(e -> new Tuple2<>(Long.parseLong(e.getKey()), e.getValue()))
+            // reversed order
+            .sorted(reverseOrder)
+            .filter(e -> e._1 < endExclusive)
+            .limit(limit)
+            .collect(Collectors.toMap(Tuple2::_1, Tuple2::_2));
     }
 
     /**
@@ -209,10 +201,6 @@ public interface KeyValueStore {
      * @return boolean if row was deleted
      */
     boolean delete(String tableName, String partitionKey, String secondaryKey) throws IOException;
-
-    default boolean deleteOrdered(String tableName, String partitionKey, String secondaryKey, Instant orderingTimestamp) throws IOException {
-        return delete(tableName, partitionKey, orderingTimestamp.toEpochMilli() + "," + secondaryKey);
-    }
 
     /**
      * Deletes all rows corresponding to a partition key
