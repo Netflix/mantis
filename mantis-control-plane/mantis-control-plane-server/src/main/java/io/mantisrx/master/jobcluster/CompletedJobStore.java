@@ -221,7 +221,12 @@ class CompletedJobStore implements ICompletedJobsStore {
         List<CompletedJob> jobs = jobStore.loadCompletedJobsForCluster(name, 100, null);
         while (!jobs.isEmpty()) {
             for (CompletedJob completedJob : jobs) {
-                jobStore.deleteJob(completedJob.getJobId());
+                try {
+//                    todo(sundaram): Clean this up. This is a hack to get around the fact that the job store
+                    jobStore.deleteJob(completedJob.getJobId());
+                } catch (IOException e) {
+                    logger.error("Unable to purge job", e);
+                }
             }
             jobs = jobStore.loadCompletedJobsForCluster(name, 100, JobId.fromId(jobs.get(jobs.size() - 1).getJobId()).get());
         }

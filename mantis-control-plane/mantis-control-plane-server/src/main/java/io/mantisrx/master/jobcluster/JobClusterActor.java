@@ -918,7 +918,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 sender.tell(new JobClusterProto.DeleteJobClusterResponse(request.requestId, CLIENT_ERROR, name + " Job cluster deletion failed as there are active jobs", request.requestingActor,name), getSelf());
             }
         } catch( Exception e) {
-            logger.error("job cluster {} not deleted", name);
+            logger.error("job cluster {} not deleted", name, e);
             sender.tell(new JobClusterProto.DeleteJobClusterResponse(request.requestId, SERVER_ERROR, name + " Job cluster deletion failed " + e.getMessage(), request.requestingActor,name), getSelf());
             numJobClusterDeleteErrors.increment();
         }
