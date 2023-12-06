@@ -2609,7 +2609,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         void initialize() {
             try {
+                logger.info("Loading completed jobs for cluster {}", name);
                 completedJobStore.initialize();
+                logger.info("Initialized completed job store for cluster {}", name);
             } catch (IOException e) {
                 logger.error("Could not initialize completed job store for cluster {}", name, e);
             }
