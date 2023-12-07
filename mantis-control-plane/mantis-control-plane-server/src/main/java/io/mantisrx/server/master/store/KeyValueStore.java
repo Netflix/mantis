@@ -305,7 +305,9 @@ public interface KeyValueStore {
         public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all,
             Duration ttl) throws IOException {
             store.putIfAbsent(tableName, new ConcurrentHashMap<>());
-            SortedMap<String, String> items = new ConcurrentSkipListMap<>(Comparator.reverseOrder());
+            SortedMap<String, String> items =
+                store.get(tableName)
+                    .getOrDefault(partitionKey, new ConcurrentSkipListMap<>(Comparator.reverseOrder()));
             items.putAll(all);
             store.get(tableName).put(partitionKey, items);
             return true;

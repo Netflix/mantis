@@ -119,7 +119,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     private static final int WORKER_BATCH_SIZE = 1000;
     private static final int WORKER_MAX_INDEX = 30000;
-    private static final long DEFAULT_TTL_IN_MS = TimeUnit.DAYS.toMillis(7);
+    private static final long DEFAULT_TTL_IN_MS = TimeUnit.DAYS.toMillis(90);
 
     static {
         mapper
