@@ -16,7 +16,12 @@
 
 package io.mantisrx.master.jobcluster;
 
+import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.Label;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.GaugeCallback;
+import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.jobcluster.JobClusterActor.LabelCache;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;
@@ -132,21 +137,30 @@ class CompletedJobStore implements ICompletedJobsStore {
     private final MantisJobStore jobStore;
     private final int initialNumberOfJobsToCache;
     private JobId cachedUpto;
+    private final Metrics metrics;
 
     @VisibleForTesting
-    public CompletedJobStore(String clusterName, LabelCache labelsCache, MantisJobStore jobStore,
+    CompletedJobStore(String clusterName, LabelCache labelsCache, MantisJobStore jobStore,
         int initialNumberOfJobsToCache) {
         this.name = clusterName;
         this.labelsCache = labelsCache;
         this.jobStore = jobStore;
         this.initialNumberOfJobsToCache = initialNumberOfJobsToCache;
+        MetricGroupId metricGroupId = getMetricGroupId(name);
+        Metrics m =
+            new Metrics.Builder()
+                .id(metricGroupId)
+                .addGauge(new GaugeCallback(metricGroupId, "completedJobsGauge", () -> 1.0 * this.getCachedSize()))
+                .build();
+        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
     }
 
     public CompletedJobStore(String clusterName, LabelCache labelsCache, MantisJobStore jobStore) {
-        this.name = clusterName;
-        this.labelsCache = labelsCache;
-        this.jobStore = jobStore;
-        this.initialNumberOfJobsToCache = 100;
+        this(clusterName, labelsCache, jobStore, 100);
+    }
+
+    MetricGroupId getMetricGroupId(String name) {
+        return new MetricGroupId("CompletedJobStore", new BasicTag("jobCluster", name));
     }
 
     private int getCachedSize() {

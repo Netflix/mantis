@@ -224,6 +224,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     private final BehaviorSubject<JobId> jobIdSubmissionSubject;
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
+    private final Metrics metrics;
 
 
     public JobClusterActor(
@@ -270,6 +271,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .addGauge(new GaugeCallback(metricGroupId, "actorToJobIdMappingsGauge", () -> 1.0 * this.jobManager.actorToJobIdMap.size()))
             .build();
         m = MetricsRegistry.getInstance().registerAndGet(m);
+        this.metrics = m;
         this.numJobSubmissions = m.getCounter("numJobSubmissions");
         this.numJobActorCreationCounter = m.getCounter("numJobActorCreationCounter");
         this.numJobSubmissionFailures = m.getCounter("numJobSubmissionFailures");
