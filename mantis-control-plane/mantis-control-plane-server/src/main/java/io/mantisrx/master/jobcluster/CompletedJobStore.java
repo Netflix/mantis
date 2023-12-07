@@ -41,18 +41,73 @@ import org.slf4j.LoggerFactory;
 
 interface ICompletedJobsStore {
 
+    /**
+     * Initialize the store
+     * @throws IOException if there is an error
+     */
     void initialize() throws IOException;
 
+
+    /**
+     * Gets a completed job given a job id
+     * @param jId job id
+     * @return completed job if found else empty
+     * @throws IOException if there is an error
+     */
     Optional<CompletedJob> getCompletedJob(JobId jId) throws IOException;
 
+    /**
+     * Gets a completed job given a job id
+     * @param jId job id
+     * @return completed job if found else empty
+     * @throws IOException if there is an error
+     */
     Optional<IMantisJobMetadata> getJobMetadata(JobId jId) throws IOException;
 
+    /**
+     * Gets a list of completed jobs
+     * @param limit number of jobs to return
+     * @return list of completed jobs
+     * @throws IOException if there is an error
+     */
     List<CompletedJob> getCompletedJobs(int limit) throws IOException;
 
+    /**
+     * Gets a list of completed jobs
+     * @param limit number of jobs to return
+     * @param endExclusive end job id
+     * @return list of completed jobs
+     * @throws IOException if there is an error
+     */
     List<CompletedJob> getCompletedJobs(int limit, JobId endExclusive) throws IOException;
 
+    /**
+     * Adds a new completed job to the store
+     * @param jobMetadata job metadata
+     *                    @return completed job
+     *                    @throws IOException if there is an error
+     */
     CompletedJob onJobCompletion(IMantisJobMetadata jobMetadata) throws IOException;
 
+    /**
+     * Adds a new completed job to the store in case the mantis job metadata was not created.
+     * @param jId job id
+     * @param submittedAt job submission time
+     * @param completionTime job completion time
+     * @param user user who submitted the job
+     * @param version job version
+     * @param finalState final state of the job
+     * @param labels labels associated with the job
+     * @return completed job
+     * @throws IOException if there is an error
+     */
+    CompletedJob onJobCompletion(JobId jId, long submittedAt, long completionTime,
+        String user, String version, JobState finalState, List<Label> labels) throws IOException;
+
+    /**
+     * Clean up in case of job cluster deletion
+     * @throws IOException if there is an error
+     */
     void onJobClusterDeletion() throws IOException;
 }
 
@@ -113,7 +168,7 @@ class CompletedJobStore implements ICompletedJobsStore {
     }
 
     @Override
-    public Optional<CompletedJob> getCompletedJob(JobId jId) {
+    public Optional<CompletedJob> getCompletedJob(JobId jId) throws IOException {
         CompletedJobEntry res = fetchJobId(jId);
         if (res != null) {
             return Optional.of(res.getJob());
@@ -139,7 +194,7 @@ class CompletedJobStore implements ICompletedJobsStore {
      * @return
      */
     @Override
-    public Optional<IMantisJobMetadata> getJobMetadata(JobId jId) {
+    public Optional<IMantisJobMetadata> getJobMetadata(JobId jId) throws IOException {
         CompletedJobEntry res = fetchJobId(jId);
         if (res != null) {
             return Optional.ofNullable(res.getJobMetadata());
@@ -203,6 +258,7 @@ class CompletedJobStore implements ICompletedJobsStore {
         }
     }
 
+    @Override
     public CompletedJob onJobCompletion(JobId jId, long submittedAt, long completionTime,
         String user, String version, JobState finalState, List<Label> labels) throws IOException {
         final CompletedJob completedJob = new CompletedJob(name, jId.getId(), version, finalState,

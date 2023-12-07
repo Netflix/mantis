@@ -194,7 +194,11 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     private MantisJobMetadataWritable readJobStageData(final String namespace, final String jobId)
         throws IOException {
-        return readJobStageData(jobId, kvStore.getAll(namespace, jobId));
+        Map<String, String> rows = kvStore.getAll(namespace, jobId);
+        if (rows == null || rows.isEmpty()) {
+            return null;
+        }
+        return readJobStageData(jobId, rows);
     }
 
     private MantisJobMetadataWritable readJobStageData(final String jobId, final Map<String, String> items) throws IOException {
@@ -272,26 +276,30 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     @Override
     public void deleteJob(String jobId) throws IOException {
         MantisJobMetadataWritable jobMeta = readJobStageData(JOB_STAGEDATA_NS, jobId);
-        int workerMaxPartitionKey = workerMaxPartitionKey(jobMeta);
+        if (jobMeta != null) {
+            int workerMaxPartitionKey = workerMaxPartitionKey(jobMeta);
 
-        kvStore.deleteAll(JOB_STAGEDATA_NS, jobId);
-        rangeOperation(workerMaxPartitionKey, idx -> {
-            try {
-                kvStore.deleteAll(WORKERS_NS, makeBucketizedPartitionKey(jobId, idx));
-            } catch (IOException e) {
-                logger.warn("failed to delete worker for jobId {} with index {}", jobId, idx, e);
-            }
-        });
+            kvStore.deleteAll(JOB_STAGEDATA_NS, jobId);
+            rangeOperation(workerMaxPartitionKey, idx -> {
+                try {
+                    kvStore.deleteAll(WORKERS_NS, makeBucketizedPartitionKey(jobId, idx));
+                } catch (IOException e) {
+                    logger.warn("failed to delete worker for jobId {} with index {}", jobId, idx, e);
+                }
+            });
 
-        // delete from archive as well
-        kvStore.deleteAll(ARCHIVED_JOB_STAGEDATA_NS, jobId);
-        rangeOperation(workerMaxPartitionKey, idx -> {
-            try {
-                kvStore.deleteAll(ARCHIVED_WORKERS_NS, makeBucketizedPartitionKey(jobId, idx));
-            } catch (IOException e) {
-                logger.warn("failed to delete worker for jobId {} with index {}", jobId, idx, e);
-            }
-        });
+            // delete from archive as well
+            kvStore.deleteAll(ARCHIVED_JOB_STAGEDATA_NS, jobId);
+            rangeOperation(workerMaxPartitionKey, idx -> {
+                try {
+                    kvStore.deleteAll(ARCHIVED_WORKERS_NS, makeBucketizedPartitionKey(jobId, idx));
+                } catch (IOException e) {
+                    logger.warn("failed to delete worker for jobId {} with index {}", jobId, idx, e);
+                }
+            });
+        } else {
+            // do nothing
+        }
     }
 
     @Override
@@ -583,6 +591,9 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     public Optional<IMantisJobMetadata> loadArchivedJob(String jobId) throws IOException {
         try {
             MantisJobMetadataWritable jmw = readJobStageData(ARCHIVED_JOB_STAGEDATA_NS, jobId);
+            if (jmw == null) {
+                return Optional.empty();
+            }
             return Optional.of(DataFormatAdapter.convertMantisJobWriteableToMantisJobMetadata(jmw, eventPublisher));
         } catch (Exception e) {
             logger.error("Exception loading archived job {}", jobId, e);

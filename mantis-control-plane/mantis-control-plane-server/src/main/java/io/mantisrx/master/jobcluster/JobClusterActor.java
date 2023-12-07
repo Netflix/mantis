@@ -2581,7 +2581,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         });
 
         // Cache that deals with completed job
-        private final CompletedJobStore completedJobStore;
+        private final ICompletedJobsStore completedJobStore;
 
         // Map of Jobs in terminating state
         private final Map<JobId, JobInfo> terminatingJobsMap = new HashMap<>();
@@ -2714,7 +2714,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         boolean markJobAccepted(JobInfo jobInfo) {
             boolean isSuccess = false;
 
-            if (!jobInfo.state.isValidStateChgTo(JobState.Accepted) || activeJobsMap.containsKey(jobInfo.jobId) || terminatingJobsMap.containsKey(jobInfo.jobId) || completedJobStore.containsKey(jobInfo.jobId)) {
+            if (!jobInfo.state.isValidStateChgTo(JobState.Accepted) || activeJobsMap.containsKey(jobInfo.jobId) || terminatingJobsMap.containsKey(jobInfo.jobId)) {
                 String warn = String.format("Job %s already exists", jobInfo.jobId);
                 logger.warn(warn);
 
@@ -2934,13 +2934,23 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         }
 
         Optional<CompletedJob> getCompletedJob(JobId jId) {
-            return completedJobStore.getCompletedJob(jId);
+            try {
+                return completedJobStore.getCompletedJob(jId);
+            } catch (IOException e) {
+                logger.warn("Failed to get completed job {}", jId, e);
+            }
+            return Optional.empty();
         }
 
         Optional<IMantisJobMetadata> getJobDataForCompletedJob(String jId) {
             Optional<JobId> jobId = JobId.fromId(jId);
             if(jobId.isPresent()) {
-                return completedJobStore.getJobMetadata(jobId.get());
+                try {
+                    return completedJobStore.getJobMetadata(jobId.get());
+                } catch (IOException e) {
+                    logger.warn("Failed to get completed job {}", jId, e);
+                    return empty();
+                }
             } else {
 
                 logger.warn("Invalid Job Id {} in getJobDataForCompletedJob", jId);
