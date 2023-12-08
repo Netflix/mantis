@@ -164,6 +164,21 @@ subprojects {
         printReleasedArtifact.dependsOn(project.rootProject.snapshot)
         printAllReleasedArtifacts.dependsOn("${project.path}:printReleasedArtifact")
     }
+
+    task akkaTest(type: Test) {
+        maxParallelForks = 1
+        filter {
+            includeTestsMatching "*AkkaTest"
+            setFailOnNoMatchingTests(false)
+        }
+    }
+
+    test {
+        filter {
+            excludeTestsMatching "*AkkaTest"
+            setFailOnNoMatchingTests(false)
+        }
+    }
 }
 
 apply from: file('baseline.gradle')

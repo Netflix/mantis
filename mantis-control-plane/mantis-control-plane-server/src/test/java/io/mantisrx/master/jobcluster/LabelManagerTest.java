@@ -193,7 +193,7 @@ public class LabelManagerTest {
             .withName(name)
             .withParameters(Lists.newArrayList())
             .withLabels(labelList)
-            .withSchedulingInfo(JobClusterTest.SINGLE_WORKER_SCHED_INFO)
+            .withSchedulingInfo(JobClusterAkkaTest.SINGLE_WORKER_SCHED_INFO)
             .withArtifactName(artifactName)
             .withVersion(version)
             .withSubscriptionTimeoutSecs(1)

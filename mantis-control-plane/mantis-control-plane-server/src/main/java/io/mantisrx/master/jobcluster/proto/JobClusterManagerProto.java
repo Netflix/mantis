@@ -26,6 +26,7 @@ import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
 import io.mantisrx.master.jobcluster.MantisJobClusterMetadataView;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;
+import io.mantisrx.master.jobcluster.job.JobState.MetaState;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
@@ -882,9 +883,11 @@ public class JobClusterManagerProto {
         private final List<Label> matchingLabels;
         private final Optional<String> labelsOperand;
 
+        private final Optional<JobId> endJobIdExclusive;
+
         public ListJobCriteria(
                 final Optional<Integer> limit,
-                final Optional<JobState.MetaState> jobState,
+                final Optional<MetaState> jobState,
                 final List<Integer> stageNumber,
                 final List<Integer> workerIndex,
                 final List<Integer> workerNumber,
@@ -892,7 +895,8 @@ public class JobClusterManagerProto {
                 final Optional<Boolean> activeOnly,
                 final Optional<String> matchingRegex,
                 final Optional<String> matchingLabels,
-                final Optional<String> labelsOperand) {
+                final Optional<String> labelsOperand,
+                final Optional<JobId> endJobIdExclusive) {
             this.limit = limit;
             this.jobState = jobState;
             this.stageNumberList = stageNumber;
@@ -904,6 +908,7 @@ public class JobClusterManagerProto {
             this.matchingLabels = matchingLabels.map(query -> LabelUtils.generatePairs(query))
                                                 .orElse(Collections.emptyList());
             this.labelsOperand = labelsOperand;
+            this.endJobIdExclusive = endJobIdExclusive;
         }
 
         public ListJobCriteria() {
@@ -914,6 +919,7 @@ public class JobClusterManagerProto {
                     Lists.newArrayList(),
                     Lists.newArrayList(),
                     Lists.newArrayList(),
+                    Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
@@ -958,6 +964,10 @@ public class JobClusterManagerProto {
 
         public Optional<String> getLabelsOperand() {
             return labelsOperand;
+        }
+
+        public Optional<JobId> getEndJobIdExclusive() {
+            return endJobIdExclusive;
         }
 
         @Override
@@ -1037,6 +1047,7 @@ public class JobClusterManagerProto {
                     Lists.newArrayList(),
                     Optional.empty(),
                     Optional.ofNullable(clusterName),
+                    Optional.empty(),
                     Optional.empty(),
                     Optional.empty()));
         }
@@ -1176,7 +1187,8 @@ public class JobClusterManagerProto {
                 final Optional<Boolean> activeOnly,
                 final Optional<String> matchingRegex,
                 final Optional<String> matchingLabels,
-                final Optional<String> labelsOperand) {
+                final Optional<String> labelsOperand,
+                final Optional<JobId> endJobIdExclusive) {
             super();
             filters = new ListJobCriteria(
                     limit,
@@ -1188,13 +1200,15 @@ public class JobClusterManagerProto {
                     activeOnly,
                     matchingRegex,
                     matchingLabels,
-                    labelsOperand);
+                    labelsOperand,
+                    endJobIdExclusive);
 
 
         }
 
         public ListJobIdsRequest() {
             this(
+                    Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),

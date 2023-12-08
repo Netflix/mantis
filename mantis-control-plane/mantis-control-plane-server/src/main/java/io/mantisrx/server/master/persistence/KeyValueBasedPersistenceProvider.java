@@ -34,6 +34,7 @@ import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
+import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
@@ -71,6 +72,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -102,7 +104,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     private static final String WORKERS_NS = "MantisWorkers";
     private static final String ARCHIVED_WORKERS_NS = "MantisArchivedWorkers";
     private static final String NAMED_JOBS_NS = "MantisNamedJobs";
-    private static final String NAMED_COMPLETEDJOBS_NS = "MantisNamedJobCompletedJobs";
+    private static final String NAMED_COMPLETEDJOBS_NS = "MantisNamedJobCompletedJobsV2";
     private static final String ACTIVE_ASGS_NS = "MantisActiveASGs";
     private static final String TASK_EXECUTOR_REGISTRATION = "TaskExecutorRegistration";
     private static final String DISABLE_TASK_EXECUTOR_REQUESTS = "MantisDisableTaskExecutorRequests";
@@ -117,7 +119,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     private static final int WORKER_BATCH_SIZE = 1000;
     private static final int WORKER_MAX_INDEX = 30000;
-    private static final long TTL_IN_MS = TimeUnit.DAYS.toMillis(7);
+    private static final long DEFAULT_TTL_IN_MS = TimeUnit.DAYS.toMillis(90);
 
     static {
         mapper
@@ -164,7 +166,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     protected Duration getArchiveDataTtlInMs() {
-        return Duration.ofMillis(TTL_IN_MS);
+        return Duration.ofMillis(DEFAULT_TTL_IN_MS);
     }
 
     protected String getJobStageFieldName(int stageNum) {
@@ -192,7 +194,11 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     private MantisJobMetadataWritable readJobStageData(final String namespace, final String jobId)
         throws IOException {
-        return readJobStageData(jobId, kvStore.getAll(namespace, jobId));
+        Map<String, String> rows = kvStore.getAll(namespace, jobId);
+        if (rows == null || rows.isEmpty()) {
+            return null;
+        }
+        return readJobStageData(jobId, rows);
     }
 
     private MantisJobMetadataWritable readJobStageData(final String jobId, final Map<String, String> items) throws IOException {
@@ -268,28 +274,32 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     @Override
-    public void deleteJob(String jobId) throws Exception {
+    public void deleteJob(String jobId) throws IOException {
         MantisJobMetadataWritable jobMeta = readJobStageData(JOB_STAGEDATA_NS, jobId);
-        int workerMaxPartitionKey = workerMaxPartitionKey(jobMeta);
+        if (jobMeta != null) {
+            int workerMaxPartitionKey = workerMaxPartitionKey(jobMeta);
 
-        kvStore.deleteAll(JOB_STAGEDATA_NS, jobId);
-        rangeOperation(workerMaxPartitionKey, idx -> {
-            try {
-                kvStore.deleteAll(WORKERS_NS, makeBucketizedPartitionKey(jobId, idx));
-            } catch (IOException e) {
-                logger.warn("failed to delete worker for jobId {} with index {}", jobId, idx, e);
-            }
-        });
+            kvStore.deleteAll(JOB_STAGEDATA_NS, jobId);
+            rangeOperation(workerMaxPartitionKey, idx -> {
+                try {
+                    kvStore.deleteAll(WORKERS_NS, makeBucketizedPartitionKey(jobId, idx));
+                } catch (IOException e) {
+                    logger.warn("failed to delete worker for jobId {} with index {}", jobId, idx, e);
+                }
+            });
 
-        // delete from archive as well
-        kvStore.deleteAll(ARCHIVED_JOB_STAGEDATA_NS, jobId);
-        rangeOperation(workerMaxPartitionKey, idx -> {
-            try {
-                kvStore.deleteAll(ARCHIVED_WORKERS_NS, makeBucketizedPartitionKey(jobId, idx));
-            } catch (IOException e) {
-                logger.warn("failed to delete worker for jobId {} with index {}", jobId, idx, e);
-            }
-        });
+            // delete from archive as well
+            kvStore.deleteAll(ARCHIVED_JOB_STAGEDATA_NS, jobId);
+            rangeOperation(workerMaxPartitionKey, idx -> {
+                try {
+                    kvStore.deleteAll(ARCHIVED_WORKERS_NS, makeBucketizedPartitionKey(jobId, idx));
+                } catch (IOException e) {
+                    logger.warn("failed to delete worker for jobId {} with index {}", jobId, idx, e);
+                }
+            });
+        } else {
+            // do nothing
+        }
     }
 
     @Override
@@ -458,33 +468,6 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     @Override
-    public List<CompletedJob> loadAllCompletedJobs() throws IOException {
-        AtomicInteger failedCount = new AtomicInteger();
-        AtomicInteger successCount = new AtomicInteger();
-        final List<CompletedJob> completedJobsList = kvStore.getAllRows(NAMED_COMPLETEDJOBS_NS)
-            .values().stream()
-            .flatMap(x -> x.values().stream())
-            .map(data -> {
-                try {
-                    NamedJob.CompletedJob cj = mapper.readValue(data, NamedJob.CompletedJob.class);
-                    CompletedJob completedJob = DataFormatAdapter.convertNamedJobCompletedJobToCompletedJob(cj);
-                    successCount.getAndIncrement();
-                    return completedJob;
-                } catch (JsonProcessingException e) {
-                    logger.warn("failed to parse CompletedJob from {}", data, e);
-                    failedCount.getAndIncrement();
-                }
-                return null;
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-
-        logger.info("Read and converted job clusters. Successful - {}, Failed - {}", successCount.get(), failedCount.get());
-        return completedJobsList;
-    }
-
-
-    @Override
     public void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException {
         MantisWorkerMetadataWritable worker = DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(mwmd);
         String pkey = makeBucketizedPartitionKey(worker.getJobId(), worker.getWorkerNumber());
@@ -545,16 +528,8 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     @Override
     public void deleteJobCluster(String name) throws Exception {
-        NamedJob namedJob = getJobCluster(NAMED_JOBS_NS, name);
         kvStore.deleteAll(NAMED_JOBS_NS, name);
-        rangeOperation((int) namedJob.getNextJobNumber(),
-            idx -> {
-                try {
-                    removeCompletedJobForCluster(name, makeBucketizedPartitionKey(name, idx));
-                } catch (IOException e) {
-                    logger.warn("failed to completed job for named job {} with index {}", name, idx, e);
-                }
-            });
+        kvStore.deleteAll(NAMED_COMPLETEDJOBS_NS, name);
     }
 
 
@@ -574,25 +549,51 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     @Override
     public void storeCompletedJobForCluster(String name, CompletedJob job) throws IOException {
-        int jobIdx = parseJobId(job.getJobId());
         NamedJob.CompletedJob completedJob = DataFormatAdapter.convertCompletedJobToNamedJobCompletedJob(job);
-        kvStore.upsert(NAMED_COMPLETEDJOBS_NS,
-            makeBucketizedPartitionKey(name, jobIdx),
-            String.valueOf(jobIdx),
-            mapper.writeValueAsString(completedJob));
+        JobId jobId = JobId.fromId(job.getJobId()).get();
+        kvStore.upsertOrdered(NAMED_COMPLETEDJOBS_NS,
+            name,
+            jobId.getJobNum(),
+            mapper.writeValueAsString(completedJob),
+            getArchiveDataTtlInMs());
     }
 
     @Override
-    public void removeCompletedJobForCluster(String name, String jobId) throws IOException {
-        int jobIdx = parseJobId(jobId);
-        kvStore.deleteAll(NAMED_COMPLETEDJOBS_NS,
-            makeBucketizedPartitionKey(name, jobIdx));
+    public void deleteCompletedJobsForCluster(String name) throws IOException {
+        kvStore.deleteAll(NAMED_COMPLETEDJOBS_NS, name);
     }
+
+    @Override
+    public List<CompletedJob> loadCompletedJobsForCluster(String name, int limit, @Nullable JobId endExclusive)
+        throws IOException {
+        final Map<Long, String> items;
+        if (endExclusive != null) {
+            items = kvStore.getAllOrdered(NAMED_COMPLETEDJOBS_NS, name, limit, endExclusive.getJobNum());
+        } else {
+            items = kvStore.getAllOrdered(NAMED_COMPLETEDJOBS_NS, name, limit);
+        }
+
+        return items.values().stream()
+            .map(
+                value -> {
+                    try {
+                        return mapper.readValue(value, NamedJob.CompletedJob.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+            .map(DataFormatAdapter::convertNamedJobCompletedJobToCompletedJob)
+            .collect(Collectors.toList());
+    }
+
 
     @Override
     public Optional<IMantisJobMetadata> loadArchivedJob(String jobId) throws IOException {
         try {
             MantisJobMetadataWritable jmw = readJobStageData(ARCHIVED_JOB_STAGEDATA_NS, jobId);
+            if (jmw == null) {
+                return Optional.empty();
+            }
             return Optional.of(DataFormatAdapter.convertMantisJobWriteableToMantisJobMetadata(jmw, eventPublisher));
         } catch (Exception e) {
             logger.error("Exception loading archived job {}", jobId, e);

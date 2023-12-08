@@ -146,7 +146,7 @@ import org.mockito.stubbing.Answer;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
-public class JobClusterTest {
+public class JobClusterAkkaTest {
     public static final SLA NO_OP_SLA = new SLA(0, 0, null, null);
 
     public static final MachineDefinition DEFAULT_MACHINE_DEFINITION = new MachineDefinition(1, 10, 10, 10, 2);
@@ -2562,12 +2562,15 @@ public class JobClusterTest {
 
         JobTestHelper.killJobAndVerify(probe, clusterName, new JobId(clusterName, 1), jobClusterActor);
 
-        jobClusterActor.tell(new ListJobIdsRequest(empty(),
-        empty(),
-        of(true),
-        empty(),
-        empty(),
-        empty()), probe.getRef());
+        jobClusterActor.tell(
+            new ListJobIdsRequest(empty(),
+                empty(),
+                of(true),
+                empty(),
+                empty(),
+                empty(),
+                empty()),
+            probe.getRef());
 
         ListJobIdsResponse listResp2 = probe.expectMsgClass(ListJobIdsResponse.class);
 
@@ -2673,6 +2676,7 @@ public class JobClusterTest {
                 of(true),
                 empty(),
                 empty(),
+                empty(),
                 empty())), probe.getRef());
 
         ListJobsResponse listResp2 = probe.expectMsgClass(ListJobsResponse.class);
@@ -2688,15 +2692,16 @@ public class JobClusterTest {
         JobTestHelper.killJobAndVerify(probe, clusterName, new JobId(clusterName, 2), jobClusterActor);
 
         jobClusterActor.tell(new ListJobsRequest(new ListJobCriteria(empty(),
-                                                                                                                empty(),
-                                                                                                                Lists.newArrayList(),
-                                                                                                                Lists.newArrayList(),
-                                                                                                                Lists.newArrayList(),
-                                                                                                                Lists.newArrayList(),
-                                                                                                                of(true),
-                                                                                                                empty(),
-                                                                                                                empty(),
-                                                                                                                empty())), probe.getRef());
+            empty(),
+            Lists.newArrayList(),
+            Lists.newArrayList(),
+            Lists.newArrayList(),
+            Lists.newArrayList(),
+            of(true),
+            empty(),
+            empty(),
+            empty(),
+            empty())), probe.getRef());
 
         ListJobsResponse listResp3 = probe.expectMsgClass(ListJobsResponse.class);
 
@@ -2831,7 +2836,10 @@ public class JobClusterTest {
             // Query for Label1
             List<Integer> emptyIntList = Lists.newArrayList();
             List<WorkerState.MetaState> workerState = Lists.newArrayList();
-            ListJobCriteria criteria1 = new ListJobCriteria(Optional.empty(), Optional.empty(), emptyIntList, emptyIntList, emptyIntList,workerState,Optional.empty(),Optional.empty(),of("l1=l1v1"), Optional.empty());
+            ListJobCriteria criteria1 = new ListJobCriteria(Optional.empty(), Optional.empty(),
+                emptyIntList, emptyIntList, emptyIntList, workerState, Optional.empty(),
+                Optional.empty(), of("l1=l1v1"), Optional.empty(),
+                empty());
 
             jobClusterActor.tell(new ListJobsRequest(criteria1), probe.getRef());
             ListJobsResponse listResp = probe.expectMsgClass(ListJobsResponse.class);
@@ -2849,7 +2857,10 @@ public class JobClusterTest {
             System.out.println("Workers returned : " + listResp.getJobList().get(0).getWorkerMetadataList());
             assertTrue(listResp.getJobList().get(0).getWorkerMetadataList().size() == 1);
             // Query with an OR query for both labels
-            ListJobCriteria criteria2 = new ListJobCriteria(Optional.empty(), Optional.empty(), emptyIntList, emptyIntList, emptyIntList,workerState,Optional.empty(),Optional.empty(),of("l1=l1v1,l2=l2v2"), Optional.empty());
+            ListJobCriteria criteria2 = new ListJobCriteria(Optional.empty(), Optional.empty(),
+                emptyIntList, emptyIntList, emptyIntList, workerState, Optional.empty(),
+                Optional.empty(), of("l1=l1v1,l2=l2v2"), Optional.empty(),
+                empty());
 
             jobClusterActor.tell(new ListJobsRequest(criteria2), probe.getRef());
             ListJobsResponse listRes2 = probe.expectMsgClass(ListJobsResponse.class);
@@ -2865,7 +2876,10 @@ public class JobClusterTest {
 
 
             // Query with an AND query for both labels
-            ListJobCriteria criteria3 = new ListJobCriteria(Optional.empty(), Optional.empty(), emptyIntList, emptyIntList, emptyIntList,workerState,Optional.empty(),Optional.empty(),of("l1=l1v1,l2=l2v2"), of("and"));
+            ListJobCriteria criteria3 = new ListJobCriteria(Optional.empty(), Optional.empty(),
+                emptyIntList, emptyIntList, emptyIntList, workerState, Optional.empty(),
+                Optional.empty(), of("l1=l1v1,l2=l2v2"), of("and"),
+                empty());
 
             jobClusterActor.tell(new ListJobsRequest(criteria3), probe.getRef());
             ListJobsResponse listRes3 = probe.expectMsgClass(ListJobsResponse.class);
