@@ -17,14 +17,18 @@
 package io.mantisrx.server.master.store;
 
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import io.vavr.Tuple2;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
@@ -144,6 +148,51 @@ public interface KeyValueStore {
      */
     boolean upsertAll(String tableName, String partitionKey, Map<String, String> all, Duration ttl) throws IOException;
 
+    default boolean upsertOrdered(String tableName, String partitionKey, Long orderingId, String value, Duration ttl) throws IOException {
+        return upsertOrdered(tableName, partitionKey, ImmutableMap.of(orderingId, value), ttl);
+    }
+
+    /**
+     * Adds all rows corresponding to partition key in an ordered manner determined by the secondary key.
+     * @param tableName
+     * @param partitionKey
+     * @param all
+     * @param ttl
+     * @return
+     * @throws IOException
+     */
+    default boolean upsertOrdered(String tableName, String partitionKey, Map<Long, String> all, Duration ttl) throws IOException {
+        Map<String, String> items = all.entrySet().stream()
+            .map(e -> new Tuple2<>(Long.toString(e.getKey()), e.getValue()))
+            .collect(Collectors.toMap(Tuple2::_1, Tuple2::_2));
+        return upsertAll(tableName, partitionKey, items, ttl);
+    }
+
+    default Map<Long, String> getAllOrdered(String tableName, String partitionKey, int limit) throws IOException {
+        Map<String, String> items = getAll(tableName, partitionKey);
+        Comparator<Tuple2<Long, String>> longOrder = Comparator.comparing(Tuple2::_1);
+        Comparator<Tuple2<Long, String>> reverseOrder = longOrder.reversed();
+        return items.entrySet().stream()
+            .map(e -> new Tuple2<>(Long.parseLong(e.getKey()), e.getValue()))
+            // reversed order
+            .sorted(reverseOrder)
+            .limit(limit)
+            .collect(Collectors.toMap(Tuple2::_1, Tuple2::_2));
+    }
+
+    default Map<Long, String> getAllOrdered(String tableName, String partitionKey, int limit, long endExclusive) throws IOException {
+        Map<String, String> items = getAll(tableName, partitionKey);
+        Comparator<Tuple2<Long, String>> longOrder = Comparator.comparing(Tuple2::_1);
+        Comparator<Tuple2<Long, String>> reverseOrder = longOrder.reversed();
+        return items.entrySet().stream()
+            .map(e -> new Tuple2<>(Long.parseLong(e.getKey()), e.getValue()))
+            // reversed order
+            .sorted(reverseOrder)
+            .filter(e -> e._1 < endExclusive)
+            .limit(limit)
+            .collect(Collectors.toMap(Tuple2::_1, Tuple2::_2));
+    }
+
     /**
      * Deletes a row corresponding to the primary key (partitionKey, secondaryKey)
      * @param tableName the tableName/table to read from
@@ -229,7 +278,7 @@ public interface KeyValueStore {
     class InMemoryStore implements KeyValueStore {
 
         // table -> partitionKey -> secondaryKey -> data
-        private final Map<String, Map<String, Map<String, String>>> store = new ConcurrentHashMap<>();
+        private final Map<String, Map<String, SortedMap<String, String>>> store = new ConcurrentHashMap<>();
 
         @Override
         public List<String> getAllPartitionKeys(String tableName) {
@@ -256,7 +305,11 @@ public interface KeyValueStore {
         public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all,
             Duration ttl) throws IOException {
             store.putIfAbsent(tableName, new ConcurrentHashMap<>());
-            store.get(tableName).put(partitionKey, new ConcurrentHashMap<>(all));
+            SortedMap<String, String> items =
+                store.get(tableName)
+                    .getOrDefault(partitionKey, new ConcurrentSkipListMap<>(Comparator.reverseOrder()));
+            items.putAll(all);
+            store.get(tableName).put(partitionKey, items);
             return true;
         }
 

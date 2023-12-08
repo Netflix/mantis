@@ -134,13 +134,13 @@ import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -151,6 +151,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -207,9 +208,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator);
     }
 
-    private Receive initializedBehavior;
+    private final Receive initializedBehavior;
 
-    private Receive disabledBehavior;
+    private final Receive disabledBehavior;
 
     private final String name;
     private final MantisJobStore jobStore;
@@ -221,8 +222,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final MantisSchedulerFactory mantisSchedulerFactory;
     private final LifecycleEventPublisher eventPublisher;
 
-    private BehaviorSubject<JobId> jobIdSubmissionSubject;
+    private final BehaviorSubject<JobId> jobIdSubmissionSubject;
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
+    private final Metrics metrics;
 
 
     public JobClusterActor(
@@ -266,10 +268,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .addGauge(new GaugeCallback(metricGroupId, "acceptedJobsGauge", () -> 1.0 * this.jobManager.acceptedJobsCount()))
             .addGauge(new GaugeCallback(metricGroupId, "activeJobsGauge", () -> 1.0 * this.jobManager.activeJobsCount()))
             .addGauge(new GaugeCallback(metricGroupId, "terminatingJobsGauge", () -> 1.0 * this.jobManager.terminatingJobsMap.size()))
-            .addGauge(new GaugeCallback(metricGroupId, "completedJobsGauge", () -> 1.0 * this.jobManager.completedJobsCache.completedJobs.size()))
             .addGauge(new GaugeCallback(metricGroupId, "actorToJobIdMappingsGauge", () -> 1.0 * this.jobManager.actorToJobIdMap.size()))
             .build();
         m = MetricsRegistry.getInstance().registerAndGet(m);
+        this.metrics = m;
         this.numJobSubmissions = m.getCounter("numJobSubmissions");
         this.numJobActorCreationCounter = m.getCounter("numJobActorCreationCounter");
         this.numJobSubmissionFailures = m.getCounter("numJobSubmissionFailures");
@@ -401,7 +403,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(JobClusterProto.KillJobResponse.class, this::onKillJobResponse)
             .match(GetJobDetailsRequest.class, this::onGetJobDetailsRequest)
             .match(WorkerEvent.class, this::onWorkerEvent)
-            .match(JobClusterProto.ExpireOldJobsRequest.class, this::onExpireOldJobs)
             .match(EnableJobClusterRequest.class, this::onJobClusterEnable)
             .match(Terminated.class, this::onTerminated)
 
@@ -504,7 +505,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(JobClusterProto.KillJobResponse.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(GetJobDetailsRequest.class, (x) -> getSender().tell(new GetJobDetailsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(WorkerEvent.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
-            .match(JobClusterProto.ExpireOldJobsRequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(EnableJobClusterRequest.class, (x) -> getSender().tell(new EnableJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(SubmitJobRequest.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
             .match(GetJobDefinitionUpdatedFromJobActorResponse.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
@@ -520,7 +520,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(ListJobsRequest.class, (x) -> getSender().tell(new ListJobsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
             .match(ListWorkersRequest.class, (x) -> getSender().tell(new ListWorkersResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
             .match(JobClusterProto.EnforceSLARequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
-            .match(JobClusterProto.ExpireOldJobsRequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(JobClusterProto.TriggerCronRequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(DisableJobClusterRequest.class, (x) -> getSender().tell(new DisableJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
 
@@ -593,7 +592,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .match(ListArchivedWorkersRequest.class, this::onListArchivedWorkers)
                 .match(ListCompletedJobsInClusterRequest.class, this::onJobListCompleted)
                 .match(JobClusterProto.KillJobResponse.class, this::onKillJobResponse)
-                .match(JobClusterProto.ExpireOldJobsRequest.class, this::onExpireOldJobs)
                 .match(WorkerEvent.class, this::onWorkerEvent)
                 .match(DisableJobClusterRequest.class, this::onJobClusterDisable)
                 .match(JobClusterProto.EnforceSLARequest.class, this::onEnforceSLARequest)
@@ -674,11 +672,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 Duration.ofSeconds(checkAgainInSecs));
     }
 
-    private void setExpiredJobsTimer(long checkAgainInSecs) {
-        getTimers().startPeriodicTimer(CHECK_EXPIRED_TIMER_KEY, new JobClusterProto.ExpireOldJobsRequest(),
-                Duration.ofSeconds(checkAgainInSecs));
-    }
-
 
 
     /**
@@ -710,8 +703,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(jobClusterMetadata.isDisabled()) {
             logger.info("Cluster {} initialized but is Disabled", jobClusterMetadata
                     .getJobClusterDefinition().getName());
-            // add completed jobs to cache to use when / if cluster is reenabled
-            jobManager.addCompletedJobsToCache(initReq.completedJobsList);
+            jobManager.initialize();
             int count = 50;
             if(!initReq.jobList.isEmpty()) {
                 logger.info("Cluster {} is disabled however it has {} active/accepted jobs",
@@ -727,8 +719,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                                     + "Marking it complete", jobMeta.getJobId(), jobMeta.getState(),
                                     jobClusterMetadata.getJobClusterDefinition().getName());
                             count--;
-                            jobManager.markCompletedDuringStartup(jobMeta.getJobId(), System.currentTimeMillis(),
-                                    jobMeta, JobState.Completed);
+                            jobManager.markCompleted(jobMeta);
                             jobStore.archiveJob(jobMeta);
                         }
                     } catch (Exception e) {
@@ -744,7 +735,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                             initReq.jobClusterDefinition.getName()),initReq.jobClusterDefinition.getName(),
                     initReq.requestor), getSelf());
             logger.info("Job expiry check frequency set to {}", expireFrequency);
-            setExpiredJobsTimer(expireFrequency);
 
             getContext().become(disabledBehavior);
 
@@ -792,15 +782,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
             initRunningJobs(initReq, sender);
 
-            setExpiredJobsTimer(expireFrequency);
-
             logger.info("Job expiry check frequency set to {}", expireFrequency);
-            try {
-                jobManager.addCompletedJobsToCache(initReq.completedJobsList);
-            } catch(Exception e) {
-                logger.warn("Exception initializing completed jobs " + e.getMessage(), e);
-
-            }
+            jobManager.initialize();
         }
 
     }
@@ -828,7 +811,12 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          Observable.from(jobList)
                  .flatMap((jobMeta) -> {
                      if(JobState.isTerminalState(jobMeta.getState())) {
-                         jobManager.persistToCompletedJobAndArchiveJobTables(jobMeta);
+                         try {
+                             jobStore.archiveJob(jobMeta);
+                             jobManager.markCompleted(jobMeta);
+                         } catch (IOException e) {
+                                logger.error("Exception archiving job {} during init ", jobMeta.getJobId(), e);
+                         }
                          return Observable.empty();
                      } else {
                          if(jobMeta.getSchedulingInfo() == null) {
@@ -919,7 +907,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         final ActorRef sender = getSender();
         try {
             if(jobManager.isJobListEmpty()) {
-                jobManager.cleanupAllCompletedJobs();
+                jobManager.onJobClusterDeletion();
                 jobStore.deleteJobCluster(name);
                 logger.info("successfully deleted job cluster {}", name);
                 eventPublisher.publishAuditEvent(
@@ -932,7 +920,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 sender.tell(new JobClusterProto.DeleteJobClusterResponse(request.requestId, CLIENT_ERROR, name + " Job cluster deletion failed as there are active jobs", request.requestingActor,name), getSelf());
             }
         } catch( Exception e) {
-            logger.error("job cluster {} not deleted", name);
+            logger.error("job cluster {} not deleted", name, e);
             sender.tell(new JobClusterProto.DeleteJobClusterResponse(request.requestId, SERVER_ERROR, name + " Job cluster deletion failed " + e.getMessage(), request.requestingActor,name), getSelf());
             numJobClusterDeleteErrors.increment();
         }
@@ -988,13 +976,16 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         // Found jobs matching labels or no labels criterion given.
         // Apply additional criterion to both active and completed jobs
-        getFilteredNonTerminalJobList(request.getCriteria(),jobIdsFilteredByLabelsSet).mergeWith(getFilteredTerminalJobList(request.getCriteria(),jobIdsFilteredByLabelsSet))
-        .collect(() -> Lists.<MantisJobMetadataView>newArrayList(), List::add)
-        .doOnNext(resultList -> {
-            if(logger.isTraceEnabled()) { logger.trace("Exit JCA:onJobList {}" , resultList.size()); }
-            sender.tell(new ListJobsResponse(request.requestId, SUCCESS, "", resultList), self);
-        })
-        .subscribe();
+        getFilteredNonTerminalJobList(request.getCriteria(), jobIdsFilteredByLabelsSet).mergeWith(
+                getFilteredTerminalJobList(request.getCriteria(), jobIdsFilteredByLabelsSet))
+            .collect(() -> Lists.<MantisJobMetadataView>newArrayList(), List::add)
+            .doOnNext(resultList -> {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Exit JCA:onJobList {}", resultList.size());
+                }
+                sender.tell(new ListJobsResponse(request.requestId, SUCCESS, "", resultList), self);
+            })
+            .subscribe();
     }
 
     @Override
@@ -1073,7 +1064,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(!prefilteredJobIdSet.isEmpty()) {
             completedJobsList = prefilteredJobIdSet.stream().map((jId) -> jobManager.getCompletedJob(jId)).filter((cjOp) -> cjOp.isPresent()).map((cjop) -> cjop.get()).collect(Collectors.toList());
         } else {
-            completedJobsList = jobManager.getCompletedJobsList();
+            completedJobsList = jobManager.getCompletedJobsList(request.getLimit().orElse(DEFAULT_LIMIT), request.getEndJobIdExclusive().orElse(null));
         }
 
         List<CompletedJob> subsetCompletedJobs = completedJobsList.subList(0, Math.min(completedJobsList.size(), request.getLimit().orElse(DEFAULT_LIMIT)));
@@ -1165,7 +1156,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             jobInfoList = jobIdSet.stream().map((jId) -> jobManager.getCompletedJob(jId))
                     .filter((compJobOp) -> compJobOp.isPresent()).map((compJobOp) -> compJobOp.get()).collect(Collectors.toList());
         } else {
-            jobInfoList = jobManager.getCompletedJobsList();
+            jobInfoList = jobManager.getCompletedJobsList(request.getLimit().orElse(DEFAULT_LIMIT), request.getEndJobIdExclusive().orElse(null));
         }
 
         List<CompletedJob> shortenedList =  jobInfoList.subList(0, Math.min(jobInfoList.size(), request.getLimit().orElse(DEFAULT_LIMIT)));
@@ -1197,10 +1188,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     public void onJobListCompleted(final ListCompletedJobsInClusterRequest request) {
         if(logger.isTraceEnabled()) { logger.trace ("Enter onJobListCompleted {}", request); }
         final ActorRef sender = getSender();
-        List<CompletedJob> completedJobsList = jobManager.getCompletedJobsList();
-        if(request.getLimit() > completedJobsList.size()) {
-            completedJobsList = completedJobsList.subList(0, request.getLimit());
-        }
+        List<CompletedJob> completedJobsList = jobManager.getCompletedJobsList(request.getLimit(), null);
         sender.tell(new ListCompletedJobsInClusterResponse(request.requestId, SUCCESS, "", completedJobsList), sender);
         if(logger.isTraceEnabled()) { logger.trace ("Exit onJobListCompleted {}", completedJobsList.size()); }
     }
@@ -1482,7 +1470,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             // no job definition specified , this is quick submit which is supposed to inherit from last job submitted
             // for request inheriting from non-terminal jobs, it has been sent to job actor instead.
             Optional<JobDefinition> jobDefnOp = cloneJobDefinitionForQuickSubmitFromArchivedJobs(
-                    jobManager.getCompletedJobsList(), empty(), jobStore);
+                    jobManager.getCompletedJobsList(1, null), empty(), jobStore);
             if (jobDefnOp.isPresent()) {
                 logger.info("Inherited scheduling Info and parameters from previous job");
                 resolvedJobDefn = jobDefnOp.get();
@@ -1576,7 +1564,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } catch (Exception e) {
             logger.error("Exception persisting job in store", e);
             numJobSubmissionFailures.increment();
-            cleanUpOnJobSubmitFailure(jId);
             throw new IllegalStateException(e);
         }
         if(logger.isTraceEnabled()) { logger.trace("Exit submitJob"); }
@@ -1633,7 +1620,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 if (jobManager.markJobTerminating(jobInfo, JobState.Failed)) { // mark job as terminating
                     getContext().unwatch(jobInfo.jobActor);
                     getContext().stop(jobInfo.jobActor);
-                    jobManager.markCompleted(jId, empty(), JobState.Failed);
+                    try {
+                        jobManager.markCompleted(jId, System.currentTimeMillis(), JobState.Failed);
+                    } catch (IOException e) {
+                        logger.error("Failed to store the completed job {}", jId, e);
+                    }
                     // clear it from initializing table if present
                     jobManager.markJobInitialized(jId, System.currentTimeMillis());
                 } else {
@@ -1796,40 +1787,44 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                             getSelf());
                 }
 
-                Optional<CompletedJob> completedJob = jobManager.markCompleted(resp.jobId, resp.jobMetadata, resp.state);
-                if(completedJob.isPresent()) {
-                    logger.info("In cleanupAfterJobKill for Job {} in state {} and metadata {} ", resp.jobId, resp.state,resp.jobMetadata);
+                try {
+                    Optional<CompletedJob> completedJob = jobManager.markCompleted(resp.jobMetadata);
+                    if(completedJob.isPresent()) {
+                        logger.info("In cleanupAfterJobKill for Job {} in state {} and metadata {} ", resp.jobId, resp.state,resp.jobMetadata);
 
-                    // enforce SLA
-                    if(!jobClusterMetadata.isDisabled()) {
-                        SLA sla = this.jobClusterMetadata.getJobClusterDefinition().getSLA();
-                        if(sla.getMin() == 0 && sla.getMax() == 0) {
-                            logger.info("{} No SLA specified nothing to enforce {}",
-                                completedJob.get().getJobId(), sla);
-                        } else {
-                            try {
-                                // first check if response has job meta for last job
-                                Optional<IMantisJobMetadata> cJob = (resp.jobMetadata);
+                        // enforce SLA
+                        if(!jobClusterMetadata.isDisabled()) {
+                            SLA sla = this.jobClusterMetadata.getJobClusterDefinition().getSLA();
+                            if(sla.getMin() == 0 && sla.getMax() == 0) {
+                                logger.info("{} No SLA specified nothing to enforce {}",
+                                    completedJob.get().getJobId(), sla);
+                            } else {
+                                try {
+                                    // first check if response has job meta for last job
+                                    Optional<IMantisJobMetadata> cJob = Optional.of(resp.jobMetadata);
 
-                                if (cJob == null || !cJob.isPresent()) {
-                                    // else check archived jobs
-                                    cJob = jobStore.getArchivedJob(completedJob.get().getJobId());
+                                    if (cJob == null || !cJob.isPresent()) {
+                                        // else check archived jobs
+                                        cJob = jobStore.getArchivedJob(completedJob.get().getJobId());
 
+                                    }
+                                    if( cJob != null && cJob.isPresent()) {
+                                        getSelf().tell(new JobClusterProto.EnforceSLARequest(Instant.now(), of(cJob.get().getJobDefinition())), ActorRef.noSender());
+                                    } else {
+                                        logger.warn("Could not load last terminated job to use for triggering enforce SLA");
+                                    }
+                                } catch (Exception e) {
+                                    // should not get here
+                                    logger.warn("Exception {} loading completed Job {} to enforce SLA due", e.getMessage(), completedJob.get().getJobId(), e);
                                 }
-                                if( cJob != null && cJob.isPresent()) {
-                                    getSelf().tell(new JobClusterProto.EnforceSLARequest(Instant.now(), of(cJob.get().getJobDefinition())), ActorRef.noSender());
-                                } else {
-                                    logger.warn("Could not load last terminated job to use for triggering enforce SLA");
-                                }
-                            } catch (Exception e) {
-                                // should not get here
-                                logger.warn("Exception {} loading completed Job {} to enforce SLA due", e.getMessage(), completedJob.get().getJobId(), e);
                             }
-                        }
 
+                        }
+                    } else {
+                        logger.warn("Unable to mark job {} completed. ", resp.jobId);
                     }
-                } else {
-                    logger.warn("Unable to mark job {} completed. ", resp.jobId);
+                } catch (IOException e) {
+                    logger.error("Unable to mark job {} completed. ", resp.jobId, e);
                 }
 
 
@@ -2079,13 +2074,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         }
         if(logger.isTraceEnabled()) { logger.trace("Exit createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters empty"); }
         return empty();
-    }
-
-    @Override
-    public void onExpireOldJobs(JobClusterProto.ExpireOldJobsRequest request) {
-        final long tooOldCutOff = System.currentTimeMillis() - (getTerminatedJobToDeleteDelayHours()*3600000L);
-        jobManager.purgeOldCompletedJobs(tooOldCutOff);
-
     }
 
     private long getExpirePendingInitializeDelayMs() {
@@ -2595,7 +2583,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         });
 
         // Cache that deals with completed job
-        private final CompletedJobCache completedJobsCache;
+        private final CompletedJobStore completedJobStore;
 
         // Map of Jobs in terminating state
         private final Map<JobId, JobInfo> terminatingJobsMap = new HashMap<>();
@@ -2617,23 +2605,22 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             this.context = context;
             this.scheduler = schedulerFactory;
             this.publisher = publisher;
-            this.completedJobsCache = new CompletedJobCache(name, labelCache);
+            this.completedJobStore = new CompletedJobStore(name, labelCache, jobStore);
             this.costsCalculator = costsCalculator;
         }
 
-        /**
-         * Invoked in a scheduled timer on the JobClusterActor to purge expired jobs
-         *
-         * @param tooOldCutOff Current cut off delta
-         */
-        public void purgeOldCompletedJobs(long tooOldCutOff) {
-
-            completedJobsCache.purgeOldCompletedJobs(tooOldCutOff, jobStore);
-
+        void initialize() {
+            try {
+                logger.debug("Loading completed jobs for cluster {}", name);
+                completedJobStore.initialize();
+                logger.debug("Initialized completed job store for cluster {}", name);
+            } catch (IOException e) {
+                logger.error("Could not initialize completed job store for cluster {}", name, e);
+            }
         }
 
-        public void cleanupAllCompletedJobs() {
-            completedJobsCache.forcePurgeCompletedJobs(jobStore);
+        public void onJobClusterDeletion() throws IOException {
+            completedJobStore.onJobClusterDeletion();
         }
 
         Observable<JobProto.JobInitialized> bootstrapJob(MantisJobMetadataImpl jobMeta, IJobClusterMetadata jobClusterMetadata) {
@@ -2721,28 +2708,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         }
 
         /**
-         * During startup if a job is in terminal state then directly mark it as completed
-         *
-         * @param jobMeta job metadata of completed job
-         */
-        void persistToCompletedJobAndArchiveJobTables(IMantisJobMetadata jobMeta) {
-
-            completedJobsCache.persistToCompletedJobAndArchiveJobTables(jobMeta, jobStore);
-
-        }
-
-        /**
-         * Used during bootstrap to add the list of completedJobs to cache
-         *
-         * @param completedJobsList
-         */
-        void addCompletedJobsToCache(List<CompletedJob> completedJobsList) {
-
-            completedJobsCache.addCompletedJobsToCache(completedJobsList);
-
-        }
-
-        /**
          * Called on Job Submit. Updates the acceptedJobsMap & actorMap
          *
          * @param jobInfo job info of accepted job
@@ -2751,7 +2716,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         boolean markJobAccepted(JobInfo jobInfo) {
             boolean isSuccess = false;
 
-            if (!jobInfo.state.isValidStateChgTo(JobState.Accepted) || activeJobsMap.containsKey(jobInfo.jobId) || terminatingJobsMap.containsKey(jobInfo.jobId) || completedJobsCache.containsKey(jobInfo.jobId)) {
+            if (!jobInfo.state.isValidStateChgTo(JobState.Accepted) || activeJobsMap.containsKey(jobInfo.jobId) || terminatingJobsMap.containsKey(jobInfo.jobId)) {
                 String warn = String.format("Job %s already exists", jobInfo.jobId);
                 logger.warn(warn);
 
@@ -2832,8 +2797,33 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             return success;
         }
 
-        Optional<CompletedJob> markCompleted(JobId jId, Optional<IMantisJobMetadata> jobMetadata, JobState state) {
-            return markCompleted(jId, System.currentTimeMillis(), jobMetadata, state);
+        Optional<CompletedJob> markCompleted(IMantisJobMetadata jobMetadata) throws IOException {
+            JobId jId = jobMetadata.getJobId();
+            if (logger.isTraceEnabled()) {
+                logger.trace("Enter markCompleted job {}", jId);
+            }
+            Optional<JobInfo> jobInfoOp = getJobInfoForNonTerminalJob(jId);
+
+            if (jobInfoOp.isPresent()) {
+                JobInfo jInfo = jobInfoOp.get();
+                jInfo.state = jobMetadata.getState();
+                jInfo.setTerminatedAt(jobMetadata.getEndedAtInstant().get().toEpochMilli());
+                this.acceptedJobsMap.remove(jId);
+                this.terminatingJobsMap.remove(jId);
+                this.activeJobsMap.remove(jId);
+                this.actorToJobIdMap.remove(jobInfoOp.get().jobActor);
+                this.nonTerminalSortedJobSet.remove(jInfo);
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Exit markCompleted job {}", jId);
+                }
+
+                return Optional.of(this.completedJobStore.onJobCompletion(jobMetadata));
+            } else {
+                logger.warn("No such job {}", jId);
+                return empty();
+            }
+//            return markCompleted(jId, System.currentTimeMillis(), jobMetadata, state);
         }
 
         /**
@@ -2842,7 +2832,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @param jId job id of the job that completed
          * @return An instance of CompletedJob that would be used to persist to storage.
          */
-        Optional<CompletedJob> markCompleted(JobId jId, long completionTime, Optional<IMantisJobMetadata> jobMetadata, JobState state) {
+        Optional<CompletedJob> markCompleted(JobId jId, long completionTime, JobState state) throws IOException {
             if (logger.isTraceEnabled()) {
                 logger.trace("Enter markCompleted job {}", jId);
             }
@@ -2862,32 +2852,15 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     logger.trace("Exit markCompleted job {}", jId);
                 }
 
-                JobState finalState = JobState.Completed;
                 String version = null;
-
-                if(jobMetadata.isPresent()) {
-                    finalState = jobMetadata.get().getState();
-                    version = jobMetadata.get().getJobDefinition().getVersion();
-                }
-                return this.completedJobsCache.markCompleted(jId, jobMetadata, jInfo.submittedAt, completionTime, jInfo.user, version, finalState, jobStore);
+                return Optional.ofNullable(this.completedJobStore.onJobCompletion(jId, jInfo.submittedAt, completionTime, jInfo.user,
+                    null,
+                    state, jInfo.jobDefinition.getLabels()));
 
             } else {
                 logger.warn("No such job {}", jId);
                 return empty();
             }
-
-        }
-
-
-        void markCompletedDuringStartup(JobId jId, long completionTime, IMantisJobMetadata jobMetadata, JobState state) {
-
-            if(logger.isTraceEnabled()) { logger.trace("Enter markCompletedDuringStartup job {}", jId);}
-
-            JobState finalState = JobState.isTerminalState(jobMetadata.getState()) ? jobMetadata.getState() : JobState.Completed;
-            String version = jobMetadata.getJobDefinition().getVersion();
-
-            this.completedJobsCache.markCompleted(jId,of(jobMetadata), jobMetadata.getSubmittedAtInstant().toEpochMilli(), completionTime, jobMetadata.getUser(), version, finalState, jobStore);
-
 
         }
 
@@ -2925,9 +2898,16 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * List of jobs in completed state
          * @return list of completed jobs
          */
-        List<CompletedJob> getCompletedJobsList() {
-            return new ArrayList<>(completedJobsCache.getCompletedJobSortedSet());
-
+        List<CompletedJob> getCompletedJobsList(int limit, @Nullable JobId to) {
+            try {
+                if (to != null) {
+                    return completedJobStore.getCompletedJobs(limit, to);
+                } else {
+                    return completedJobStore.getCompletedJobs(limit);
+                }
+            } catch (IOException e) {
+                return Collections.emptyList();
+            }
         }
 
         List<JobInfo> getTerminatingJobsList() {
@@ -2956,13 +2936,23 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         }
 
         Optional<CompletedJob> getCompletedJob(JobId jId) {
-            return completedJobsCache.getCompletedJob(jId);
+            try {
+                return completedJobStore.getCompletedJob(jId);
+            } catch (IOException e) {
+                logger.warn("Failed to get completed job {}", jId, e);
+            }
+            return Optional.empty();
         }
 
         Optional<IMantisJobMetadata> getJobDataForCompletedJob(String jId) {
             Optional<JobId> jobId = JobId.fromId(jId);
             if(jobId.isPresent()) {
-                return completedJobsCache.getJobDataForCompletedJob(jobId.get(), jobStore);
+                try {
+                    return completedJobStore.getJobMetadata(jobId.get());
+                } catch (IOException e) {
+                    logger.warn("Failed to get completed job {}", jId, e);
+                    return empty();
+                }
             } else {
 
                 logger.warn("Invalid Job Id {} in getJobDataForCompletedJob", jId);
@@ -3190,226 +3180,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
             if(logger.isTraceEnabled()) { logger.trace("Return getSetIntersection " + intersectionSet); }
             return intersectionSet;
-        }
-    }
-
-    /**
-     * Consolidates all processing of completed jobs
-     */
-    static class CompletedJobCache {
-        private  final Logger logger = LoggerFactory.getLogger(CompletedJobCache.class);
-
-        // Set of sorted terminal jobs
-        private final Set<CompletedJob> terminalSortedJobSet = new TreeSet<>((o1, o2) -> {
-            if(o1.getTerminatedAt() < o2.getTerminatedAt()) {
-                return 1;
-            } else if(o1.getTerminatedAt() > o2.getTerminatedAt()) {
-                return -1;
-            } else {
-                return 0;
-            }
-        });
-
-        // cluster name
-        private final String name;
-        // Map of completed jobs
-
-        private final Map<JobId, CompletedJob> completedJobs = new HashMap<>();
-
-        // Labels lookup map
-        private final LabelCache labelsCache;
-
-        // Map of jobmetadata
-        private final Map<JobId, IMantisJobMetadata> jobIdToMetadataMap = new HashMap<>();
-
-        public CompletedJobCache(String clusterName, LabelCache labelsCache) {
-            this.name = clusterName;
-            this.labelsCache = labelsCache;
-        }
-
-        public Set<CompletedJob> getCompletedJobSortedSet() {
-            return terminalSortedJobSet;
-        }
-
-        public Optional<CompletedJob> getCompletedJob(JobId jId) {
-            return ofNullable(completedJobs.getOrDefault(jId, null));
-        }
-
-        /**
-         * If job data exists in cache return it else call getArchiveJob
-         * @param jId
-         * @param jobStore
-         * @return
-         */
-
-        public Optional<IMantisJobMetadata> getJobDataForCompletedJob(JobId jId, MantisJobStore jobStore) {
-            if(this.jobIdToMetadataMap.containsKey(jId)) {
-                return of(jobIdToMetadataMap.get(jId));
-            } else {
-                return jobStore.getArchivedJob(jId.getId());
-            }
-        }
-
-        public Set<JobId> getJobIdsMatchingLabels(List<Label> labelList, boolean isAnd) {
-            return labelsCache.getJobIdsMatchingLabels(labelList, isAnd);
-        }
-
-        public Optional<CompletedJob> markCompleted(JobId jId, Optional<IMantisJobMetadata> jobMetadata, long submittedAt, long completionTime, String user, String version, JobState finalState, MantisJobStore jobStore) {
-
-            // make sure its not already marked completed
-            if(!completedJobs.containsKey(jId)) {
-                // create completed job
-                List<Label> labels = new ArrayList<>();
-                if(jobMetadata.isPresent()) {
-                    labels = jobMetadata.get().getLabels();
-                }
-                final CompletedJob completedJob = new CompletedJob(name, jId.getId(), version, finalState, submittedAt, completionTime, user, labels);
-                // add to sorted set
-                terminalSortedJobSet.add(completedJob);
-                try {
-                    // add to local cache and store table
-                    addToCacheAndSaveCompletedJobToStore(completedJob, jobMetadata, jobStore);
-                } catch (Exception e) {
-                    logger.warn("Unable to save {} to completed jobs table due to {}", completedJob, e.getMessage(), e);
-                }
-                return of(completedJob);
-            } else {
-                logger.warn("Job {}  already marked completed", jId);
-                return of(completedJobs.get(jId));
-            }
-        }
-
-        /**
-         * Completely delete jobs that are older than cut off
-         * @param tooOldCutOff timestamp, all jobs having an older timestamp should be deleted
-         * @param jobStore
-         */
-        public void purgeOldCompletedJobs(long tooOldCutOff, MantisJobStore jobStore) {
-            long numDeleted = 0;
-            int maxJobsToPurge = ConfigurationProvider.getConfig().getMaxJobsToPurge();
-            final long startNanos = System.nanoTime();
-
-            for(Iterator<CompletedJob> it = completedJobs.values().iterator(); it.hasNext();) {
-                if(numDeleted == maxJobsToPurge) {
-                    logger.info("{} Max clean up limit of {} reached. Stop clean up", name, maxJobsToPurge);
-                    break;
-                }
-                CompletedJob completedJob = it.next();
-                if(completedJob.getTerminatedAt() < tooOldCutOff) {
-                    try {
-                        logger.info("Purging Job {} as it was terminated at {} which is older than cutoff {}", completedJob, completedJob.getTerminatedAt(), tooOldCutOff);
-                        terminalSortedJobSet.remove(completedJob);
-                        jobStore.deleteJob(completedJob.getJobId());
-                        jobStore.deleteCompletedJob(name, completedJob.getJobId());
-                        it.remove();
-                        Optional<JobId> jobId = JobId.fromId(completedJob.getJobId());
-                        if(jobId.isPresent()) {
-                            this.jobIdToMetadataMap.remove(jobId.get());
-                            labelsCache.removeJobIdFromLabelCache(jobId.get());
-                        }
-
-                    } catch (Exception e) {
-                        logger.warn("Unable to purge job {} due to {}", completedJob, e);
-                    }
-                    numDeleted++;
-                } else {
-                    if(logger.isDebugEnabled()) { logger.debug("Job {} was terminated at {} which is not older than cutoff {}",completedJob, completedJob.getTerminatedAt(), tooOldCutOff);}
-                }
-            }
-            if (numDeleted > 0) {
-                final long endNanos = System.nanoTime();
-                logger.info("Took {} micros to clean up {} jobs in cluster {} ", (endNanos - startNanos) / 1000, numDeleted, this.name);
-            }
-        }
-
-        /**
-         * During Job Cluster delete, purge all records of completed jobs
-         * @param jobStore
-         */
-
-        void forcePurgeCompletedJobs(MantisJobStore jobStore) {
-            for(Iterator<CompletedJob> it = completedJobs.values().iterator(); it.hasNext();) {
-                CompletedJob completedJob = it.next();
-
-                    try {
-                        logger.info("Purging Job {} during job cluster cleanup", completedJob);
-                        terminalSortedJobSet.remove(completedJob);
-                        jobStore.deleteJob(completedJob.getJobId());
-                        jobStore.deleteCompletedJob(name, completedJob.getJobId());
-                        it.remove();
-                        Optional<JobId> jobId = JobId.fromId(completedJob.getJobId());
-                        if(jobId.isPresent()) {
-                            this.jobIdToMetadataMap.remove(jobId.get());
-                            labelsCache.removeJobIdFromLabelCache(jobId.get());
-                        }
-                    } catch (Exception e) {
-                        logger.warn("Unable to purge job {} due to {}", completedJob, e);
-                    }
-
-            }
-        }
-
-        /**
-         * During startup if a job is in terminal state then directly mark it as completed
-         * @param jobMeta job metadata of completed job
-         */
-        public void persistToCompletedJobAndArchiveJobTables(IMantisJobMetadata jobMeta, MantisJobStore jobStore) {
-
-
-            try {
-                Instant endedAt = jobMeta.getEndedAtInstant().orElse(Instant.now());
-                final CompletedJob completedJob = new CompletedJob(name, jobMeta.getJobId().getId(), null, jobMeta.getState(), jobMeta.getSubmittedAtInstant().toEpochMilli(), endedAt.toEpochMilli(), jobMeta.getUser(), jobMeta.getLabels());
-                addToCacheAndSaveCompletedJobToStore(completedJob, of(jobMeta), jobStore);
-                // normally archiving is done by job actor, but these are jobs in active table that weren't archived
-                jobStore.archiveJob(jobMeta);
-            } catch (Exception e) {
-                logger.warn("Unable to save completed job {} to store due to {}", jobMeta, e);
-            }
-
-
-        }
-
-        private void addToCacheAndSaveCompletedJobToStore(CompletedJob completedJob, Optional<IMantisJobMetadata> jobMetaData, MantisJobStore jobStore) throws Exception {
-            Optional<JobId> jId = JobId.fromId(completedJob.getJobId());
-            if(jId.isPresent()) {
-                labelsCache.addJobIdToLabelCache( jId.get(),completedJob.getLabelList());
-                completedJobs.put(jId.get(), completedJob);
-                terminalSortedJobSet.add(completedJob);
-                if(jobMetaData.isPresent()) {
-                    jobIdToMetadataMap.put(jId.get(), jobMetaData.get());
-                }
-                jobStore.storeCompletedJobForCluster(name, completedJob);
-            } else {
-                logger.warn("Invalid job id {} in addToCAcheAndSaveCompletedJobToStore ", completedJob);
-            }
-
-        }
-
-        /**
-         * Bulk add completed jobs to cache
-         * @param completedJobsList
-         */
-        public void addCompletedJobsToCache(List<CompletedJob> completedJobsList) {
-            if(completedJobsList == null) {
-                logger.warn("addCompletedJobsToCache called with null completedJobsList");
-                return;
-            }
-            this.terminalSortedJobSet.addAll(completedJobsList);
-
-            completedJobsList.forEach((compJob) -> {
-                Optional<JobId> jId=  JobId.fromId(compJob.getJobId());
-                if(jId.isPresent()) {
-                    completedJobs.put(jId.get(), compJob);
-                    labelsCache.addJobIdToLabelCache(jId.get(), compJob.getLabelList());
-                } else {
-                    logger.warn("Invalid job Id {}", compJob.getJobId());
-                }
-            });
-        }
-
-
-        public boolean containsKey(JobId jobId) {
-            return completedJobs.containsKey(jobId);
         }
     }
 
