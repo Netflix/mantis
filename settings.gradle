@@ -40,7 +40,7 @@ include 'mantis-examples:mantis-examples-groupby-sample'
 include 'mantis-examples:mantis-examples-jobconnector-sample'
 include 'mantis-examples:mantis-examples-mantis-publish-sample'
 //todo(sundaram): https://github.com/Netflix/mantis/issues/267
-//include 'mantis-examples:mantis-examples-mantis-publish-web-sample'
+include 'mantis-examples:mantis-examples-mantis-publish-web-sample'
 include 'mantis-examples:mantis-examples-sine-function'
 include 'mantis-examples:mantis-examples-synthetic-sourcejob'
 include 'mantis-examples:mantis-examples-twitter-sample'
