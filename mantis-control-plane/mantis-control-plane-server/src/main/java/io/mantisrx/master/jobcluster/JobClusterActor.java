@@ -703,7 +703,15 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(jobClusterMetadata.isDisabled()) {
             logger.info("Cluster {} initialized but is Disabled", jobClusterMetadata
                     .getJobClusterDefinition().getName());
-            jobManager.initialize();
+            try {
+                jobManager.initialize();
+            } catch (Exception e) {
+                sender.tell(new JobClusterProto.InitializeJobClusterResponse(initReq.requestId, CLIENT_ERROR,
+                    String.format("JobCluster %s initialization failed",
+                        initReq.jobClusterDefinition.getName()),
+                    initReq.jobClusterDefinition.getName(), initReq.requestor), getSelf());
+            }
+
             int count = 50;
             if(!initReq.jobList.isEmpty()) {
                 logger.info("Cluster {} is disabled however it has {} active/accepted jobs",
@@ -783,7 +791,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             initRunningJobs(initReq, sender);
 
             logger.info("Job expiry check frequency set to {}", expireFrequency);
-            jobManager.initialize();
+            try {
+                jobManager.initialize();
+            } catch (Exception e) {
+                sender.tell(new JobClusterProto.InitializeJobClusterResponse(initReq.requestId, CLIENT_ERROR,
+                    String.format("JobCluster %s initialization failed",
+                        initReq.jobClusterDefinition.getName()),
+                    initReq.jobClusterDefinition.getName(), initReq.requestor), getSelf());
+            }
         }
 
     }
@@ -798,14 +813,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      */
 
     private void initRunningJobs(JobClusterProto.InitializeJobClusterRequest initReq, ActorRef sender) {
-        List<CompletedJob> completedJobsList = initReq.completedJobsList;
         List<IMantisJobMetadata> jobList = initReq.jobList;
 
-         logger.info("In _initJobs for cluster {}: {} activeJobs and {} completedJobs", name, jobList.size(),
-                 completedJobsList.size());
+         logger.info("In _initJobs for cluster {}: {} activeJobs", name, jobList.size());
          if (logger.isDebugEnabled()) {
-            logger.debug("In _initJobs for cluster {} activeJobs -> {} and completedJobs -> {}", name, jobList,
-                    completedJobsList);
+            logger.debug("In _initJobs for cluster {} activeJobs -> {} and completedJobs -> {}", name, jobList);
          }
 
          Observable.from(jobList)
@@ -2609,14 +2621,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             this.costsCalculator = costsCalculator;
         }
 
-        void initialize() {
-            try {
-                logger.debug("Loading completed jobs for cluster {}", name);
-                completedJobStore.initialize();
-                logger.debug("Initialized completed job store for cluster {}", name);
-            } catch (IOException e) {
-                logger.error("Could not initialize completed job store for cluster {}", name, e);
-            }
+        void initialize() throws IOException {
+            logger.debug("Loading completed jobs for cluster {}", name);
+            completedJobStore.initialize();
+            logger.debug("Initialized completed job store for cluster {}", name);
         }
 
         public void onJobClusterDeletion() throws IOException {
