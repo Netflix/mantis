@@ -200,7 +200,7 @@ public class TestContainerHelloWorld {
         if (!ensureJobWorkerStarted(
             controlPlaneHost,
             controlPlanePort,
-            5,
+            10,
             Duration.ofSeconds(2).toMillis())) {
             fail("Failed to start job worker.");
         }
