@@ -30,6 +30,7 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -253,7 +254,7 @@ class CompletedJobStore implements ICompletedJobsStore {
             jobMetadata.getJobDefinition().getVersion(),
             jobMetadata.getState(),
             jobMetadata.getSubmittedAtInstant().toEpochMilli(),
-            jobMetadata.getEndedAtInstant().get().toEpochMilli(),
+            jobMetadata.getEndedAtInstant().orElse(Instant.MIN).toEpochMilli(),
             jobMetadata.getUser(),
             jobMetadata.getLabels());
     }
