@@ -205,8 +205,8 @@ class CompletedJobStore implements ICompletedJobsStore {
     /**
      * If job data exists in cache return it else call getArchiveJob
      *
-     * @param jId
-     * @return
+     * @param jId job id
+     * @return job metadata if found else empty
      */
     @Override
     public Optional<IMantisJobMetadata> getJobMetadata(JobId jId) throws IOException {
@@ -325,9 +325,9 @@ class CompletedJobStore implements ICompletedJobsStore {
     /**
      * Bulk add completed jobs to cache
      *
-     * @param completedJobsList
+     * @param completedJobsList list of completed jobs
      */
-    private void addCompletedJobsToCache(List<CompletedJob> completedJobsList) throws IOException {
+    private void addCompletedJobsToCache(List<CompletedJob> completedJobsList) {
         if (!completedJobsList.isEmpty()) {
             Map<JobId, CompletedJobEntry> cache = completedJobsList.stream()
                 .flatMap(compJob -> {
