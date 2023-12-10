@@ -254,7 +254,7 @@ class CompletedJobStore implements ICompletedJobsStore {
             jobMetadata.getJobDefinition().getVersion(),
             jobMetadata.getState(),
             jobMetadata.getSubmittedAtInstant().toEpochMilli(),
-            jobMetadata.getEndedAtInstant().orElse(Instant.MIN).toEpochMilli(),
+            jobMetadata.getEndedAtInstant().orElse(Instant.ofEpochMilli(0l)).toEpochMilli(),
             jobMetadata.getUser(),
             jobMetadata.getLabels());
     }
