@@ -369,7 +369,8 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
 
                             List<CompletedJob> completedJobsList = Lists.newArrayList();
                             JobClusterProto.InitializeJobClusterRequest req = new JobClusterProto.InitializeJobClusterRequest((JobClusterDefinitionImpl) jobClusterMeta.getJobClusterDefinition(),
-                                jobClusterMeta.isDisabled(), jobClusterMeta.getLastJobCount(), jobList, completedJobsList, "system", getSelf(), false);
+                                jobClusterMeta.isDisabled(), jobClusterMeta.getLastJobCount(), jobList,
+                                "system", getSelf(), false);
                             return jobClusterInfoManager.initializeCluster(jobClusterInfo, req, t);
 
 
