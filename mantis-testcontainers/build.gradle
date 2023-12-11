@@ -35,7 +35,7 @@ tasks.register('writeVersion') {
     }
 }
 
-processResources.dependsOn writeVersion
+processTestResources.dependsOn writeVersion
 
 // require following tasks to build container images.
 test {
