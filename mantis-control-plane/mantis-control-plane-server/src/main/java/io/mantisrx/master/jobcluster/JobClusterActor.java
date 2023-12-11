@@ -817,7 +817,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
          logger.info("In _initJobs for cluster {}: {} activeJobs", name, jobList.size());
          if (logger.isDebugEnabled()) {
-            logger.debug("In _initJobs for cluster {} activeJobs -> {} and completedJobs -> {}", name, jobList);
+            logger.debug("In _initJobs for cluster {} activeJobs -> {}", name, jobList);
          }
 
          Observable.from(jobList)
