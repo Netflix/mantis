@@ -106,7 +106,8 @@ public class TestContainerHelloWorld {
         + "\"isReadyForJobMaster\":false}";
 
     public static String getBuildVersion() {
-        try (InputStream input = Files.newInputStream(Paths.get("./build/resources/test/version.properties"))) {
+        try (InputStream input =
+            Files.newInputStream(Paths.get("../mantis-testcontainers/build/resources/test/version.properties"))) {
             Properties prop = new Properties();
             prop.load(input);
             return prop.getProperty("version");
