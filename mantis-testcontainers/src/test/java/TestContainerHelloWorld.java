@@ -201,7 +201,7 @@ public class TestContainerHelloWorld {
         final String agentId0 = "agentquicksubmit";
         final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
         GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, agentDockerFile, network);
-        agent0.withLogConsumer(out -> log.info("[Agent log] {}", out.getUtf8String()));
+        agent0.withLogConsumer(out -> log.debug("[Agent log] {}", out.getUtf8String()));
 
         if (!ensureAgentStarted(
             controlPlaneHost,
@@ -253,8 +253,7 @@ public class TestContainerHelloWorld {
         final String agentId0 = "agentregularsubmit";
         final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
         GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, agentDockerFile, network);
-
-        agent0.withLogConsumer(out -> log.info("[Agent log] {}", out.getUtf8String()));
+        agent0.withLogConsumer(out -> log.debug("[Agent log] {}", out.getUtf8String()));
 
         if (!ensureAgentStarted(
             controlPlaneHost,
