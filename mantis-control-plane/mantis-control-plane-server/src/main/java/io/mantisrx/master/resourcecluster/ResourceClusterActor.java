@@ -1042,9 +1042,23 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
 
     @Value
-    @Builder
     static class BestFit {
         Map<TaskExecutorAllocationRequest, Pair<TaskExecutorID, TaskExecutorState>> bestFit;
+        Set<TaskExecutorID> taskExecutorIDSet;
+
+        public BestFit() {
+            this.bestFit = new HashMap<>();
+            this.taskExecutorIDSet = new HashSet<>();
+        }
+
+        public void add(TaskExecutorAllocationRequest request, Pair<TaskExecutorID, TaskExecutorState> taskExecutorStatePair) {
+            bestFit.put(request, taskExecutorStatePair);
+            taskExecutorIDSet.add(taskExecutorStatePair.getLeft());
+        }
+
+        public boolean contains(TaskExecutorID taskExecutorID) {
+            return taskExecutorIDSet.contains(taskExecutorID);
+        }
 
         public Map<TaskExecutorAllocationRequest, TaskExecutorID> getRequestToTaskExecutorMap() {
             return bestFit
