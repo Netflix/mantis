@@ -27,6 +27,16 @@ dependencies {
     testImplementation 'com.squareup.okhttp3:okhttp:latest.release'
 }
 
+tasks.register('writeVersion') {
+    doLast {
+        def propsFile = file("$buildDir/resources/test/version.properties")
+        propsFile.parentFile.mkdirs()
+        propsFile.text = "version=$version"
+    }
+}
+
+processResources.dependsOn writeVersion
+
 // require following tasks to build container images.
 test {
     dependsOn ':mantis-server:mantis-server-agent:dockerCreateDockerfile'
