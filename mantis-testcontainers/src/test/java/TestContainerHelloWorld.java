@@ -28,7 +28,6 @@ import io.mantisrx.shaded.org.apache.curator.retry.RetryOneTime;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -106,8 +105,11 @@ public class TestContainerHelloWorld {
         + "\"isReadyForJobMaster\":false}";
 
     public static String getBuildVersion() {
-        try (InputStream input =
-            Files.newInputStream(Paths.get("../mantis-testcontainers/build/resources/test/version.properties"))) {
+        try (InputStream input = TestContainerHelloWorld.class.getClassLoader().getResourceAsStream(
+            "version.properties")) {
+            if (input == null) {
+                throw new RuntimeException("failed to get build version file.");
+            }
             Properties prop = new Properties();
             prop.load(input);
             return prop.getProperty("version");
