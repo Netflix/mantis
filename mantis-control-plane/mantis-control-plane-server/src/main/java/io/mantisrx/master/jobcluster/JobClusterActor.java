@@ -1986,7 +1986,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         List<JobInfo> pendingInitializationJobsPriorToCutoff = jobManager.getJobActorsStuckInInit(now, getExpirePendingInitializeDelayMs());
 
         List<JobInfo> jobsStuckInAcceptedList = jobManager.getJobsStuckInAccepted(now, getExpireAcceptedDelayMs());
-        numJobsStuckInAccepted.increment(jobsStuckInAcceptedList.size());
 
         List<JobInfo> jobsStuckInTerminatingList = jobManager.getJobsStuckInTerminating(now, getExpireAcceptedDelayMs());
 
