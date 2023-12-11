@@ -30,8 +30,10 @@ dependencies {
 tasks.register('writeVersion') {
     doLast {
         def propsFile = file("$buildDir/resources/test/version.properties")
+        println "Writing version to ${propsFile.absolutePath}"
         propsFile.parentFile.mkdirs()
         propsFile.text = "version=$version"
+        println "Version written: ${propsFile.text}"
     }
 }
 
