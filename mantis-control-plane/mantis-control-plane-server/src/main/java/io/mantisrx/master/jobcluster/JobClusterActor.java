@@ -42,7 +42,6 @@ import com.netflix.spectator.api.BasicTag;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
