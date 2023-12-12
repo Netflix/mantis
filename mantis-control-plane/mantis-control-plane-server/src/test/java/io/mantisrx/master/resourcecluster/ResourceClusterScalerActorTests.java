@@ -16,7 +16,6 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import static io.mantisrx.master.resourcecluster.ResourceClusterActorTest.actorSystem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -78,6 +77,8 @@ public class ResourceClusterScalerActorTests {
 
     private static final MachineDefinition MACHINE_DEFINITION_M =
         new MachineDefinition(3, 4096, 700, 10240, 5);
+
+    private static ActorSystem actorSystem;
 
     @BeforeClass
     public static void setup() {

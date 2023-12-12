@@ -58,6 +58,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -564,7 +565,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     @Override
-    public List<CompletedJob> loadCompletedJobsForCluster(String name, int limit, @Nullable JobId endExclusive)
+    public List<CompletedJob> loadLatestCompletedJobsForCluster(String name, int limit, @Nullable JobId endExclusive)
         throws IOException {
         final Map<Long, String> items;
         if (endExclusive != null) {
@@ -583,6 +584,8 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                     }
                 })
             .map(DataFormatAdapter::convertNamedJobCompletedJobToCompletedJob)
+            .sorted(Comparator.<CompletedJob>comparingLong(
+                job -> JobId.fromId(job.getJobId()).get().getJobNum()).reversed())
             .collect(Collectors.toList());
     }
 

@@ -106,7 +106,7 @@ public class MantisJobStore {
     }
 
     public List<CompletedJob> loadCompletedJobsForCluster(String clusterName, int limit, @Nullable JobId endJobIdExclusive) throws IOException {
-        return storageProvider.loadCompletedJobsForCluster(clusterName, limit, endJobIdExclusive);
+        return storageProvider.loadLatestCompletedJobsForCluster(clusterName, limit, endJobIdExclusive);
     }
 
     public void deleteCompletedJobsForCluster(String clusterName) throws IOException {
