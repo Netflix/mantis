@@ -46,7 +46,9 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -83,6 +85,10 @@ public class ExecutorStateManagerTests {
 
     private static final MachineDefinition MACHINE_DEFINITION_2 =
         new MachineDefinition(4.0, 2.0, 3.0, 4.0, 5);
+
+    private static final MachineDefinition MACHINE_DEFINITION_3 =
+        new MachineDefinition(2.0, 2.0, 3.0, 4.0, 5);
+
     private static final Map<String, String> ATTRIBUTES =
         ImmutableMap.of("attr1", "attr2");
 
@@ -352,5 +358,40 @@ public class ExecutorStateManagerTests {
         stateManager.tryMarkAvailable(id);
 
         return state;
+    }
+
+    @Test
+    public void testGetBestFit_WithDifferentResourcesSameSku() {
+        registerNewTaskExecutor(TASK_EXECUTOR_ID_1,
+            MACHINE_DEFINITION_2,
+            ATTRIBUTES_WITH_SCALE_GROUP_2,
+            stateManager);
+
+        // should get te1 with group2
+        Optional<BestFit> bestFitO =
+            stateManager.findBestFit(
+                new TaskExecutorBatchAssignmentRequest(
+                    new HashSet<>(Arrays.asList(
+                        TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 1))),
+                    CLUSTER_ID));
+
+        assertFalse(bestFitO.isPresent());
+
+        registerNewTaskExecutor(TASK_EXECUTOR_ID_2,
+            MACHINE_DEFINITION_2,
+            ATTRIBUTES_WITH_SCALE_GROUP_1,
+            stateManager);
+
+        bestFitO =
+            stateManager.findBestFit(
+                new TaskExecutorBatchAssignmentRequest(
+                    new HashSet<>(Arrays.asList(
+                        TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 1))),
+                    CLUSTER_ID));
+
+        assertTrue(bestFitO.isPresent());
+        assertEquals(new HashSet<>(Arrays.asList(TASK_EXECUTOR_ID_1, TASK_EXECUTOR_ID_2)), bestFitO.get().getTaskExecutorIDSet());
     }
 }
