@@ -22,9 +22,9 @@ public class MachineDefinitionUtils {
     public static MachineDefinition sys(WorkerPorts workerPorts, double networkBandwidthInMB) {
         return new MachineDefinition(
             Hardware.getNumberCPUCores(),
-            Hardware.getSizeOfPhysicalMemory(),
+            Hardware.getSizeOfPhysicalMemory() / 1024.0 / 1024.0,
             networkBandwidthInMB,
-            Hardware.getSizeOfDisk(),
+            Hardware.getSizeOfDisk() / 1024.0 / 1024.0,
             workerPorts.getNumberOfPorts());
     }
 }
