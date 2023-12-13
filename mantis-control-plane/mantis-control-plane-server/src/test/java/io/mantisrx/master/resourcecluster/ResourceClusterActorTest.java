@@ -155,7 +155,7 @@ public class ResourceClusterActorTest {
     private static final WorkerId WORKER_ID =
         WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1");
 
-    static ActorSystem actorSystem;
+    private static ActorSystem actorSystem;
 
     private final TestingRpcService rpcService = new TestingRpcService();
     private final TaskExecutorGateway gateway = mock(TaskExecutorGateway.class);

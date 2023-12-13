@@ -123,7 +123,7 @@ public interface IMantisPersistenceProvider {
     //  */
     List<IJobClusterMetadata> loadAllJobClusters() throws IOException;
 
-    List<CompletedJob> loadCompletedJobsForCluster(String name, int limit, @Nullable JobId endJobId) throws IOException;
+    List<CompletedJob> loadLatestCompletedJobsForCluster(String name, int limit, @Nullable JobId endJobId) throws IOException;
 
     void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException;
 

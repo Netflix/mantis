@@ -20,6 +20,8 @@ import static akka.pattern.PatternsCS.ask;
 
 import akka.actor.ActorRef;
 import akka.util.Timeout;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.Timer;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.core.BaseService;
@@ -36,6 +38,7 @@ public class JobClustersManagerService extends BaseService {
     private final ActorRef jobClustersManagerActor;
     private final MantisSchedulerFactory schedulerFactory;
     private final boolean loadJobsFromStore;
+    private final Timer initializationTimeTracker;
 
     public JobClustersManagerService(final ActorRef jobClustersManagerActor,
                                      final MantisSchedulerFactory schedulerFactory,
@@ -44,6 +47,13 @@ public class JobClustersManagerService extends BaseService {
         this.jobClustersManagerActor = jobClustersManagerActor;
         this.schedulerFactory = schedulerFactory;
         this.loadJobsFromStore = loadJobsFromStore;
+        Metrics metrics =
+            new Metrics.Builder()
+                .name("JobClustersManagerService")
+                .addTimer("initializationTime")
+                .build();
+
+        this.initializationTimeTracker = metrics.getTimer("initializationTime");
     }
 
     @Override
@@ -80,6 +90,7 @@ public class JobClustersManagerService extends BaseService {
 
             logger.info("JobClustersManager initialize took {} sec",
                 TimeUnit.SECONDS.convert(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS));
+            initializationTimeTracker.record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
         });
     }
 }
