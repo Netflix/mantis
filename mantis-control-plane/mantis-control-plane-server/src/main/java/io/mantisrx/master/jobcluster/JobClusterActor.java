@@ -2905,10 +2905,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * List of jobs in completed state
          * @return list of completed jobs
          */
-        List<CompletedJob> getCompletedJobsList(int limit, @Nullable JobId to) {
+        List<CompletedJob> getCompletedJobsList(int limit, @Nullable JobId from) {
             try {
                 if (to != null) {
-                    return completedJobStore.getCompletedJobs(limit, to);
+                    return completedJobStore.getCompletedJobs(limit, from);
                 } else {
                     return completedJobStore.getCompletedJobs(limit);
                 }
