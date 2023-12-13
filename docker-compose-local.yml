@@ -10,7 +10,7 @@ version: '3'
 services:
 
   zookeeper:
-    image: jplock/zookeeper:3.4.6
+    image: jplock/zookeeper:3.5.5
     ports:
       - "2181:2181"
     networks:
