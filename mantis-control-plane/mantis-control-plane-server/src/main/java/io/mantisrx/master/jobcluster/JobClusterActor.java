@@ -1076,7 +1076,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(!prefilteredJobIdSet.isEmpty()) {
             completedJobsList = prefilteredJobIdSet.stream().map((jId) -> jobManager.getCompletedJob(jId)).filter((cjOp) -> cjOp.isPresent()).map((cjop) -> cjop.get()).collect(Collectors.toList());
         } else {
-            completedJobsList = jobManager.getCompletedJobsList(request.getLimit().orElse(DEFAULT_LIMIT), request.getEndJobIdExclusive().orElse(null));
+            completedJobsList = jobManager.getCompletedJobsList(
+                request.getLimit().orElse(DEFAULT_LIMIT),
+                request.getStartJobIdExclusive().orElse(null));
         }
 
         List<CompletedJob> subsetCompletedJobs = completedJobsList.subList(0, Math.min(completedJobsList.size(), request.getLimit().orElse(DEFAULT_LIMIT)));
@@ -1168,7 +1170,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             jobInfoList = jobIdSet.stream().map((jId) -> jobManager.getCompletedJob(jId))
                     .filter((compJobOp) -> compJobOp.isPresent()).map((compJobOp) -> compJobOp.get()).collect(Collectors.toList());
         } else {
-            jobInfoList = jobManager.getCompletedJobsList(request.getLimit().orElse(DEFAULT_LIMIT), request.getEndJobIdExclusive().orElse(null));
+            jobInfoList = jobManager.getCompletedJobsList(request.getLimit().orElse(DEFAULT_LIMIT), request.getStartJobIdExclusive().orElse(null));
         }
 
         List<CompletedJob> shortenedList =  jobInfoList.subList(0, Math.min(jobInfoList.size(), request.getLimit().orElse(DEFAULT_LIMIT)));
@@ -2907,7 +2909,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          */
         List<CompletedJob> getCompletedJobsList(int limit, @Nullable JobId from) {
             try {
-                if (to != null) {
+                if (from != null) {
                     return completedJobStore.getCompletedJobs(limit, from);
                 } else {
                     return completedJobStore.getCompletedJobs(limit);
