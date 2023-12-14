@@ -116,6 +116,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             log.debug("Marking executor {} as available for matching.", teHolder);
             double cpuCores = state.getRegistration().getMachineDefinition().getCpuCores();
             if (!this.executorByCores.containsKey(cpuCores)) {
+                log.info("[executorByCores] adding {} from TE: {}", cpuCores, teHolder);
                 this.executorByCores.putIfAbsent(
                     cpuCores,
                     new TreeSet<>(TaskExecutorHolder.generationFirstComparator));
