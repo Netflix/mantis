@@ -565,11 +565,11 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     @Override
-    public List<CompletedJob> loadLatestCompletedJobsForCluster(String name, int limit, @Nullable JobId endExclusive)
+    public List<CompletedJob> loadLatestCompletedJobsForCluster(String name, int limit, @Nullable JobId startJobIdExclusive)
         throws IOException {
         final Map<Long, String> items;
-        if (endExclusive != null) {
-            items = kvStore.getAllOrdered(NAMED_COMPLETEDJOBS_NS, name, limit, endExclusive.getJobNum());
+        if (startJobIdExclusive != null) {
+            items = kvStore.getAllOrdered(NAMED_COMPLETEDJOBS_NS, name, limit, startJobIdExclusive.getJobNum());
         } else {
             items = kvStore.getAllOrdered(NAMED_COMPLETEDJOBS_NS, name, limit);
         }

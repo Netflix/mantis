@@ -50,7 +50,7 @@ public class JobRouteUtils {
     public static final String QUERY_PARAM_ACTIVE_ONLY = "activeOnly";
     public static final String QUERY_PARAM_LABELS_QUERY = "labels";
     public static final String QUERY_PARAM_LABELS_OPERAND = "labels.op";
-    public static final String QUERY_PARAM_END_JOB_ID = "endJobId";
+    public static final String QUERY_PARAM_END_JOB_ID = "startJobIdExclusive";
 
     public static WorkerEvent createWorkerStatusRequest(final PostJobStatusRequest req) {
         final Status status = req.getStatus();
