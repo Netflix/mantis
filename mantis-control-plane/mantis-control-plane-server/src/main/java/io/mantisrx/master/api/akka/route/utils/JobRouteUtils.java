@@ -30,6 +30,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ public class JobRouteUtils {
     public static final String QUERY_PARAM_ACTIVE_ONLY = "activeOnly";
     public static final String QUERY_PARAM_LABELS_QUERY = "labels";
     public static final String QUERY_PARAM_LABELS_OPERAND = "labels.op";
+    public static final String QUERY_PARAM_END_JOB_ID = "startJobIdExclusive";
 
     public static WorkerEvent createWorkerStatusRequest(final PostJobStatusRequest req) {
         final Status status = req.getStatus();
@@ -84,6 +86,7 @@ public class JobRouteUtils {
         final Optional<Boolean> activeOnly = Optional.of(paramValueAsBool(params, QUERY_PARAM_ACTIVE_ONLY).orElse(activeOnlyDefault));
         final Optional<String> labelsQuery = paramValue(params, QUERY_PARAM_LABELS_QUERY);
         final Optional<String> labelsOperand = paramValue(params, QUERY_PARAM_LABELS_OPERAND);
+        final Optional<JobId> jobId = paramValue(params, QUERY_PARAM_END_JOB_ID).flatMap(JobId::fromId);
 
         return new JobClusterManagerProto.ListJobsRequest(new JobClusterManagerProto.ListJobCriteria(limit,
             jobState,
@@ -94,7 +97,8 @@ public class JobRouteUtils {
             activeOnly,
             regex,
             labelsQuery,
-            labelsOperand));
+            labelsOperand,
+            jobId));
     }
 
     public static JobClusterManagerProto.ListJobIdsRequest createListJobIdsRequest(final Map<String, List<String>> params, final Optional<String> regex,
@@ -109,8 +113,9 @@ public class JobRouteUtils {
         final Optional<Boolean> activeOnly = Optional.of(paramValueAsBool(params, QUERY_PARAM_ACTIVE_ONLY).orElse(activeOnlyDefault));
         final Optional<String> labelsQuery = paramValue(params, QUERY_PARAM_LABELS_QUERY);
         final Optional<String> labelsOperand = paramValue(params, QUERY_PARAM_LABELS_OPERAND);
+        final Optional<JobId> jobId = paramValue(params, QUERY_PARAM_END_JOB_ID).flatMap(JobId::fromId);
 
-        return new JobClusterManagerProto.ListJobIdsRequest(limit, jobState, activeOnly, regex, labelsQuery, labelsOperand);
+        return new JobClusterManagerProto.ListJobIdsRequest(limit, jobState, activeOnly, regex, labelsQuery, labelsOperand, jobId);
     }
 
 }

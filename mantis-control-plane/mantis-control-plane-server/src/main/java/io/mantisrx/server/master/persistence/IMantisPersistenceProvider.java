@@ -28,6 +28,7 @@ import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
+import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
@@ -60,7 +61,7 @@ public interface IMantisPersistenceProvider {
      */
     void archiveJob(final String jobId) throws IOException;
 
-    void deleteJob(String jobId) throws Exception;
+    void deleteJob(String jobId) throws IOException;
 
     void storeMantisStage(final IMantisStageMetadata msmd) throws IOException;
 
@@ -115,14 +116,23 @@ public interface IMantisPersistenceProvider {
 
     Observable<IMantisJobMetadata> loadAllArchivedJobs();
 
-    //  /**
-    //  * Initialize and return all existing NamedJobs from persistence.
-    //  * @return List of {@link NamedJob} objects.
-    //  * @throws IOException Upon error connecting to or reading from persistence.
-    //  */
+    /**
+     * Initialize and return all existing NamedJobs from persistence.
+     *
+     * @return List of {@link NamedJob} objects.
+     * @throws IOException Upon error connecting to or reading from persistence.
+     */
     List<IJobClusterMetadata> loadAllJobClusters() throws IOException;
 
-    List<CompletedJob> loadAllCompletedJobs() throws IOException;
+    /**
+     * load all completed jobs for a given cluster sorted by descending order of job id
+     * @param name name of cluster
+     * @param limit max number of jobs to return
+     * @param startJobIdExclusive if not null, start from this job id
+     * @return list of completed jobs
+     * @throws IOException upon errors with storage invocation
+     */
+    List<CompletedJob> loadLatestCompletedJobsForCluster(String name, int limit, @Nullable JobId startJobIdExclusive) throws IOException;
 
     void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException;
 
@@ -137,8 +147,7 @@ public interface IMantisPersistenceProvider {
 
     void storeCompletedJobForCluster(String name, CompletedJob job) throws IOException;
 
-
-    void removeCompletedJobForCluster(String name, String jobId) throws IOException;
+    void deleteCompletedJobsForCluster(String name) throws IOException;
 
     Optional<IMantisJobMetadata> loadArchivedJob(String jobId) throws IOException;
 

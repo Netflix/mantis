@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import static io.mantisrx.master.jobcluster.JobClusterTest.DEFAULT_JOB_OWNER;
-import static io.mantisrx.master.jobcluster.JobClusterTest.NO_OP_SLA;
-import static io.mantisrx.master.jobcluster.JobClusterTest.TWO_WORKER_SCHED_INFO;
+import static io.mantisrx.master.jobcluster.JobClusterAkkaTest.DEFAULT_JOB_OWNER;
+import static io.mantisrx.master.jobcluster.JobClusterAkkaTest.NO_OP_SLA;
+import static io.mantisrx.master.jobcluster.JobClusterAkkaTest.TWO_WORKER_SCHED_INFO;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_CONFLICT;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_NOT_FOUND;
@@ -119,7 +119,7 @@ import org.mockito.Mockito;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
-public class JobClusterManagerTest {
+public class JobClusterManagerAkkaTest {
 
     static ActorSystem system;
     private MantisJobStore jobStoreMock;
@@ -497,11 +497,12 @@ public class JobClusterManagerTest {
                 1));
 
         jobClusterManagerActor.tell(new GetJobDetailsRequest(
-                "user",
-                JobId.fromId("testBootStrapJobClustersAndJobs3-1")
-                        .get()), probe.getRef());
-        GetJobDetailsResponse acceptedResponse = probe.expectMsgClass(Duration.of(10, ChronoUnit.MINUTES),
-                GetJobDetailsResponse.class);
+            "user",
+            JobId.fromId("testBootStrapJobClustersAndJobs3-1")
+                .get()), probe.getRef());
+        GetJobDetailsResponse acceptedResponse = probe.expectMsgClass(
+            Duration.of(10, ChronoUnit.MINUTES),
+            GetJobDetailsResponse.class);
 
         System.out.println("[fdc-92] acceptedResponse -> " + acceptedResponse);
         // Ensure its Accepted
@@ -567,8 +568,8 @@ public class JobClusterManagerTest {
 
         //TODO(hmitnflx): Need to fix this test after support completed jobs async loading
         // Ensure its completed
-        assertEquals(CLIENT_ERROR_NOT_FOUND, resp2.responseCode);
-        // assertEquals(JobState.Completed, resp2.getJobMetadata().get().getState());
+        assertEquals(SUCCESS, resp2.responseCode);
+        assertEquals(JobState.Completed, resp2.getJobMetadata().get().getState());
 
         jobClusterManagerActor.tell(new GetJobDetailsRequest(
             "user",

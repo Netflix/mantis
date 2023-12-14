@@ -26,12 +26,14 @@ import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
 import io.mantisrx.shaded.org.apache.curator.retry.RetryOneTime;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
 import okhttp3.HttpUrl.Builder;
@@ -72,7 +74,7 @@ public class TestContainerHelloWorld {
     private static final String LOGGING_ENABLED_METRICS_GROUP =
             "MasterApiMetrics;DeadLetterActor;JobDiscoveryRoute";
     private static final String JOB_CLUSTER_CREATE = "{\"jobDefinition\":{\"name\":\"hello-sine-testcontainers\","
-        + "\"user\":\"mantisoss\",\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-2.1.0-SNAPSHOT"
+        + "\"user\":\"mantisoss\",\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-%s"
         + ".zip\"," +
         "\"version\":\"0.2.9 2018-05-29 16:12:56\",\"schedulingInfo\":{\"stages\":{" +
         "\"1\":{\"numberOfInstances\":\"1\",\"machineDefinition\":{\"cpuCores\":\"1\",\"memoryMB\":\"1024\",\"diskMB\":\"1024\",\"networkMbps\":\"128\",\"numPorts\":\"1\"},\"scalable\":true," +
@@ -93,13 +95,29 @@ public class TestContainerHelloWorld {
             + "\"runtimeLimitSecs\":\"0\",\"minRuntimeSecs\":\"0\",\"userProvidedType\":\"\"}}";
 
     private static final String REGULAR_SUBMIT = "{\"name\":\"hello-sine-testcontainers\",\"user\":\"mantisoss\","
-        + "\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-2.1.0-SNAPSHOT.zip\",\"version\":\"0.2.9 2018-05-29 16:12:56\","
+        + "\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-%s.zip\",\"version\":\"0.2.9 2018-05-29 "
+        + "16:12:56\","
         + "\"subscriptionTimeoutSecs\":\"0\",\"jobSla\":{\"durationType\":\"Transient\","
         + "\"runtimeLimitSecs\":\"300\",\"minRuntimeSecs\":\"0\"},"
         + "\"schedulingInfo\":{\"stages\":{\"1\":{\"numberOfInstances\":1,\"machineDefinition\":{\"cpuCores\":1,"
         + "\"memoryMB\":1024,\"diskMB\":1024,\"networkMbps\":128,\"numPorts\":\"1\"},\"scalable\":true,"
         + "\"softConstraints\":[],\"hardConstraints\":[]}}},\"parameters\":[{\"name\":\"useRandom\",\"value\":\"false\"}],"
         + "\"isReadyForJobMaster\":false}";
+
+    public static String getBuildVersion() {
+        try (InputStream input = TestContainerHelloWorld.class.getClassLoader().getResourceAsStream(
+            "version.properties")) {
+            if (input == null) {
+                throw new RuntimeException("failed to get build version file.");
+            }
+            Properties prop = new Properties();
+            prop.load(input);
+            return prop.getProperty("version");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("failed to get build version in test: ", ex);
+        }
+    }
 
     private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -183,6 +201,7 @@ public class TestContainerHelloWorld {
         final String agentId0 = "agentquicksubmit";
         final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
         GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, agentDockerFile, network);
+        agent0.withLogConsumer(out -> log.debug("[Agent log] {}", out.getUtf8String()));
 
         if (!ensureAgentStarted(
             controlPlaneHost,
@@ -200,7 +219,7 @@ public class TestContainerHelloWorld {
         if (!ensureJobWorkerStarted(
             controlPlaneHost,
             controlPlanePort,
-            5,
+            10,
             Duration.ofSeconds(2).toMillis())) {
             fail("Failed to start job worker.");
         }
@@ -234,6 +253,7 @@ public class TestContainerHelloWorld {
         final String agentId0 = "agentregularsubmit";
         final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
         GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, agentDockerFile, network);
+        agent0.withLogConsumer(out -> log.debug("[Agent log] {}", out.getUtf8String()));
 
         if (!ensureAgentStarted(
             controlPlaneHost,
@@ -297,7 +317,9 @@ public class TestContainerHelloWorld {
             ImageFromDockerfile dockerFile, Network network) {
         // setup sample job artifact
         MountableFile sampleArtifact = MountableFile.forHostPath(
-            Paths.get("../mantis-examples/mantis-examples-sine-function/build/distributions/mantis-examples-sine-function-2.1.0-SNAPSHOT.zip"));
+            Paths.get(String.format(
+                "../mantis-examples/mantis-examples-sine-function/build/distributions/mantis-examples-sine-function-%s.zip",
+                getBuildVersion())));
 
         return USE_LOCAL_BUILT_IMAGE ?
             new GenericContainer<>(dockerFile)
@@ -416,9 +438,10 @@ public class TestContainerHelloWorld {
             .addPathSegments("api/v1/jobClusters")
             .build();
         log.info("Req: {}", reqUrl);
-
+        String payload = String.format(JOB_CLUSTER_CREATE, getBuildVersion());
+        log.info("using payload: {}", payload);
         RequestBody body = RequestBody.create(
-            JOB_CLUSTER_CREATE, MediaType.parse("application/json; charset=utf-8"));
+            payload, MediaType.parse("application/json; charset=utf-8"));
 
         Request request = new Request.Builder()
             .url(reqUrl)
@@ -530,8 +553,12 @@ public class TestContainerHelloWorld {
             .build();
         log.info("Req: {}", reqUrl);
 
+        String buildVersion = getBuildVersion();
+        log.info("using artifact version: {}", buildVersion);
+        String payload = String.format(REGULAR_SUBMIT, getBuildVersion());
+        log.info("Submit payload: {}", payload);
         RequestBody body = RequestBody.create(
-            REGULAR_SUBMIT, MediaType.parse("application/json; charset=utf-8"));
+            payload, MediaType.parse("application/json; charset=utf-8"));
 
         Request request = new Request.Builder()
             .url(reqUrl)

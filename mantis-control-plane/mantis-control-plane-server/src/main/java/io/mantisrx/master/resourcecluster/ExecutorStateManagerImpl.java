@@ -260,14 +260,14 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         }
 
         boolean noResourcesAvailable = false;
-        final Map<TaskExecutorAllocationRequest, Pair<TaskExecutorID, TaskExecutorState>> bestFit = new HashMap<>();
+        final BestFit bestFit = new BestFit();
         final boolean isJobIdAlreadyPending = pendingJobRequests.getIfPresent(request.getJobId()) != null;
 
         for (Entry<MachineDefinition, List<TaskExecutorAllocationRequest>> entry : request.getGroupedByMachineDef().entrySet()) {
             final MachineDefinition machineDefinition = entry.getKey();
             final List<TaskExecutorAllocationRequest> allocationRequests = entry.getValue();
 
-            Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findTaskExecutorsFor(request, machineDefinition, allocationRequests, isJobIdAlreadyPending);
+            Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findTaskExecutorsFor(request, machineDefinition, allocationRequests, isJobIdAlreadyPending, bestFit);
 
             // Mark noResourcesAvailable if we can't find enough TEs for a given machine def
             if (!taskExecutors.isPresent()) {
@@ -278,7 +278,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             // Map each TE to a given allocation request
             int index = 0;
             for (Entry<TaskExecutorID, TaskExecutorState> taskToStateEntry : taskExecutors.get().entrySet()) {
-                bestFit.put(allocationRequests.get(index), Pair.of(taskToStateEntry.getKey(), taskToStateEntry.getValue()));
+                bestFit.add(allocationRequests.get(index), Pair.of(taskToStateEntry.getKey(), taskToStateEntry.getValue()));
                 index++;
             }
         }
@@ -288,12 +288,12 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             return Optional.empty();
         } else {
             // Return best fit only if there are enough available TEs for all machine def
-            return Optional.of(new BestFit(bestFit));
+            return Optional.of(bestFit);
         }
 
     }
 
-    private Optional<Map<TaskExecutorID, TaskExecutorState>> findBestFitFor(TaskExecutorBatchAssignmentRequest request, MachineDefinition machineDefinition, Integer numWorkers) {
+    private Optional<Map<TaskExecutorID, TaskExecutorState>> findBestFitFor(TaskExecutorBatchAssignmentRequest request, MachineDefinition machineDefinition, Integer numWorkers, BestFit currentBestFit) {
         // only allow allocation in the lowest CPU cores matching group.
         SortedMap<Double, NavigableSet<TaskExecutorHolder>> targetMap =
             this.executorByCores.tailMap(machineDefinition.getCpuCores());
@@ -324,6 +324,10 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
                 .stream()
                 .filter(teHolder -> {
                     if (!this.taskExecutorStateMap.containsKey(teHolder.getId())) {
+                        return false;
+                    }
+
+                    if (currentBestFit.contains(teHolder.getId())) {
                         return false;
                     }
 
@@ -434,10 +438,10 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             .orElse(0);
     }
 
-    private Optional<Map<TaskExecutorID, TaskExecutorState>> findTaskExecutorsFor(TaskExecutorBatchAssignmentRequest request, MachineDefinition machineDefinition, List<TaskExecutorAllocationRequest> allocationRequests, boolean isJobIdAlreadyPending) {
+    private Optional<Map<TaskExecutorID, TaskExecutorState>> findTaskExecutorsFor(TaskExecutorBatchAssignmentRequest request, MachineDefinition machineDefinition, List<TaskExecutorAllocationRequest> allocationRequests, boolean isJobIdAlreadyPending, BestFit currentBestFit) {
         // Finds best fit for N workers of the same machine def
         final Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findBestFitFor(
-            request, machineDefinition, allocationRequests.size());
+            request, machineDefinition, allocationRequests.size(), currentBestFit);
 
         // Verify that the number of task executors returned matches the asked
         if (taskExecutors.isPresent() && taskExecutors.get().size() == allocationRequests.size()) {

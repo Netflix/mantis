@@ -26,6 +26,7 @@ import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
+import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
@@ -42,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.PriorityBlockingQueue;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.schedulers.Schedulers;
@@ -103,8 +105,12 @@ public class MantisJobStore {
         return mantisJobMetadataList;
     }
 
-    public List<CompletedJob> loadAllCompletedJobs() throws IOException {
-        return storageProvider.loadAllCompletedJobs();
+    public List<CompletedJob> loadCompletedJobsForCluster(String clusterName, int limit, @Nullable JobId startJobIdExclusive) throws IOException {
+        return storageProvider.loadLatestCompletedJobsForCluster(clusterName, limit, startJobIdExclusive);
+    }
+
+    public void deleteCompletedJobsForCluster(String clusterName) throws IOException {
+        storageProvider.deleteCompletedJobsForCluster(clusterName);
     }
 
     public void createJobCluster(IJobClusterMetadata jobCluster) throws Exception {
@@ -119,14 +125,10 @@ public class MantisJobStore {
         storageProvider.deleteJobCluster(name);
     }
 
-    public void deleteJob(String jobId) throws Exception {
+    public void deleteJob(String jobId) throws IOException {
         archivedJobsMetadataCache.remove(jobId);
         archivedWorkersCache.remove(jobId);
         storageProvider.deleteJob(jobId);
-    }
-
-    public void deleteCompletedJob(String clusterName, String jobId) throws IOException {
-        storageProvider.removeCompletedJobForCluster(clusterName, jobId);
     }
 
     public void storeCompletedJobForCluster(String name, CompletedJob completedJob) throws IOException {

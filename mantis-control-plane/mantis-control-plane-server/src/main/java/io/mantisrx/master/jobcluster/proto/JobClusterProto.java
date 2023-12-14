@@ -16,7 +16,6 @@
 
 package io.mantisrx.master.jobcluster.proto;
 
-import static java.util.Optional.ofNullable;
 
 import akka.actor.ActorRef;
 import com.netflix.spectator.impl.Preconditions;
@@ -24,7 +23,6 @@ import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
-import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
@@ -49,20 +47,19 @@ public class JobClusterProto {
         public final long lastJobNumber;
         public final boolean createInStore;
         public final List<IMantisJobMetadata> jobList;
-        public final List<CompletedJob> completedJobsList;
+
         /**
          * Invoked directly during bootstrap
          * @param jobClusterDefinition
          * @param isDisabled
          * @param lastJobNumber
          * @param jobList
-         * @param completedJobsList
          * @param user
          * @param requestor
          * @param createInStore
          */
         public InitializeJobClusterRequest(final JobClusterDefinitionImpl jobClusterDefinition, boolean isDisabled, long lastJobNumber,
-                                           List<IMantisJobMetadata> jobList, List<CompletedJob> completedJobsList, String user, ActorRef requestor, boolean createInStore) {
+                                           List<IMantisJobMetadata> jobList, String user, ActorRef requestor, boolean createInStore) {
             super();
             Preconditions.checkNotNull(jobClusterDefinition, "JobClusterDefn cannot be null");
             this.jobClusterDefinition = jobClusterDefinition;
@@ -72,7 +69,6 @@ public class JobClusterProto {
             this.isDisabled = isDisabled;
             this.lastJobNumber = lastJobNumber;
             this.jobList = jobList;
-            this.completedJobsList = completedJobsList;
 
         }
         /**
@@ -82,7 +78,7 @@ public class JobClusterProto {
          * @param requestor
          */
         public InitializeJobClusterRequest(final JobClusterDefinitionImpl jobClusterDefinition, String user, ActorRef requestor) {
-            this(jobClusterDefinition, false, 0, Lists.newArrayList(), Lists.newArrayList(), user, requestor, true);
+            this(jobClusterDefinition, false, 0, Lists.newArrayList(), user, requestor, true);
 
         }
 
@@ -96,7 +92,6 @@ public class JobClusterProto {
                     ", lastJobNumber=" + lastJobNumber +
                     ", createInStore=" + createInStore +
                     ", jobList=" + jobList +
-                    ", completedJobsList=" + completedJobsList +
                     '}';
         }
     }
@@ -209,7 +204,7 @@ public class JobClusterProto {
         public final ActorRef requestor;
         public final JobState state;
         public final String user;
-        public final Optional<IMantisJobMetadata> jobMetadata;
+        public final IMantisJobMetadata jobMetadata;
         public KillJobResponse(long requestId, ResponseCode responseCode, JobState state, String message, JobId jobId, IMantisJobMetadata jobMeta, String user,
                                final ActorRef requestor) {
             super(requestId, responseCode, message);
@@ -217,7 +212,7 @@ public class JobClusterProto {
             this.requestor = requestor;
             this.state = state;
             this.user = user;
-            this.jobMetadata = ofNullable(jobMeta);
+            this.jobMetadata = jobMeta;
         }
 
         @Override
@@ -257,18 +252,6 @@ public class JobClusterProto {
             this.timeOfEnforcement = now;
             this.jobDefinitionOp = jobDefnOp;
 
-        }
-    }
-
-    public static final class ExpireOldJobsRequest {
-        public final Instant timeOfEnforcement;
-
-        public ExpireOldJobsRequest() {
-            this(Instant.now());
-        }
-
-        public ExpireOldJobsRequest(Instant now) {
-            this.timeOfEnforcement = now;
         }
     }
 
