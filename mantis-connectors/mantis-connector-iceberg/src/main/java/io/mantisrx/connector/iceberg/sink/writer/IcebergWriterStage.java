@@ -38,7 +38,6 @@ import io.mantisrx.runtime.scheduler.MantisRxSingleThreadScheduler;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
-import java.util.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -130,7 +129,7 @@ public class IcebergWriterStage implements ScalarComputation<MantisRecord, Manti
         LocationProvider locationProvider = context.getServiceLocator().service(LocationProvider.class);
         IcebergWriterFactory factory = new DefaultIcebergWriterFactory(config, workerInfo, table, locationProvider);
         IcebergWriterPool writerPool = new FixedIcebergWriterPool(factory, config);
-        WriterMetrics metrics = new WriterMetrics();
+        WriterMetrics metrics = new WriterMetrics(meterRegistry);
         PartitionerFactory partitionerFactory = context.getServiceLocator().service(PartitionerFactory.class);
         Partitioner partitioner = partitionerFactory.getPartitioner(table);
 

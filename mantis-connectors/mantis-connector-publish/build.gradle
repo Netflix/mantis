@@ -17,6 +17,7 @@
 dependencies {
     implementation libraries.mantisShaded
     implementation project(":mantis-runtime")
+    implementation libraries.micrometerCore
 
     api project(":mantis-control-plane:mantis-control-plane-core")
     api project(":mantis-publish:mantis-publish-core")
