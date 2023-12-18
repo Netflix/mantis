@@ -92,6 +92,8 @@ import io.mantisrx.master.jobcluster.job.JobHelper;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastLaunchedJobIdStreamRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastLaunchedJobIdStreamResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterArtifactRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterLabelsRequest;
@@ -234,6 +236,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(GetJobClusterRequest.class, this::onJobClusterGet)
                 .match(ListCompletedJobsInClusterRequest.class, this::onJobListCompleted)
                 .match(GetLastSubmittedJobIdStreamRequest.class, this::onGetLastSubmittedJobIdSubject)
+                .match(GetLastLaunchedJobIdStreamRequest.class, this::onGetLastLaunchedJobIdSubject)
                 .match(ListArchivedWorkersRequest.class, this::onListArchivedWorkers)
                 // List Job Cluster related messages
                 .match(ListJobClustersRequest.class, this::onJobClustersList)
@@ -291,6 +294,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(GetJobClusterRequest.class, (x) -> getSender().tell(new GetJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), empty()), getSelf()))
                 .match(ListCompletedJobsInClusterRequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), state)))
                 .match(GetLastSubmittedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastSubmittedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), empty()), getSelf()))
+                .match(GetLastLaunchedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastLaunchedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), empty()), getSelf()))
                 .match(ListArchivedWorkersRequest.class, (x) -> getSender().tell(new ListArchivedWorkersResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), Lists.newArrayList()), getSelf()))
                 .match(ListJobClustersRequest.class, (x) -> getSender().tell(new ListJobClustersResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), Lists.newArrayList()), getSelf()))
                 .match(ListJobsRequest.class, (x) -> getSender().tell(new ListJobsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), Lists.newArrayList()), getSelf()))
@@ -522,6 +526,18 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             sender.tell(new GetLastSubmittedJobIdStreamResponse(r.requestId, CLIENT_ERROR_NOT_FOUND, "No such Job cluster " + r.getClusterName(), empty()), getSelf());
         }
     }
+
+    @Override
+    public void onGetLastLaunchedJobIdSubject(GetLastLaunchedJobIdStreamRequest r) {
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(r.getClusterName());
+        ActorRef sender = getSender();
+        if (jobClusterInfo.isPresent()) {
+            jobClusterInfo.get().jobClusterActor.forward(r, getContext());
+        } else {
+            sender.tell(new GetLastLaunchedJobIdStreamResponse(r.requestId, CLIENT_ERROR_NOT_FOUND, "No such Job cluster " + r.getClusterName(), empty()), getSelf());
+        }
+    }
+
     @Override
     public void onWorkerEvent(WorkerEvent workerEvent) {
         if(logger.isDebugEnabled()) { logger.debug("Entering JobClusterManagerActor:onWorkerEvent {}", workerEvent); }
