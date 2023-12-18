@@ -60,7 +60,7 @@ public class JobDiscoveryRoute extends BaseRoute {
     private final Counter jobClusterInfoStreamGET;
 
     public JobDiscoveryRoute(final JobDiscoveryRouteHandler jobDiscoveryRouteHandler) {
-        this(true, jobDiscoveryRouteHandler);
+        this(false, jobDiscoveryRouteHandler);
     }
 
     public JobDiscoveryRoute(final boolean namedJobsReferToLaunched, final JobDiscoveryRouteHandler jobDiscoveryRouteHandler) {

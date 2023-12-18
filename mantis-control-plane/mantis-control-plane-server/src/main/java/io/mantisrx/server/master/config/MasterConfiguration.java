@@ -401,5 +401,6 @@ public interface MasterConfiguration extends CoreConfiguration {
 
     @Config("mantis.route.namedjobs.useLaunched")
     @Default("false")
+    // TODO: could we instead have a list of jobs we enable this for?
     boolean getNamedJobsReferToLaunched();
 }

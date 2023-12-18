@@ -153,7 +153,6 @@ import java.util.TreeSet;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
@@ -992,13 +991,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         // Found jobs matching labels or no labels criterion given.
         // Apply additional criterion to both active and completed jobs
-        getFilteredNonTerminalJobList(request.getCriteria(),jobIdsFilteredByLabelsSet).mergeWith(
-            getFilteredTerminalJobList(request.getCriteria(),jobIdsFilteredByLabelsSet))
-        .collect(() -> Lists.<MantisJobMetadataView>newArrayList(), List::add)
-        .doOnNext(resultList -> {
-            sender.tell(new ListJobsResponse(request.requestId, SUCCESS, "", resultList), self);
-        })
-        .subscribe();
+        getFilteredNonTerminalJobList(request.getCriteria(), jobIdsFilteredByLabelsSet).mergeWith(
+            getFilteredTerminalJobList(request.getCriteria(), jobIdsFilteredByLabelsSet))
+            .collect(() -> Lists.<MantisJobMetadataView>newArrayList(), List::add)
+            .doOnNext(resultList -> {
+                sender.tell(new ListJobsResponse(request.requestId, SUCCESS, "", resultList), self);
+            })
+            .subscribe();
     }
 
     @Override
@@ -1857,6 +1856,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     public void onGetLatestJobDiscoveryInfo(JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest request) {
         ActorRef sender = getSender();
         if(this.name.equals(request.getJobCluster())) {
+            // TODO: I think this might be wrong.
             JobId latestJobId = jobIdLaunchedSubject.getValue();
             logger.debug("[{}] latest job Id for cluster: {}", name, latestJobId);
             if (latestJobId != null) {
