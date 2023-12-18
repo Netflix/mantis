@@ -117,6 +117,7 @@ public class MasterApiAkkaService extends BaseService {
         Preconditions.checkNotNull(mantisStorageProvider, "mantisStorageProvider");
         Preconditions.checkNotNull(lifecycleEventPublisher, "lifecycleEventPublisher");
         Preconditions.checkNotNull(leadershipManager, "leadershipManager");
+        this.masterConfig = masterConfig;
         this.masterMonitor = masterMonitor;
         this.masterDescription = masterDescription;
         this.jobClustersManagerActor = jobClustersManagerActor;
@@ -130,7 +131,6 @@ public class MasterApiAkkaService extends BaseService {
         this.system = ActorSystem.create("MasterApiActorSystem");
         this.materializer = Materializer.createMaterializer(system);
         this.mantisMasterRoute = configureApiRoutes(this.system, agentClusterOperations);
-        this.masterConfig = masterConfig;
         this.executorService = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "MasterApiAkkaServiceThread");
             t.setDaemon(true);
