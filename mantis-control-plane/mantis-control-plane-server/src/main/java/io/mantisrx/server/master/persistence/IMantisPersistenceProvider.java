@@ -116,14 +116,23 @@ public interface IMantisPersistenceProvider {
 
     Observable<IMantisJobMetadata> loadAllArchivedJobs();
 
-    //  /**
-    //  * Initialize and return all existing NamedJobs from persistence.
-    //  * @return List of {@link NamedJob} objects.
-    //  * @throws IOException Upon error connecting to or reading from persistence.
-    //  */
+    /**
+     * Initialize and return all existing NamedJobs from persistence.
+     *
+     * @return List of {@link NamedJob} objects.
+     * @throws IOException Upon error connecting to or reading from persistence.
+     */
     List<IJobClusterMetadata> loadAllJobClusters() throws IOException;
 
-    List<CompletedJob> loadLatestCompletedJobsForCluster(String name, int limit, @Nullable JobId endJobId) throws IOException;
+    /**
+     * load all completed jobs for a given cluster sorted by descending order of job id
+     * @param name name of cluster
+     * @param limit max number of jobs to return
+     * @param startJobIdExclusive if not null, start from this job id
+     * @return list of completed jobs
+     * @throws IOException upon errors with storage invocation
+     */
+    List<CompletedJob> loadLatestCompletedJobsForCluster(String name, int limit, @Nullable JobId startJobIdExclusive) throws IOException;
 
     void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException;
 

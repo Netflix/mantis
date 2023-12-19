@@ -883,7 +883,7 @@ public class JobClusterManagerProto {
         private final List<Label> matchingLabels;
         private final Optional<String> labelsOperand;
 
-        private final Optional<JobId> endJobIdExclusive;
+        private final Optional<JobId> startJobIdExclusive;
 
         public ListJobCriteria(
                 final Optional<Integer> limit,
@@ -896,7 +896,7 @@ public class JobClusterManagerProto {
                 final Optional<String> matchingRegex,
                 final Optional<String> matchingLabels,
                 final Optional<String> labelsOperand,
-                final Optional<JobId> endJobIdExclusive) {
+                final Optional<JobId> startJobIdExclusive) {
             this.limit = limit;
             this.jobState = jobState;
             this.stageNumberList = stageNumber;
@@ -908,7 +908,7 @@ public class JobClusterManagerProto {
             this.matchingLabels = matchingLabels.map(query -> LabelUtils.generatePairs(query))
                                                 .orElse(Collections.emptyList());
             this.labelsOperand = labelsOperand;
-            this.endJobIdExclusive = endJobIdExclusive;
+            this.startJobIdExclusive = startJobIdExclusive;
         }
 
         public ListJobCriteria() {
@@ -966,8 +966,8 @@ public class JobClusterManagerProto {
             return labelsOperand;
         }
 
-        public Optional<JobId> getEndJobIdExclusive() {
-            return endJobIdExclusive;
+        public Optional<JobId> getStartJobIdExclusive() {
+            return startJobIdExclusive;
         }
 
         @Override
@@ -1188,7 +1188,7 @@ public class JobClusterManagerProto {
                 final Optional<String> matchingRegex,
                 final Optional<String> matchingLabels,
                 final Optional<String> labelsOperand,
-                final Optional<JobId> endJobIdExclusive) {
+                final Optional<JobId> startJobIdExclusive) {
             super();
             filters = new ListJobCriteria(
                     limit,
@@ -1201,7 +1201,7 @@ public class JobClusterManagerProto {
                     matchingRegex,
                     matchingLabels,
                     labelsOperand,
-                    endJobIdExclusive);
+                    startJobIdExclusive);
 
 
         }

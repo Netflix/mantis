@@ -231,14 +231,14 @@ class CompletedJobStore implements ICompletedJobsStore {
     }
 
     @Override
-    public List<CompletedJob> getCompletedJobs(int limit, JobId endExclusive) throws IOException {
+    public List<CompletedJob> getCompletedJobs(int limit, JobId startExclusive) throws IOException {
         List<CompletedJob> completedJobsList =
-            jobStore.loadCompletedJobsForCluster(name, limit, endExclusive);
+            jobStore.loadCompletedJobsForCluster(name, limit, startExclusive);
         addCompletedJobsToCache(completedJobsList);
         return terminalSortedJobSet
             .stream()
             .filter(job ->
-                JobId.fromId(job.getJobId()).get().getJobNum() < endExclusive.getJobNum())
+                JobId.fromId(job.getJobId()).get().getJobNum() < startExclusive.getJobNum())
             .limit(limit)
             .collect(Collectors.toList());
     }
