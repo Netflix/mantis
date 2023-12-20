@@ -17,7 +17,7 @@ ext {
     archaiusVersion = 'latest.release'
     versionMockito = '2.18.+'
     mqlVersion = '3.2.2'
-    spectatorVersion = '0.134.0'
+    spectatorVersion = '1.6.10'
 }
 
 dependencies {
