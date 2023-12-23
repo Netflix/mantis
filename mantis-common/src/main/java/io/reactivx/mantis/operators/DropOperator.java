@@ -16,11 +16,10 @@
 
 package io.reactivx.mantis.operators;
 
-import com.netflix.spectator.api.Tag;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,37 +39,35 @@ public class DropOperator<T> implements Operator<T, T> {
     private final Counter dropped;
     MetricGroupId metricGroupId;
 
-    public DropOperator(final Metrics m) {
-        next = m.getCounter("" + Counters.onNext);
-        error = m.getCounter("" + Counters.onError);
-        complete = m.getCounter("" + Counters.onComplete);
-        dropped = m.getCounter("" + Counters.dropped);
-    }
-    public DropOperator(final MetricGroupId groupId) {
-        this.metricGroupId = groupId;
 
-        Metrics m = new Metrics.Builder()
-                .id(metricGroupId)
-                .addCounter("" + Counters.onNext)
-                .addCounter("" + Counters.onError)
-                .addCounter("" + Counters.onComplete)
-                .addCounter("" + Counters.dropped)
-                .build();
-
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-
-        next = m.getCounter("" + Counters.onNext);
-        error = m.getCounter("" + Counters.onError);
-        complete = m.getCounter("" + Counters.onComplete);
-        dropped = m.getCounter("" + Counters.dropped);
+    public DropOperator(MeterRegistry meterRegistry) {
+        next = meterRegistry.counter(METRIC_GROUP+ "_" +"" + Counters.onNext);
+        error = meterRegistry.counter(METRIC_GROUP+ "_" +"" + Counters.onError);
+        complete = meterRegistry.counter(METRIC_GROUP+ "_" +"" + Counters.onComplete);
+        dropped = meterRegistry.counter(METRIC_GROUP+ "_" +"" + Counters.dropped);
     }
 
-    public DropOperator(final String name) {
-        this(new MetricGroupId(METRIC_GROUP + "_" + name));
+
+    public DropOperator(MeterRegistry meterRegistry, final String name) {
+        next = meterRegistry.counter(METRIC_GROUP+ "_" + name +"" + Counters.onNext);
+        error = meterRegistry.counter(METRIC_GROUP+ "_" + name +"" + Counters.onError);
+        complete = meterRegistry.counter(METRIC_GROUP+ "_" + name +"" + Counters.onComplete);
+        dropped = meterRegistry.counter(METRIC_GROUP+ "_" + name +"" + Counters.dropped);
     }
 
-    public DropOperator(final String name, final Tag... tags) {
-        this(new MetricGroupId(METRIC_GROUP + "_" + name, tags));
+    public DropOperator(MeterRegistry meterRegistry, final String name, final Tags tags) {
+        next = Counter.builder(METRIC_GROUP+ "_" + name +"" + Counters.onNext)
+            .tags(tags)
+            .register(meterRegistry);
+        error = Counter.builder(METRIC_GROUP+ "_" + name +"" + Counters.onError)
+            .tags(tags)
+            .register(meterRegistry);
+        complete = Counter.builder(METRIC_GROUP+ "_" + name +"" + Counters.onComplete)
+            .tags(tags)
+            .register(meterRegistry);
+        dropped = Counter.builder(METRIC_GROUP+ "_" + name +"" + Counters.dropped)
+            .tags(tags)
+            .register(meterRegistry);
     }
 
     @Override
@@ -102,7 +99,7 @@ public class DropOperator<T> implements Operator<T, T> {
             @Override
             public void onError(Throwable e) {
                 error.increment();
-                logger.error("onError() occured in DropOperator for groupId: {}", metricGroupId.id(), e);
+                logger.error("onError() occured in DropOperator for groupId: {}", METRIC_GROUP, e);
                 o.onError(e);
             }
 

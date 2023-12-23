@@ -15,6 +15,7 @@
  */
 package io.mantisrx.common.metrics.netty;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import mantis.io.reactivex.netty.client.ClientMetricsEvent;
 import mantis.io.reactivex.netty.client.RxClient;
 import mantis.io.reactivex.netty.metrics.MetricEventsListener;
@@ -36,9 +37,11 @@ public class MantisNettyEventsListenerFactory extends MetricEventsListenerFactor
 
     private final String clientMetricNamePrefix;
     private final String serverMetricNamePrefix;
+    private MeterRegistry micrometerRegistry;
 
-    public MantisNettyEventsListenerFactory() {
+    public MantisNettyEventsListenerFactory(MeterRegistry micrometerRegistry) {
         this("mantis-rxnetty-client-", "mantis-rxnetty-server-");
+        this.micrometerRegistry = micrometerRegistry;
     }
 
     public MantisNettyEventsListenerFactory(String clientMetricNamePrefix, String serverMetricNamePrefix) {
@@ -48,32 +51,32 @@ public class MantisNettyEventsListenerFactory extends MetricEventsListenerFactor
 
     @Override
     public TcpClientListener<ClientMetricsEvent<ClientMetricsEvent.EventType>> forTcpClient(@SuppressWarnings("rawtypes") RxClient client) {
-        return TcpClientListener.newListener(clientMetricNamePrefix + client.name());
+        return TcpClientListener.newListener(clientMetricNamePrefix + client.name(), micrometerRegistry);
     }
 
     @Override
     public HttpClientListener forHttpClient(@SuppressWarnings("rawtypes") HttpClient client) {
-        return HttpClientListener.newHttpListener(clientMetricNamePrefix + client.name());
+        return HttpClientListener.newHttpListener(clientMetricNamePrefix + client.name(), micrometerRegistry);
     }
 
     @Override
     public UdpClientListener forUdpClient(@SuppressWarnings("rawtypes") UdpClient client) {
-        return UdpClientListener.newUdpListener(clientMetricNamePrefix + client.name());
+        return UdpClientListener.newUdpListener(clientMetricNamePrefix + client.name(), micrometerRegistry);
     }
 
     @Override
     public TcpServerListener<ServerMetricsEvent<ServerMetricsEvent.EventType>> forTcpServer(@SuppressWarnings("rawtypes") RxServer server) {
-        return TcpServerListener.newListener(serverMetricNamePrefix + server.getServerPort());
+        return TcpServerListener.newListener(serverMetricNamePrefix + server.getServerPort(), micrometerRegistry);
     }
 
     @Override
     public HttpServerListener forHttpServer(@SuppressWarnings("rawtypes") HttpServer server) {
-        return HttpServerListener.newHttpListener(serverMetricNamePrefix + server.getServerPort());
+        return HttpServerListener.newHttpListener(serverMetricNamePrefix + server.getServerPort(), micrometerRegistry);
     }
 
     @Override
     public UdpServerListener forUdpServer(@SuppressWarnings("rawtypes") UdpServer server) {
-        return UdpServerListener.newUdpListener(serverMetricNamePrefix + server.getServerPort());
+        return UdpServerListener.newUdpListener(serverMetricNamePrefix + server.getServerPort(), micrometerRegistry);
     }
 
     @Override

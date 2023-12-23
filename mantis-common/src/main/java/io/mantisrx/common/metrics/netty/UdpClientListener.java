@@ -16,6 +16,7 @@
 
 package io.mantisrx.common.metrics.netty;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.client.ClientMetricsEvent;
 
@@ -25,12 +26,12 @@ import mantis.io.reactivex.netty.client.ClientMetricsEvent;
  */
 public class UdpClientListener extends TcpClientListener<ClientMetricsEvent<?>> {
 
-    protected UdpClientListener(String monitorId) {
-        super(monitorId);
+    protected UdpClientListener(String monitorId, MeterRegistry micrometerRegistry) {
+        super(monitorId, micrometerRegistry);
     }
 
-    public static UdpClientListener newUdpListener(String monitorId) {
-        return new UdpClientListener(monitorId);
+    public static UdpClientListener newUdpListener(String monitorId, MeterRegistry micrometerRegistry) {
+        return new UdpClientListener(monitorId, micrometerRegistry);
     }
 
     @Override
