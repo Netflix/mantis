@@ -486,7 +486,7 @@ public class JobAutoScaler {
             final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
             long coolDownSecs = scalingPolicy == null ? Long.MAX_VALUE : scalingPolicy.getCoolDownSecs();
             boolean scalable = stageSchedulingInfo.getScalable() && scalingPolicy != null && scalingPolicy.isEnabled();
-            logger.debug("Will check for autoscaling job " + jobId + " stage " + stage + " due to event: " + event);
+            logger.info("Will check for autoscaling job " + jobId + " stage " + stage + " due to event: " + event);
             if (scalable && scalingPolicy != null) {
               final StageScalingPolicy.Strategy strategy = scalingPolicy.getStrategies().get(event.getType());
               if (strategy != null) {
@@ -516,7 +516,7 @@ public class JobAutoScaler {
                       lastScaledAt = System.currentTimeMillis();
                       logger.info("lastScaledAt set to {} after scale up request", lastScaledAt);
                     } else {
-                      logger.debug("scale up NOOP: desiredWorkers same as current workers");
+                      logger.info("scale up NOOP: desiredWorkers same as current workers");
                     }
                   } else if (stats.getLowThreshTriggered()) {
                     logger.info("Attempting to scale down stage " + stage + " of job " + jobId + " by " +
@@ -532,11 +532,11 @@ public class JobAutoScaler {
                       lastScaledAt = System.currentTimeMillis();
                       logger.info("lastScaledAt set to {} after scale down request", lastScaledAt);
                     } else {
-                      logger.debug("scale down NOOP: desiredWorkers same as current workers");
+                      logger.info("scale down NOOP: desiredWorkers same as current workers");
                     }
                   }
                 } else {
-                  logger.debug("lastScaledAt {} within cooldown period", lastScaledAt);
+                  logger.info("lastScaledAt {} within cooldown period", lastScaledAt);
                 }
               }
             }

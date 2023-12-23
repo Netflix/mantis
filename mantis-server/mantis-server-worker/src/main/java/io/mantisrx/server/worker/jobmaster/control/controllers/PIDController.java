@@ -19,6 +19,7 @@ package io.mantisrx.server.worker.jobmaster.control.controllers;
 
 import io.mantisrx.server.worker.jobmaster.control.Controller;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -29,6 +30,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
  * Iteratively applying changes in the correct direction allows this
  * system to converge onto the correct value over time.
  */
+@Slf4j
 public class PIDController extends Controller {
 
     private final Double kp; // Proportional Gain
@@ -76,12 +78,20 @@ public class PIDController extends Controller {
 
     @Override
     public Double processStep(Double error) {
+        log.info("[Autoscaling] pidError={}", error);
+        log.info("[Autoscaling] pidPreviousError={}", previous);
+
         this.integral += this.deltaT * error;
         this.derivative = (error - this.previous) / this.deltaT;
         this.previous = error;
+        log.info("[Autoscaling] pidDeltaT={}", deltaT);
+        log.info("[Autoscaling] pidIntegral={}", integral);
+        log.info("[Autoscaling] pidDerivative={}", derivative);
 
-        return (this.dampener.get() * this.kp) * error
+        double x = (this.dampener.get() * this.kp) * error
                 + (this.dampener.get() * this.ki) * this.integral
                 + (this.dampener.get() * this.kd) * this.derivative;
+        log.info("[Autoscaling] pidResult={}", x);
+        return x;
     }
 }

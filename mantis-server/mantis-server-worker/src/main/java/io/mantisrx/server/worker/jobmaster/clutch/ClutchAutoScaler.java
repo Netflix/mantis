@@ -92,7 +92,7 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
         Observable.interval(60, TimeUnit.SECONDS)
                 .forEach(__ -> {
                     double factor = computeGainFactor(actionCache);
-                    log.debug("Setting gain dampening factor to: {}.", factor);
+                    log.info("[Autoscaling] gainDampeningFactor={}", factor);
                     this.gainDampeningFactor.set(factor);
                 });
     }
@@ -163,7 +163,10 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
         ClutchController memController = new ClutchController(Memory, this.stageSchedulingInfo, this.config.memory.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
         ClutchController netController = new ClutchController(Network, this.stageSchedulingInfo, this.config.network.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
 
-        Observable<ClutchControllerOutput> cpuSignal = metrics.filter(event -> event.getType().equals(CPU))
+        Observable<ClutchControllerOutput> cpuSignal = metrics.filter(event -> {
+            log.info("[Autoscaling] event={}", event);
+            return event.getType().equals(CPU);
+        })
                 .compose(cpuController);
         Observable<ClutchControllerOutput> memorySignal = metrics.filter(event -> event.getType().equals(Memory))
                 .compose(memController);
@@ -198,9 +201,15 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
                 .withLatestFrom(currentScale, (tup, scale) -> Tuple.of(tup._1, tup._2, scale))
                 .withLatestFrom(error, (tup, err) -> Tuple.of(tup._1, tup._2, tup._3, err))
                 .map(tup -> {
+                    log.info("[Autoscaling] start_now");
+                    log.info("[Autoscaling] tup={}", tup);
                     int currentWorkerCount = tup._3;
+                    log.info("[Autoscaling] currentWorkerCount={}", currentWorkerCount);
+
                     ClutchControllerOutput dominantResource = findDominatingResource(tup._2);
                     String resourceName = dominantResource.reason.name();
+                    log.info("[Autoscaling] dominantResource={}", dominantResource);
+                    log.info("[Autoscaling] dominantResourceName={}", resourceName);
 
                     //
                     // Correction
@@ -209,6 +218,7 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
                     double yhat = tup._4;
                     yhat = Math.min(yhat, config.maxAdjustment.getOrElse(config.maxSize * 1.0));
                     yhat = yhat < 1.0 ? 0.0 : yhat;
+                    log.info("[Autoscaling] yhat={}", yhat);
 
                     if (System.currentTimeMillis() > this.cooldownTimestamp.get()) {
                         double x = correction.addAndGet(yhat);
@@ -217,15 +227,24 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
                     }
                     correction.set(correction.get() * 0.99); // Exponentially decay our correction.
                     correction.set(Double.isNaN(correction.get()) ? 0.0 : correction.get());
+                    log.info("[Autoscaling] correction={}", correction);
 
                     Double targetScale = enforceMinMax(Math.ceil(dominantResource.scale) + Math.ceil(correction.get()), this.config.minSize, this.config.maxSize);
                     String logMessage = String.format(autoscaleLogMessageFormat, scaler.getStage(), targetScale.intValue(), tup._2._1.scale, tup._2._2.scale, tup._2._3.scale, gainDampeningFactor.get(), correction.get(), resourceName);
+                    log.info("[Autoscaling] targetScale={}", targetScale);
+                    log.info("[fdc-91] Autoscaling stage {} to {} instances on controller output: cpu/mem/network {}/{}/{} (dampening: {}) and predicted error: {} with dominant resource: {}", scaler.getStage(), targetScale.intValue(), tup._2._1.scale, tup._2._2.scale, tup._2._3.scale, gainDampeningFactor.get(), correction.get(), resourceName);
+                    log.info("[Autoscaling] gainDampeningFactor={}", gainDampeningFactor);
 
                     return Tuple.of(logMessage, targetScale, currentWorkerCount);
                 });
 
         return controllerSignal
-                .filter(__ -> System.currentTimeMillis() > this.cooldownTimestamp.get())
+                .filter(__ -> {
+                    log.info("[Autoscaling] systemTime={}", System.currentTimeMillis());
+                    log.info("[Autoscaling] cooldownTimestamp={}", this.cooldownTimestamp.get());
+                    log.info("[fdc-91] systemTime > cooldownTimestamp: {}", System.currentTimeMillis() > this.cooldownTimestamp.get());
+                    return System.currentTimeMillis() > this.cooldownTimestamp.get();
+                })
                 .filter(tup -> Math.abs(Math.round(tup._2) - tup._3) > 0.99) //
                 .doOnNext(signal -> log.info(signal._1))
                 .compose(new ClutchMantisStageActuator(this.scaler))
@@ -267,7 +286,13 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
 
         @Override
         public Observable<ClutchControllerOutput> call(Observable<JobAutoScaler.Event> eventObservable) {
-            return eventObservable.map(event -> Util.getEffectiveValue(this.stageSchedulingInfo, event.getType(), event.getValue()))
+            log.info("[Autoscaling] gainFactor={}", gainFactor);
+            log.info("[Autoscaling] integrator={}", integrator);
+            return eventObservable.map(event -> {
+                        double x = Util.getEffectiveValue(this.stageSchedulingInfo, event.getType(), event.getValue());
+                        log.info("[Autoscaling] ###{}### effectiveValue={}", event, x);
+                        return x;
+                    })
                     .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
                     .lift(PIDController.of(config.kp, 0.0, config.kd, 1.0, this.gainFactor))
                     .lift(this.integrator)
