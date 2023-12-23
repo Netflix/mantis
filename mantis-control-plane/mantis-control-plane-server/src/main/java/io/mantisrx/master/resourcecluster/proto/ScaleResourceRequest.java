@@ -37,7 +37,13 @@ public class ScaleResourceRequest {
 
     Optional<MantisResourceClusterEnvType> envType;
 
-    int desireSize;
+    int scaleUpCount;
+
+    int scaleDownCount;
+
+    int registeredCount;
+
+    int idleCount;
 
     @Singular
     List<TaskExecutorID> idleInstances;
@@ -48,7 +54,8 @@ public class ScaleResourceRequest {
             this.region == null ? "" : this.region,
             this.envType != null && this.envType.isPresent() ? this.getEnvType().get().name() : "",
             this.skuId.getResourceID(),
-            this.desireSize);
+            this.scaleUpCount, this.scaleDownCount,
+            this.registeredCount, this.idleCount);
     }
 
 }

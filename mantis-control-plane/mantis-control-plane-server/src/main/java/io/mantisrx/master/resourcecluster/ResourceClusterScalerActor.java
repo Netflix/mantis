@@ -208,9 +208,11 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                                 GetClusterIdleInstancesRequest.builder()
                                     .clusterID(this.clusterId)
                                     .skuId(skuId)
-                                    .desireSize(decisionO.get().getDesireSize())
-                                    .maxInstanceCount(
-                                        Math.max(0, usage.getTotalCount() - decisionO.get().getDesireSize()))
+                                    .scaleDownCount(
+                                        Math.max(0, decisionO.get().getScaleDownCount()))
+                                    .scaleUpCount(0)
+                                    .registeredCount(decisionO.get().getRegisteredCount())
+                                    .idleCount(decisionO.get().getIdleCount())
                                     .build(),
                                 self());
                             break;
@@ -244,7 +246,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             ScaleResourceRequest.builder()
                 .clusterId(this.clusterId)
                 .skuId(response.getSkuId())
-                .desireSize(response.getDesireSize())
+                .scaleDownCount(response.getScaleDownCount())
+                .scaleUpCount(0)
+                .registeredCount(response.getRegisteredCount())
+                .idleCount(response.getIdleCount())
                 .idleInstances(response.getInstanceIds())
                 .build(),
             self());
@@ -353,7 +358,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         return ScaleResourceRequest.builder()
             .clusterId(this.clusterId)
             .skuId(decision.getSkuId())
-            .desireSize(decision.getDesireSize())
+            .scaleUpCount(decision.getScaleUpCount())
+            .scaleDownCount(decision.getScaleDownCount())
+            .registeredCount(decision.getRegisteredCount())
+            .idleCount(decision.getIdleCount())
             .build();
     }
 
@@ -436,17 +444,19 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 }
 
                 // too many idle agents, scale down.
-                int step = usage.getIdleCount() - scaleSpec.getMaxIdleToKeep();
-                int newSize = Math.max(
-                    usage.getTotalCount() - step, this.scaleSpec.getMinSize());
+                // TODO: fix this. probably we shouldn't check whether we reached the max. here we should simply
+                // count what to increase or decreased based on available resources...
+                ScaleType scaleType = usage.getTotalCount() == this.scaleSpec.getMinSize() ? ScaleType.NoOpReachMin : ScaleType.ScaleDown;
+                int step = scaleType == ScaleType.NoOpReachMin ? 0 : usage.getIdleCount() - scaleSpec.getMaxIdleToKeep();
                 decision = Optional.of(
                     ScaleDecision.builder()
                         .clusterId(this.scaleSpec.getClusterId())
                         .skuId(this.scaleSpec.getSkuId())
-                        .desireSize(newSize)
-                        .maxSize(newSize)
-                        .minSize(newSize)
-                        .type(newSize == usage.getTotalCount() ? ScaleType.NoOpReachMin : ScaleType.ScaleDown)
+                        .scaleUpCount(0)
+                        .scaleDownCount(step)
+                        .registeredCount(usage.getTotalCount())
+                        .idleCount(usage.getIdleCount())
+                        .type(scaleType)
                         .build());
             }
             else if (usage.getIdleCount() < scaleSpec.getMinIdleToKeep()) {
@@ -457,17 +467,19 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 }
 
                 // scale up
-                int step = scaleSpec.getMinIdleToKeep() - usage.getIdleCount();
-                int newSize = Math.min(
-                    usage.getTotalCount() + step, this.scaleSpec.getMaxSize());
+                // TODO: fix this. probably we shouldn't check whether we reached the max. here we should simply
+                // count what to increase or decreased based on available resources...
+                ScaleType scaleType = usage.getTotalCount() == this.scaleSpec.getMaxSize() ? ScaleType.NoOpReachMax : ScaleType.ScaleUp;
+                int step = scaleType == ScaleType.NoOpReachMax ? 0 : scaleSpec.getMinIdleToKeep() - usage.getIdleCount();
                 decision = Optional.of(
                     ScaleDecision.builder()
                         .clusterId(this.scaleSpec.getClusterId())
                         .skuId(this.scaleSpec.getSkuId())
-                        .desireSize(newSize)
-                        .maxSize(newSize)
-                        .minSize(newSize)
-                        .type(newSize == usage.getTotalCount() ? ScaleType.NoOpReachMax : ScaleType.ScaleUp)
+                        .scaleUpCount(step)
+                        .scaleDownCount(0)
+                        .registeredCount(usage.getTotalCount())
+                        .idleCount(usage.getIdleCount())
+                        .type(scaleType)
                         .build());
             }
 
@@ -495,9 +507,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     static class ScaleDecision {
         ContainerSkuID skuId;
         ClusterID clusterId;
-        int maxSize;
-        int minSize;
-        int desireSize;
+        int scaleUpCount;
+        int scaleDownCount;
+        int registeredCount;
+        int idleCount;
         ScaleType type;
     }
 

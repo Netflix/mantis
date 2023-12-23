@@ -291,6 +291,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             .instanceIds(instanceList)
             .clusterId(this.clusterID)
             .skuId(req.getSkuId())
+            .scaleDownCount(req.getScaleDownCount())
+            .registeredCount(req.getRegisteredCount())
+            .idleCount(req.getIdleCount())
             .build();
         log.info("Return idle instance list: {}", res);
         return res;

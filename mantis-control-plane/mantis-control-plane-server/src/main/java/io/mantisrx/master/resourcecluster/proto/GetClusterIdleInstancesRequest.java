@@ -26,7 +26,8 @@ import lombok.Value;
 public class GetClusterIdleInstancesRequest {
     ClusterID clusterID;
     ContainerSkuID skuId;
-
-    int maxInstanceCount;
-    int desireSize;
+    int scaleUpCount;
+    int scaleDownCount;
+    int registeredCount;
+    int idleCount;
 }
