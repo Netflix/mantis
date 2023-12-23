@@ -6,10 +6,10 @@ Currently supported linux versions include:
 
 ## Setup instructions
 1. Install Vagrant(https://www.vagrantup.com/) and VirtualBox(https://www.virtualbox.org/)
-2. git clone the Mantis repo to ~/Projects (can change clone directory in <path to mantis source>/mantis-localdev/vagrant/centos/Vagrantfile to point to a different location)
-3. cd <path to mantis source>/mantis-localdev/vagrant/centos
-4. vagrant up
-5. add "192.168.34.10 mantis-node1" to your /etc/hosts (This allows mesos UI to fetch console logs for any mantis jobs running on mesos-slave)
+2. git clone the Mantis repo to ~/Projects (can change clone directory in <path to mantis source>/localdev/vagrant/centos/Vagrantfile to point to a different location)
+3. ```cd /localdev/vagrant/centos```<path to mantis source>
+4. ```vagrant up```
+5. add ```192.168.34.10 mantis-node1``` to your /etc/hosts (This allows mesos UI to fetch console logs for any mantis jobs running on mesos-slave)
 
 The above steps will
 - spin up a CentOS VM in VirtualBox
