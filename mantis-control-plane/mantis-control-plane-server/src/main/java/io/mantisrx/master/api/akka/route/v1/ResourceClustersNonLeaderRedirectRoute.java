@@ -208,8 +208,11 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                 path(
                     PathMatchers.segment().slash("getRegisteredTaskExecutors"),
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(
-                        get(() -> mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getRegisteredTaskExecutors(req.getAttributes())))))
-                ),
+                        get(() -> {
+                            log.info("[fdc-91] getRegisteredTaskExecutors hit!");
+                            return mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getRegisteredTaskExecutors(req.getAttributes()));
+                        }))
+                )),
                 // /{}/getBusyTaskExecutors
                 path(
                     PathMatchers.segment().slash("getBusyTaskExecutors"),
@@ -303,10 +306,12 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
     private Route mkTaskExecutorsRoute(
         ClusterID clusterId,
         BiFunction<ResourceCluster, GetTaskExecutorsRequest, CompletableFuture<List<TaskExecutorID>>> taskExecutors) {
+        log.info("[fdc-91] mkTaskExecutorsRoute");
         final GetTaskExecutorsRequest empty = new GetTaskExecutorsRequest(ImmutableMap.of());
         return entity(
             Jackson.optionalEntityUnmarshaller(GetTaskExecutorsRequest.class),
             request -> {
+                log.info("[fdc-91] GetTaskExecutorsRequest: {}", request);
                 if (request == null) {
                     request = empty;
                 }
