@@ -16,10 +16,8 @@
 
 package io.reactivex.mantis.network.push;
 
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.GaugeCallback;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Gauge;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -40,18 +38,18 @@ public class ConnectionManager<T> {
 
     private Map<String, ConnectionGroup<T>> managedConnections
             = new LinkedHashMap<String, ConnectionGroup<T>>();
-    private MetricsRegistry metricsRegistry;
+    private MeterRegistry meterRegistry;
     private AtomicReference<Gauge> activeConnectionsRef = new AtomicReference<>(null);
     private Action0 doOnFirstConnection;
     private Action0 doOnZeroConnections;
     private Lock connectionState = new ReentrantLock();
     private AtomicBoolean subscribed = new AtomicBoolean();
 
-    public ConnectionManager(MetricsRegistry metricsRegistry,
+    public ConnectionManager(MeterRegistry metricsRegistry,
                              Action0 doOnFirstConnection, Action0 doOnZeroConnections) {
         this.doOnFirstConnection = doOnFirstConnection;
         this.doOnZeroConnections = doOnZeroConnections;
-        this.metricsRegistry = metricsRegistry;
+        this.meterRegistry = meterRegistry;
     }
 
     private int activeConnections() {
@@ -67,9 +65,10 @@ public class ConnectionManager<T> {
         }
     }
 
-    protected Gauge getActiveConnections(final MetricGroupId metricsGroup) {
+    protected Gauge getActiveConnections() {
         activeConnectionsRef.compareAndSet(null,
-                new GaugeCallback(metricsGroup, "activeConnections", () -> (double) activeConnections()));
+            Gauge.builder("PushServer_activeConnections", () -> (double) activeConnections())
+                .register(meterRegistry));
         return activeConnectionsRef.get();
     }
 
@@ -119,11 +118,11 @@ public class ConnectionManager<T> {
             String groupId = connection.getGroupId();
             ConnectionGroup<T> current = managedConnections.get(groupId);
             if (current == null) {
-                ConnectionGroup<T> newGroup = new ConnectionGroup<T>(groupId);
+                ConnectionGroup<T> newGroup = new ConnectionGroup<T>(groupId, meterRegistry);
                 current = managedConnections.putIfAbsent(groupId, newGroup);
                 if (current == null) {
                     current = newGroup;
-                    metricsRegistry.registerAndGet(current.getMetrics());
+                    meterRegistry.getMeters();
                 }
             }
             current.addConnection(connection);
@@ -150,7 +149,10 @@ public class ConnectionManager<T> {
                 if (current.isEmpty()) {
                     logger.info("Removing group: " + groupId + ", zero connections");
                     // deregister metrics
-                    metricsRegistry.remove(current.getMetricsGroup());
+                    meterRegistry.remove(current.getMetrics().get(0));
+                    meterRegistry.remove(current.getMetrics().get(1));
+                    meterRegistry.remove(current.getMetrics().get(2));
+                    meterRegistry.remove(current.getMetrics().get(3));
                     // remove group
                     managedConnections.remove(groupId);
                 }

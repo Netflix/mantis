@@ -17,14 +17,17 @@
 package io.reactivex.mantis.network.push;
 
 import com.mantisrx.common.utils.MantisMetricStringConstants;
-import com.netflix.spectator.api.BasicTag;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Tags;
 import java.util.AbstractQueue;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jctools.queues.SpscArrayQueue;
 
 
@@ -33,10 +36,11 @@ public class MonitoredQueue<T> {
     final boolean isSpsc;
     //private BlockingQueue<T> queue;
     private AbstractQueue<T> queue;
-    private Metrics metrics;
+    private MeterRegistry meterRegistry;
     private Counter numSuccessEnqueu;
     private Counter numFailedEnqueu;
     private Gauge queueDepth;
+    private AtomicLong queueDepthValue = new AtomicLong(0);
 
     public MonitoredQueue(String name, int capacity) {
         this(name, capacity, true);
@@ -51,24 +55,18 @@ public class MonitoredQueue<T> {
         }
 
         final String qId = Optional.ofNullable(name).orElse("none");
-        final BasicTag idTag = new BasicTag(MantisMetricStringConstants.GROUP_ID_TAG, qId);
-        final MetricGroupId metricGroup = new MetricGroupId("MonitoredQueue", idTag);
+        final Tags idTag = Tags.of(MantisMetricStringConstants.GROUP_ID_TAG, qId);
 
-        metrics = new Metrics.Builder()
-            .id(metricGroup)
-            .addCounter("numFailedToQueue")
-            .addCounter("numSuccessQueued")
-            .addGauge("queueDepth")
-            .build();
-
-        numSuccessEnqueu = metrics.getCounter("numSuccessQueued");
-        numFailedEnqueu = metrics.getCounter("numFailedToQueue");
-        queueDepth = metrics.getGauge("queueDepth");
+        numSuccessEnqueu = meterRegistry.counter("MonitoredQueue_numSuccessEnqueu", idTag);
+        numFailedEnqueu = meterRegistry.counter("MonitoredQueue_numFailedEnqueu", idTag);
+        queueDepth = Gauge.builder("MonitoredQueue_queueDepth", queueDepthValue::get)
+                .tags(idTag)
+                .register(meterRegistry);
     }
 
     public boolean write(T data) {
         boolean offer = queue.offer(data);
-        queueDepth.set(queue.size());
+        queueDepthValue.set(queue.size());
         if (offer) {
             numSuccessEnqueu.increment();
         } else {
@@ -77,8 +75,12 @@ public class MonitoredQueue<T> {
         return offer;
     }
 
-    public Metrics getMetrics() {
-        return metrics;
+    public List<Meter> getMetrics() {
+        List<Meter> meters = new LinkedList<>();
+        meters.add(numSuccessEnqueu);
+        meters.add(numFailedEnqueu);
+        meters.add(queueDepth);
+        return meters;
     }
 
     public T get() throws InterruptedException {

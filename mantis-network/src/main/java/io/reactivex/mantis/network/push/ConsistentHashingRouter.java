@@ -16,6 +16,7 @@
 
 package io.reactivex.mantis.network.push;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,12 +37,13 @@ public class ConsistentHashingRouter<K, V> extends Router<KeyValuePair<K, V>> {
     private static int connectionRepetitionOnRing = 1000;
     private static long validCacheAgeMSec = 5000;
     private HashFunction hashFunction;
+    private MeterRegistry meterRegistry;
     private AtomicReference<SnapshotCache<SortedMap<Long, AsyncConnection<KeyValuePair<K, V>>>>> cachedRingRef = new AtomicReference<>();
 
     public ConsistentHashingRouter(String name,
                                    Func1<KeyValuePair<K, V>, byte[]> dataEncoder,
-                                   HashFunction hashFunction) {
-        super("ConsistentHashingRouter_" + name, dataEncoder);
+                                   HashFunction hashFunction, MeterRegistry meterRegistry) {
+        super("ConsistentHashingRouter_" + name, dataEncoder, meterRegistry);
         this.hashFunction = hashFunction;
     }
 
