@@ -31,8 +31,6 @@ import io.mantisrx.sourcejobs.publish.core.RequestPostProcessor;
 import io.mantisrx.sourcejobs.publish.core.RequestPreProcessor;
 import io.mantisrx.sourcejobs.publish.core.Utils;
 import io.mantisrx.sourcejobs.publish.stages.EchoStage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 public class PushRequestEventSourceJob extends MantisJobProvider<String> {
