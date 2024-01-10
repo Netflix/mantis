@@ -50,8 +50,9 @@ def imageRepository = ci ? 'netflixoss' : 'localhost:5001/netflixoss'
 
 docker {
     dockerSyncBuildContext {
-        from pushServerJob.buildDir
-        from mantisExamplesSineFunctionBuildDir
+        // get push server job's distribution zip into the docker build context
+        from new File(pushServerJob.buildDir, "distributions") into file( buildDir.toString() + "/docker/examples" )
+        from new File(mantisExamplesSineFunctionBuildDir, "distributions") into file( buildDir.toString() + "/docker/examples" )
         from installDir
         from resourcesDir
     }
@@ -63,7 +64,7 @@ docker {
         // copy the files from the build context to the image
         instruction 'COPY mantis-server-agent/bin/* /apps/mantis/mantis-server-agent/bin/'
         instruction 'COPY mantis-server-agent/lib/* /apps/mantis/mantis-server-agent/lib/'
-        instruction 'COPY distributions/* mantis-artifacts/storage/'
+        instruction 'COPY examples/* mantis-artifacts/storage/'
         instruction 'COPY resources/* conf/'
         entryPoint 'bin/mantis-server-agent', '-p', 'conf/agent-docker.properties'
     }
@@ -78,7 +79,7 @@ docker {
     }
 }
 
-dockerSyncBuildContext.dependsOn(pushServerJob.tasks.named("mantisZipArtifact"))
+//dockerSyncBuildContext.dependsOn(pushServerJob.tasks.named("mantisZipArtifact"))
 dockerSyncBuildContext.dependsOn(mantisExamplesSineFunctionMantisZipArtifact)
 dockerSyncBuildContext.dependsOn(installDist)
 
