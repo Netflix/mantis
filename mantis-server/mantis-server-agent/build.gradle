@@ -41,6 +41,8 @@ dependencies {
 def mantisExamplesSineFunction = project(":mantis-examples:mantis-examples-sine-function")
 def mantisExamplesSineFunctionBuildDir = mantisExamplesSineFunction.buildDir
 def mantisExamplesSineFunctionMantisZipArtifact = mantisExamplesSineFunction.tasks.named("mantisZipArtifact")
+def pushServerJob = project(":mantis-source-jobs:mantis-source-job-publish")
+
 def installDir = file("${buildDir}/install")
 def resourcesDir = file("${buildDir}/resources")
 def ci = System.getenv('GITHUB_ACTIONS')
@@ -48,6 +50,7 @@ def imageRepository = ci ? 'netflixoss' : 'localhost:5001/netflixoss'
 
 docker {
     dockerSyncBuildContext {
+        from pushServerJob.buildDir
         from mantisExamplesSineFunctionBuildDir
         from installDir
         from resourcesDir
@@ -75,7 +78,8 @@ docker {
     }
 }
 
-dockerSyncBuildContext.dependsOn(installDist)
+dockerSyncBuildContext.dependsOn(pushServerJob.tasks.named("mantisZipArtifact"))
 dockerSyncBuildContext.dependsOn(mantisExamplesSineFunctionMantisZipArtifact)
+dockerSyncBuildContext.dependsOn(installDist)
 
 mainClassName = "io.mantisrx.server.agent.AgentV2Main"

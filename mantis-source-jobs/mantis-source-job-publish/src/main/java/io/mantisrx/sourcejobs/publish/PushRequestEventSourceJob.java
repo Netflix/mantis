@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 
 public class PushRequestEventSourceJob extends MantisJobProvider<String> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PushRequestEventSourceJob.class);
     private static final String MANTIS_CLIENT_ID = "MantisPushRequestEvents";
 
     @Override
