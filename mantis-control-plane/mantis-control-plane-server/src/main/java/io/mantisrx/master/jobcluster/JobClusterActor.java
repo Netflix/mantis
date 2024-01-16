@@ -1893,7 +1893,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
                 }
             } else {
-                logger.warn("No such job {} ", req.getJobId());
+                logger.debug("No such job {} ", req.getJobId());
             }
         }
         getSender().tell(response, getSelf());

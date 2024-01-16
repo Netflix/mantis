@@ -232,7 +232,7 @@ public class MantisJobStore {
     public Optional<IMantisJobMetadata> getArchivedJob(final String jobId) {
         final Optional<IMantisJobMetadata> jobOp = Optional.ofNullable(archivedJobsMetadataCache.getJob(jobId));
         if (!jobOp.isPresent()) {
-            logger.error("archivedJobsMetadataCache found no job for job ID {}", jobId);
+            logger.debug("archivedJobsMetadataCache found no job for job ID {}", jobId);
         }
         return jobOp;
     }
