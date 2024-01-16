@@ -17,6 +17,7 @@
 apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'com.bmuschko.docker-java-application'
+apply plugin: 'com.palantir.git-version'
 
 application {
     mainClassName = 'com.netflix.mantis.examples.mantispublishsample.Application'
@@ -24,7 +25,6 @@ application {
 
 ext {
     guiceVersion = '4.2.2'
-    spectatorVersion = '0.96.0'
     archaiusVersion = 'latest.release'
     mockNeatVersion = '0.4.8'
 }
@@ -34,20 +34,24 @@ dependencies {
     implementation project(":mantis-publish:mantis-publish-netty-guice")
 
     implementation libraries.rxJava
-    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
+
+    implementation libraries.spectatorExtIpc
+    implementation libraries.spectatorNflxPlugin
     implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
     implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
     implementation "com.google.inject:guice:$guiceVersion"
-    implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
     implementation libraries.mockneat
 
     implementation libraries.slf4jLog4j12
+
+    testImplementation libraries.junit4
 }
 
 def installDir = file("${buildDir}/install")
 def resourcesDir = file("${buildDir}/resources")
 def ci = System.getenv('GITHUB_ACTIONS')
 def imageRepository = ci ? 'netflixoss' : 'localhost:5001/netflixoss'
+def tag = gitVersion()
 
 docker {
     dockerSyncBuildContext {
@@ -69,7 +73,9 @@ docker {
         baseImage = 'azul/zulu-openjdk:8-latest'
         maintainer = 'Mantis Developers "mantis-oss-dev@netflix.com"'
         mainClassName = 'com.netflix.mantis.examples.mantispublishsample.Application'
-        images = ["$imageRepository/mantis-publisher-sample:latest"]
+        images = [
+            "$imageRepository/mantis-publisher-sample:latest",
+            "$imageRepository/mantis-publisher-sample:$tag"]
     }
 }
 
