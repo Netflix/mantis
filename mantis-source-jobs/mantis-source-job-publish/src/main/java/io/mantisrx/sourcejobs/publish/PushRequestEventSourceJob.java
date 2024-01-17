@@ -46,17 +46,9 @@ public class PushRequestEventSourceJob extends MantisJobProvider<String> {
                 .withClientIdPrefix(mantisClientId)
                 .build();
 
-        String customPortName = "MANTIS_WORKER_CUSTOM_PORT";
-        String consolePort = Utils.getEnvVariable(customPortName, "9090");
-
-        int port = 9090;
-        if (consolePort != null && !consolePort.isEmpty()) {
-            port = Integer.parseInt(consolePort);
-        }
-
         return
                 MantisJob
-                        .source(new PushHttpSource(queryRegistry, port))
+                        .source(new PushHttpSource(queryRegistry))
                         .stage(new EchoStage(), EchoStage.config())
                         .sink(new SourceSink(
                                 new RequestPreProcessor(queryRegistry),

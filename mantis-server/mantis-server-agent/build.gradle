@@ -16,6 +16,7 @@
 
 apply plugin: 'application'
 apply plugin: 'com.bmuschko.docker-java-application'
+apply plugin: 'com.palantir.git-version'
 
 dependencies {
     api project(":mantis-runtime-loader")
@@ -47,6 +48,7 @@ def installDir = file("${buildDir}/install")
 def resourcesDir = file("${buildDir}/resources")
 def ci = System.getenv('GITHUB_ACTIONS')
 def imageRepository = ci ? 'netflixoss' : 'localhost:5001/netflixoss'
+def gitVersionTag = gitVersion()
 
 docker {
     dockerSyncBuildContext {
@@ -74,7 +76,7 @@ docker {
         maintainer = 'Mantis Developers "mantis-oss-dev@netflix.com"'
         mainClassName = 'io.mantisrx.server.agent.AgentV2Main'
         applicationDefaultJvmArgs = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/sun.net.util=ALL-UNNAMED']
-        images = ["$imageRepository/mantisagent:latest"]
+        images = ["$imageRepository/mantisagent:latest", "$imageRepository/mantisagent:$gitVersionTag"]
         ports = [5050]
     }
 }
