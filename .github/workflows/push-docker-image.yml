@@ -5,6 +5,7 @@ on:
     paths:
       - ./mantis-control-plane/mantis-control-plane-server/build.gradle
       - ./mantis-server/mantis-server-agent/build.gradle
+      - ./mantis-examples/mantis-examples-mantis-publish-sample/build.gradle
       - .github/workflows/push-docker-image.yml
   push:
     tags:
@@ -29,6 +30,10 @@ jobs:
             image: "netflixoss/mantisagent"
             target: mantis-server:mantis-server-agent
             workingDirectory: ./mantis-server/mantis-server-agent/build/docker
+          - dockerfile: ./mantis-examples/mantis-examples-mantis-publish-sample/build/docker/Dockerfile
+            image: "netflixoss/mantis-publisher-sample"
+            target: mantis-examples:mantis-examples-mantis-publish-sample
+            workingDirectory: ./mantis-examples/mantis-examples-mantis-publish-sample/build/docker
     permissions:
       contents: read
       packages: write
