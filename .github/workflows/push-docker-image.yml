@@ -5,6 +5,7 @@ on:
     paths:
       - ./mantis-control-plane/mantis-control-plane-server/build.gradle
       - ./mantis-server/mantis-server-agent/build.gradle
+      - ./mantis-examples/mantis-examples-mantis-publish-sample/build.gradle
       - .github/workflows/push-docker-image.yml
   push:
     tags:
@@ -29,6 +30,10 @@ jobs:
             image: "netflixoss/mantisagent"
             target: mantis-server:mantis-server-agent
             workingDirectory: ./mantis-server/mantis-server-agent/build/docker
+          - dockerfile: ./mantis-examples/mantis-examples-mantis-publish-sample/build/docker/Dockerfile
+            image: "netflixoss/mantis-publisher-sample"
+            target: mantis-examples:mantis-examples-mantis-publish-sample
+            workingDirectory: ./mantis-examples/mantis-examples-mantis-publish-sample/build/docker
     permissions:
       contents: read
       packages: write
@@ -82,6 +87,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+
       - name: Build and push Docker images
         uses: docker/build-push-action@v3
         with:
@@ -90,3 +104,5 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
