@@ -41,7 +41,7 @@ dependencies {
 
 def mantisExamplesSineFunction = project(":mantis-examples:mantis-examples-sine-function")
 def mantisExamplesSineFunctionBuildDir = mantisExamplesSineFunction.buildDir
-def mantisExamplesSineFunctionMantisZipArtifact = mantisExamplesSineFunction.tasks.named("mantisZipArtifact")
+def mantisExamplesSineFunctionMantisZipArtifact = mantisExamplesSineFunction.getTasksByName("mantisZipArtifact", false)
 def pushServerJob = project(":mantis-source-jobs:mantis-source-job-publish")
 
 def installDir = file("${buildDir}/install")
@@ -52,11 +52,13 @@ def gitVersionTag = gitVersion()
 
 docker {
     dockerSyncBuildContext {
-        // get push server job's distribution zip into the docker build context
-        from new File(pushServerJob.buildDir, "distributions") into file( buildDir.toString() + "/docker/examples" )
-        from new File(mantisExamplesSineFunctionBuildDir, "distributions") into file( buildDir.toString() + "/docker/examples" )
         from installDir
         from resourcesDir
+        // get push server job's distribution zip into the docker build context
+        into("examples") {
+            from new File(pushServerJob.buildDir, "distributions")
+            from new File(mantisExamplesSineFunctionBuildDir, "distributions")
+        }
     }
 
     dockerCreateDockerfile {
@@ -81,7 +83,7 @@ docker {
     }
 }
 
-//dockerSyncBuildContext.dependsOn(pushServerJob.tasks.named("mantisZipArtifact"))
+dockerSyncBuildContext.dependsOn(pushServerJob.getTasksByName("mantisZipArtifact", false))
 dockerSyncBuildContext.dependsOn(mantisExamplesSineFunctionMantisZipArtifact)
 dockerSyncBuildContext.dependsOn(installDist)
 

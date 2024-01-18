@@ -45,8 +45,3 @@ test {
     dependsOn ':mantis-server:mantis-server-agent:dockerCreateDockerfile'
     dependsOn ':mantis-control-plane:mantis-control-plane-server:dockerCreateDockerfile'
 }
-
-//
-//test {
-//    useJUnitPlatform()
-//}
