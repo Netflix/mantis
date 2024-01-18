@@ -41,6 +41,7 @@ test.dependsOn writeVersion
 
 // require following tasks to build container images.
 test {
+    dependsOn project(":mantis-source-jobs:mantis-source-job-publish").getTasksByName('mantisZipArtifact', false)
     dependsOn ':mantis-server:mantis-server-agent:dockerCreateDockerfile'
     dependsOn ':mantis-control-plane:mantis-control-plane-server:dockerCreateDockerfile'
 }

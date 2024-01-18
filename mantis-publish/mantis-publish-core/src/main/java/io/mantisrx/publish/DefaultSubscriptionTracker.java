@@ -72,7 +72,7 @@ public class DefaultSubscriptionTracker extends AbstractSubscriptionTracker {
             } else {
                 uri = String.format(SUBSCRIPTIONS_URL_FORMAT, worker.getHost(), worker.getPort(), jobId);
             }
-            LOG.info("Subscription fetch URL: {}", uri);
+            LOG.trace("Subscription fetch URL: {}", uri);
             HttpResponse response = httpClient
                     .get(URI.create(uri))
                     .withConnectTimeout(1000)
