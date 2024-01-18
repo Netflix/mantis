@@ -33,6 +33,7 @@ buildscript {
         classpath 'gradle.plugin.org.inferred:gradle-processors:3.3.0'
         classpath 'com.palantir.baseline:gradle-baseline-java:4.0.0'
         classpath 'com.bmuschko:gradle-docker-plugin:6.7.0'
+        classpath "com.palantir.gradle.gitversion:gradle-git-version:3.0.0"
     }
 }
 
@@ -83,6 +84,8 @@ ext.libraries = [
         slf4jApi       : "org.slf4j:slf4j-api:${versions.slf4j}",
         slf4jLog4j12   : "org.slf4j:slf4j-log4j12:${versions.slf4j}",
         spectatorApi   : "com.netflix.spectator:spectator-api:${versions.spectator}",
+        spectatorExtIpc: "com.netflix.spectator:spectator-ext-ipc:${versions.spectator}",
+        spectatorNflxPlugin: "com.netflix.spectator:spectator-nflx-plugin:${versions.spectator}",
         spotifyFutures : "com.spotify:completable-futures:0.3.1",
         vavr           : "io.vavr:vavr:${versions.vavr}",
         vavrJackson    : "io.vavr:vavr-jackson:${versions.vavr}",

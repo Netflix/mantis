@@ -16,38 +16,15 @@
 
 apply plugin: 'java'
 apply plugin: 'application'
-apply plugin: 'com.github.johnrengelman.shadow'
-repositories {
-    maven {
-        url "https://artifactory-oss.prod.netflix.net/artifactory/maven-oss-releases"
-    }
-}
+apply plugin: 'com.bmuschko.docker-java-application'
+apply plugin: 'com.palantir.git-version'
 
-
-if (project.hasProperty('useMavenLocal')) {
-    repositories {
-        mavenLocal()
-    }
-}
-
-buildscript {
-    repositories {
-        mavenCentral()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
-    }
-}
 application {
     mainClassName = 'com.netflix.mantis.examples.mantispublishsample.Application'
 }
 
 ext {
     guiceVersion = '4.2.2'
-    spectatorVersion = '0.96.0'
     archaiusVersion = 'latest.release'
     mockNeatVersion = '0.4.8'
 }
@@ -57,12 +34,49 @@ dependencies {
     implementation project(":mantis-publish:mantis-publish-netty-guice")
 
     implementation libraries.rxJava
-    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
+
+    implementation libraries.spectatorExtIpc
+    implementation libraries.spectatorNflxPlugin
     implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
     implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
     implementation "com.google.inject:guice:$guiceVersion"
-    implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
     implementation libraries.mockneat
 
     implementation libraries.slf4jLog4j12
+
+    testImplementation libraries.junit4
 }
+
+def installDir = file("${buildDir}/install")
+def resourcesDir = file("${buildDir}/resources")
+def ci = System.getenv('GITHUB_ACTIONS')
+def imageRepository = ci ? 'netflixoss' : 'localhost:5001/netflixoss'
+def tag = gitVersion()
+
+docker {
+    dockerSyncBuildContext {
+        from installDir
+        from resourcesDir
+    }
+
+    dockerCreateDockerfile {
+        // root directory to store all the files
+        instruction 'WORKDIR /apps/mantis/mantis-publisher-sample'
+        // copy the files from the build context to the image
+        instruction 'COPY mantis-examples-mantis-publish-sample/bin/* /apps/mantis/mantis-publisher-sample/bin/'
+        instruction 'COPY mantis-examples-mantis-publish-sample/lib/* /apps/mantis/mantis-publisher-sample/lib/'
+        instruction 'COPY resources/* conf/'
+        entryPoint 'bin/mantis-examples-mantis-publish-sample', '-p', 'application.properties'
+    }
+
+    javaApplication {
+        baseImage = 'azul/zulu-openjdk:8-latest'
+        maintainer = 'Mantis Developers "mantis-oss-dev@netflix.com"'
+        mainClassName = 'com.netflix.mantis.examples.mantispublishsample.Application'
+        images = [
+            "$imageRepository/mantis-publisher-sample:latest",
+            "$imageRepository/mantis-publisher-sample:$tag"]
+    }
+}
+
+dockerSyncBuildContext.dependsOn(installDist)

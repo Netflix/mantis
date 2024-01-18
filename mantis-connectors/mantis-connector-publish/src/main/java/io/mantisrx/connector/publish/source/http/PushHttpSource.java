@@ -48,17 +48,16 @@ public class PushHttpSource implements Source<String> {
     private final Subject<String, String> eventSubject = new SerializedSubject<>(PublishSubject.create());
 
     private final QueryRegistry queryRegistry;
-    private final int serverPort;
 
     private AtomicReference<WorkerMap> workerMapAtomicReference = new AtomicReference<>(new WorkerMap(new HashMap<>()));
 
     private static final String NETTY_THREAD_COUNT_PARAM_NAME = "nettyThreadCount";
+    private static final String SERVER_PORT = "serverPort";
 
     private SourceHttpServer server;
 
-    public PushHttpSource(QueryRegistry registry, int serverPort) {
+    public PushHttpSource(QueryRegistry registry) {
         this.queryRegistry = registry;
-        this.serverPort = serverPort;
     }
 
     @Override
@@ -72,6 +71,7 @@ public class PushHttpSource implements Source<String> {
     public void init(Context context, Index index) {
         LOGGER.info("Initializing PushHttpSource");
         int threadCount = (Integer) context.getParameters().get(NETTY_THREAD_COUNT_PARAM_NAME, 4);
+        int serverPort = (Integer) context.getParameters().get(SERVER_PORT);
 
         LOGGER.info("PushHttpSource server starting at Port " + serverPort);
 
@@ -114,6 +114,13 @@ public class PushHttpSource implements Source<String> {
                 .validator(Validators.alwaysPass())
                 .defaultValue("")
                 .build());
+
+        parameters.add(new IntParameter()
+            .name(SERVER_PORT)
+            .description("port to serve the output")
+            .validator(Validators.range(1000, 65535))
+            .defaultValue(5054)
+            .build());
 
         parameters.add(new StringParameter()
                 .name(MantisSourceJobConstants.TARGET_ASG_CSV_PARAM)

@@ -31,13 +31,10 @@ import io.mantisrx.sourcejobs.publish.core.RequestPostProcessor;
 import io.mantisrx.sourcejobs.publish.core.RequestPreProcessor;
 import io.mantisrx.sourcejobs.publish.core.Utils;
 import io.mantisrx.sourcejobs.publish.stages.EchoStage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 public class PushRequestEventSourceJob extends MantisJobProvider<String> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PushRequestEventSourceJob.class);
     private static final String MANTIS_CLIENT_ID = "MantisPushRequestEvents";
 
     @Override
@@ -49,17 +46,9 @@ public class PushRequestEventSourceJob extends MantisJobProvider<String> {
                 .withClientIdPrefix(mantisClientId)
                 .build();
 
-        String customPortName = "MANTIS_WORKER_CUSTOM_PORT";
-        String consolePort = Utils.getEnvVariable(customPortName, "9090");
-
-        int port = 9090;
-        if (consolePort != null && !consolePort.isEmpty()) {
-            port = Integer.parseInt(consolePort);
-        }
-
         return
                 MantisJob
-                        .source(new PushHttpSource(queryRegistry, port))
+                        .source(new PushHttpSource(queryRegistry))
                         .stage(new EchoStage(), EchoStage.config())
                         .sink(new SourceSink(
                                 new RequestPreProcessor(queryRegistry),

@@ -33,7 +33,7 @@ import rx.Observable;
  *
  */
 @Slf4j
-public class SampleDataPublisher implements IDataPublisher{
+public class SampleDataPublisher implements IDataPublisher {
     @Inject
     EventPublisher publisher;
     @Inject

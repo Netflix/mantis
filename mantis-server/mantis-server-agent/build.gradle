@@ -16,6 +16,7 @@
 
 apply plugin: 'application'
 apply plugin: 'com.bmuschko.docker-java-application'
+apply plugin: 'com.palantir.git-version'
 
 dependencies {
     api project(":mantis-runtime-loader")
@@ -40,17 +41,24 @@ dependencies {
 
 def mantisExamplesSineFunction = project(":mantis-examples:mantis-examples-sine-function")
 def mantisExamplesSineFunctionBuildDir = mantisExamplesSineFunction.buildDir
-def mantisExamplesSineFunctionMantisZipArtifact = mantisExamplesSineFunction.tasks.named("mantisZipArtifact")
+def mantisExamplesSineFunctionMantisZipArtifact = mantisExamplesSineFunction.getTasksByName("mantisZipArtifact", false)
+def pushServerJob = project(":mantis-source-jobs:mantis-source-job-publish")
+
 def installDir = file("${buildDir}/install")
 def resourcesDir = file("${buildDir}/resources")
 def ci = System.getenv('GITHUB_ACTIONS')
 def imageRepository = ci ? 'netflixoss' : 'localhost:5001/netflixoss'
+def gitVersionTag = gitVersion()
 
 docker {
     dockerSyncBuildContext {
-        from mantisExamplesSineFunctionBuildDir
         from installDir
         from resourcesDir
+        // get push server job's distribution zip into the docker build context
+        into("examples") {
+            from new File(pushServerJob.buildDir, "distributions")
+            from new File(mantisExamplesSineFunctionBuildDir, "distributions")
+        }
     }
 
     dockerCreateDockerfile {
@@ -60,7 +68,7 @@ docker {
         // copy the files from the build context to the image
         instruction 'COPY mantis-server-agent/bin/* /apps/mantis/mantis-server-agent/bin/'
         instruction 'COPY mantis-server-agent/lib/* /apps/mantis/mantis-server-agent/lib/'
-        instruction 'COPY distributions/* mantis-artifacts/storage/'
+        instruction 'COPY examples/* mantis-artifacts/storage/'
         instruction 'COPY resources/* conf/'
         entryPoint 'bin/mantis-server-agent', '-p', 'conf/agent-docker.properties'
     }
@@ -70,12 +78,13 @@ docker {
         maintainer = 'Mantis Developers "mantis-oss-dev@netflix.com"'
         mainClassName = 'io.mantisrx.server.agent.AgentV2Main'
         applicationDefaultJvmArgs = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/sun.net.util=ALL-UNNAMED']
-        images = ["$imageRepository/mantisagent:latest"]
+        images = ["$imageRepository/mantisagent:latest", "$imageRepository/mantisagent:$gitVersionTag"]
         ports = [5050]
     }
 }
 
-dockerSyncBuildContext.dependsOn(installDist)
+dockerSyncBuildContext.dependsOn(pushServerJob.getTasksByName("mantisZipArtifact", false))
 dockerSyncBuildContext.dependsOn(mantisExamplesSineFunctionMantisZipArtifact)
+dockerSyncBuildContext.dependsOn(installDist)
 
 mainClassName = "io.mantisrx.server.agent.AgentV2Main"

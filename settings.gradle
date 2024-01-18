@@ -56,6 +56,9 @@ include 'mantis-remote-observable'
 include 'mantis-runtime'
 include 'mantis-runtime-loader'
 
+include 'mantis-source-jobs:mantis-source-job-kafka'
+include 'mantis-source-jobs:mantis-source-job-publish'
+
 include 'mantis-server:mantis-server-agent'
 include 'mantis-server:mantis-server-worker'
 include 'mantis-server:mantis-server-worker-client'
@@ -63,9 +66,6 @@ include 'mantis-server:mantis-server-worker-client'
 include 'mantis-shaded'
 
 include 'mantis-testcontainers'
-
-include 'mantis-source-jobs:mantis-source-job-kafka'
-include 'mantis-source-jobs:mantis-source-job-publish'
 
 gradleEnterprise {
     buildScan {

@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'mantis'
+apply plugin: "mantis"
 
 dependencies {
     implementation project(":mantis-runtime")
     implementation project(":mantis-publish:mantis-publish-netty")
     implementation project(":mantis-connectors:mantis-connector-publish")
+    implementation project(':mantis-server:mantis-server-worker')
 
     implementation libraries.slf4jApi
 
