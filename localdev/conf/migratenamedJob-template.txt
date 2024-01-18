@@ -1,8 +1,0 @@
-{
-  "name": "sine-function",
-  "migrationConfig": {
-    "configString": "{\"percentToMove\":10, \"intervalMs\":1000}",
-    "strategy": "PERCENTAGE"
-  },
-  "user": "NM"
-}

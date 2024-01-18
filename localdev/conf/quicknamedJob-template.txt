@@ -1,7 +1,0 @@
-{
-  "name": "sine-function",
-  "version": "1.2",
-  "url": "file://my-url",
-  "skipsubmit": "false",
-  "user": "YourUserName"
-}
