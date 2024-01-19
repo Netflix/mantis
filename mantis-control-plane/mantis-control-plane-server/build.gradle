@@ -67,6 +67,7 @@ def installDir = file("${buildDir}/install")
 def controlPlaneState = file("${project.resources}/docker")
 def ci = System.getenv('GITHUB_ACTIONS')
 def imageRepository = ci ? 'netflixoss' : 'localhost:5001/netflixoss'
+def version = project.version
 
 docker {
     dockerSyncBuildContext {
@@ -86,6 +87,8 @@ docker {
         instruction 'COPY mantis-control-plane-server/lib/* lib/'
         instruction 'COPY resources/* conf/'
         instruction 'COPY docker/job-clusters/* job-clusters/'
+        // todo: remove this once we have a better way to handle uploading job clusters to the control plane
+        instruction "RUN for file in job-clusters/*; do sed -i -e \"s/{{version}}/$version/g\" \$file; done"
         instruction 'COPY docker/scripts/* bin/'
 
         entryPoint './bin/start.sh'
