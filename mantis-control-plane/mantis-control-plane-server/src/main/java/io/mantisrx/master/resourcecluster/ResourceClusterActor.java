@@ -156,6 +156,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     @Override
     public void preStart() throws Exception {
         super.preStart();
+        metrics.incrementCounter(
+            ResourceClusterActorMetrics.RC_ACTOR_RESTART,
+            TagList.create(ImmutableMap.of(
+                "resourceCluster",
+                clusterID.getResourceID())));
+
         fetchJobArtifactsToCache();
 
         List<DisableTaskExecutorsRequest> activeRequests =
@@ -445,7 +451,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void findAndMarkDisabledTaskExecutors(CheckDisabledTaskExecutors r) {
-        log.info("Checking disabled task executors for Cluster {} because of {}", clusterID.getResourceID(), r.getReason());
+        log.info(
+            "Checking disabled task executors for Cluster {} because of {}. Current disabled request size: {}",
+            clusterID.getResourceID(), r.getReason(), activeDisableTaskExecutorsByAttributesRequests.size());
         final Instant now = clock.instant();
         for (DisableTaskExecutorsRequest request : activeDisableTaskExecutorsByAttributesRequests) {
             if (request.isExpired(now)) {

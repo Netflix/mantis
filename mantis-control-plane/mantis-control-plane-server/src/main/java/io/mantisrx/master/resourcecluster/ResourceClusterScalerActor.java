@@ -254,7 +254,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             this.resourceClusterActor.tell(new DisableTaskExecutorsRequest(
                 Collections.emptyMap(),
                 this.clusterId,
-                Instant.now().plus(Duration.ofHours(24)),
+                Instant.now().plus(Duration.ofMinutes(60)),
                 Optional.of(id)),
                 self()
         ));

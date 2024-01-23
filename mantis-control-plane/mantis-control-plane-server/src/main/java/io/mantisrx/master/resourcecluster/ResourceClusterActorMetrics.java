@@ -55,6 +55,8 @@ class ResourceClusterActorMetrics {
     public static final String HEARTBEAT_TIMEOUT = "taskExecutorHeartbeatTimeout";
 
     public static final String TE_CONNECTION_FAILURE = "taskExecutorConnectionFailure";
+
+    public static final String RC_ACTOR_RESTART = "resourceClusterActorRestart";
     public static final String MAX_JOB_ARTIFACTS_TO_CACHE_REACHED = "maxJobArtifactsToCacheReached";
 
     private final Registry registry;
