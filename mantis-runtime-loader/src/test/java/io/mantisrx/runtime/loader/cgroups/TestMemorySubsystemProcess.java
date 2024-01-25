@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Netflix, Inc.
+ * Copyright 2024 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,32 +14,27 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.agent.metrics.cgroups;
+package io.mantisrx.runtime.loader.cgroups;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import io.mantisrx.runtime.loader.cgroups.Cgroup;
-import io.mantisrx.runtime.loader.cgroups.CgroupImpl;
-import io.mantisrx.runtime.loader.cgroups.MemorySubsystemProcess;
 import io.mantisrx.runtime.loader.config.Usage;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.io.Resources;
 import java.io.IOException;
+import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class TestMemorySubsystemProcess {
-    private final Cgroup cgroup = mock(Cgroup.class);
+    private final Cgroup cgroup = Mockito.mock(Cgroup.class);
 
     private final MemorySubsystemProcess process = new MemorySubsystemProcess(cgroup);
 
     @Test
     public void testHappyPath() throws Exception {
-        when(cgroup.isV1()).thenReturn(true);
-        when(cgroup.getMetric("memory", "memory.limit_in_bytes"))
+        Mockito.when(cgroup.isV1()).thenReturn(true);
+        Mockito.when(cgroup.getMetric("memory", "memory.limit_in_bytes"))
             .thenReturn(17179869184L);
-        when(cgroup.getStats("memory", "memory.stat"))
+        Mockito.when(cgroup.getStats("memory", "memory.stat"))
             .thenReturn(
                 ImmutableMap.<String, Long>builder()
                     .put("cache", 233472L)
@@ -83,9 +78,9 @@ public class TestMemorySubsystemProcess {
         final Usage.UsageBuilder usageBuilder = Usage.builder();
         process.getUsage(usageBuilder);
         final Usage usage = usageBuilder.build();
-        assertEquals(17179869184L, (long) usage.getMemLimit());
-        assertEquals(14828109824L, (long) usage.getMemRssBytes());
-        assertEquals(14828109824L, (long) usage.getMemAnonBytes());
+        Assert.assertEquals(17179869184L, (long) usage.getMemLimit());
+        Assert.assertEquals(14828109824L, (long) usage.getMemRssBytes());
+        Assert.assertEquals(14828109824L, (long) usage.getMemAnonBytes());
     }
 
     @Test
@@ -97,8 +92,8 @@ public class TestMemorySubsystemProcess {
         final Usage.UsageBuilder usageBuilder = Usage.builder();
         process.getUsage(usageBuilder);
         final Usage usage = usageBuilder.build();
-        assertEquals(2147483648L, (long) usage.getMemLimit());
-        assertEquals(1693843456L, (long) usage.getMemRssBytes());
-        assertEquals(945483776L, (long) usage.getMemAnonBytes());
+        Assert.assertEquals(2147483648L, (long) usage.getMemLimit());
+        Assert.assertEquals(1693843456L, (long) usage.getMemRssBytes());
+        Assert.assertEquals(945483776L, (long) usage.getMemAnonBytes());
     }
 }

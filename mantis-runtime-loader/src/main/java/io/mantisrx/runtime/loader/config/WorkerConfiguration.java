@@ -141,7 +141,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     Integer getBindPort();
 
     @Config("mantis.taskexecutor.metrics.collector")
-    @Default("io.mantisrx.server.worker.mesos.MesosMetricsCollector")
+    @Default("io.mantisrx.runtime.loader.cgroups.CgroupsMetricsCollector")
     MetricsCollector getUsageSupplier();
 
     // ------------------------------------------------------------------------

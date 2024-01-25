@@ -56,7 +56,6 @@ import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
 import io.mantisrx.server.worker.jobmaster.JobMasterService;
 import io.mantisrx.server.worker.jobmaster.JobMasterStageConfig;
-import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
@@ -99,7 +98,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private final WorkerMetricsClient workerMetricsClient;
     private final AtomicReference<Heartbeat> heartbeatRef = new AtomicReference<>();
     private final SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
-    private final Observer<VirtualMachineTaskStatus> vmTaskStatusObserver;
     private final MantisMasterGateway mantisMasterApi;
     private int connectionsPerEndpoint = 2;
     private boolean lookupSpectatorRegistry = true;
@@ -112,13 +110,11 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private Observer<Status> jobStatusObserver;
 
     public WorkerExecutionOperationsNetworkStage(
-        Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
         MantisMasterGateway mantisMasterApi,
         WorkerConfiguration config,
         WorkerMetricsClient workerMetricsClient,
         SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
         ClassLoader classLoader) {
-        this.vmTaskStatusObserver = vmTaskStatusObserver;
         this.mantisMasterApi = mantisMasterApi;
         this.config = config;
         this.workerMetricsClient = workerMetricsClient;
@@ -309,7 +305,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 .jobStatusObserver(setup.getStatus())
                 .requestSubject(setup.getExecuteStageRequest().getRequestSubject())
                 .workerInfo(workerInfo)
-                .vmTaskStatusObservable(vmTaskStatusObserver)
                 .hasJobMaster(executionRequest.getHasJobMaster())
                 .jobId(executionRequest.getJobId());
 

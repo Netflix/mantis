@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Netflix, Inc.
+ * Copyright 2024 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.agent.metrics.cgroups;
+package io.mantisrx.runtime.loader.cgroups;
 
-import static org.junit.Assert.assertEquals;
-
-import io.mantisrx.runtime.loader.cgroups.NetworkSubsystemProcess;
 import io.mantisrx.runtime.loader.config.Usage;
 import io.mantisrx.shaded.com.google.common.io.Resources;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class TestNetworkSubsystemProcess {
@@ -32,7 +30,7 @@ public class TestNetworkSubsystemProcess {
         final Usage.UsageBuilder usageBuilder = Usage.builder();
         process.getUsage(usageBuilder);
         final Usage usage = usageBuilder.build();
-        assertEquals(2861321009430L, (long) usage.getNetworkReadBytes());
-        assertEquals(2731791728959L, (long) usage.getNetworkWriteBytes());
+        Assert.assertEquals(2861321009430L, (long) usage.getNetworkReadBytes());
+        Assert.assertEquals(2731791728959L, (long) usage.getNetworkWriteBytes());
     }
 }

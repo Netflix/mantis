@@ -28,8 +28,6 @@ import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
-import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
@@ -61,7 +59,6 @@ public class RunningWorker {
     private final String jobName;
     private final int totalStages;
     private final int metricsPort;
-    private final Observer<VirtualMachineTaskStatus> vmTaskStatusObserver;
     private final Observable<Integer> stageTotalWorkersObservable;
     private final Observable<JobSchedulingInfo> jobSchedulingInfoObservable;
     private final Iterator<Integer> ports;
@@ -85,7 +82,6 @@ public class RunningWorker {
         this.jobName = builder.jobName;
         this.totalStages = builder.totalStages;
         this.totalStagesNet = this.totalStages - (builder.hasJobMaster ? 1 : 0);
-        this.vmTaskStatusObserver = builder.vmTaskStatusObserver;
         this.jobStatus = builder.jobStatus;
         this.stageTotalWorkersObservable = builder.stageTotalWorkersObservable;
         this.jobSchedulingInfoObservable = builder.jobSchedulingInfoObservable;
@@ -126,10 +122,6 @@ public class RunningWorker {
     public void signalStartedInitiated() {
         logger.info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
                 + " signaling started initiated");
-        vmTaskStatusObserver.onNext(new VirtualMachineTaskStatus(
-                new WorkerId(jobId, workerIndex, workerNum).getId(),
-                VirtualMachineTaskStatus.TYPE.STARTED, jobName + ", " +
-                String.format(STATUS_MESSAGE_FORMAT, stageNum, workerIndex, workerNum, "started")));
         // indicate start success
         requestSubject.onNext(true);
         requestSubject.onCompleted();
@@ -153,11 +145,6 @@ public class RunningWorker {
                 MantisJobState.Completed));
         // send complete status
         jobStatus.onCompleted();
-        // send completed status to vm service
-        vmTaskStatusObserver.onNext(new VirtualMachineTaskStatus(
-                new WorkerId(jobId, workerIndex, workerNum).getId(),
-                VirtualMachineTaskStatus.TYPE.COMPLETED, jobName + ", " +
-                String.format(STATUS_MESSAGE_FORMAT, stageNum, workerIndex, workerNum, "completed")));
     }
 
     public void signalFailed(Throwable t) {
@@ -263,10 +250,6 @@ public class RunningWorker {
         return totalStagesNet;
     }
 
-    public Observer<VirtualMachineTaskStatus> getVmTaskStatusObserver() {
-        return vmTaskStatusObserver;
-    }
-
     @Override
     public String toString() {
         return "RunningWorker ["
@@ -275,8 +258,7 @@ public class RunningWorker {
                 + ", stageNum=" + stageNum + ", workerNum=" + workerNum
                 + ", workerIndex=" + workerIndex + ", jobName=" + jobName
                 + ", totalStages=" + totalStages + ", metricsPort="
-                + metricsPort + ", vmTaskStatusObserver="
-                + vmTaskStatusObserver + ", ports=" + ports
+                + metricsPort + ", ports=" + ports
                 + ", requestSubject=" + requestSubject + ", context=" + context
                 + ", workerInfo=" + workerInfo + "]";
     }
@@ -298,7 +280,6 @@ public class RunningWorker {
         private int workerIndex;
         private String jobName;
         private int totalStages;
-        private Observer<VirtualMachineTaskStatus> vmTaskStatusObserver;
         private Observable<Integer> stageTotalWorkersObservable;
         private Observable<JobSchedulingInfo> jobSchedulingInfoObservable;
         private PublishSubject<Boolean> requestSubject;
@@ -371,11 +352,6 @@ public class RunningWorker {
 
         public Builder totalStages(int totalStages) {
             this.totalStages = totalStages;
-            return this;
-        }
-
-        public Builder vmTaskStatusObservable(Observer<VirtualMachineTaskStatus> vmTaskStatusObserver) {
-            this.vmTaskStatusObserver = vmTaskStatusObserver;
             return this;
         }
 

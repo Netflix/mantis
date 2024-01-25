@@ -16,10 +16,9 @@
 apply plugin: "mantis"
 
 dependencies {
-    implementation project(":mantis-runtime")
     implementation project(":mantis-publish:mantis-publish-netty")
     implementation project(":mantis-connectors:mantis-connector-publish")
-    implementation project(':mantis-server:mantis-server-worker')
+    implementation project(':mantis-runtime-executor')
 
     implementation libraries.slf4jApi
 

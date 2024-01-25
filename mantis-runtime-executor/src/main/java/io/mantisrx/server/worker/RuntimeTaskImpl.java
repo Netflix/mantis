@@ -19,10 +19,10 @@ import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
+import io.mantisrx.runtime.loader.cgroups.CgroupsMetricsCollector;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
 import io.mantisrx.runtime.loader.config.WorkerConfigurationWritable;
-import io.mantisrx.server.agent.metrics.cgroups.CgroupsMetricsCollector;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
@@ -33,7 +33,6 @@ import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
-import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import java.io.IOException;
 import java.time.Clock;
@@ -68,8 +67,6 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     private SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
 
     private final PublishSubject<Observable<Status>> tasksStatusSubject;
-
-    private final PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
 
     private Optional<Job> mantisJob = Optional.empty();
 
@@ -181,7 +178,6 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
             executeStageSubject,
             tasksStatusSubject,
             new WorkerExecutionOperationsNetworkStage(
-                vmTaskStatusSubject,
                 masterMonitor,
                 config,
                 workerMetricsClient,
@@ -227,10 +223,6 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     protected Observable<Status> getStatus() {
         return tasksStatusSubject
             .flatMap((Func1<Observable<Status>, Observable<Status>>) status -> status);
-    }
-
-    public Observable<VirtualMachineTaskStatus> getVMStatus() {
-        return vmTaskStatusSubject;
     }
 
     public String getWorkerId() {

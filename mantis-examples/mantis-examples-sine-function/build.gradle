@@ -27,6 +27,6 @@ task execute(type:JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 dependencies {
-    implementation project(':mantis-server:mantis-server-worker')
+    implementation project(':mantis-runtime-executor')
     implementation libraries.spectatorApi
 }

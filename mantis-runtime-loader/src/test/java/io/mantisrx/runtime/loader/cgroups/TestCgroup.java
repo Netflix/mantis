@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Netflix, Inc.
+ * Copyright 2024 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.agent.metrics.cgroups;
+package io.mantisrx.runtime.loader.cgroups;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import io.mantisrx.runtime.loader.cgroups.Cgroup;
-import io.mantisrx.runtime.loader.cgroups.CgroupImpl;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.io.Resources;
 import java.io.IOException;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class TestCgroup {
@@ -33,15 +29,15 @@ public class TestCgroup {
 
     @Test
     public void testReadingStatFiles() throws IOException {
-        assertEquals(
+        Assert.assertEquals(
             ImmutableMap.of("user", 49692738L, "system", 4700825L),
             cgroup.getStats("cpuacct", "cpuacct.stat"));
-        assertTrue(cgroup.isV1());
+        Assert.assertTrue(cgroup.isV1());
     }
 
     @Test
     public void testReadingMetrics() throws IOException {
-        assertEquals(
+        Assert.assertEquals(
             400000L,
             cgroup.getMetric("cpuacct", "cpu.cfs_quota_us").longValue()
         );
@@ -49,7 +45,7 @@ public class TestCgroup {
 
     @Test
     public void testLongOverflow() throws IOException {
-        assertEquals(
+        Assert.assertEquals(
             Long.MAX_VALUE,
             cgroup.getMetric("testlongoverflow", "verylongvalue").longValue()
         );

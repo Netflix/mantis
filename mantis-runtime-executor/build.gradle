@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-apply plugin: 'eu.appsatori.fatjar'
 
 ext {
     mantisRxControlVersion = '1.3.+'
-    mesosVersion = '1.7.2'
 }
 
 dependencies {
     api project(":mantis-runtime")
     api project(":mantis-runtime-loader")
     api project(":mantis-server:mantis-server-worker-client")
-    api project(":mantis-server:mantis-server-agent")
 
-    implementation "org.apache.mesos:mesos:$mesosVersion"
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
     implementation libraries.vavr
@@ -38,7 +34,6 @@ dependencies {
     implementation libraries.httpClient
     implementation "io.mantisrx:mantis-rxcontrol:$mantisRxControlVersion"
     implementation "com.yahoo.datasketches:sketches-core:0.9.1"
-
     implementation libraries.spectatorApi
 
     testImplementation libraries.junit4
@@ -47,11 +42,4 @@ dependencies {
     testImplementation libraries.vavrTest
     testImplementation(testFixtures(project(":mantis-common")))
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
-}
-
-// exclude any signed jars
-fatJar {
-    exclude "META-INF/*.SF"
-    exclude "META-INF/*.DSA"
-    exclude "META-INF/*.RSA"
 }

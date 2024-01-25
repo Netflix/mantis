@@ -31,8 +31,6 @@ import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
-import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
-import io.mantisrx.server.worker.mesos.VirualMachineWorkerServiceMesosImpl;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.FileInputStream;
@@ -115,8 +113,6 @@ public class MantisWorker extends BaseService {
         // metrics
 
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
-        PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
-        mantisServices.add(new VirualMachineWorkerServiceMesosImpl(executeStageSubject, vmTaskStatusSubject));
         // TODO(sundaram): inline services are hard to read. Would be good to refactor this.
         mantisServices.add(new Service() {
             private RuntimeTaskImpl runtimeTaskImpl;
@@ -154,8 +150,6 @@ public class MantisWorker extends BaseService {
                                         Clock.systemDefaultZone()));
                             runtimeTaskImpl.setJob(jobToRun);
 
-                            vmStatusSubscription =
-                                runtimeTaskImpl.getVMStatus().subscribe(vmTaskStatusSubject);
                             runtimeTaskImpl.startAsync();
                         } catch (Exception ex) {
                             logger.error("Failed to start task, request: {}", wrappedRequest, ex);
