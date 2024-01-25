@@ -18,6 +18,7 @@ package io.mantisrx.server.agent.metrics.cgroups;
 
 import static org.junit.Assert.assertEquals;
 
+import io.mantisrx.runtime.loader.cgroups.NetworkSubsystemProcess;
 import io.mantisrx.runtime.loader.config.Usage;
 import io.mantisrx.shaded.com.google.common.io.Resources;
 import org.junit.Test;

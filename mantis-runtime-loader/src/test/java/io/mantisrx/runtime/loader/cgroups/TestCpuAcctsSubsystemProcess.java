@@ -21,6 +21,9 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.mantisrx.runtime.loader.cgroups.Cgroup;
+import io.mantisrx.runtime.loader.cgroups.CgroupImpl;
+import io.mantisrx.runtime.loader.cgroups.CpuAcctsSubsystemProcess;
 import io.mantisrx.runtime.loader.config.Usage;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.io.Resources;
