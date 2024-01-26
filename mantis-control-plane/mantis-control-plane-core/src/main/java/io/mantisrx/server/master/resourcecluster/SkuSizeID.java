@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Netflix, Inc.
+ * Copyright 2022 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,11 @@
 
 package io.mantisrx.server.master.resourcecluster;
 
-import io.mantisrx.runtime.AllocationConstraints;
-import io.mantisrx.server.core.domain.JobMetadata;
-import io.mantisrx.server.core.domain.WorkerId;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
+@RequiredArgsConstructor(staticName="of")
 @Value
-@AllArgsConstructor(staticName = "of")
-public class TaskExecutorAllocationRequest {
-    WorkerId workerId;
-    AllocationConstraints constraints;
-    JobMetadata jobMetadata;
-    int stageNum;
+public class SkuSizeID {
+    String resourceID;
 }

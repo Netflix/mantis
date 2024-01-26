@@ -26,6 +26,8 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Cr
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateResourceClusterScaleRuleRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterSkuSizeProto.CreateResourceClusterSkuSizeRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterSkuSizeProto.GetResourceClusterSkuSizesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
@@ -54,4 +56,9 @@ public interface ResourceClusterRouteHandler {
 
     CompletionStage<GetResourceClusterScaleRulesResponse> getClusterScaleRules(
         GetResourceClusterScaleRulesRequest request);
+
+    CompletionStage<GetResourceClusterSkuSizesResponse> createClusterSkuSize(
+        CreateResourceClusterSkuSizeRequest request);
+
+    CompletionStage<GetResourceClusterSkuSizesResponse> getClusterSkuSizes();
 }

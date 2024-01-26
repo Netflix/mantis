@@ -27,6 +27,7 @@ import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
+import io.mantisrx.master.resourcecluster.proto.SkuSizeSpec;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
@@ -110,6 +111,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     private static final String TASK_EXECUTOR_REGISTRATION = "TaskExecutorRegistration";
     private static final String DISABLE_TASK_EXECUTOR_REQUESTS = "MantisDisableTaskExecutorRequests";
     private static final String CONTROLPLANE_NS = "mantis_controlplane";
+    private static final String SKU_SIZES_NS = "mantis_global_cluster_sku_size";
     private static final String JOB_ARTIFACTS_NS = "mantis_global_job_artifacts";
     private static final String JOB_ARTIFACTS_TO_CACHE_PER_CLUSTER_ID_NS = "mantis_global_cached_artifacts";
 
@@ -903,6 +905,29 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         return registerResourceClusterScaleRule(newSpec);
     }
 
+    @Override
+    public List<SkuSizeSpec> registerResourceClusterSkuSize(SkuSizeSpec skuSizeSpec) throws IOException {
+        kvStore.upsert(
+            SKU_SIZES_NS, skuSizeSpec.getSkuSizeID().getResourceID(), "",
+            mapper.writeValueAsString(skuSizeSpec));
+        return getResourceClusterSkuSizes();
+    }
+
+    @Override
+    public List<SkuSizeSpec> getResourceClusterSkuSizes() throws IOException {
+        return kvStore.getAllRows(SKU_SIZES_NS)
+            .values().stream()
+            .map(
+                value -> {
+                    try {
+                        return mapper.convertValue(value, SkuSizeSpec.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+            .collect(Collectors.toList());
+    }
+
     private static final String RESOURCE_CLUSTER_REGISTRATION = "ResourceClusterRegistration";
     private static String getClusterKeyFromId(ClusterID id) {
         return RESOURCE_CLUSTER_REGISTRATION + "_" + id.getResourceID();
@@ -911,6 +936,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     private static final String CLUSTER_REGISTRATION_KEY = "resource_cluster_registrations";
 
     private static final String RESOURCE_CLUSTER_RULE_PREFIX = "ResourceClusterRulePrefix";
+
     private static String getClusterRuleKeyFromId(ClusterID id) {
         return RESOURCE_CLUSTER_RULE_PREFIX + "_" + id.getResourceID();
     }

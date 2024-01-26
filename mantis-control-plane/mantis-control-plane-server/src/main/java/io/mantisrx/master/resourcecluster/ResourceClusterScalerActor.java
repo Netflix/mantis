@@ -38,7 +38,6 @@ import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWrit
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Clock;
@@ -50,7 +49,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
@@ -267,8 +265,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             return;
         }
         this.resourceClusterActor.tell(
-            new GetClusterUsageRequest(
-                this.clusterId, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            new GetClusterUsageRequest(this.clusterId),
             self());
     }
 
@@ -500,11 +497,4 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         int desireSize;
         ScaleType type;
     }
-
-    /**
-     * {@link TaskExecutorRegistration} holds task attribute map in which the container sku ID's resource id is stored
-     * as a string. Here the key function is used to retrieve the map this string as grouping kye.
-     */
-    static Function<TaskExecutorRegistration, Optional<String>> groupKeyFromTaskExecutorDefinitionIdFunc =
-        reg -> reg.getTaskExecutorContainerDefinitionId().map(id -> id.getResourceID());
 }

@@ -113,20 +113,14 @@ public class TaskExecutorRegistration {
     }
 
     @JsonIgnore
-    public Optional<ContainerSkuID> getTaskExecutorContainerDefinitionId() {
+    public ContainerSkuID getTaskExecutorContainerDefinitionId() {
         // handle back compat on key case insensitivity.
         String containerDefIdLower = WorkerConstants.WORKER_CONTAINER_DEFINITION_ID.toLowerCase();
         if (this.taskExecutorAttributes.containsKey(containerDefIdLower)) {
-            return Optional.ofNullable(ContainerSkuID.of(this.getTaskExecutorAttributes().get(containerDefIdLower)));
+            return ContainerSkuID.of(this.getTaskExecutorAttributes().get(containerDefIdLower));
         }
-
-        if (this.taskExecutorAttributes.containsKey(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID)) {
-            return Optional.ofNullable(
-                ContainerSkuID.of(
-                    this.getTaskExecutorAttributes().get(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID)));
-        }
-
-        return Optional.empty();
+        return ContainerSkuID.of(
+                this.getTaskExecutorAttributes().get(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID));
     }
 
     @JsonIgnore

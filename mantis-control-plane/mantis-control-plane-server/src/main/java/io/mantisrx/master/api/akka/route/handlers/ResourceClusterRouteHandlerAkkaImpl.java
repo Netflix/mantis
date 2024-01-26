@@ -30,6 +30,9 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Cr
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateResourceClusterScaleRuleRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterSkuSizeProto.CreateResourceClusterSkuSizeRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterSkuSizeProto.GetResourceClusterSkuSizesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterSkuSizeProto.GetResourceClusterSkuSizesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
@@ -124,5 +127,18 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
         GetResourceClusterScaleRulesRequest request) {
         return ask(this.resourceClustersHostManagerActor, request, timeout)
             .thenApply(GetResourceClusterScaleRulesResponse.class::cast);
+    }
+
+    @Override
+    public CompletionStage<GetResourceClusterSkuSizesResponse> createClusterSkuSize(
+        CreateResourceClusterSkuSizeRequest request) {
+        return ask(this.resourceClustersHostManagerActor, request, timeout)
+            .thenApply(GetResourceClusterSkuSizesResponse.class::cast);
+    }
+
+    @Override
+    public CompletionStage<GetResourceClusterSkuSizesResponse> getClusterSkuSizes() {
+        return ask(this.resourceClustersHostManagerActor, GetResourceClusterSkuSizesRequest.builder().build(), timeout)
+            .thenApply(GetResourceClusterSkuSizesResponse.class::cast);
     }
 }

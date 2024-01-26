@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
+import io.mantisrx.runtime.AllocationConstraints;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
@@ -35,6 +36,7 @@ import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.mesos.VirtualMachineLeaseMesosImpl;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
@@ -105,7 +107,7 @@ public class TestHelpers {
                             mantisJobMetadata.getMinRuntimeSecs()
                     ),
                     mantisJobMetadata.getSla().get().getDurationType(),
-                    machineDefinition,
+                    AllocationConstraints.of(machineDefinition, ImmutableMap.of()),
                     Collections.emptyList(),
                     Collections.emptyList(),
                     0,Optional.empty()

@@ -42,6 +42,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
+import io.mantisrx.runtime.AllocationConstraints;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
@@ -62,6 +63,7 @@ import io.mantisrx.server.master.scheduler.BatchScheduleRequest;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.store.FileBasedStore;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.URL;
@@ -303,7 +305,7 @@ public class JobTestLifecycle {
             JobMetadata jobMetadata = new JobMetadata(jobId, new URL("http://myart" +
                     ""),1,"njoshi",schedInfo,Lists.newArrayList(),0,10, 0);
             ScheduleRequest scheduleRequest = new ScheduleRequest(workerId,
-                    1,4, jobMetadata,MantisJobDurationType.Perpetual,machineDefinition,Lists.newArrayList(),Lists.newArrayList(),0,empty());
+                    1,4, jobMetadata,MantisJobDurationType.Perpetual, AllocationConstraints.of(machineDefinition, ImmutableMap.of()),Lists.newArrayList(),Lists.newArrayList(),0,empty());
             BatchScheduleRequest expectedRequest = new BatchScheduleRequest(Collections.singletonList(scheduleRequest));
             verify(schedulerMock).scheduleWorkers(expectedRequest);
 

@@ -44,8 +44,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.ToString;
+import org.apache.commons.lang3.tuple.Pair;
 
 @ToString
 public class JobDefinition {
@@ -62,6 +65,8 @@ public class JobDefinition {
     private final DeploymentStrategy deploymentStrategy;
     private final int withNumberOfStages;
     private Map<String, Label> labels; // Map label->name to label instance.
+
+    private final static String ALLOCATION_CONSTRAINT_LABEL_REGEX = "_mantis\\.allocationConstraint\\.(.+)";
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -244,6 +249,21 @@ public class JobDefinition {
             .filter(label -> label.getName().equals(MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label))
             .findFirst()
             .map(l -> ClusterID.of(l.getValue()));
+    }
+
+    public Map<String, String> getAssignmentAttributes() {
+        final Pattern pattern = Pattern.compile(ALLOCATION_CONSTRAINT_LABEL_REGEX);
+
+        return labels.entrySet().stream()
+            .map(label -> {
+                final Matcher matcher = pattern.matcher(label.getKey());
+                return matcher.find() ? Pair.of(matcher.group(1), label.getValue().getValue()) : null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(
+                Pair::getLeft,
+                Pair::getRight
+            ));
     }
 
     @JsonIgnore

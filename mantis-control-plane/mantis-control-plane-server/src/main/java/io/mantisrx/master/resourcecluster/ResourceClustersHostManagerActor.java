@@ -23,7 +23,6 @@ import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
-import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec.SkuTypeSpec;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
@@ -36,7 +35,12 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Cr
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterSkuSizeProto.CreateResourceClusterSkuSizeRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterSkuSizeProto.GetResourceClusterSkuSizesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterSkuSizeProto.GetResourceClusterSkuSizesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
+import io.mantisrx.master.resourcecluster.proto.SkuSizeSpec;
+import io.mantisrx.master.resourcecluster.proto.SkuTypeSpec;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
@@ -46,9 +50,12 @@ import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWrit
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable.ResourceClusterScaleRulesWritableBuilder;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.master.resourcecluster.SkuSizeID;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
@@ -92,6 +99,10 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
             .match(GetResourceClusterScaleRulesRequest.class, this::onGetResourceClusterScaleRulesRequest)
             .match(ResourceClusterProvisionSubmissionResponse.class, this::onResourceClusterProvisionResponse)
             .match(ScaleResourceRequest.class, this::onScaleResourceClusterRequest)
+
+            // Sku size section
+            .match(CreateResourceClusterSkuSizeRequest.class, this::onCreateResourceClusterSkuSizeRequest)
+            .match(GetResourceClusterSkuSizesRequest.class, this::onGetResourceClusterSkuSizesRequest)
 
             // Upgrade section
             .match(UpgradeClusterContainersRequest.class, this::onUpgradeClusterContainersRequest)
@@ -189,6 +200,53 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                     .skuId(kv.getValue().getSkuId())
                     .build())
                 .collect(Collectors.toList()))
+            .build();
+    }
+
+    private void onCreateResourceClusterSkuSizeRequest(CreateResourceClusterSkuSizeRequest req) {
+        try {
+            if (!req.getSkuSizeSpec().isSizeValid()) {
+                pipe(
+                    CompletableFuture.completedFuture(GetResourceClusterResponse.builder()
+                        .responseCode(ResponseCode.CLIENT_ERROR)
+                        .message("Invalid sku definition")
+                        .build()),
+                    getContext().dispatcher())
+                    .to(getSender());
+                log.info("Invalid sku size spec, return client error. Req: {}", req.getSkuSizeSpec());
+                log.debug("Full invalid Req: {}", req);
+                return;
+            }
+
+            List<SkuSizeSpec> skuSizes = this.resourceClusterStorageProvider.registerResourceClusterSkuSize(req.getSkuSizeSpec());
+            getSender().tell(toGetResourceClusterSkuSizesResponse(skuSizes), getSelf());
+        } catch (Exception err) {
+            log.error("Error from registerResourceClusterSkuSize: {}", req, err);
+            getSender().tell(toGetResourceClusterSkuSizesErrorResponse(err.getMessage()), getSelf());
+        }
+    }
+
+    private void onGetResourceClusterSkuSizesRequest(GetResourceClusterSkuSizesRequest req) {
+        try {
+            getSender().tell(toGetResourceClusterSkuSizesResponse(resourceClusterStorageProvider.getResourceClusterSkuSizes()), getSelf());
+        } catch (IOException err) {
+            log.error("Error from getResourceClusterSkuSizes: {}", req, err);
+            getSender().tell(toGetResourceClusterSkuSizesErrorResponse(err.getMessage()), getSelf());
+        }
+    }
+
+    private GetResourceClusterSkuSizesResponse toGetResourceClusterSkuSizesResponse(List<SkuSizeSpec> skuSizeSpecs) {
+        return GetResourceClusterSkuSizesResponse.builder()
+            .responseCode(ResponseCode.SUCCESS)
+            .skuSizeSpecs(skuSizeSpecs)
+            .build();
+    }
+
+    private GetResourceClusterSkuSizesResponse toGetResourceClusterSkuSizesErrorResponse(String errorMessage) {
+        return GetResourceClusterSkuSizesResponse
+            .builder()
+            .message(errorMessage)
+            .responseCode(ResponseCode.SERVER_ERROR)
             .build();
     }
 
@@ -383,7 +441,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
         pipe(upgradeFut, getContext().dispatcher()).to(getSender());
     }
 
-    private static Optional<String> validateClusterSpec(ProvisionResourceClusterRequest req) {
+    private Optional<String> validateClusterSpec(ProvisionResourceClusterRequest req) {
         if (req.getClusterSpec() == null) {
             log.error("Empty request without cluster spec: {}", req.getClusterId());
             return Optional.of("cluster spec cannot be null");
@@ -394,9 +452,17 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
             return Optional.of("cluster spec id doesn't match cluster id");
         }
 
+        Set<SkuSizeID> skuSizeIDS;
+        try {
+            skuSizeIDS = this.resourceClusterStorageProvider
+                .getResourceClusterSkuSizes().stream().map(SkuSizeSpec::getSkuSizeID).collect(Collectors.toSet());
+        } catch (IOException e) {
+            return Optional.of("cannot fetch sku sizes");
+        }
         Optional<SkuTypeSpec> invalidSku = req.getClusterSpec().getSkuSpecs().stream().filter(sku ->
             sku.getSkuId() == null || sku.getCapacity() == null || sku.getCpuCoreCount() < 1 ||
                 sku.getDiskSizeInMB() < 1 || sku.getMemorySizeInMB() < 1 || sku.getNetworkMbps() < 1 ||
+                (sku.getSizeId() != null && !skuSizeIDS.contains(sku.getSizeId())) ||
                 Strings.isNullOrEmpty(sku.getImageId()))
             .findAny();
 

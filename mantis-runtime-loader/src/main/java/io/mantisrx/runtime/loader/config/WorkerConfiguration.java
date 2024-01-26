@@ -159,7 +159,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Default(value = "128.0")
     double getNetworkBandwidthInMB();
 
-    @Config("mantis.taskexecutor.attributes")
+    @Config({"mantis.taskexecutor.attributes", "MANTIS_TASKEXECUTOR_ATTRIBUTES"})
     @Default(value = "")
     String taskExecutorAttributes();
 

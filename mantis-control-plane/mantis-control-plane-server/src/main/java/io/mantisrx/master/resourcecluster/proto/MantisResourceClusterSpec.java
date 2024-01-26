@@ -18,13 +18,11 @@ package io.mantisrx.master.resourcecluster.proto;
 
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Singular;
 import lombok.Value;
 
@@ -76,78 +74,5 @@ public class MantisResourceClusterSpec {
         this.envType = envType;
         this.skuSpecs = skuSpecs;
         this.clusterMetadataFields = clusterMetadataFields;
-    }
-
-    @Builder
-    @Value
-    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-    public static class SkuTypeSpec {
-        @EqualsAndHashCode.Include
-        ContainerSkuID skuId;
-
-        SkuCapacity capacity;
-
-        String imageId;
-
-        int cpuCoreCount;
-
-        int memorySizeInMB;
-
-        int networkMbps;
-
-        int diskSizeInMB;
-
-        @Singular
-        Map<String, String> skuMetadataFields;
-
-        @JsonCreator
-        public SkuTypeSpec(
-                @JsonProperty("skuId") final ContainerSkuID skuId,
-                @JsonProperty("capacity") final SkuCapacity capacity,
-                @JsonProperty("imageId") final String imageId,
-                @JsonProperty("cpuCoreCount") final int cpuCoreCount,
-                @JsonProperty("memorySizeInBytes") final int memorySizeInMB,
-                @JsonProperty("networkMbps") final int networkMbps,
-                @JsonProperty("diskSizeInBytes") final int diskSizeInMB,
-                @JsonProperty("skuMetadataFields") final Map<String, String> skuMetadataFields) {
-            this.skuId = skuId;
-            this.capacity = capacity;
-            this.imageId = imageId;
-            this.cpuCoreCount = cpuCoreCount;
-            this.memorySizeInMB = memorySizeInMB;
-            this.networkMbps = networkMbps;
-            this.diskSizeInMB = diskSizeInMB;
-            this.skuMetadataFields = skuMetadataFields;
-        }
-    }
-
-    /**
-     * This class defined the capacity required for the given skuId mapping to hosting framework nodes
-     * e.g. containers/virtual machines.
-     */
-    @Builder
-    @Value
-    public static class SkuCapacity {
-        ContainerSkuID skuId;
-
-        int minSize;
-
-        int maxSize;
-
-        int desireSize;
-
-        @JsonCreator
-        public SkuCapacity(
-                @JsonProperty("skuId") final ContainerSkuID skuId,
-                @JsonProperty("minSize") final int minSize,
-                @JsonProperty("maxSize") final int maxSize,
-                @JsonProperty("desireSize") final int desireSize
-        ) {
-
-            this.skuId = skuId;
-            this.minSize = minSize;
-            this.maxSize = maxSize;
-            this.desireSize = desireSize;
-        }
     }
 }

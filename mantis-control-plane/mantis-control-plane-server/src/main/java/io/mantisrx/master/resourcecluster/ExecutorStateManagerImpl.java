@@ -25,8 +25,10 @@ import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.GetClusterUsageResponseBuilder;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
-import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.AllocationConstraints;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
@@ -36,6 +38,7 @@ import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.cache.RemovalListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -45,14 +48,12 @@ import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.Builder;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +62,16 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 class ExecutorStateManagerImpl implements ExecutorStateManager {
     private final Map<TaskExecutorID, TaskExecutorState> taskExecutorStateMap = new HashMap<>();
-    Cache<String, JobRequirements> pendingJobRequests = CacheBuilder.newBuilder()
+
+    /**
+     * Cache the available executors ready to accept assignments. Note these executors' state are not strongly
+     * synchronized and requires state level check when matching.
+     */
+    private final ConcurrentHashMap<ContainerSkuID, NavigableSet<TaskExecutorHolder>> executorsBySkuID = new ConcurrentHashMap<>();
+
+    private final TaskExecutorAllocationHelper allocationHelper;
+
+    private final Cache<String, JobRequirements> pendingJobRequests = CacheBuilder.newBuilder()
         .maximumSize(1000)
         .expireAfterWrite(10, TimeUnit.MINUTES)
         .removalListener((RemovalListener<String, JobRequirements>) notification -> {
@@ -69,28 +79,35 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         })
         .build();
 
-    @RequiredArgsConstructor
-    @ToString
-    static class JobRequirements {
-        public final Map<Double, Integer> coresToWorkerCount;
-
-        public int getTotalWorkers() {
-            return coresToWorkerCount.values().stream().mapToInt(Integer::intValue).sum();
-        }
-    }
-
-    /**
-     * Cache the available executors ready to accept assignments. Note these executors' state are not strongly
-     * synchronized and requires state level check when matching.
-     */
-    private final SortedMap<Double, NavigableSet<TaskExecutorHolder>> executorByCores = new ConcurrentSkipListMap<>();
-
     private final Cache<TaskExecutorID, TaskExecutorState> archivedState = CacheBuilder.newBuilder()
         .maximumSize(10000)
         .expireAfterWrite(24, TimeUnit.HOURS)
         .removalListener(notification ->
             log.info("Archived TaskExecutor: {} removed due to: {}", notification.getKey(), notification.getCause()))
         .build();
+
+    public ExecutorStateManagerImpl(ClusterID clusterID, IMantisPersistenceProvider storageProvider, String allocationConstraintsAndDefaults) {
+        this.allocationHelper = new TaskExecutorAllocationHelper(clusterID, storageProvider, allocationConstraintsAndDefaults);
+    }
+
+    @ToString
+    class JobRequirements {
+        public final Map<ContainerSkuID, Integer> skuIDToWorkerCount;
+
+        public JobRequirements(Map<AllocationConstraints, Integer> constraintsToWorkerCount) {
+            this.skuIDToWorkerCount = constraintsToWorkerCount
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(entry -> {
+                    Optional<ContainerSkuID> s = allocationHelper.findBestFitSkuID(entry.getKey());
+                    return s.orElseGet(() -> ContainerSkuID.of("skuDoesntExist"));
+                }, Entry::getValue));
+        }
+
+        public int getTotalWorkers() {
+            return skuIDToWorkerCount.values().stream().mapToInt(Integer::intValue).sum();
+        }
+    }
 
     @Override
     public void trackIfAbsent(TaskExecutorID taskExecutorID, TaskExecutorState state) {
@@ -114,16 +131,17 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         if (state.isAvailable() && state.getRegistration() != null) {
             TaskExecutorHolder teHolder = TaskExecutorHolder.of(taskExecutorID, state.getRegistration());
             log.debug("Marking executor {} as available for matching.", teHolder);
-            double cpuCores = state.getRegistration().getMachineDefinition().getCpuCores();
-            if (!this.executorByCores.containsKey(cpuCores)) {
-                log.info("[executorByCores] adding {} from TE: {}", cpuCores, teHolder);
-                this.executorByCores.putIfAbsent(
-                    cpuCores,
+            ContainerSkuID skuID = state.getRegistration().getTaskExecutorContainerDefinitionId();
+            this.allocationHelper.addSkuIdIfAbsent(skuID);
+            if (!this.executorsBySkuID.containsKey(skuID)) {
+                log.info("[executorsBySkuID] adding {} from TE: {}", skuID, teHolder);
+                this.executorsBySkuID.putIfAbsent(
+                    skuID,
                     new TreeSet<>(TaskExecutorHolder.generationFirstComparator));
             }
 
             log.info("Assign {} to available.", teHolder.getId());
-            return this.executorByCores.get(cpuCores).add(teHolder);
+            return this.executorsBySkuID.get(skuID).add(teHolder);
         }
         else {
             log.debug("Ignore unavailable TE: {}", taskExecutorID);
@@ -147,10 +165,14 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         if (this.taskExecutorStateMap.containsKey(taskExecutorID)) {
             TaskExecutorState taskExecutorState = this.taskExecutorStateMap.get(taskExecutorID);
             if (taskExecutorState.getRegistration() != null) {
-                double cpuCores = taskExecutorState.getRegistration().getMachineDefinition().getCpuCores();
-                if (this.executorByCores.containsKey(cpuCores)) {
-                    this.executorByCores.get(cpuCores)
+                ContainerSkuID skuID = taskExecutorState.getRegistration().getTaskExecutorContainerDefinitionId();
+                if (this.executorsBySkuID.containsKey(skuID)) {
+                    this.executorsBySkuID.get(skuID)
                         .remove(TaskExecutorHolder.of(taskExecutorID, taskExecutorState.getRegistration()));
+
+                    if (this.executorsBySkuID.get(skuID).isEmpty()) {
+                        allocationHelper.removeSkuIdIfPresent(skuID);
+                    }
                 }
                 return true;
             }
@@ -180,9 +202,9 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
                     return false;
                 }
 
-                Optional<ContainerSkuID> skuIdO =
+                ContainerSkuID skuIdO =
                     kv.getValue().getRegistration().getTaskExecutorContainerDefinitionId();
-                return skuIdO.isPresent() && skuIdO.get().equals(req.getSkuId());
+                return skuIdO.equals(req.getSkuId());
             })
             .filter(isAvailable)
             .map(Entry::getKey)
@@ -263,11 +285,12 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         final BestFit bestFit = new BestFit();
         final boolean isJobIdAlreadyPending = pendingJobRequests.getIfPresent(request.getJobId()) != null;
 
-        for (Entry<MachineDefinition, List<TaskExecutorAllocationRequest>> entry : request.getGroupedByMachineDef().entrySet()) {
-            final MachineDefinition machineDefinition = entry.getKey();
+        // Tells how many TEs we need to allocate for a given SkuID
+        for (Entry<AllocationConstraints, List<TaskExecutorAllocationRequest>> entry : request.getGroupedByConstraints().entrySet()) {
+            final AllocationConstraints constraints = entry.getKey();
             final List<TaskExecutorAllocationRequest> allocationRequests = entry.getValue();
 
-            Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findTaskExecutorsFor(request, machineDefinition, allocationRequests, isJobIdAlreadyPending, bestFit);
+            Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findTaskExecutorsFor(request, allocationRequests, constraints, isJobIdAlreadyPending, bestFit);
 
             // Mark noResourcesAvailable if we can't find enough TEs for a given machine def
             if (!taskExecutors.isPresent()) {
@@ -293,33 +316,21 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
 
     }
 
-    private Optional<Map<TaskExecutorID, TaskExecutorState>> findBestFitFor(TaskExecutorBatchAssignmentRequest request, MachineDefinition machineDefinition, Integer numWorkers, BestFit currentBestFit) {
-        // only allow allocation in the lowest CPU cores matching group.
-        SortedMap<Double, NavigableSet<TaskExecutorHolder>> targetMap =
-            this.executorByCores.tailMap(machineDefinition.getCpuCores());
-
-        if (targetMap.isEmpty()) {
-            log.warn("Cannot find any executor for request: {}", request);
+    private Optional<Map<TaskExecutorID, TaskExecutorState>> findBestFitFor(TaskExecutorBatchAssignmentRequest request, Integer numWorkers, AllocationConstraints constraints, BestFit currentBestFit) {
+        // find SkuID which fits best
+        Optional<ContainerSkuID> targetSkuID = allocationHelper.findBestFitSkuID(constraints);
+        if (!targetSkuID.isPresent()) {
+            log.warn("Cannot find any matching sku for request: {}", request);
             return Optional.empty();
         }
-        Double targetCoreCount = targetMap.firstKey();
-        log.debug("Applying assignmentReq: {} to {} cores.", request, targetCoreCount);
-
-        Double requestedCoreCount = machineDefinition.getCpuCores();
-        if (Math.abs(targetCoreCount - requestedCoreCount) > 1E-10) {
-            // this mismatch should not happen in production and indicates TE registration/spec problem.
-            log.warn("Requested core count mismatched. requested: {}, found: {} for {}", requestedCoreCount,
-                targetCoreCount,
-                request);
-        }
-
-        if (this.executorByCores.get(targetCoreCount).isEmpty()) {
-            log.warn("No available TE found for core count: {}, request: {}", targetCoreCount, request);
+        log.debug("Applying assignment request: {} to sku {}.", request, targetSkuID);
+        if (this.executorsBySkuID.getOrDefault(targetSkuID.get(), Collections.emptyNavigableSet()).isEmpty()) {
+            log.warn("No available TE found for skuID: {}, request: {}", targetSkuID.get(), request);
             return Optional.empty();
         }
 
         return Optional.of(
-            this.executorByCores.get(targetCoreCount)
+            this.executorsBySkuID.get(targetSkuID.get())
                 .descendingSet()
                 .stream()
                 .filter(teHolder -> {
@@ -333,8 +344,9 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
 
                     TaskExecutorState st = this.taskExecutorStateMap.get(teHolder.getId());
                     return st.isAvailable() &&
-                        st.getRegistration() != null &&
-                        st.getRegistration().getMachineDefinition().canFit(machineDefinition);
+                        st.getRegistration() != null;
+                        // TODO: is this check redundant? probably this checks all dimensions (cpu, mem, disk and net???)
+//                        st.getRegistration().getConstraints().canFit(constraints);
                 })
                 .limit(numWorkers)
                 .map(TaskExecutorHolder::getId)
@@ -351,10 +363,10 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
     @Override
     public GetClusterUsageResponse getClusterUsage(GetClusterUsageRequest req) {
         // default grouping is containerSkuID to usage
-        Map<String, Integer> pendingCountByGroupKey = new HashMap<>();
-        Map<String, Pair<Integer, Integer>> usageByGroupKey = new HashMap<>();
+        Map<ContainerSkuID, Integer> pendingCountBySkuID = new HashMap<>();
+        Map<ContainerSkuID, Pair<Integer, Integer>> usageBySkuID = new HashMap<>();
         // helper struct to verify job has been fully deployed so we can remove it from pending
-        Map<String, List<MachineDefinition>> jobIdToMachineDef = new HashMap<>();
+        Map<String, List<ContainerSkuID>> jobIdToWorkerCount = new HashMap<>();
 
         taskExecutorStateMap.forEach((key, value) -> {
             if (value == null ||
@@ -368,47 +380,38 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
                 return;
             }
 
-            Optional<String> groupKeyO =
-                req.getGroupKeyFunc().apply(value.getRegistration());
-
-            if (!groupKeyO.isPresent()) {
-                log.info("Empty groupKey from: {}, {}. Skip usage request.", req.getClusterID(), key);
-                return;
-            }
-
-            String groupKey = groupKeyO.get();
-
+            ContainerSkuID registrationSkuID = value.getRegistration().getTaskExecutorContainerDefinitionId();
             Pair<Integer, Integer> kvState = Pair.of(
                 value.isAvailable() ? 1 : 0,
                 value.isRegistered() ? 1 : 0);
 
-            if (usageByGroupKey.containsKey(groupKey)) {
-                Pair<Integer, Integer> prevState = usageByGroupKey.get(groupKey);
-                usageByGroupKey.put(
-                    groupKey,
+            if (usageBySkuID.containsKey(registrationSkuID)) {
+                Pair<Integer, Integer> prevState = usageBySkuID.get(registrationSkuID);
+                usageBySkuID.put(
+                    registrationSkuID,
                     Pair.of(
                         kvState.getLeft() + prevState.getLeft(), kvState.getRight() + prevState.getRight()));
             } else {
-                usageByGroupKey.put(groupKey, kvState);
+                usageBySkuID.put(registrationSkuID, kvState);
             }
 
             if ((value.isAssigned() || value.isRunningTask()) && value.getWorkerId() != null) {
                 if (pendingJobRequests.getIfPresent(value.getWorkerId().getJobId()) != null) {
-                    List<MachineDefinition> workers = jobIdToMachineDef.getOrDefault(value.getWorkerId().getJobId(), new ArrayList<>());
-                    workers.add(value.getRegistration().getMachineDefinition());
-                    jobIdToMachineDef.put(value.getWorkerId().getJobId(), workers);
+                    List<ContainerSkuID> registrations = jobIdToWorkerCount.getOrDefault(value.getWorkerId().getJobId(), new ArrayList<>());
+                    registrations.add(registrationSkuID);
+                    jobIdToWorkerCount.put(value.getWorkerId().getJobId(), registrations);
                 }
             }
 
-            if (!pendingCountByGroupKey.containsKey(groupKey)) {
-                pendingCountByGroupKey.put(
-                    groupKey,
-                    getPendingCountyByCores(value.getRegistration().getMachineDefinition().getCpuCores()));
+            if (!pendingCountBySkuID.containsKey(registrationSkuID)) {
+                pendingCountBySkuID.put(
+                    registrationSkuID,
+                    getPendingCountBySkuID(registrationSkuID));
             }
         });
 
         // remove jobs from pending set which have all pending workers
-        jobIdToMachineDef.forEach((jobId, workers) -> {
+        jobIdToWorkerCount.forEach((jobId, workers) -> {
             final JobRequirements jobStats = pendingJobRequests.getIfPresent(jobId);
             if (jobStats != null && jobStats.getTotalWorkers() <= workers.size()) {
                 log.info("Removing job {} from pending requests", jobId);
@@ -417,9 +420,9 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         });
 
         GetClusterUsageResponseBuilder resBuilder = GetClusterUsageResponse.builder().clusterID(req.getClusterID());
-        usageByGroupKey.forEach((key, value) -> resBuilder.usage(UsageByGroupKey.builder()
-            .usageGroupKey(key)
-            .idleCount(value.getLeft() - pendingCountByGroupKey.get(key))
+        usageBySkuID.forEach((key, value) -> resBuilder.usage(UsageByGroupKey.builder()
+            .usageGroupKey(key.getResourceID())
+            .idleCount(value.getLeft() - pendingCountBySkuID.get(key))
             .totalCount(value.getRight())
             .build()));
 
@@ -428,34 +431,34 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         return res;
     }
 
-    private int getPendingCountyByCores(Double cores) {
+    private int getPendingCountBySkuID(ContainerSkuID skuID) {
         return pendingJobRequests
             .asMap()
             .values()
             .stream()
-            .map(req -> req.coresToWorkerCount.getOrDefault(cores, 0))
+            .map(req -> req.skuIDToWorkerCount.getOrDefault(skuID, 0))
             .reduce(Integer::sum)
             .orElse(0);
     }
 
-    private Optional<Map<TaskExecutorID, TaskExecutorState>> findTaskExecutorsFor(TaskExecutorBatchAssignmentRequest request, MachineDefinition machineDefinition, List<TaskExecutorAllocationRequest> allocationRequests, boolean isJobIdAlreadyPending, BestFit currentBestFit) {
-        // Finds best fit for N workers of the same machine def
+    private Optional<Map<TaskExecutorID, TaskExecutorState>> findTaskExecutorsFor(TaskExecutorBatchAssignmentRequest request, List<TaskExecutorAllocationRequest> allocationRequests, AllocationConstraints constraints, boolean isJobIdAlreadyPending, BestFit currentBestFit) {
+        // Finds best fit for N workers of the same machine def & allocation attributes
         final Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findBestFitFor(
-            request, machineDefinition, allocationRequests.size(), currentBestFit);
+            request, allocationRequests.size(), constraints, currentBestFit);
 
         // Verify that the number of task executors returned matches the asked
         if (taskExecutors.isPresent() && taskExecutors.get().size() == allocationRequests.size()) {
             return taskExecutors;
         } else {
-            log.warn("Not enough available TEs found for machine def {} with core count: {}, request: {}",
-                machineDefinition, machineDefinition.getCpuCores(), request);
+            log.warn("Not enough available TEs found for request with constraints {}, request: {}",
+                constraints, request);
 
             // If there are not enough workers with the given spec then add the request the pending ones
             if (!isJobIdAlreadyPending && request.getAllocationRequests().size() > 2) {
                 // Add jobId to pending requests only once
                 if (pendingJobRequests.getIfPresent(request.getJobId()) == null) {
-                    log.info("Adding job {} to pending requests for {} machine {}", request.getJobId(), allocationRequests.size(), machineDefinition);
-                    pendingJobRequests.put(request.getJobId(), new JobRequirements(request.getGroupedByCoresCount()));
+                    log.info("Adding job {} to pending requests for {} constraints {}", request.getJobId(), allocationRequests.size(), constraints);
+                    pendingJobRequests.put(request.getJobId(), new JobRequirements(request.getGroupedByConstraintsCount()));
                 }
             }
             return Optional.empty();
