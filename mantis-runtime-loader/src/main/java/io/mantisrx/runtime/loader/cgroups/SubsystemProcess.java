@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2024 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: "mantis"
 
-configurations.all {
-    resolutionStrategy {
-        force "com.google.guava:guava:31.1-jre"
-    }
-}
-task execute(type:JavaExec) {
+package io.mantisrx.runtime.loader.cgroups;
 
-    main = "io.mantisrx.mantis.examples.sinefunction.SineFunctionJob"
+import io.mantisrx.runtime.loader.config.Usage;
+import java.io.IOException;
 
-    classpath = sourceSets.main.runtimeClasspath
-}
-dependencies {
-    implementation project(':mantis-runtime-executor')
-    implementation libraries.spectatorApi
+interface SubsystemProcess {
+    void getUsage(Usage.UsageBuilder usageBuilder) throws IOException;
 }
