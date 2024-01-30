@@ -398,4 +398,9 @@ public interface MasterConfiguration extends CoreConfiguration {
     default Duration getMaxAssignmentThreshold() {
         return Duration.ofMillis(getAssignmentIntervalInMs());
     }
+
+    @Config("mantis.route.namedjobs.useLaunched")
+    @Default("false")
+    // TODO: could we instead have a list of jobs we enable this for?
+    boolean getNamedJobsReferToLaunched();
 }
