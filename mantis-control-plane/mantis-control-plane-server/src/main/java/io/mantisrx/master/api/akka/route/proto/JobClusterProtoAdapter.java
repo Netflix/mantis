@@ -55,7 +55,9 @@ public class JobClusterProtoAdapter {
     // explicit private constructor to prohibit instantiation
     private JobClusterProtoAdapter() {}
 
-    public static final CreateJobClusterRequest toCreateJobClusterRequest(final NamedJobDefinition njd) {
+    public static final CreateJobClusterRequest toCreateJobClusterRequest(
+        final NamedJobDefinition njd,
+        final String defaultResourceClusterId) {
         MantisJobDefinition jd = njd.getJobDefinition();
 
         final CreateJobClusterRequest request = new CreateJobClusterRequest(new JobClusterDefinitionImpl(
@@ -77,7 +79,7 @@ public class JobClusterProtoAdapter {
                 jd.getMigrationConfig(),
                 jd.getIsReadyForJobMaster(),
                 jd.getParameters(),
-                processLabels(jd)
+                processLabels(jd, defaultResourceClusterId)
         )
 
         , "user"
@@ -175,7 +177,9 @@ public class JobClusterProtoAdapter {
 //        );
 //    }
 
-    public static final UpdateJobClusterRequest toUpdateJobClusterRequest(final NamedJobDefinition njd) {
+    public static final UpdateJobClusterRequest toUpdateJobClusterRequest(
+        final NamedJobDefinition njd,
+        final String defaultResourceClusterId) {
         MantisJobDefinition jd = njd.getJobDefinition();
 
         final UpdateJobClusterRequest request = new UpdateJobClusterRequest(new JobClusterDefinitionImpl(
@@ -196,7 +200,7 @@ public class JobClusterProtoAdapter {
                 jd.getMigrationConfig(),
                 jd.getIsReadyForJobMaster(),
                 jd.getParameters(),
-                processLabels(jd)
+                processLabels(jd, defaultResourceClusterId)
         ),
 
         "user");
@@ -264,6 +268,10 @@ public class JobClusterProtoAdapter {
     }
 
     protected static List<Label> processLabels(MantisJobDefinition jd) {
+        return processLabels(jd, null);
+    }
+
+    protected static List<Label> processLabels(MantisJobDefinition jd, final String defaultResourceClusterId) {
         Map<String, Label> labelMap = new HashMap<>();
         jd.getLabels().forEach(l -> labelMap.put(l.getName(), l));
         if (jd.getDeploymentStrategy() != null &&
@@ -271,6 +279,15 @@ public class JobClusterProtoAdapter {
             Label rcLabel = new Label(
                 SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label,
                 jd.getDeploymentStrategy().getResourceClusterId());
+            labelMap.put(rcLabel.getName(), rcLabel);
+        }
+
+        // Override to default cluster ID if there is no resource cluster given.
+        if (defaultResourceClusterId != null &&
+            !labelMap.containsKey(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label)) {
+            Label rcLabel = new Label(
+                SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label,
+                defaultResourceClusterId);
             labelMap.put(rcLabel.getName(), rcLabel);
         }
 

@@ -90,6 +90,7 @@ public class JobClusterRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobClusterRoute.class);
     private final JobClusterRouteHandler jobClusterRouteHandler;
     private final JobRouteHandler jobRouteHandler;
+    private final String defaultResourceClusterId;
     private final Cache<Uri, RouteResult> cache;
     private final JavaPartialFunction<RequestContext, Uri> requestUriKeyer = new JavaPartialFunction<RequestContext, Uri>() {
         public Uri apply(RequestContext in, boolean isCheck) {
@@ -132,6 +133,7 @@ public class JobClusterRoute extends BaseRoute {
         this.jobClusterRouteHandler = jobClusterRouteHandler;
         this.jobRouteHandler = jobRouteHandler;
         MasterConfiguration config = ConfigurationProvider.getConfig();
+        this.defaultResourceClusterId = config.getDefaultResourceClusterId();
         this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
                 config.getApiCacheTtlMilliseconds());
 
@@ -356,7 +358,8 @@ public class JobClusterRoute extends BaseRoute {
                                         return complete(StatusCodes.BAD_REQUEST, "{\"error\": \"Job definition must include name and URL\"}");
                                     }
                                     final CompletionStage<CreateJobClusterResponse> response =
-                                        jobClusterRouteHandler.create(JobClusterProtoAdapter.toCreateJobClusterRequest(namedJobDefinition));
+                                        jobClusterRouteHandler.create(
+                                            JobClusterProtoAdapter.toCreateJobClusterRequest(namedJobDefinition, this.defaultResourceClusterId));
                                     jobClusterCreate.increment();
                                     return completeWithFuture(response
                                         .thenApply(r -> {
@@ -395,7 +398,9 @@ public class JobClusterRoute extends BaseRoute {
                                         return complete(StatusCodes.BAD_REQUEST, "{\"error\": \"Job definition must include name and URL\"}");
                                     }
                                     final CompletionStage<UpdateJobClusterResponse> response =
-                                        jobClusterRouteHandler.update(JobClusterProtoAdapter.toUpdateJobClusterRequest(namedJobDefinition));
+                                        jobClusterRouteHandler.update(
+                                            JobClusterProtoAdapter.toUpdateJobClusterRequest(
+                                                namedJobDefinition, this.defaultResourceClusterId));
                                     jobClusterCreateUpdate.increment();
                                     return completeWithFuture(response.thenApply(this::toHttpResponse));
                                 } catch (IOException e) {

@@ -51,6 +51,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.resourceClusterProvider")
     String getResourceClusterProvider();
 
+    @Config("mantis.master.resourceClusterDefaultId")
+    @Default("mantisagent")
+    String getDefaultResourceClusterId();
+
     @Config("mantis.master.host")
     @DefaultNull
     String getMasterHost();

@@ -69,11 +69,13 @@ public class JobClustersRoute extends BaseRoute {
 
     private final JobClusterRouteHandler jobClusterRouteHandler;
     private final Cache<Uri, RouteResult> routeResultCache;
+    private final String defaultResourceClusterId;
 
     public JobClustersRoute(final JobClusterRouteHandler jobClusterRouteHandler,
                             final ActorSystem actorSystem) {
         this.jobClusterRouteHandler = jobClusterRouteHandler;
         MasterConfiguration config = ConfigurationProvider.getConfig();
+        this.defaultResourceClusterId = config.getDefaultResourceClusterId();
         this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
                 config.getApiCacheTtlMilliseconds());
     }
@@ -237,7 +239,7 @@ public class JobClustersRoute extends BaseRoute {
             logger.info("POST /api/v1/jobClusters called {}", jobClusterDefn);
 
             final CreateJobClusterRequest createJobClusterRequest =
-                    JobClusterProtoAdapter.toCreateJobClusterRequest(jobClusterDefn);
+                    JobClusterProtoAdapter.toCreateJobClusterRequest(jobClusterDefn, this.defaultResourceClusterId);
 
             // sequentially chaining the createJobClusterRequest and getJobClusterRequest
             // when previous is successful
@@ -324,7 +326,7 @@ public class JobClustersRoute extends BaseRoute {
             logger.info("PUT /api/v1/jobClusters/{} called {}", clusterName, jobClusterDefn);
 
             final UpdateJobClusterRequest request = JobClusterProtoAdapter
-                    .toUpdateJobClusterRequest(jobClusterDefn);
+                    .toUpdateJobClusterRequest(jobClusterDefn, this.defaultResourceClusterId);
 
             CompletionStage<UpdateJobClusterResponse> updateResponse;
 
@@ -356,7 +358,7 @@ public class JobClustersRoute extends BaseRoute {
             } else {
                 // everything look ok so far, process the request!
                 updateResponse = jobClusterRouteHandler.update(
-                        JobClusterProtoAdapter.toUpdateJobClusterRequest(jobClusterDefn));
+                        JobClusterProtoAdapter.toUpdateJobClusterRequest(jobClusterDefn, this.defaultResourceClusterId));
             }
 
 
