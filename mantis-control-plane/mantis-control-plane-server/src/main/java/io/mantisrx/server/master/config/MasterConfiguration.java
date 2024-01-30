@@ -92,10 +92,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("2500")
     long getMasterApiLongOperationAskTimeoutMs();
 
-    @Config("mantis.mesos.enabled")
-    @Default("true")
-    boolean getMesosEnabled();
-
     @Config("mesos.master.location")
     @Default("localhost:5050")
     String getMasterLocation();
