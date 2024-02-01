@@ -16,9 +16,9 @@
 
 package io.mantisrx.server.master.resourcecluster;
 
-import io.mantisrx.runtime.AllocationConstraints;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
@@ -26,7 +26,7 @@ import lombok.Value;
 @AllArgsConstructor(staticName = "of")
 public class TaskExecutorAllocationRequest {
     WorkerId workerId;
-    AllocationConstraints constraints;
+    SchedulingConstraints constraints;
     JobMetadata jobMetadata;
     int stageNum;
 }

@@ -44,8 +44,6 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Cr
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.JobArtifactsToCacheRequest;
-import io.mantisrx.master.resourcecluster.proto.ResourceClusterSkuSizeProto.CreateResourceClusterSkuSizeRequest;
-import io.mantisrx.master.resourcecluster.proto.ResourceClusterSkuSizeProto.GetResourceClusterSkuSizesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
@@ -76,8 +74,6 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * /api/v1/resourceClusters/{}                                        (GET, DELETE)
  * <p>
- * /api/v1/resourceClusters/skuSize                                   (POST)
- * /api/v1/resourceClusters/skuSizes                                  (GET)
  * <p>
  * /api/v1/resourceClusters/{}/getResourceOverview                    (GET)
  * /api/v1/resourceClusters/{}/getRegisteredTaskExecutors             (GET)
@@ -150,18 +146,6 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                     () -> concat(
                         // GET
                         get(this::listClusters))
-                ),
-                // /skuSize
-                pathPrefix("skuSize", () -> concat(
-                    // POST
-                    post(this::createClusterSkuSize)
-                )),
-                // /skuSizes
-                pathPrefix(
-                    "skuSizes",
-                    () -> concat(
-                        // GET
-                        get(this::getSkuSizes))
                 ),
                 // /{}
                 path(
@@ -523,37 +507,6 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                         Jackson.marshaller()),
                     Endpoints.RESOURCE_CLUSTERS,
                     HttpVerb.GET))));
-    }
-
-    private Route createClusterSkuSize() {
-        return entity(Jackson.unmarshaller(CreateResourceClusterSkuSizeRequest.class),
-            skuSizeReq -> {
-                log.info("POST api/v1/resourceClusters/skuSize {}", skuSizeReq);
-                final CompletionStage<GetResourceClusterSkuSizesResponse> response =
-                    this.resourceClusterRouteHandler.createClusterSkuSize(skuSizeReq);
-
-                return completeAsync(
-                    response,
-                    resp -> complete(
-                        StatusCodes.ACCEPTED,
-                        resp,
-                        Jackson.marshaller()),
-                    Endpoints.RESOURCE_CLUSTERS,
-                    HttpRequestMetrics.HttpVerb.POST
-                );
-            });
-    }
-
-    private Route getSkuSizes() {
-        log.info("GET /api/v1/resourceClusters/skuSizes called");
-        return alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
-                uri -> completeAsync(
-                    this.resourceClusterRouteHandler.getClusterSkuSizes(),
-                    resp -> completeOK(
-                        resp,
-                        Jackson.marshaller()),
-                    Endpoints.RESOURCE_CLUSTERS,
-                    HttpVerb.GET)));
     }
 
     private Route cacheJobArtifacts(String clusterId) {

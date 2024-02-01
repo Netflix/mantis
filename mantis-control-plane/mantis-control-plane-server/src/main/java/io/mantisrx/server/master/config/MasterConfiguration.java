@@ -391,9 +391,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("false")
     boolean isBatchSchedulingEnabled();
 
-    @Config("mantis.scheduler.allocationConstraintsAndDefaults")
+    // Example: "jdk:17,sbn:3"
+    @Config("mantis.scheduler.assignmentAttributesAndDefaults")
     @Default("")
-    String getAllocationConstraintsAndDefaults();
+    String getAssignmentAttributesAndDefaults();
 
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());

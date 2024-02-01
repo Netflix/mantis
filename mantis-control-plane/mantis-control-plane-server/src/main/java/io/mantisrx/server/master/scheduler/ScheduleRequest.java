@@ -20,11 +20,11 @@ import com.netflix.fenzo.ConstraintEvaluator;
 import com.netflix.fenzo.VMTaskFitnessCalculator;
 import com.netflix.fenzo.queues.QAttributes;
 import com.netflix.fenzo.queues.QueuableTask;
-import io.mantisrx.runtime.AllocationConstraints;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +51,7 @@ public class ScheduleRequest implements QueuableTask {
     private final int numPortsRequested;
     private final JobMetadata jobMetadata;
     private final MantisJobDurationType durationType;
-    private final AllocationConstraints allocationConstraints;
+    private final SchedulingConstraints schedulingConstraints;
     private final List<ConstraintEvaluator> hardConstraints;
     private final List<VMTaskFitnessCalculator> softConstraints;
     private final Optional<String> preferredCluster;
@@ -62,7 +62,7 @@ public class ScheduleRequest implements QueuableTask {
                            final int numPortsRequested,
                            final JobMetadata jobMetadata,
                            final MantisJobDurationType durationType,
-                           final AllocationConstraints allocationConstraints,
+                           final SchedulingConstraints schedulingConstraints,
                            final List<ConstraintEvaluator> hardConstraints,
                            final List<VMTaskFitnessCalculator> softConstraints,
                            final long readyAt,
@@ -72,7 +72,7 @@ public class ScheduleRequest implements QueuableTask {
         this.numPortsRequested = numPortsRequested;
         this.jobMetadata = jobMetadata;
         this.durationType = durationType;
-        this.allocationConstraints = allocationConstraints;
+        this.schedulingConstraints = schedulingConstraints;
         this.hardConstraints = hardConstraints;
         this.softConstraints = softConstraints;
         this.readyAt = readyAt;
@@ -110,22 +110,22 @@ public class ScheduleRequest implements QueuableTask {
 
     @Override
     public double getCPUs() {
-        return allocationConstraints.getMachineDefinition().getCpuCores();
+        return schedulingConstraints.getMachineDefinition().getCpuCores();
     }
 
     @Override
     public double getMemory() {
-        return allocationConstraints.getMachineDefinition().getMemoryMB();
+        return schedulingConstraints.getMachineDefinition().getMemoryMB();
     }
 
     @Override
     public double getNetworkMbps() {
-        return allocationConstraints.getMachineDefinition().getNetworkMbps();
+        return schedulingConstraints.getMachineDefinition().getNetworkMbps();
     }
 
     @Override
     public double getDisk() {
-        return allocationConstraints.getMachineDefinition().getDiskMB();
+        return schedulingConstraints.getMachineDefinition().getDiskMB();
     }
 
     @Override
@@ -137,12 +137,12 @@ public class ScheduleRequest implements QueuableTask {
         return jobMetadata;
     }
 
-    public AllocationConstraints getAllocationConstraints() {
-        return allocationConstraints;
+    public SchedulingConstraints getSchedulingConstraints() {
+        return schedulingConstraints;
     }
 
     public MachineDefinition getMachineDefinition() {
-        return allocationConstraints.getMachineDefinition();
+        return schedulingConstraints.getMachineDefinition();
     }
 
     @Override

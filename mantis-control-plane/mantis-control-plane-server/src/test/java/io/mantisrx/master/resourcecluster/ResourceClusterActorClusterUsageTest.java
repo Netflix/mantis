@@ -18,7 +18,6 @@ package io.mantisrx.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertThrows;
 
 import akka.actor.ActorRef;
@@ -34,15 +33,10 @@ import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
-import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterEnvType;
-import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
-import io.mantisrx.master.resourcecluster.proto.SkuTypeSpec;
-import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
-import io.mantisrx.runtime.AllocationConstraints;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
@@ -57,12 +51,9 @@ import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableSet;
-import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -70,7 +61,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.ArgumentMatchers;
 
 public class ResourceClusterActorClusterUsageTest {
     private static final String TASK_EXECUTOR_ADDRESS = "address";
@@ -128,7 +118,8 @@ public class ResourceClusterActorClusterUsageTest {
             .machineDefinition(MACHINE_DEFINITION_2)
             .taskExecutorAttributes(
                 ImmutableMap.of(
-                    WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_3.getResourceID()))
+                    WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_3.getResourceID(),
+                    "jdk", "17"))
             .build();
 
     private static ActorSystem actorSystem;
@@ -137,7 +128,6 @@ public class ResourceClusterActorClusterUsageTest {
     private final TaskExecutorGateway gateway = mock(TaskExecutorGateway.class);
 
     private MantisJobStore mantisJobStore;
-    private IMantisPersistenceProvider storageProvider;
     private ActorRef resourceClusterActor;
     private ResourceCluster resourceCluster;
     private JobMessageRouter jobMessageRouter;
@@ -156,101 +146,10 @@ public class ResourceClusterActorClusterUsageTest {
     }
 
     @Before
-    public void setupRpcService() throws IOException {
+    public void setupRpcService() {
         rpcService.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
         mantisJobStore = mock(MantisJobStore.class);
         jobMessageRouter = mock(JobMessageRouter.class);
-
-        storageProvider = mock(IMantisPersistenceProvider.class);
-        when(storageProvider.getResourceClusterSpecWritable(ArgumentMatchers.eq(CLUSTER_ID)))
-            .thenReturn(ResourceClusterSpecWritable.builder()
-                .clusterSpec(buildMantisResourceClusterSpec())
-                .id(CLUSTER_ID)
-                .build());
-        when(storageProvider.getResourceClusterSkuSizes())
-            .thenReturn(ImmutableList.of());
-    }
-
-    public static MantisResourceClusterSpec buildMantisResourceClusterSpec() {
-        return MantisResourceClusterSpec.builder()
-            .id(CLUSTER_ID)
-            .name(CLUSTER_ID.getResourceID())
-            .envType(MantisResourceClusterEnvType.Prod)
-            .ownerEmail("test@netflix.com")
-            .ownerName("test@netflix.com")
-            .skuSpecs(getSkuTypeSpecs())
-            .build();
-    }
-
-    private static List<SkuTypeSpec> getSkuTypeSpecs() {
-        List<SkuTypeSpec> skuTypeSpecs = new ArrayList<>();
-        final SkuTypeSpec small = SkuTypeSpec.builder()
-            .skuId(CONTAINER_DEF_ID_1)
-            .capacity(SkuTypeSpec.SkuCapacity.builder()
-                .skuId(CONTAINER_DEF_ID_1)
-                .desireSize(2)
-                .maxSize(3)
-                .minSize(1)
-                .build())
-            .cpuCoreCount((int) MACHINE_DEFINITION_1.getCpuCores())
-            .memorySizeInMB((int) MACHINE_DEFINITION_1.getMemoryMB())
-            .diskSizeInMB((int) MACHINE_DEFINITION_1.getDiskMB())
-            .networkMbps((int) MACHINE_DEFINITION_1.getNetworkMbps())
-            .imageId("dev/mantistaskexecutor:main-latest")
-            .skuMetadataField(
-                "skuKey",
-                "us-east-1")
-            .skuMetadataField(
-                "sgKey",
-                "sg-11, sg-22, sg-33, sg-44")
-            .skuMetadataField("jdk", "8")
-            .build();
-        final SkuTypeSpec medium = SkuTypeSpec.builder()
-            .skuId(CONTAINER_DEF_ID_2)
-            .capacity(SkuTypeSpec.SkuCapacity.builder()
-                .skuId(CONTAINER_DEF_ID_2)
-                .desireSize(2)
-                .maxSize(3)
-                .minSize(1)
-                .build())
-            .cpuCoreCount((int) MACHINE_DEFINITION_2.getCpuCores())
-            .memorySizeInMB((int) MACHINE_DEFINITION_2.getMemoryMB())
-            .diskSizeInMB((int) MACHINE_DEFINITION_2.getDiskMB())
-            .networkMbps((int) MACHINE_DEFINITION_2.getNetworkMbps())
-            .imageId("dev/mantistaskexecutor:main-latest")
-            .skuMetadataField(
-                "skuKey",
-                "us-east-1")
-            .skuMetadataField(
-                "sgKey",
-                "sg-11, sg-22, sg-33, sg-44")
-            .skuMetadataField("jdk", "8")
-            .build();
-        final SkuTypeSpec mediumJdk17 = SkuTypeSpec.builder()
-            .skuId(CONTAINER_DEF_ID_3)
-            .capacity(SkuTypeSpec.SkuCapacity.builder()
-                .skuId(CONTAINER_DEF_ID_3)
-                .desireSize(2)
-                .maxSize(3)
-                .minSize(1)
-                .build())
-            .cpuCoreCount((int) MACHINE_DEFINITION_2.getCpuCores())
-            .memorySizeInMB((int) MACHINE_DEFINITION_2.getMemoryMB())
-            .diskSizeInMB((int) MACHINE_DEFINITION_2.getDiskMB())
-            .networkMbps((int) MACHINE_DEFINITION_2.getNetworkMbps())
-            .imageId("dev/mantistaskexecutor:main-latest")
-            .skuMetadataField(
-                "skuKey",
-                "us-east-1")
-            .skuMetadataField(
-                "sgKey",
-                "sg-11, sg-22, sg-33, sg-44")
-            .skuMetadataField("jdk", "17")
-            .build();
-        skuTypeSpecs.add(small);
-        skuTypeSpecs.add(medium);
-        skuTypeSpecs.add(mediumJdk17);
-        return skuTypeSpecs;
     }
 
     @Before
@@ -264,11 +163,11 @@ public class ResourceClusterActorClusterUsageTest {
                 Clock.systemDefaultZone(),
                 rpcService,
                 mantisJobStore,
-                storageProvider,
                 jobMessageRouter,
                 0,
                 "",
-                false, "");
+                false,
+                "jdk:8");
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =
@@ -281,135 +180,87 @@ public class ResourceClusterActorClusterUsageTest {
 
     @Test
     public void testGetTaskExecutorsUsageWithAllocationAttributes() throws Exception {
-        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_1).get());
-        assertEquals(Ack.getInstance(),
-            resourceCluster
-                .heartBeatFromTaskExecutor(
-                    new TaskExecutorHeartbeat(
-                        TASK_EXECUTOR_ID_1,
-                        CLUSTER_ID,
-                        TaskExecutorReport.available())).get());
-
-        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_2).get());
-        assertEquals(Ack.getInstance(),
-            resourceCluster
-                .heartBeatFromTaskExecutor(
-                    new TaskExecutorHeartbeat(
-                        TASK_EXECUTOR_ID_2,
-                        CLUSTER_ID,
-                        TaskExecutorReport.available())).get());
-
-        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_3).get());
-        assertEquals(Ack.getInstance(),
-            resourceCluster
-                .heartBeatFromTaskExecutor(
-                    new TaskExecutorHeartbeat(
-                        TASK_EXECUTOR_ID_3,
-                        CLUSTER_ID,
-                        TaskExecutorReport.available())).get());
+        registerTes();
 
         // Test get cluster usage
         TestKit probe = new TestKit(actorSystem);
-        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID),
+        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
             probe.getRef());
+
         GetClusterUsageResponse usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
+        // The 3 registrations belong to 3 different skus
         assertEquals(3, usageRes.getUsages().size());
         for (ContainerSkuID skuID : ImmutableList.of(CONTAINER_DEF_ID_1, CONTAINER_DEF_ID_2, CONTAINER_DEF_ID_3)) {
-            assertEquals(1, usageRes.getUsages().stream()
-                .filter(usage -> Objects.equals(usage.getUsageGroupKey(), skuID.getResourceID())).count());
-            UsageByGroupKey usage =
-                usageRes.getUsages().stream()
-                    .filter(u -> Objects.equals(u.getUsageGroupKey(), skuID.getResourceID()))
-                    .findFirst().get();
-            assertEquals(1, usage.getIdleCount());
-            assertEquals(1, usage.getTotalCount());
+            // no scheduling happened so far, so each Te is reported as idle
+            assertIdleAndTotalCount(usageRes, skuID.getResourceID(), 1, 1);
         }
 
         // reserve jdk 17 TE and check usage
-        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), AllocationConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0));
+        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0));
         assertEquals(
             TASK_EXECUTOR_ID_3,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
 
         probe = new TestKit(actorSystem);
-        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID),
+        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
             probe.getRef());
         usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
 
         for (ContainerSkuID skuID : ImmutableList.of(CONTAINER_DEF_ID_1, CONTAINER_DEF_ID_2)) {
-            assertEquals(1, usageRes.getUsages().stream()
-                .filter(usage -> Objects.equals(usage.getUsageGroupKey(), skuID.getResourceID())).count());
-            UsageByGroupKey usage =
-                usageRes.getUsages().stream()
-                    .filter(u -> Objects.equals(u.getUsageGroupKey(), skuID.getResourceID()))
-                    .findFirst().get();
-            assertEquals(1, usage.getIdleCount());
-            assertEquals(1, usage.getTotalCount());
+            assertIdleAndTotalCount(usageRes, skuID.getResourceID(), 1, 1);
         }
-        UsageByGroupKey usage =
-            usageRes.getUsages().stream()
-                .filter(u -> u.getUsageGroupKey().equals(CONTAINER_DEF_ID_3.getResourceID())).findFirst().get();
-        assertEquals(0, usage.getIdleCount());
-        assertEquals(1, usage.getTotalCount());
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_3.getResourceID(), 0, 1);
     }
 
     @Test
     public void testGetTaskExecutorsUsageWithAllocationAttributesWithPendingJobs() throws Exception {
-        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_1).get());
-        assertEquals(Ack.getInstance(),
-            resourceCluster
-                .heartBeatFromTaskExecutor(
-                    new TaskExecutorHeartbeat(
-                        TASK_EXECUTOR_ID_1,
-                        CLUSTER_ID,
-                        TaskExecutorReport.available())).get());
-
-        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_2).get());
-        assertEquals(Ack.getInstance(),
-            resourceCluster
-                .heartBeatFromTaskExecutor(
-                    new TaskExecutorHeartbeat(
-                        TASK_EXECUTOR_ID_2,
-                        CLUSTER_ID,
-                        TaskExecutorReport.available())).get());
-
-        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_3).get());
-        assertEquals(Ack.getInstance(),
-            resourceCluster
-                .heartBeatFromTaskExecutor(
-                    new TaskExecutorHeartbeat(
-                        TASK_EXECUTOR_ID_3,
-                        CLUSTER_ID,
-                        TaskExecutorReport.available())).get());
+        registerTes();
 
         // add pending workers
         Set<TaskExecutorAllocationRequest> requests = ImmutableSet.of(
-            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), AllocationConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0),
-            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-2"), AllocationConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0),
-            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-3"), AllocationConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0));
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0),
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-2"), SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0),
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-3"), SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0));
         assertThrows(ExecutionException.class, () -> resourceCluster.getTaskExecutorsFor(requests).get());
 
         // Test get cluster usage
         TestKit probe = new TestKit(actorSystem);
-        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID),
+        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
             probe.getRef());
         GetClusterUsageResponse usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
         assertEquals(3, usageRes.getUsages().size());
         for (ContainerSkuID skuID : ImmutableList.of(CONTAINER_DEF_ID_1, CONTAINER_DEF_ID_2)) {
-            assertEquals(1, usageRes.getUsages().stream()
-                .filter(usage -> Objects.equals(usage.getUsageGroupKey(), skuID.getResourceID())).count());
-            UsageByGroupKey usage =
-                usageRes.getUsages().stream()
-                    .filter(u -> Objects.equals(u.getUsageGroupKey(), skuID.getResourceID()))
-                    .findFirst().get();
-            assertEquals(1, usage.getIdleCount());
-            assertEquals(1, usage.getTotalCount());
+            assertIdleAndTotalCount(usageRes, skuID.getResourceID(), 1, 1);
         }
 
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_3.getResourceID(), -2, 1);
+    }
+
+    private void registerTes() throws Exception {
+        registerTe(TASK_EXECUTOR_REGISTRATION_1);
+        registerTe(TASK_EXECUTOR_REGISTRATION_2);
+        registerTe(TASK_EXECUTOR_REGISTRATION_3);
+    }
+
+    private void registerTe(TaskExecutorRegistration registration) throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(registration).get());
+        assertEquals(Ack.getInstance(),
+            resourceCluster
+                .heartBeatFromTaskExecutor(
+                    new TaskExecutorHeartbeat(
+                        registration.getTaskExecutorID(),
+                        CLUSTER_ID,
+                        TaskExecutorReport.available())).get());
+    }
+
+    private void assertIdleAndTotalCount(GetClusterUsageResponse usageRes, String skuID, int idleCount, int totalCount) {
+        assertEquals(1, usageRes.getUsages().stream()
+            .filter(usage -> Objects.equals(usage.getUsageGroupKey(), skuID)).count());
         UsageByGroupKey usage =
             usageRes.getUsages().stream()
-                .filter(u -> u.getUsageGroupKey().equals(CONTAINER_DEF_ID_3.getResourceID())).findFirst().get();
-        assertEquals(-2, usage.getIdleCount());
-        assertEquals(1, usage.getTotalCount());
+                .filter(u -> Objects.equals(u.getUsageGroupKey(), skuID))
+                .findFirst().get();
+        assertEquals(idleCount, usage.getIdleCount());
+        assertEquals(totalCount, usage.getTotalCount());
     }
 }

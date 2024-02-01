@@ -16,47 +16,36 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
-import io.mantisrx.server.master.resourcecluster.SkuSizeID;
+import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
+/**
+ * SkuSizeSpec class represents the SKU size specifications.
+ * Contains the name of the SKU size (equivalent to the 't-shirt size') and the machine definition.
+ */
 @Builder
 @Value
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class SkuSizeSpec {
-    @EqualsAndHashCode.Include
-    SkuSizeID skuSizeID; // ie. small-v0, small-v1
+    // The name of the SKU size (e.g. small, large etc.)
+    String name;
 
-    String skuSizeName; // ie. small
-
-    int cpuCoreCount;
-
-    int memorySizeInMB;
-
-    int networkMbps;
-
-    int diskSizeInMB;
+    // The MachineDefinition object that includes the specifications of a machine: CPU, disk, memory, and network.
+    MachineDefinition machineDefinition;
 
     @JsonCreator
     public SkuSizeSpec(
-        @JsonProperty("skuSizeID") final SkuSizeID skuSizeID,
-        @JsonProperty("skuSizeName") final String skuSizeName,
-        @JsonProperty("cpuCoreCount") final int cpuCoreCount,
-        @JsonProperty("memorySizeInMB") final int memorySizeInMB,
-        @JsonProperty("networkMbps") final int networkMbps,
-        @JsonProperty("diskSizeInMB") final int diskSizeInMB) {
-        this.skuSizeID = skuSizeID;
-        this.skuSizeName = skuSizeName;
-        this.cpuCoreCount = cpuCoreCount;
-        this.memorySizeInMB = memorySizeInMB;
-        this.networkMbps = networkMbps;
-        this.diskSizeInMB = diskSizeInMB;
+        @JsonProperty("name") final String name,
+        @JsonProperty("machineDefinition") final MachineDefinition machineDefinition) {
+        this.name = name;
+        this.machineDefinition = machineDefinition;
     }
 
     public boolean isSizeValid() {
-        return cpuCoreCount >= 1 && diskSizeInMB >= 1 && memorySizeInMB >= 1 && networkMbps >= 1;
+        return machineDefinition.getCpuCores() >= 1 && machineDefinition.getDiskMB() >= 1 && machineDefinition.getMemoryMB() >= 1 && machineDefinition.getNetworkMbps() >= 1;
     }
 }

@@ -22,7 +22,6 @@ import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
-import io.mantisrx.master.resourcecluster.proto.SkuSizeSpec;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
@@ -210,8 +209,4 @@ public interface IMantisPersistenceProvider {
         ResourceClusterScaleRulesWritable ruleSpec) throws IOException;
 
     ResourceClusterScaleRulesWritable registerResourceClusterScaleRule(ResourceClusterScaleSpec rule) throws IOException;
-
-    List<SkuSizeSpec> registerResourceClusterSkuSize(SkuSizeSpec skuSizeSpec) throws IOException;
-
-    List<SkuSizeSpec> getResourceClusterSkuSizes() throws IOException;
 }

@@ -73,37 +73,6 @@ public class TestContainerHelloWorld {
 
     private static final String LOGGING_ENABLED_METRICS_GROUP =
             "MasterApiMetrics;DeadLetterActor;JobDiscoveryRoute";
-
-    private static final String RESOURCE_CLUSTER_CREATE = "{\n" +
-        "    \"clusterId\": {\"resourceID\": \"testcluster1\"},\n" +
-        "    \"clusterSpec\": {\n" +
-        "        \"name\": \"testcluster1\",\n" +
-        "        \"id\": {\"resourceID\": \"testcluster1\"},\n" +
-        "        \"ownerName\": \"test@netflix.com\",\n" +
-        "        \"ownerEmail\": \"test@netflix.com\",\n" +
-        "        \"skuSpecs\": [\n" +
-        "            {\n" +
-        "                \"skuId\": {\"resourceID\": \"medium\"},\n" +
-        "                \"capacity\": {\n" +
-        "                    \"skuId\": {\"resourceID\": \"medium\"},\n" +
-        "                    \"minSize\": 10,\n" +
-        "                    \"maxSize\": 20,\n" +
-        "                    \"desireSize\": 10\n" +
-        "                },\n" +
-        "                \"imageId\": \"123\",\n" +
-        "                \"sizeID\": {\"resourceID\": \"medium\"},\n" +
-        "                \"cpuCoreCount\": 1,\n" +
-        "                \"memorySizeInMB\": 1024,\n" +
-        "                \"networkMbps\": 128,\n" +
-        "                \"diskSizeInMB\": 1024,\n" +
-        "                \"skuMetadataFields\": {\n" +
-        "                    \"skuSecurityGroupListKey\": \"sg1\"\n" +
-        "                }\n" +
-        "            }\n" +
-        "        ],\n" +
-        "        \"clusterMetadataFields\": {}\n" +
-        "    }\n" +
-        "}";
     private static final String JOB_CLUSTER_CREATE = "{\"jobDefinition\":{\"name\":\"hello-sine-testcontainers\","
         + "\"user\":\"mantisoss\",\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-%s"
         + ".zip\"," +
@@ -119,6 +88,7 @@ public class TestContainerHelloWorld {
         "\"migrationConfig\":{\"strategy\":\"PERCENTAGE\",\"configString\":\"{\\\"percentToMove\\\":25,\\\"intervalMs\\\":60000}\"},\"slaMin\":\"0\",\"slaMax\":\"0\",\"cronSpec\":null,\"cronPolicy\":\"KEEP_EXISTING\",\"isReadyForJobMaster\":true}," +
         "\"owner\":{\"contactEmail\":\"mantisoss@netflix.com\",\"description\":\"\",\"name\":\"Mantis OSS\","
         + "\"repo\":\"\",\"teamName\":\"\"}}";
+
 
     private static final String QUICK_SUBMIT =
         "{\"name\":\"hello-sine-testcontainers\",\"user\":\"mantisoss\",\"jobSla\":{\"durationType\":\"Perpetual\","
@@ -214,8 +184,6 @@ public class TestContainerHelloWorld {
         agentDockerFile =
             new ImageFromDockerfile("localhost/testcontainers/mantis_agent_" + Base58.randomString(4).toLowerCase())
                 .withDockerfile(agentDockerFilePath);
-
-        assertTrue("Failed to create resource cluster", createResourceCluster(controlPlaneHost, controlPlanePort));
 
         assertTrue("Failed to create job cluster", createJobCluster(controlPlaneHost, controlPlanePort));
         assertTrue("Failed to get job cluster", getJobCluster(controlPlaneHost, controlPlanePort));
@@ -359,7 +327,6 @@ public class TestContainerHelloWorld {
                 .withEnv("mantis_taskexecutor_id".toUpperCase(), agentId)
                 .withEnv("MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS", hostname)
                 .withEnv("JAVA_OPTS", JAVA_OPTS)
-                .withEnv("MANTIS_TASKEXECUTOR_ATTRIBUTES", "MANTIS_WORKER_CONTAINER_DEFINITION_ID:medium")
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network)
                 .withCreateContainerCmdModifier(it -> it.withName(hostname))
@@ -369,7 +336,6 @@ public class TestContainerHelloWorld {
                 .withEnv("mantis_taskexecutor_id".toUpperCase(), agentId)
                 .withEnv("MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS", hostname)
                 .withEnv("JAVA_OPTS", JAVA_OPTS)
-                .withEnv("MANTIS_TASKEXECUTOR_ATTRIBUTES", "MANTIS_WORKER_CONTAINER_DEFINITION_ID:medium")
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network)
                 .withCreateContainerCmdModifier(it -> it.withName(hostname));
@@ -460,38 +426,6 @@ public class TestContainerHelloWorld {
             }
         }
         return false;
-    }
-
-    private static boolean createResourceCluster(
-        String controlPlaneHost,
-        int controlPlanePort) {
-        HttpUrl reqUrl = new Builder()
-            .scheme("http")
-            .host(controlPlaneHost)
-            .port(controlPlanePort)
-            .addPathSegments("api/v1/resourceClusters")
-            .build();
-        log.info("Req: {}", reqUrl);
-        String payload = RESOURCE_CLUSTER_CREATE;
-        log.info("using payload: {}", payload);
-        RequestBody body = RequestBody.create(
-            payload, MediaType.parse("application/json; charset=utf-8"));
-
-        Request request = new Request.Builder()
-            .url(reqUrl)
-            .post(body)
-            .build();
-
-        try {
-            Response response = HTTP_CLIENT.newCall(request).execute();
-            String responseBody = response.body().string();
-            log.info("Created resource cluster response: {}.", responseBody);
-
-        } catch (Exception e) {
-            log.warn("Create cluster call error", e);
-            return false;
-        }
-        return true;
     }
 
     private static boolean createJobCluster(

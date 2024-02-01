@@ -18,12 +18,15 @@ package io.mantisrx.server.master.resourcecluster;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -113,14 +116,20 @@ public class TaskExecutorRegistration {
     }
 
     @JsonIgnore
-    public ContainerSkuID getTaskExecutorContainerDefinitionId() {
+    public Optional<ContainerSkuID> getTaskExecutorContainerDefinitionId() {
         // handle back compat on key case insensitivity.
         String containerDefIdLower = WorkerConstants.WORKER_CONTAINER_DEFINITION_ID.toLowerCase();
         if (this.taskExecutorAttributes.containsKey(containerDefIdLower)) {
-            return ContainerSkuID.of(this.getTaskExecutorAttributes().get(containerDefIdLower));
+            return Optional.ofNullable(ContainerSkuID.of(this.getTaskExecutorAttributes().get(containerDefIdLower)));
         }
-        return ContainerSkuID.of(
-                this.getTaskExecutorAttributes().get(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID));
+
+        if (this.taskExecutorAttributes.containsKey(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID)) {
+            return Optional.ofNullable(
+                ContainerSkuID.of(
+                    this.getTaskExecutorAttributes().get(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID)));
+        }
+
+        return Optional.empty();
     }
 
     @JsonIgnore
@@ -134,5 +143,31 @@ public class TaskExecutorRegistration {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Computes the scheduling constraints of the current registration. It navigates through all entries in
+     * the provided allocationAttributesWithDefault map. If a key is detected within the registration's attributes, the value
+     * linked to it is used. In cases where a key is not present in the registration's attributes, the default value from
+     * the allocationAttributesWithDefault is maintained. The method then utilizes this refined map of allocation attributes to
+     * create a SchedulingConstraints object.
+     *
+     * The keys in allocationAttributesWithDefault denote the necessary attributes for scheduling, while the values act as
+     * the fallback options when a specific attribute value isn't located in an external attribute store.
+     *
+     * @param allocationAttributesWithDefault The keys are allocations attributes that will be checked during scheduling and
+     *                                        the values are possible defaults in case the keys are not present in the external
+     *                                        attribute store.
+     * @return The SchedulingConstraints which is based on the machineDefinition and the processed allocation attributes.
+     */
+    @JsonIgnore
+    public SchedulingConstraints getSchedulingConstraints(Map<String, String> allocationAttributesWithDefault) {
+        Map<String, String> attributes = allocationAttributesWithDefault
+            .entrySet()
+            .stream()
+            .collect(Collectors.toMap(
+                Entry::getKey,
+                entry -> getAttributeByKey(entry.getKey()).orElse(entry.getValue())));
+        return SchedulingConstraints.of(machineDefinition, attributes);
     }
 }

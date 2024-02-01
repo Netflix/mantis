@@ -28,11 +28,10 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
-import io.mantisrx.runtime.AllocationConstraints;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
@@ -72,6 +71,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -103,8 +103,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private final RpcService rpcService;
     private final ClusterID clusterID;
     private final MantisJobStore mantisJobStore;
-    private final IMantisPersistenceProvider storageProvider;
-
     private final Set<DisableTaskExecutorsRequest> activeDisableTaskExecutorsByAttributesRequests;
     private final Set<TaskExecutorID> disabledTaskExecutors;
     private final JobMessageRouter jobMessageRouter;
@@ -118,10 +116,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final boolean isJobArtifactCachingEnabled;
 
-    private final String allocationConstraintsAndDefaults;
-
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, IMantisPersistenceProvider mantisPersistenceProvider, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled, boolean isJobArtifactCachingEnabled, String allocationConstraintsAndDefaults) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, mantisPersistenceProvider, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled, isJobArtifactCachingEnabled, allocationConstraintsAndDefaults)
+    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled, boolean isJobArtifactCachingEnabled, String assignmentAttributesAndDefaults) {
+        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled, isJobArtifactCachingEnabled, assignmentAttributesAndDefaults)
                 .withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -133,41 +129,29 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         Clock clock,
         RpcService rpcService,
         MantisJobStore mantisJobStore,
-        IMantisPersistenceProvider storageProvider,
         JobMessageRouter jobMessageRouter,
         int maxJobArtifactsToCache,
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
-        String allocationConstraintsAndDefaults) {
+        String assignmentAttributesAndDefaults) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
         this.disabledTaskExecutorsCheckInterval = disabledTaskExecutorsCheckInterval;
         this.isJobArtifactCachingEnabled = isJobArtifactCachingEnabled;
-        this.allocationConstraintsAndDefaults = allocationConstraintsAndDefaults;
 
         this.clock = clock;
         this.rpcService = rpcService;
         this.jobMessageRouter = jobMessageRouter;
         this.mantisJobStore = mantisJobStore;
-        this.storageProvider = storageProvider;
         this.activeDisableTaskExecutorsByAttributesRequests = new HashSet<>();
         this.disabledTaskExecutors = new HashSet<>();
         this.maxJobArtifactsToCache = maxJobArtifactsToCache;
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
 
-        this.executorStateManager = createExecutorStateManager();
+        this.executorStateManager = new ExecutorStateManagerImpl(assignmentAttributesAndDefaults);
 
         this.metrics = new ResourceClusterActorMetrics();
-    }
-
-    private ExecutorStateManager createExecutorStateManager() {
-        try {
-            return new ExecutorStateManagerImpl(clusterID, storageProvider, allocationConstraintsAndDefaults);
-        } catch (Exception e) {
-            log.error("No resource cluster spec found for {}", clusterID);
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -642,7 +626,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             sender().tell(new TaskExecutorsAllocation(matchedExecutors.get().getRequestToTaskExecutorMap()), self());
         } else {
             request.allocationRequests.forEach(req -> metrics.incrementCounter(
-                // TODO(fdichiara): replace cpu+mem with skuID
                 ResourceClusterActorMetrics.NO_RESOURCES_AVAILABLE,
                 TagList.create(ImmutableMap.of(
                     "resourceCluster",
@@ -720,8 +703,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .filter(Objects::nonNull)
                 .map(TaskExecutorState::getRegistration)
                 .filter(Objects::nonNull)
-                .filter(registration -> registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).isPresent())
-                .collect(groupingBy(registration -> Tuple.of(registration.getTaskExecutorContainerDefinitionId(), registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).get()), Collectors.counting()))
+                .filter(registration -> registration.getTaskExecutorContainerDefinitionId().isPresent() && registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).isPresent())
+                .collect(groupingBy(registration -> Tuple.of(registration.getTaskExecutorContainerDefinitionId().get(), registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).get()), Collectors.counting()))
                 .forEach((keys, count) -> metrics.setGauge(
                     metricName,
                     count,
@@ -878,13 +861,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         Set<TaskExecutorAllocationRequest> allocationRequests;
         ClusterID clusterID;
 
-        public Map<AllocationConstraints, List<TaskExecutorAllocationRequest>> getGroupedByConstraints() {
+        public Map<SchedulingConstraints, List<TaskExecutorAllocationRequest>> getGroupedByConstraints() {
             return allocationRequests
                 .stream()
                 .collect(Collectors.groupingBy(TaskExecutorAllocationRequest::getConstraints));
         }
 
-        public Map<AllocationConstraints, Integer> getGroupedByConstraintsCount() {
+        public Map<SchedulingConstraints, Integer> getGroupedByConstraintsCount() {
             return allocationRequests
                 .stream()
                 .collect(Collectors.groupingBy(TaskExecutorAllocationRequest::getConstraints))
@@ -1025,6 +1008,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class GetClusterUsageRequest {
         ClusterID clusterID;
+        Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
     }
 
     @Value

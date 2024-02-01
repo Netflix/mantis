@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
-import io.mantisrx.runtime.AllocationConstraints;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
@@ -30,6 +29,7 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.master.domain.JobDefinition;
@@ -107,7 +107,7 @@ public class TestHelpers {
                             mantisJobMetadata.getMinRuntimeSecs()
                     ),
                     mantisJobMetadata.getSla().get().getDurationType(),
-                    AllocationConstraints.of(machineDefinition, ImmutableMap.of()),
+                    SchedulingConstraints.of(machineDefinition, ImmutableMap.of()),
                     Collections.emptyList(),
                     Collections.emptyList(),
                     0,Optional.empty()

@@ -66,7 +66,8 @@ public class JobDefinition {
     private final int withNumberOfStages;
     private Map<String, Label> labels; // Map label->name to label instance.
 
-    private final static String ALLOCATION_CONSTRAINT_LABEL_REGEX = "_mantis\\.allocationConstraint\\.(.+)";
+    private final static Pattern SCHEDULING_CONSTRAINT_LABEL_REGEX =
+        Pattern.compile("_mantis\\.schedulingConstraint\\.(.+)");
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -251,12 +252,17 @@ public class JobDefinition {
             .map(l -> ClusterID.of(l.getValue()));
     }
 
+    /**
+     * Returns the map of assignment attributes deduced from labels. The attributes are extracted
+     * from labels matching the "SCHEDULING_CONSTRAINT_LABEL_REGEX" pattern, and only the capturing
+     * group content (i.e., the key that comes after "_mantis.schedulingConstraint.") is saved.
+     *
+     * The return value would be used as constraint during worker scheduling.
+     */
     public Map<String, String> getAssignmentAttributes() {
-        final Pattern pattern = Pattern.compile(ALLOCATION_CONSTRAINT_LABEL_REGEX);
-
         return labels.entrySet().stream()
             .map(label -> {
-                final Matcher matcher = pattern.matcher(label.getKey());
+                final Matcher matcher = SCHEDULING_CONSTRAINT_LABEL_REGEX.matcher(label.getKey());
                 return matcher.find() ? Pair.of(matcher.group(1), label.getValue().getValue()) : null;
             })
             .filter(Objects::nonNull)
