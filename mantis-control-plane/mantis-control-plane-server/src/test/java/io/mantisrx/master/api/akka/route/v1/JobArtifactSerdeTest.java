@@ -55,12 +55,38 @@ public class JobArtifactSerdeTest {
                 .createdAt(Instant.ofEpochMilli(1668135952L))
                 .runtimeType("sbn")
                 .dependencies(ImmutableMap.of("de1", "1.0.0"))
+                .tags(ImmutableMap.of("jdkVersion", "9"))
                 .entrypoint("entrypoint")
                 .build();
         String metaJson = Jackson.toJSON(mapper, null, artifact);
-        assertEquals(metaJson, "{\"artifactID\":{\"resourceID\":\"id\"},\"name\":\"proj1\",\"version\":\"v1\",\"createdAt\":1668135.952000000,\"runtimeType\":\"sbn\",\"dependencies\":{\"de1\":\"1.0.0\"},\"entrypoint\":\"entrypoint\"}");
+        assertEquals(metaJson, "{\"artifactID\":{\"resourceID\":\"id\"},\"name\":\"proj1\",\"version\":\"v1\",\"createdAt\":1668135.952000000,\"runtimeType\":\"sbn\",\"dependencies\":{\"de1\":\"1.0.0\"},\"entrypoint\":\"entrypoint\",\"tags\":{\"jdkVersion\":\"9\"}}");
 
         final JobArtifact actual = Jackson.fromJSON(mapper, metaJson, JobArtifact.class);
+        assertEquals(artifact, actual);
+    }
+
+    @Test
+    public void testIfJobArtifactIsSerializableByJsonBackCompat() throws Exception {
+        final JobArtifact artifact =
+            JobArtifact.builder()
+                .artifactID(ArtifactID.of("id"))
+                .name("proj1")
+                .version("v1")
+                .createdAt(Instant.ofEpochMilli(1668135952L))
+                .runtimeType("sbn")
+                .dependencies(ImmutableMap.of("de1", "1.0.0"))
+                .entrypoint("entrypoint")
+                .build();
+        String metaJson = Jackson.toJSON(mapper, null, artifact);
+        String rawStr = "{\"artifactID\":{\"resourceID\":\"id\"},\"name\":\"proj1\",\"version\":\"v1\",\"createdAt\":1668135.952000000,\"runtimeType\":\"sbn\",\"dependencies\":{\"de1\":\"1.0.0\"},\"entrypoint\":\"entrypoint\",\"tags\":null}";
+
+        assertEquals(metaJson, rawStr);
+
+        JobArtifact actual = Jackson.fromJSON(mapper, rawStr, JobArtifact.class);
+        assertEquals(artifact, actual);
+
+        String rawStrOldVersion = "{\"artifactID\":{\"resourceID\":\"id\"},\"name\":\"proj1\",\"version\":\"v1\",\"createdAt\":1668135.952000000,\"runtimeType\":\"sbn\",\"dependencies\":{\"de1\":\"1.0.0\"},\"entrypoint\":\"entrypoint\"}";
+        actual = Jackson.fromJSON(mapper, rawStrOldVersion, JobArtifact.class);
         assertEquals(artifact, actual);
     }
 }
