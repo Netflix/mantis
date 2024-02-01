@@ -49,4 +49,10 @@ public class JobArtifact {
     // Job entrypoint clas.
     @JsonProperty("entrypoint")
     String entrypoint;
+
+    /**
+     * tags for the current job artifact. E.g. jdk version, SBN version etc.
+     */
+    @JsonProperty("tags")
+    Map<String, String> tags;
 }
