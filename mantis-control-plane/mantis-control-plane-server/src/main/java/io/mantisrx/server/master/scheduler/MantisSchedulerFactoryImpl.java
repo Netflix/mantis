@@ -24,7 +24,6 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,10 +42,9 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
 
     @Override
     public MantisScheduler forClusterID(ClusterID clusterID) {
-        Optional<ClusterID> clusterIDOptional = Optional.ofNullable(clusterID);
-        if (clusterIDOptional.isPresent()) {
-            if (Strings.isNullOrEmpty(clusterIDOptional.get().getResourceID())) {
-                log.error("Received empty resource id: {}", clusterIDOptional.get());
+        if (clusterID != null) {
+            if (Strings.isNullOrEmpty(clusterID.getResourceID())) {
+                log.error("Received empty resource id: {}", clusterID);
                 throw new RuntimeException("Empty resourceID in clusterID for MantisScheduler");
             }
 
@@ -55,7 +53,7 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
                     clusterID,
                     (cid) -> {
                         log.info("Created scheduler actor for cluster: {}",
-                            clusterIDOptional.get().getResourceID());
+                            clusterID.getResourceID());
                         return new ResourceClusterAwareScheduler(actorSystem.actorOf(
                             ResourceClusterAwareSchedulerActor.props(
                                 masterConfiguration.getSchedulerMaxRetries(),
