@@ -24,8 +24,10 @@ import static org.junit.Assert.assertTrue;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
+import io.mantisrx.common.Label;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.jobcluster.LabelManager.SystemLabels;
 import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
@@ -132,6 +134,7 @@ public class JobTestHelper {
             .withIsReadyForJobMaster(true)
             .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
             .withMigrationConfig(migrationConfig)
+            .withLabel(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"))
             .build();
     }
 
