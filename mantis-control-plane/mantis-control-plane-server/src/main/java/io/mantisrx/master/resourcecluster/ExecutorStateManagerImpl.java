@@ -63,8 +63,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
     private final Map<TaskExecutorID, TaskExecutorState> taskExecutorStateMap = new HashMap<>();
 
     /**
-     * Cache the available executors ready to accept assignments. Note these executors' state are not strongly
-     * synchronized and requires state level check when matching.
+     * Cache the available executors ready to accept assignments
      */
     private final Map<SchedulingConstraints, NavigableSet<TaskExecutorHolder>> executorsBySchedulingConstraints = new HashMap<>();
 
