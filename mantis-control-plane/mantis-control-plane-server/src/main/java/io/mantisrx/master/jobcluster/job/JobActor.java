@@ -1175,6 +1175,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     static class WorkerNumberGenerator {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(WorkerNumberGenerator.class);
+        private static final int MAX_ATTEMPTS = 10;
+        private static final long SLEEP_DURATION_MS = Duration.ofSeconds(2).toMillis();
         private static final int DEFAULT_INCREMENT_STEP = 10;
         private final int incrementStep;
         private int lastUsed;
@@ -1208,14 +1210,31 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         private void advance(MantisJobMetadataImpl mantisJobMetaData, MantisJobStore jobStore) {
             try {
-                currLimit += incrementStep;
-
-                mantisJobMetaData.setNextWorkerNumberToUse(currLimit, jobStore);
+                final int value = currLimit + incrementStep;
+                // If store operations fail, extraneous workers will be killed since currLimit would be lower
+                setNextWorkerNumberWithRetries(mantisJobMetaData, jobStore, value);
+                currLimit = value;
             } catch (Exception e) {
                 hasErrored = true;
-                LOGGER.error("Exception setting next Worker number to use ", e);
+                LOGGER.error("Exception setting nextWorkerNumberToUse after {} consecutive attempts", MAX_ATTEMPTS, e);
                 throw new RuntimeException("Unexpected error setting next worker number to use", e);
             }
+        }
+        private void setNextWorkerNumberWithRetries(MantisJobMetadataImpl mantisJobMetaData, MantisJobStore jobStore, int value) throws Exception {
+            int attempts = 0;
+            Exception exception = null;
+            while (attempts < MAX_ATTEMPTS) {
+                try {
+                    mantisJobMetaData.setNextWorkerNumberToUse(value, jobStore);
+                    return;
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to setNextWorkerNumberToUse to {} (attempt {}/{})", value, attempts, MAX_ATTEMPTS, e);
+                    exception = e;
+                }
+                Thread.sleep(SLEEP_DURATION_MS);
+                attempts++;
+            }
+            throw exception;
         }
 
         /**
@@ -2020,8 +2039,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                             + "worker",
                                     event.getWorkerId(),
                                     currentWorkerNum);
-                        }
-                        else if (currentWorkerNum < eventWorkerNum) {
+                        } else if (currentWorkerNum < eventWorkerNum) {
                             // this case should not happen as new worker assignment should update state and persist first.
                             LOGGER.error(
                                     "[Corrupted state] Newer worker num received: {}, Current stage worker: {}",
