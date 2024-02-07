@@ -35,6 +35,10 @@ ext {
 dependencies {
     api project(':mantis-control-plane:mantis-control-plane-core')
 
+    implementation platform('software.amazon.awssdk:bom:2.23.15')
+    implementation 'software.amazon.awssdk:dynamodb'
+    implementation 'software.amazon.awssdk:aws-core'
+
     api "com.typesafe.akka:akka-http_$scalaBinaryVersion:$akkaHttpVersion"
     api "com.typesafe.akka:akka-http-jackson_$scalaBinaryVersion:$akkaHttpVersion"
     api "com.typesafe.akka:akka-http-caching_$scalaBinaryVersion:$akkaHttpVersion"
@@ -62,6 +66,7 @@ dependencies {
     testImplementation testFixtures(project(":mantis-common"))
     testImplementation testFixtures(project(":mantis-control-plane:mantis-control-plane-core"))
     testImplementation libraries.commonsIo
+    testImplementation "com.amazonaws:DynamoDBLocal:latest.release"
 }
 def installDir = file("${buildDir}/install")
 def controlPlaneState = file("${project.resources}/docker")
