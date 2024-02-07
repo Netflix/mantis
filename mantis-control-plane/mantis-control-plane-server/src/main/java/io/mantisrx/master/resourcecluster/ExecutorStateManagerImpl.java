@@ -324,8 +324,9 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
     private Optional<SchedulingConstraints> findBestFitAllocationConstraints(SchedulingConstraints requestedConstraints) {
         return executorsBySchedulingConstraints.keySet()
             .stream()
+            .filter(s -> s.canFit(requestedConstraints, assignmentAttributesAndDefaults))
             .max(Comparator.comparing(target ->
-                target.fitness(requestedConstraints, assignmentAttributesAndDefaults)
+                target.calculateFitness(requestedConstraints, assignmentAttributesAndDefaults)
             ));
     }
 

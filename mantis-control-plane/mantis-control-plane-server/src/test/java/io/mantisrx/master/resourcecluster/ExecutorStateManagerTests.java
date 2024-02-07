@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.resourcecluster;
 
+import static io.mantisrx.server.core.scheduler.SizeDefinition.SIZE_NAME_LABEL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -34,6 +35,7 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import io.mantisrx.server.core.scheduler.SizeDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
@@ -140,7 +142,7 @@ public class ExecutorStateManagerTests {
     public void testGetBestFit() {
         Optional<BestFit> bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of()), null, 0)),
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of()), null, 0)),
                 CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
@@ -163,14 +165,14 @@ public class ExecutorStateManagerTests {
         // test machine def 1
         bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of()), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of()), null, 0)), CLUSTER_ID));
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
         assertEquals(state1, bestFitO.get().getBestFit().values().stream().findFirst().get().getRight());
 
         bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of()), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of()), null, 0)), CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_2, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
@@ -181,7 +183,7 @@ public class ExecutorStateManagerTests {
             TaskExecutorReport.occupied(WORKER_ID)));
         bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of()), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of()), null, 0)), CLUSTER_ID));
         assertFalse(bestFitO.isPresent());
 
         // enable e3 and disable e2
@@ -193,7 +195,7 @@ public class ExecutorStateManagerTests {
 
         bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of()), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of()), null, 0)), CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_3, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
@@ -203,7 +205,7 @@ public class ExecutorStateManagerTests {
         stateManager.tryMarkUnavailable(TASK_EXECUTOR_ID_3);
         bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of()), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of()), null, 0)), CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
     }
@@ -244,7 +246,7 @@ public class ExecutorStateManagerTests {
         Optional<BestFit> bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
-                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of()), null, 0)),
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of()), null, 0)),
                     CLUSTER_ID));
         assertFalse(bestFitO.isPresent());
 
@@ -277,7 +279,7 @@ public class ExecutorStateManagerTests {
         bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
-                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of()), null, 0)),
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of()), null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
@@ -293,7 +295,7 @@ public class ExecutorStateManagerTests {
         bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
-                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of()), null, 0)),
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of()), null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
@@ -318,7 +320,7 @@ public class ExecutorStateManagerTests {
         bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
-                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of()), null, 0)),
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of()), null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
@@ -331,7 +333,7 @@ public class ExecutorStateManagerTests {
         bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
-                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of()), null, 0)),
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of()), null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
@@ -374,8 +376,8 @@ public class ExecutorStateManagerTests {
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
                     new HashSet<>(Arrays.asList(
-                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of()), null, 0),
-                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of()), null, 1))),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of()), null, 0),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of()), null, 1))),
                     CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
@@ -389,8 +391,8 @@ public class ExecutorStateManagerTests {
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
                     new HashSet<>(Arrays.asList(
-                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of()), null, 0),
-                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of()), null, 1))),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of()), null, 0),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of()), null, 1))),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
@@ -416,7 +418,7 @@ public class ExecutorStateManagerTests {
         // no matching found for jdk:17
         Optional<BestFit> bestFit =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
         assertFalse(bestFit.isPresent());
 
         stateManager.trackIfAbsent(TaskExecutorID.of("jdk17ID"), state2);
@@ -427,7 +429,7 @@ public class ExecutorStateManagerTests {
 
         bestFit =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
         assertTrue(bestFit.isPresent());
         assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk17ID"))), bestFit.get().getTaskExecutorIDSet());
     }
@@ -451,7 +453,7 @@ public class ExecutorStateManagerTests {
         // no matching found for jdk:8
         Optional<BestFit> bestFit =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "8")), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of("jdk", "8")), null, 0)), CLUSTER_ID));
         assertFalse(bestFit.isPresent());
 
         stateManager.trackIfAbsent(TaskExecutorID.of("jdk8ID"), state1);
@@ -463,7 +465,7 @@ public class ExecutorStateManagerTests {
         // best fit found using default allocation attribute
         bestFit =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "8")), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of("jdk", "8")), null, 0)), CLUSTER_ID));
         assertTrue(bestFit.isPresent());
         assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk8ID"))), bestFit.get().getTaskExecutorIDSet());
     }
@@ -493,7 +495,7 @@ public class ExecutorStateManagerTests {
         // no matching found for jdk17/sbn3
         Optional<BestFit> bestFit =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "17", "sbn", "3")), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of("jdk", "17", "sbn", "3")), null, 0)), CLUSTER_ID));
         assertFalse(bestFit.isPresent());
 
         TaskExecutorRegistration jdk17Sbn3Te =
@@ -507,8 +509,51 @@ public class ExecutorStateManagerTests {
 
         bestFit =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "17", "sbn", "3")), null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, null), ImmutableMap.of("jdk", "17", "sbn", "3")), null, 0)), CLUSTER_ID));
         assertTrue(bestFit.isPresent());
         assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk17SbnID"))), bestFit.get().getTaskExecutorIDSet());
+    }
+
+    @Test
+    public void testGetBestFitWithSizeName() {
+        stateManager = new ExecutorStateManagerImpl("jdk:8,sbn:2");
+
+        TaskExecutorRegistration jdk8Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk8ID"), MACHINE_DEFINITION_1, ImmutableMap.of(SIZE_NAME_LABEL, "small")).build();
+
+        TaskExecutorRegistration jdk17Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk17ID"), MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "17", SIZE_NAME_LABEL, "small")).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk8ID"), state1);
+        state1.onRegistration(jdk8Te);
+        state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk8ID"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk8ID"));
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk17ID"), state2);
+        state2.onRegistration(jdk17Te);
+        state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk17ID"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk17ID"));
+
+        // no matching found for large + jdk17
+        Optional<BestFit> bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_1, "large"), ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
+        assertFalse(bestFit.isPresent());
+
+        // matching the only small + jdk17 --> machine definition is not taken into account
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, "small"), ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk17ID"))), bestFit.get().getTaskExecutorIDSet());
+
+        // matching the only small + jdk8 --> machine definition is not taken into account
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, "small"), ImmutableMap.of("jdk", "8")), null, 0)), CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk8ID"))), bestFit.get().getTaskExecutorIDSet());
     }
 }

@@ -37,6 +37,7 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import io.mantisrx.server.core.scheduler.SizeDefinition;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
@@ -196,7 +197,7 @@ public class ResourceClusterActorClusterUsageTest {
         }
 
         // reserve jdk 17 TE and check usage
-        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0));
+        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of("jdk", "17")), null, 0));
         assertEquals(
             TASK_EXECUTOR_ID_3,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -218,9 +219,9 @@ public class ResourceClusterActorClusterUsageTest {
 
         // add pending workers
         Set<TaskExecutorAllocationRequest> requests = ImmutableSet.of(
-            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0),
-            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-2"), SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0),
-            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-3"), SchedulingConstraints.of(MACHINE_DEFINITION_2, ImmutableMap.of("jdk", "17")), null, 0));
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of("jdk", "17")), null, 0),
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-2"), SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of("jdk", "17")), null, 0),
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-3"), SchedulingConstraints.of(SizeDefinition.of(MACHINE_DEFINITION_2, null), ImmutableMap.of("jdk", "17")), null, 0));
         assertThrows(ExecutionException.class, () -> resourceCluster.getTaskExecutorsFor(requests).get());
 
         // Test get cluster usage

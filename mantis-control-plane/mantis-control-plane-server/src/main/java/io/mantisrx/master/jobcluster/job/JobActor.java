@@ -20,6 +20,7 @@ import static io.mantisrx.master.StringConstants.MANTIS_MASTER_USER;
 import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.*;
 import static io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.MANTIS_SYSTEM_ALLOCATED_NUM_PORTS;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.*;
+import static io.mantisrx.server.core.scheduler.SizeDefinition.SIZE_NAME_LABEL;
 import static java.util.Optional.*;
 
 import akka.actor.*;
@@ -53,6 +54,7 @@ import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import io.mantisrx.server.core.scheduler.SizeDefinition;
 import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.InvalidJobRequest;
 import io.mantisrx.server.master.agentdeploy.MigrationStrategyFactory;
@@ -1590,9 +1592,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         workerRequest.getNumberOfPorts(),
                         jobMetadata,
                         mantisJobMetaData.getSla().orElse(new JobSla.Builder().build()).getDurationType(),
-                        SchedulingConstraints.of(
-                            stageMetadata.getMachineDefinition(),
-                            mergeJobDefAndArtifactAssigmentAttributes(jobMetadata.getJobArtifact())),
+                        getSchedulingConstraints(jobMetadata, mantisJobMetaData, stageMetadata),
                         hardConstraints,
                         softConstraints,
                         readyAt.orElse(0L),
@@ -1602,6 +1602,28 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 LOGGER.error("Exception creating scheduleRequest ", e);
                 throw e;
             }
+        }
+
+        /**
+         * Constructs a `SchedulingConstraints` object for a given job and stage metadata. It retrieves the size information and
+         * other assignment attributes from the job metadata and combines them for the computation of the scheduling constraints.
+         *
+         * The `machineDefinition` for size information is extracted from the `stageMetadata`, and the `sizeName` is obtained from the container attributes of the stage, if it exists.
+         * Assignment attributes are a consolidation of the job definition attributes and job artifact attributes.
+         *
+         * @param jobMetadata The `JobMetadata` object that holds metadata pertaining to the job and its scheduling information.
+         * @param mantisJobMetaData The `MantisJobMetadataImpl` instance containing the job definition details.
+         * @param stageMetadata The `IMantisStageMetadata` instance representing the metadata of the stage requiring scheduling.
+         *
+         * @return A `SchedulingConstraints` object containing the `SizeDefinition` (representing resource constraints based on either sizeName
+         * or machine definition) and merged assignment attributes from the job definition and job artifact.
+         */
+        private SchedulingConstraints getSchedulingConstraints(JobMetadata jobMetadata, MantisJobMetadataImpl mantisJobMetaData, IMantisStageMetadata stageMetadata) {
+            Map<String, String> containerAttr = mantisJobMetaData.getJobDefinition().getSchedulingInfo().getStages().get(stageMetadata.getStageNum()).getContainerAttributes();
+            String sizeName = containerAttr != null ? containerAttr.getOrDefault(SIZE_NAME_LABEL, null) : null;
+            return SchedulingConstraints.of(
+                    SizeDefinition.of(stageMetadata.getMachineDefinition(), sizeName),
+                    mergeJobDefAndArtifactAssigmentAttributes(jobMetadata.getJobArtifact()));
         }
 
         /**

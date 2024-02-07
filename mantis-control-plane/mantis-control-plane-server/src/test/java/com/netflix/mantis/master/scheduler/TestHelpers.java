@@ -30,6 +30,7 @@ import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import io.mantisrx.server.core.scheduler.SizeDefinition;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.master.domain.JobDefinition;
@@ -107,7 +108,7 @@ public class TestHelpers {
                             mantisJobMetadata.getMinRuntimeSecs()
                     ),
                     mantisJobMetadata.getSla().get().getDurationType(),
-                    SchedulingConstraints.of(machineDefinition, ImmutableMap.of()),
+                    SchedulingConstraints.of(SizeDefinition.of(machineDefinition, null), ImmutableMap.of()),
                     Collections.emptyList(),
                     Collections.emptyList(),
                     0,Optional.empty()

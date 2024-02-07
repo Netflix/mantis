@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.core.scheduler;
 
-import io.mantisrx.runtime.MachineDefinition;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -25,8 +24,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * A class representing scheduling constraints that includes the machine definition and a map of assignment attributes (ie. jdk or sb version).
- * The class provides functionality to calculate the fitness of given scheduling constraints and assignment attributes.
+ * A class that represents scheduling constraints. These constraints include the resource constraints encapsulated within `SizeDefinition`, and a map of assignment attributes (e.g. jdkVersion:17 or springBootVersion:3).
+ * The class provides functionality to calculate the fitness of a given set of scheduling constraints and assignment attributes by taking container size characteristics and assignment attributes into account.
  */
 @RequiredArgsConstructor
 @Getter
@@ -34,29 +33,29 @@ import lombok.ToString;
 @AllArgsConstructor(staticName = "of")
 @ToString
 public class SchedulingConstraints {
-    // Defines the machine constraints for scheduling
-    MachineDefinition machineDefinition;
+    // Defines the resource constraints for scheduling
+    SizeDefinition sizeDefinition;
 
     // Additional attributes for assignment (ie. jdkVersion:17 or springBootVersion:3)
     Map<String, String> assignmentAttributes;
 
     /**
      * Measures the compatibility of provided scheduling constraints with those of this instance.
-     * Evaluation is done based on the machine definition and the given assignment attributes.
+     * Evaluation is based on two factors: the `SizeDefinition` of the worker and the attributes for assignment.
      *
-     * @param constraints - SchedulingConstraints object, carries machine definition and assignment attributes.
+     * @param constraints - SchedulingConstraints object, carries resource constraints and assignment attributes.
      * @param assignmentAttributesAndDefaults - Map containing assignment attributes to be verified and their default values.
      *
      * @return - The fitness value ranging between 0 and 1. Returns 0 if the provided assignment attributes
-     * do not match those of this instance or if the machine definition doesn't fit into the current instance's
-     * machine definition. Conversely, it returns a value close to 1 indicating higher similarity between
-     * the machine definitions.
+     * do not match those of this instance or if the size definition doesn't fit into the current instance's
+     * size definition. Conversely, it returns a value close to 1 indicating higher similarity between
+     * the size definitions.
      */
-    public double fitness(SchedulingConstraints constraints, Map<String, String> assignmentAttributesAndDefaults) {
+    public double calculateFitness(SchedulingConstraints constraints, Map<String, String> assignmentAttributesAndDefaults) {
         if (!areAllocationConstraintsSatisfied(constraints, assignmentAttributesAndDefaults)) {
             return 0.0;
         }
-        return machineDefinition.fitnessCoresAndMem(constraints.getMachineDefinition());
+        return sizeDefinition.calculateFitness(constraints.getSizeDefinition());
     }
 
     /**
@@ -67,7 +66,7 @@ public class SchedulingConstraints {
      * @param assignmentAttributesAndDefaults - Map of assignment attributes and their default values to be considered.
      * @return - boolean result indicating whether the given assignment attributes satisfy the scheduling constraints.
      */
-    private boolean areAllocationConstraintsSatisfied(SchedulingConstraints constraints, Map<String, String> assignmentAttributesAndDefaults) {
+    public boolean areAllocationConstraintsSatisfied(SchedulingConstraints constraints, Map<String, String> assignmentAttributesAndDefaults) {
         return assignmentAttributesAndDefaults.entrySet()
             .stream()
             .allMatch(entry -> this.getAssignmentAttributes()
@@ -76,7 +75,20 @@ public class SchedulingConstraints {
                     .getOrDefault(entry.getKey(), entry.getValue())));
     }
 
+    /**
+     * Checks whether the current `SchedulingConstraints` can fit within another `SchedulingConstraints` object, based on the `sizeDefinition` and assignment attributes.
+     *
+     * @param constraints - The `SchedulingConstraints` instance to compare with this instance.
+     * @param assignmentAttributesAndDefaults - A map containing assignment attributes and their default values.
+     *
+     * @return - true if the current instance can fit within the passed instance, else returns false.
+     */
     public boolean canFit(SchedulingConstraints constraints, Map<String, String> assignmentAttributesAndDefaults) {
-        return areAllocationConstraintsSatisfied(constraints, assignmentAttributesAndDefaults) & machineDefinition.canFit(constraints.getMachineDefinition());
+        return areAllocationConstraintsSatisfied(constraints, assignmentAttributesAndDefaults) &&
+            sizeDefinition.canFit(constraints.sizeDefinition);
+    }
+
+    public Map<String, String> getTags() {
+        return sizeDefinition.getTags();
     }
 }
