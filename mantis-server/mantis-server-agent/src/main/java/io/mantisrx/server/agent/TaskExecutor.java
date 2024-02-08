@@ -154,11 +154,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         this.highAvailabilityServices = highAvailabilityServices;
         this.classLoaderHandle = classLoaderHandle;
         WorkerPorts workerPorts = new WorkerPorts(workerConfiguration.getMetricsPort(),
-            workerConfiguration.getDebugPort(), workerConfiguration.getConsolePort(),
-            workerConfiguration.getCustomPort(),
-            workerConfiguration.getSinkPort());
-        MachineDefinition machineDefinition =
-            MachineDefinitionUtils.sys(workerPorts, workerConfiguration.getNetworkBandwidthInMB());
+                workerConfiguration.getDebugPort(), workerConfiguration.getConsolePort(),
+                workerConfiguration.getCustomPort(),
+                workerConfiguration.getSinkPort());
+        MachineDefinition machineDefinition = MachineDefinitionUtils.from(workerConfiguration, workerPorts);
         String hostName = workerConfiguration.getExternalAddress();
 
         this.taskExecutorRegistration =

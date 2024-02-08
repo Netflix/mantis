@@ -66,6 +66,9 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     URI blobStoreArtifactDir;
     File localStorageDir;
     double networkBandwidthInMB;
+    Double cpuCores;
+    Double memoryInMB;
+    Double diskInMB;
     String taskExecutorAttributesStr;
     int asyncHttpClientMaxConnectionsPerHost;
     int asyncHttpClientConnectionTimeoutMs;
@@ -241,6 +244,21 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     @Override
     public File getLocalStorageDir() {
         return this.localStorageDir;
+    }
+
+    @Override
+    public Double getCpuCores() {
+        return this.cpuCores;
+    }
+
+    @Override
+    public Double getMemoryInMB() {
+        return this.memoryInMB;
+    }
+
+    @Override
+    public Double getDiskInMB() {
+        return this.diskInMB;
     }
 
     @Override

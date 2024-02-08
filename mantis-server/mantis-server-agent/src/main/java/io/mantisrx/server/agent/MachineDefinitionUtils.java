@@ -17,14 +17,32 @@ package io.mantisrx.server.agent;
 
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.loader.config.WorkerConfiguration;
+import java.util.Optional;
 
 public class MachineDefinitionUtils {
-    public static MachineDefinition sys(WorkerPorts workerPorts, double networkBandwidthInMB) {
+    private static MachineDefinition sys(WorkerPorts workerPorts, double networkBandwidthInMB) {
         return new MachineDefinition(
             Hardware.getNumberCPUCores(),
             Hardware.getSizeOfPhysicalMemory() / 1024.0 / 1024.0,
             networkBandwidthInMB,
             Hardware.getSizeOfDisk() / 1024.0 / 1024.0,
             workerPorts.getNumberOfPorts());
+    }
+
+    public static MachineDefinition from(WorkerConfiguration workerConfiguration, WorkerPorts workerPorts) {
+        return fromWorkerConfiguration(workerConfiguration, workerPorts).orElseGet(() -> sys(workerPorts, workerConfiguration.getNetworkBandwidthInMB()));
+    }
+
+    private static Optional<MachineDefinition> fromWorkerConfiguration(WorkerConfiguration workerConfiguration, WorkerPorts workerPorts) {
+        if (workerConfiguration.getCpuCores() != null && workerConfiguration.getMemoryInMB() != null && workerConfiguration.getDiskInMB() != null) {
+            return Optional.of(new MachineDefinition(
+                    workerConfiguration.getNetworkBandwidthInMB(),
+                    workerConfiguration.getNetworkBandwidthInMB(),
+                    workerConfiguration.getNetworkBandwidthInMB(),
+                    workerConfiguration.getNetworkBandwidthInMB(),
+                    workerPorts.getNumberOfPorts()));
+        }
+        return Optional.empty();
     }
 }
