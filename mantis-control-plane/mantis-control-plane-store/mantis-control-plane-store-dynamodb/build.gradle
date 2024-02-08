@@ -31,7 +31,7 @@ ext {
 }
 
 dependencies {
-    api project(':mantis-control-plane:mantis-control-plane-core')
+    implementation project(':mantis-control-plane:mantis-control-plane-core')
     implementation project(':mantis-control-plane:mantis-control-plane-server')
 
     implementation platform('software.amazon.awssdk:bom:2.23.15')
@@ -50,7 +50,7 @@ dependencies {
     testImplementation testFixtures(project(":mantis-common"))
     testImplementation testFixtures(project(":mantis-control-plane:mantis-control-plane-core"))
     testImplementation libraries.commonsIo
-    testImplementation "com.amazonaws:DynamoDBLocal:latest.release"
+    testImplementation "com.amazonaws:DynamoDBLocal:1.25.0"
 }
 def installDir = file("${buildDir}/install")
 def ci = System.getenv('GITHUB_ACTIONS')

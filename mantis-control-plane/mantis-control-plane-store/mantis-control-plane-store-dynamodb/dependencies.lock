@@ -218,7 +218,7 @@
     },
     "baseline-exact-dependencies-test": {
         "com.amazonaws:DynamoDBLocal": {
-            "locked": "2.2.1"
+            "locked": "1.25.0"
         },
         "com.github.spullara.cli-parser:cli-parser": {
             "firstLevelTransitive": [
@@ -298,7 +298,7 @@
             "locked": "2.12.7"
         },
         "junit:junit": {
-            "locked": "4.13.2"
+            "locked": "4.13.1"
         },
         "junit:junit-dep": {
             "locked": "4.11"
@@ -340,7 +340,7 @@
             "locked": "20180813"
         },
         "org.mockito:mockito-core": {
-            "locked": "4.11.0"
+            "locked": "3.12.4"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -352,7 +352,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "2.0.5"
+            "locked": "1.7.30"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -832,7 +832,7 @@
     },
     "testCompileClasspath": {
         "com.amazonaws:DynamoDBLocal": {
-            "locked": "2.2.1"
+            "locked": "1.25.0"
         },
         "com.github.spullara.cli-parser:cli-parser": {
             "firstLevelTransitive": [
@@ -980,7 +980,7 @@
             "locked": "2.12.7"
         },
         "junit:junit": {
-            "locked": "4.13.2"
+            "locked": "4.13.1"
         },
         "junit:junit-dep": {
             "locked": "4.11"
@@ -1022,7 +1022,7 @@
             "locked": "20180813"
         },
         "org.mockito:mockito-core": {
-            "locked": "4.11.0"
+            "locked": "3.12.4"
         },
         "org.projectlombok:lombok": {
             "locked": "1.18.20"
@@ -1038,7 +1038,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "2.0.5"
+            "locked": "1.7.30"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -1067,7 +1067,7 @@
     },
     "testRuntimeClasspath": {
         "com.amazonaws:DynamoDBLocal": {
-            "locked": "2.2.1"
+            "locked": "1.25.0"
         },
         "com.github.spullara.cli-parser:cli-parser": {
             "firstLevelTransitive": [
@@ -1229,7 +1229,7 @@
             "locked": "2.12.7"
         },
         "junit:junit": {
-            "locked": "4.13.2"
+            "locked": "4.13.1"
         },
         "junit:junit-dep": {
             "locked": "4.11"
@@ -1283,7 +1283,7 @@
             "locked": "20180813"
         },
         "org.mockito:mockito-core": {
-            "locked": "4.11.0"
+            "locked": "3.12.4"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -1296,7 +1296,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "2.0.5"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
