@@ -32,6 +32,7 @@ include 'mantis-connectors:mantis-connector-publish'
 include 'mantis-control-plane:mantis-control-plane-client'
 include 'mantis-control-plane:mantis-control-plane-core'
 include 'mantis-control-plane:mantis-control-plane-server'
+include 'mantis-control-plane:mantis-control-plane-store:mantis-control-plane-store-dynamodb'
 
 include 'mantis-discovery-proto'
 
