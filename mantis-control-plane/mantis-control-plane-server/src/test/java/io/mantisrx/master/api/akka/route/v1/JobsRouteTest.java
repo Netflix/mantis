@@ -47,7 +47,6 @@ import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
-import io.mantisrx.master.api.akka.route.v0.AgentClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
 import io.mantisrx.master.api.akka.route.v0.JobRoute;
@@ -167,9 +166,6 @@ public class JobsRouteTest extends RouteTestBase {
                         jobRouteHandler,
                         system);
                 final JobStatusRoute v0JobStatusRoute = new JobStatusRoute(jobStatusRouteHandler);
-                final AgentClusterRoute v0AgentClusterRoute = new AgentClusterRoute(
-                        mockAgentClusterOps,
-                        system);
                 final MasterDescriptionRoute v0MasterDescriptionRoute = new MasterDescriptionRoute(
                         masterDescription);
 
@@ -181,8 +177,6 @@ public class JobsRouteTest extends RouteTestBase {
                 final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(
                         jobClusterRouteHandler, system);
                 final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
-                final AgentClustersRoute v1AgentClustersRoute = new AgentClustersRoute(
-                        mockAgentClusterOps);
                 final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(
                         jobStatusRouteHandler);
                 final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
@@ -206,12 +200,10 @@ public class JobsRouteTest extends RouteTestBase {
                         v0JobRoute,
                         v0JobDiscoveryRoute,
                         v0JobStatusRoute,
-                        v0AgentClusterRoute,
                         v1JobClusterRoute,
                         v1JobsRoute,
                         v1JobArtifactsRoute,
                         v1AdminMasterRoute,
-                        v1AgentClustersRoute,
                         v1JobDiscoveryStreamRoute,
                         v1LastSubmittedJobIdStreamRoute,
                         v1JobStatusStreamRoute,

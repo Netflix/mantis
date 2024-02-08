@@ -19,6 +19,8 @@ package io.mantisrx.server.master.domain;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.mantisrx.common.Label;
+import io.mantisrx.master.jobcluster.LabelManager.SystemLabels;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.WorkerMigrationConfig;
@@ -42,15 +44,15 @@ public class JobClusterConfigTest {
                 .build();
         try {
             final JobClusterDefinitionImpl fakeJobCluster = new JobClusterDefinitionImpl.Builder()
-                    .withJobClusterConfig(clusterConfig)
-                    .withName(name)
-                    .withUser("nj")
-                    .withParameters(Lists.newArrayList())
-                    .withIsReadyForJobMaster(true)
-                    .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
-                    .withMigrationConfig(WorkerMigrationConfig.DEFAULT)
-
-                    .build();
+                .withJobClusterConfig(clusterConfig)
+                .withName(name)
+                .withUser("nj")
+                .withParameters(Lists.newArrayList())
+                .withIsReadyForJobMaster(true)
+                .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
+                .withMigrationConfig(WorkerMigrationConfig.DEFAULT)
+                .withLabel(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"))
+                .build();
         } catch(Exception e) {
             fail();
         }
@@ -113,6 +115,7 @@ public class JobClusterConfigTest {
                 .withIsReadyForJobMaster(true)
                 .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
                 .withMigrationConfig(WorkerMigrationConfig.DEFAULT)
+                .withLabel(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"))
                 .build();
 
         assertTrue(clusterConfig.getVersion() != null);

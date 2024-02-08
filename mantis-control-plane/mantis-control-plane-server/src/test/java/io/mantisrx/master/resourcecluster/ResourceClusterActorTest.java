@@ -220,6 +220,7 @@ public class ResourceClusterActorTest {
     public void testInitializationAfterRestart() throws Exception {
         when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
             .thenReturn(ImmutableList.of());
+        when(mantisJobStore.getJobArtifactsToCache(ArgumentMatchers.eq(CLUSTER_ID))).thenReturn(ImmutableList.of());
         when(mantisJobStore.getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID))).thenReturn(TASK_EXECUTOR_REGISTRATION);
         assertEquals(
             Ack.getInstance(),
