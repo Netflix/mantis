@@ -30,6 +30,7 @@ import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.JobClusterMetadataImpl;
+import io.mantisrx.master.jobcluster.LabelManager.SystemLabels;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;
@@ -206,7 +207,7 @@ public class DataFormatAdapterTest {
         List<Label> labels = new ArrayList<>();
         Label label = new Label("label1", "labelvalue1");
         labels.add(label);
-
+        labels.add(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"));
 
         long uAt = 1234l;
         JobClusterConfig jobClusterConfig =  new JobClusterConfig.Builder()
@@ -245,7 +246,7 @@ public class DataFormatAdapterTest {
         assertEquals(disabled,namedJob.getDisabled());
         assertEquals(clusterName, namedJob.getName());
         assertEquals(lastJobCnt,namedJob.getLastJobCount());
-        assertEquals(1, namedJob.getLabels().size());
+        assertEquals(2, namedJob.getLabels().size());
         assertEquals(label, namedJob.getLabels().get(0));
         assertEquals(owner, namedJob.getOwner());
         assertEquals(isReadyForMaster, namedJob.getIsReadyForJobMaster());
@@ -274,7 +275,7 @@ public class DataFormatAdapterTest {
         assertEquals(disabled,reconvertedJobCluster.isDisabled());
         assertEquals(clusterName,reconvertedJobCluster.getJobClusterDefinition().getName());
         assertEquals(lastJobCnt,reconvertedJobCluster.getLastJobCount());
-        assertEquals(1, reconvertedJobCluster.getJobClusterDefinition().getLabels().size());
+        assertEquals(2, reconvertedJobCluster.getJobClusterDefinition().getLabels().size());
         assertEquals(label, reconvertedJobCluster.getJobClusterDefinition().getLabels().get(0));
         assertEquals(owner, reconvertedJobCluster.getJobClusterDefinition().getOwner());
         assertEquals(isReadyForMaster,reconvertedJobCluster.getJobClusterDefinition().getIsReadyForJobMaster());

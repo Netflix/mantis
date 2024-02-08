@@ -59,14 +59,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @DefaultNull
     String getMasterIP();
 
-    @Config("mesos.scheduler.driver.init.timeout.sec")
-    @Default("2")
-    int getMesosSchedulerDriverInitTimeoutSec();
-
-    @Config("mesos.scheduler.driver.init.max.attempts")
-    @Default("3")
-    int getMesosSchedulerDriverInitMaxAttempts();
-
     @Config("mesos.worker.timeoutSecondsToReportStart")
     @Default("10")
     int getTimeoutSecondsToReportStart();
@@ -88,21 +80,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("2500")
     long getMasterApiLongOperationAskTimeoutMs();
 
-    @Config("mantis.mesos.enabled")
-    @Default("true")
-    boolean getMesosEnabled();
-
-    @Config("mesos.master.location")
-    @Default("localhost:5050")
-    String getMasterLocation();
-
-    @Config("mesos.worker.installDir")
-    String getWorkerInstallDir();
-
-    @Config("mesos.worker.executorscript")
-    @Default("startup.sh")
-    String getWorkerExecutorScript();
-
     @Config("mantis.worker.machine.definition.maxCpuCores")
     @Default("8")
     int getWorkerMachineDefinitionMaxCpuCores();
@@ -122,14 +99,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.worker.jvm.memory.scale.back.percent")
     @Default("10")
     int getWorkerJvmMemoryScaleBackPercentage();
-
-    @Config("mesos.useSlaveFiltering")
-    @Default("false")
-    boolean getUseSlaveFiltering();
-
-    @Config("mesos.slaveFilter.attributeName")
-    @Default("EC2_AMI_ID")
-    String getSlaveFilterAttributeName();
 
     @Config("mantis.master.active.slave.attribute.name")
     @Default("NETFLIX_AUTO_SCALE_GROUP")
@@ -168,11 +137,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.worker.executor.name")
     @Default("Mantis Worker Executor")
     String getWorkerExecutorName();
-
-    @Config("mantis.master.mesos.failover.timeout.secs")
-    @Default("604800.0")
-        // 604800 secs = 1 week
-    double getMesosFailoverTimeOutSecs();
 
     // Sleep interval between consecutive scheduler iterations
     @Config("mantis.master.scheduler.iteration.interval.millis")
@@ -231,10 +195,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.interval.move.workers.disabled.vms.millis")
     @Default("60000")
     long getIntervalMoveWorkersOnDisabledVMsMillis();
-
-    @Config("mesos.task.reconciliation.interval.secs")
-    @Default("300")
-    long getMesosTaskReconciliationIntervalSecs();
 
     @Config("mesos.lease.offer.expiry.secs")
     @Default("300")

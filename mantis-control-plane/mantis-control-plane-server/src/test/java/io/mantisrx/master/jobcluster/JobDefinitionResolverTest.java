@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.mantisrx.common.Label;
+import io.mantisrx.master.jobcluster.LabelManager.SystemLabels;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.MachineDefinition;
@@ -49,10 +50,6 @@ public class JobDefinitionResolverTest {
     public static final JobOwner DEFAULT_JOB_OWNER = new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo");
     public static final String DEFAULT_ARTIFACT_NAME = "myart";
     public static final String DEFAULT_VERSION = "0.0.1";
-
-    private JobClusterDefinitionImpl createFakeJobClusterDefn(String clusterName) {
-        return createFakeJobClusterDefn(clusterName, Lists.newArrayList(), Lists.newArrayList(), NO_OP_SLA, SINGLE_WORKER_SCHED_INFO);
-    }
 
     private JobClusterDefinitionImpl createFakeJobClusterDefn(String clusterName, List<Label> labels, List<Parameter> parameters) {
         return createFakeJobClusterDefn(clusterName, labels, parameters, NO_OP_SLA, SINGLE_WORKER_SCHED_INFO);
@@ -83,6 +80,7 @@ public class JobDefinitionResolverTest {
         List<Label> labels = new ArrayList<>();
         Label label = new Label("l1", "lv1");
         labels.add(label);
+        labels.add(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"));
 
         List<Parameter> parameters = new ArrayList<>();
         Parameter parameter = new Parameter("paramName", "paramValue");
@@ -108,7 +106,7 @@ public class JobDefinitionResolverTest {
 
             // assert the parameters and labels are inherited since they were not specified
 
-            assertEquals(1, resolvedJobDefinition.getLabels().size());
+            assertEquals(2, resolvedJobDefinition.getLabels().size());
             assertEquals(label, resolvedJobDefinition.getLabels().get(0));
 
             assertEquals(1, resolvedJobDefinition.getParameters().size());
@@ -137,7 +135,7 @@ public class JobDefinitionResolverTest {
 
             // assert the parameters and labels are inherited since they were not specified
 
-            assertEquals(1, resolvedJobDefinition.getLabels().size());
+            assertEquals(2, resolvedJobDefinition.getLabels().size());
             assertEquals(label, resolvedJobDefinition.getLabels().get(0));
 
             assertEquals(1, resolvedJobDefinition.getParameters().size());
@@ -160,6 +158,7 @@ public class JobDefinitionResolverTest {
         List<Label> labels = new ArrayList<>();
         Label label = new Label("l1", "lv1");
         labels.add(label);
+        labels.add(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"));
 
         List<Parameter> parameters = new ArrayList<>();
         Parameter parameter = new Parameter("paramName", "paramValue");
@@ -204,6 +203,7 @@ public class JobDefinitionResolverTest {
         List<Label> labels = new ArrayList<>();
         Label label = new Label("l1", "lv1");
         labels.add(label);
+        labels.add(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"));
 
         List<Parameter> parameters = new ArrayList<>();
         Parameter parameter = new Parameter("paramName", "paramValue");
@@ -234,7 +234,7 @@ public class JobDefinitionResolverTest {
 
             // assert the parameters and labels are inherited since they were not specified
 
-            assertEquals(1, resolvedJobDefinition.getLabels().size());
+            assertEquals(2, resolvedJobDefinition.getLabels().size());
             assertEquals(label, resolvedJobDefinition.getLabels().get(0));
 
             assertEquals(1, resolvedJobDefinition.getParameters().size());
@@ -264,7 +264,7 @@ public class JobDefinitionResolverTest {
 
             // assert the parameters and labels are inherited since they were not specified
 
-            assertEquals(1, resolvedJobDefinition.getLabels().size());
+            assertEquals(2, resolvedJobDefinition.getLabels().size());
             assertEquals(label, resolvedJobDefinition.getLabels().get(0));
 
             assertEquals(1, resolvedJobDefinition.getParameters().size());
@@ -288,6 +288,7 @@ public class JobDefinitionResolverTest {
         List<Label> labels = new ArrayList<>();
         Label label = new Label("l1", "lv1");
         labels.add(label);
+        labels.add(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"));
 
         List<Parameter> parameters = new ArrayList<>();
         Parameter parameter = new Parameter("paramName", "paramValue");
@@ -317,7 +318,7 @@ public class JobDefinitionResolverTest {
 
             // assert the parameters and labels are inherited since they were not specified
 
-            assertEquals(1, resolvedJobDefinition.getLabels().size());
+            assertEquals(2, resolvedJobDefinition.getLabels().size());
             assertEquals(label, resolvedJobDefinition.getLabels().get(0));
 
             assertEquals(1, resolvedJobDefinition.getParameters().size());
@@ -347,7 +348,7 @@ public class JobDefinitionResolverTest {
 
             // assert the parameters and labels are inherited since they were not specified
 
-            assertEquals(1, resolvedJobDefinition.getLabels().size());
+            assertEquals(2, resolvedJobDefinition.getLabels().size());
             assertEquals(label, resolvedJobDefinition.getLabels().get(0));
 
             assertEquals(1, resolvedJobDefinition.getParameters().size());
@@ -377,7 +378,7 @@ public class JobDefinitionResolverTest {
 
             // assert the parameters and labels are inherited since they were not specified
 
-            assertEquals(1, resolvedJobDefinition.getLabels().size());
+            assertEquals(2, resolvedJobDefinition.getLabels().size());
             assertEquals(label, resolvedJobDefinition.getLabels().get(0));
 
             assertEquals(1, resolvedJobDefinition.getParameters().size());
@@ -401,6 +402,7 @@ public class JobDefinitionResolverTest {
         List<Label> labels = new ArrayList<>();
         Label label = new Label("l1", "lv1");
         labels.add(label);
+        labels.add(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"));
 
         List<Parameter> parameters = new ArrayList<>();
         Parameter parameter = new Parameter("paramName", "paramValue");
@@ -446,7 +448,7 @@ public class JobDefinitionResolverTest {
                 .withJobClusterConfigs(configList)
                 .withName(clusterName)
                 .withParameters(Lists.newArrayList())
-                .withLabels(Lists.newArrayList())
+                .withLabel(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"))
                 .withUser("user")
                 .withIsReadyForJobMaster(true)
                 .withOwner(DEFAULT_JOB_OWNER)

@@ -17,6 +17,7 @@
 package io.mantisrx.server.master.domain;
 
 import io.mantisrx.common.Label;
+import io.mantisrx.master.jobcluster.LabelManager.SystemLabels;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.WorkerMigrationConfig;
@@ -72,6 +73,14 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
         this.parameters = Optional.ofNullable(parameters).orElse(Lists.newArrayList());
 
         this.user = user;
+
+        // Todo move the resource cluster label to a property
+        Preconditions.checkNotNull(labels, "labels cannot be empty.");
+        Preconditions.checkArgument(
+            labels.stream()
+                .anyMatch(l ->
+                    l.getName().equalsIgnoreCase(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label)),
+            "Missing required label: " + SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label);
     }
 
 

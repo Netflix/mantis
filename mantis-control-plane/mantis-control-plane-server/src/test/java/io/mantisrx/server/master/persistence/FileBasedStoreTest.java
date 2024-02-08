@@ -30,6 +30,7 @@ import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.JobClusterMetadataImpl;
+import io.mantisrx.master.jobcluster.LabelManager.SystemLabels;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;
@@ -212,7 +213,10 @@ public class FileBasedStoreTest {
         FileBasedPersistenceProvider sProvider = new FileBasedPersistenceProvider(fileProvider, eventPublisher);
         String clusterName = "testCreateClusterClueter";
 
-        JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(clusterName, Lists.newArrayList());
+        JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(
+            clusterName,
+            ImmutableList.of(
+                new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster")));
 
         IJobClusterMetadata jobCluster = new JobClusterMetadataImpl.Builder().withLastJobCount(0).withJobClusterDefinition(jobClusterDefn).build();
         try {
@@ -235,7 +239,10 @@ public class FileBasedStoreTest {
         FileBasedPersistenceProvider sProvider = new FileBasedPersistenceProvider(fileProvider, eventPublisher);
         String clusterName = "testUpdateJobCluster";
 
-        JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(clusterName, Lists.newArrayList());
+        JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(
+            clusterName,
+            ImmutableList.of(
+                new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster")));
 
         IJobClusterMetadata jobCluster = new JobClusterMetadataImpl.Builder().withLastJobCount(0).withJobClusterDefinition(jobClusterDefn).build();
         try {
@@ -244,13 +251,14 @@ public class FileBasedStoreTest {
                 .filter(jc -> clusterName.equals(jc.getJobClusterDefinition().getName())).findFirst();
             if(readDataOp.isPresent()) {
                 assertEquals(clusterName, readDataOp.get().getJobClusterDefinition().getName());
-                assertEquals(0, readDataOp.get().getJobClusterDefinition().getLabels().size());
+                assertEquals(1, readDataOp.get().getJobClusterDefinition().getLabels().size());
             } else {
                 fail();
             }
 
             List<Label> labels = Lists.newArrayList();
             labels.add(new Label("label1", "label1value"));
+            labels.add(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"));
             jobClusterDefn = createFakeJobClusterDefn(clusterName, labels);
             IJobClusterMetadata jobClusterUpdated = new JobClusterMetadataImpl.Builder().withLastJobCount(0).withJobClusterDefinition(jobClusterDefn).build();
             sProvider.updateJobCluster(jobClusterUpdated);
@@ -259,7 +267,7 @@ public class FileBasedStoreTest {
                 .filter(jc -> clusterName.equals(jc.getJobClusterDefinition().getName())).findFirst();
             if(readDataOp.isPresent()) {
                 assertEquals(clusterName, readDataOp.get().getJobClusterDefinition().getName());
-                assertEquals(1, readDataOp.get().getJobClusterDefinition().getLabels().size());
+                assertEquals(2, readDataOp.get().getJobClusterDefinition().getLabels().size());
             } else {
                 fail();
             }
@@ -275,7 +283,10 @@ public class FileBasedStoreTest {
         FileBasedPersistenceProvider sProvider = new FileBasedPersistenceProvider(fileProvider, eventPublisher);
         String clusterPrefix = "testGetAllJobClustersCluster";
         for(int i=0; i<5; i++) {
-            JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(clusterPrefix + "_" + i, Lists.newArrayList());
+            JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(
+                clusterPrefix + "_" + i,
+                ImmutableList.of(
+                    new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster")));
             IJobClusterMetadata jobCluster = new JobClusterMetadataImpl.Builder().withLastJobCount(0).withJobClusterDefinition(jobClusterDefn).build();
             sProvider.createJobCluster(jobCluster);
         }

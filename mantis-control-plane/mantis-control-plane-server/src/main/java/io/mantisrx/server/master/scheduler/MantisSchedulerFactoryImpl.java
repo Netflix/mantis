@@ -19,15 +19,12 @@ package io.mantisrx.server.master.scheduler;
 import akka.actor.ActorSystem;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
-import io.mantisrx.server.master.SchedulingService;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,17 +36,15 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
     private final ResourceClusters resourceClusters;
     private final ExecuteStageRequestFactory executeStageRequestFactory;
     private final JobMessageRouter jobMessageRouter;
-    private final SchedulingService mesosSchedulingService;
     private final MasterConfiguration masterConfiguration;
     private final MetricsRegistry metricsRegistry;
     private final Map<ClusterID, MantisScheduler> actorRefMap = new ConcurrentHashMap<>();
 
     @Override
-    public MantisScheduler forClusterID(@Nullable ClusterID clusterID) {
-        Optional<ClusterID> clusterIDOptional = Optional.ofNullable(clusterID);
-        if (clusterIDOptional.isPresent()) {
-            if (Strings.isNullOrEmpty(clusterIDOptional.get().getResourceID())) {
-                log.error("Received empty resource id: {}", clusterIDOptional.get());
+    public MantisScheduler forClusterID(ClusterID clusterID) {
+        if (clusterID != null) {
+            if (Strings.isNullOrEmpty(clusterID.getResourceID())) {
+                log.error("Received empty resource id: {}", clusterID);
                 throw new RuntimeException("Empty resourceID in clusterID for MantisScheduler");
             }
 
@@ -58,7 +53,7 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
                     clusterID,
                     (cid) -> {
                         log.info("Created scheduler actor for cluster: {}",
-                            clusterIDOptional.get().getResourceID());
+                            clusterID.getResourceID());
                         return new ResourceClusterAwareScheduler(actorSystem.actorOf(
                             ResourceClusterAwareSchedulerActor.props(
                                 masterConfiguration.getSchedulerMaxRetries(),
@@ -71,7 +66,8 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
                             "scheduler-for-" + cid.getResourceID()));
                     });
         } else {
-            return mesosSchedulingService;
+            log.error("Scheduler gets unexpected null clusterID");
+            throw new RuntimeException("invalid null clusterID.");
         }
     }
 }
