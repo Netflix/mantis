@@ -24,6 +24,7 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class ScheduleRequest implements QueuableTask {
     private final int numPortsRequested;
     private final JobMetadata jobMetadata;
     private final MantisJobDurationType durationType;
-    private final MachineDefinition machineDefinition;
+    private final SchedulingConstraints schedulingConstraints;
     private final List<ConstraintEvaluator> hardConstraints;
     private final List<VMTaskFitnessCalculator> softConstraints;
     private final Optional<String> preferredCluster;
@@ -61,7 +62,7 @@ public class ScheduleRequest implements QueuableTask {
                            final int numPortsRequested,
                            final JobMetadata jobMetadata,
                            final MantisJobDurationType durationType,
-                           final MachineDefinition machineDefinition,
+                           final SchedulingConstraints schedulingConstraints,
                            final List<ConstraintEvaluator> hardConstraints,
                            final List<VMTaskFitnessCalculator> softConstraints,
                            final long readyAt,
@@ -71,7 +72,8 @@ public class ScheduleRequest implements QueuableTask {
         this.numPortsRequested = numPortsRequested;
         this.jobMetadata = jobMetadata;
         this.durationType = durationType;
-        this.machineDefinition = machineDefinition;
+        this.schedulingConstraints = schedulingConstraints;
+
         this.hardConstraints = hardConstraints;
         this.softConstraints = softConstraints;
         this.readyAt = readyAt;
@@ -109,22 +111,22 @@ public class ScheduleRequest implements QueuableTask {
 
     @Override
     public double getCPUs() {
-        return machineDefinition.getCpuCores();
+        return schedulingConstraints.getMachineDefinition().getCpuCores();
     }
 
     @Override
     public double getMemory() {
-        return machineDefinition.getMemoryMB();
+        return schedulingConstraints.getMachineDefinition().getMemoryMB();
     }
 
     @Override
     public double getNetworkMbps() {
-        return machineDefinition.getNetworkMbps();
+        return schedulingConstraints.getMachineDefinition().getNetworkMbps();
     }
 
     @Override
     public double getDisk() {
-        return machineDefinition.getDiskMB();
+        return schedulingConstraints.getMachineDefinition().getDiskMB();
     }
 
     @Override
@@ -137,7 +139,11 @@ public class ScheduleRequest implements QueuableTask {
     }
 
     public MachineDefinition getMachineDefinition() {
-        return machineDefinition;
+        return schedulingConstraints.getMachineDefinition();
+    }
+
+    public SchedulingConstraints getSchedulingConstraints() {
+        return schedulingConstraints;
     }
 
     @Override

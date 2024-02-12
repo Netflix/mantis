@@ -634,7 +634,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     "jobCluster",
                     req.getWorkerId().getJobCluster(),
                     "cpuCores",
-                    String.valueOf(req.getMachineDefinition().getCpuCores())))));
+                    String.valueOf(req.getConstraints().getMachineDefinition().getCpuCores())))));
             sender().tell(new Status.Failure(new NoResourceAvailableException(
                 String.format("No resource available for request %s: resource overview: %s", request,
                     getResourceOverview()))), self());
@@ -861,13 +861,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         public Map<MachineDefinition, List<TaskExecutorAllocationRequest>> getGroupedByMachineDef() {
             return allocationRequests
                 .stream()
-                .collect(Collectors.groupingBy(TaskExecutorAllocationRequest::getMachineDefinition));
+                .collect(Collectors.groupingBy(a -> a.getConstraints().getMachineDefinition()));
         }
 
         public Map<Double, Integer> getGroupedByCoresCount() {
             return allocationRequests
                 .stream()
-                .collect(Collectors.groupingBy(TaskExecutorAllocationRequest::getMachineDefinition))
+                .collect(Collectors.groupingBy(a -> a.getConstraints().getMachineDefinition()))
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(
