@@ -16,15 +16,13 @@
 package io.mantisrx.server.master.store;
 
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
