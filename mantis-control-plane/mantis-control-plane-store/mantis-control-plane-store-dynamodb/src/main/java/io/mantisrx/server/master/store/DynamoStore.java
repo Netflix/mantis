@@ -16,20 +16,20 @@
 package io.mantisrx.server.master.store;
 
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
+@Slf4j
 public class DynamoStore implements KeyValueStore {
-
-    private static final Logger logger = LoggerFactory.getLogger(DynamoStore.class);
 
     public static final String PK = "PK";
     public  static final String SK = "SK";
@@ -91,7 +91,7 @@ public class DynamoStore implements KeyValueStore {
                 .projectionExpression(MPK_E)
                 .build();
 
-        logger.info("querying for all partition keys in table {}", tableName);
+        log.info("querying for all partition keys in table {}", tableName);
         final QueryResponse response = this.client.query(request);
         final Map<String, String> pks = new HashMap<>();
         response.items().forEach(v -> pks.put(v.get(PARTITION_KEY).s(), ""));
@@ -122,7 +122,7 @@ public class DynamoStore implements KeyValueStore {
                 .expressionAttributeValues(expressionAttributeValues)
                 .build();
 
-        logger.info("querying for all items in partition {} in table {}", partitionKey, tableName);
+        log.info("querying for all items in partition {} in table {}", partitionKey, tableName);
         final QueryResponse response = this.client.query(request);
         final Map<String, String> items = new HashMap<>();
         response.items()
@@ -168,7 +168,7 @@ public class DynamoStore implements KeyValueStore {
                 .build();
         final DeleteItemResponse response = this.client.deleteItem(request);
         response.responseMetadata().requestId();
-        logger.info("deleted item from table [{}], pk[{}], sk[{}] with request ID {}",
+        log.info("deleted item from table [{}], pk[{}], sk[{}] with request ID {}",
                 tableName, partitionKey, secondaryKey, response.responseMetadata().requestId());
         return true;
     }
@@ -196,10 +196,10 @@ public class DynamoStore implements KeyValueStore {
                 .expressionAttributeValues(expressionAttributeValues)
 //                .projectionExpression(String.format("%s,%s", PK_E, SK_E))
                 .build();
-        logger.info("querying for all items in partition {} in table {}", partitionKey, tableName);
+        log.info("querying for all items in partition {} in table {}", partitionKey, tableName);
         final QueryResponse response = this.client.query(request);
         final List<WriteRequest> deleteRequests = new ArrayList<>();
-        logger.info("retrieved {} from {} and {}", response.items().size(), tableName, partitionKey);
+        log.info("retrieved {} from {} and {}", response.items().size(), tableName, partitionKey);
         response.items()
                 .forEach(v -> deleteRequests.add(WriteRequest.builder().deleteRequest(
                         DeleteRequest.builder()
@@ -208,7 +208,7 @@ public class DynamoStore implements KeyValueStore {
                                 SK, AttributeValue.builder().s(v.get(SK).s()).build())).build()).build()
                 ));
         doBatchWriteRequest(deleteRequests);
-        logger.info("deleted {} from {} and {}", deleteRequests.size(), tableName, partitionKey);
+        log.info("deleted {} from {} and {}", deleteRequests.size(), tableName, partitionKey);
         return true;
     }
 
@@ -244,7 +244,7 @@ public class DynamoStore implements KeyValueStore {
     }
     private WriteRequest deleteRequestFrom(String dyanmoPK, String dynamoSK) {
         final Map<String, AttributeValue> items = new HashMap<>();
-        logger.info("preparing to delete pk {} sk {}", dyanmoPK, dynamoSK);
+        log.info("preparing to delete pk {} sk {}", dyanmoPK, dynamoSK);
         items.put(PK, AttributeValue.builder().s(dyanmoPK).build());
         items.put(SK, AttributeValue.builder().s(dynamoSK).build());
 
@@ -261,7 +261,7 @@ public class DynamoStore implements KeyValueStore {
     private boolean doBatchWriteRequest(List<WriteRequest> writeRequests) throws IOException {
         for(int i = 0; i < writeRequests.size(); i +=MAX_ITEMS) {
             final List<WriteRequest> writes = writeRequests.subList(i, Integer.min(i+MAX_ITEMS,writeRequests.size()));
-            logger.info("processing {} items to {}", writes.size(), this.mantisTable);
+            log.info("processing {} items to {}", writes.size(), this.mantisTable);
             BatchWriteItemRequest batchWriteItemRequest = BatchWriteItemRequest.builder()
                     .requestItems(ImmutableMap.of(this.mantisTable, writes))
                     .build();
@@ -270,7 +270,7 @@ public class DynamoStore implements KeyValueStore {
 
             while (!batchWriteItemResponse.hasUnprocessedItems()) {
                 Map<String, List<WriteRequest>> unprocessedItems = batchWriteItemResponse.unprocessedItems();
-                logger.warn("handling {} unprocessed items", unprocessedItems.size());
+                log.warn("handling {} unprocessed items", unprocessedItems.size());
 
                 batchWriteItemResponse = this.client.batchWriteItem(batchWriteItemRequest);
             }
