@@ -33,6 +33,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatch
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
@@ -138,7 +139,7 @@ public class ExecutorStateManagerTests {
     public void testGetBestFit() {
         Optional<BestFit> bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)),
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2), null, 0)),
                 CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
@@ -161,14 +162,14 @@ public class ExecutorStateManagerTests {
         // test machine def 1
         bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1), null, 0)), CLUSTER_ID));
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
         assertEquals(state1, bestFitO.get().getBestFit().values().stream().findFirst().get().getRight());
 
         bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2), null, 0)), CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_2, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
@@ -179,7 +180,7 @@ public class ExecutorStateManagerTests {
             TaskExecutorReport.occupied(WORKER_ID)));
         bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1), null, 0)), CLUSTER_ID));
         assertFalse(bestFitO.isPresent());
 
         // enable e3 and disable e2
@@ -191,7 +192,7 @@ public class ExecutorStateManagerTests {
 
         bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2), null, 0)), CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_3, bestFitO.get().getBestFit().values().stream().findFirst().get().getLeft());
@@ -201,7 +202,7 @@ public class ExecutorStateManagerTests {
         stateManager.tryMarkUnavailable(TASK_EXECUTOR_ID_3);
         bestFitO =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
-                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)), CLUSTER_ID));
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2), null, 0)), CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
     }
@@ -242,7 +243,7 @@ public class ExecutorStateManagerTests {
         Optional<BestFit> bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
-                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)),
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2), null, 0)),
                     CLUSTER_ID));
         assertFalse(bestFitO.isPresent());
 
@@ -275,7 +276,7 @@ public class ExecutorStateManagerTests {
         bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
-                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)),
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1), null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
@@ -291,7 +292,7 @@ public class ExecutorStateManagerTests {
         bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
-                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)),
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1), null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
@@ -316,7 +317,7 @@ public class ExecutorStateManagerTests {
         bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
-                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)),
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1), null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
@@ -329,7 +330,7 @@ public class ExecutorStateManagerTests {
         bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
-                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 0)),
+                    Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1), null, 0)),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
@@ -372,8 +373,8 @@ public class ExecutorStateManagerTests {
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
                     new HashSet<>(Arrays.asList(
-                        TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0),
-                        TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 1))),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2), null, 0),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1), null, 1))),
                     CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
@@ -387,8 +388,8 @@ public class ExecutorStateManagerTests {
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
                     new HashSet<>(Arrays.asList(
-                        TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0),
-                        TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1, null, 1))),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2), null, 0),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1), null, 1))),
                     CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());

@@ -52,6 +52,7 @@ import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
@@ -303,7 +304,7 @@ public class JobTestLifecycle {
             JobMetadata jobMetadata = new JobMetadata(jobId, new URL("http://myart" +
                     ""),1,"njoshi",schedInfo,Lists.newArrayList(),0,10, 0);
             ScheduleRequest scheduleRequest = new ScheduleRequest(workerId,
-                    1,4, jobMetadata,MantisJobDurationType.Perpetual,machineDefinition,Lists.newArrayList(),Lists.newArrayList(),0,empty());
+                    1,4, jobMetadata,MantisJobDurationType.Perpetual, SchedulingConstraints.of(machineDefinition),Lists.newArrayList(),Lists.newArrayList(),0,empty());
             BatchScheduleRequest expectedRequest = new BatchScheduleRequest(Collections.singletonList(scheduleRequest));
             verify(schedulerMock).scheduleWorkers(expectedRequest);
 
