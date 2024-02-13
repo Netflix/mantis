@@ -129,7 +129,7 @@ public class ExecutorStateManagerTests {
             .taskExecutorAttributes(attributes);
     }
 
-    private ExecutorStateManager stateManager = new ExecutorStateManagerImpl("");
+    private ExecutorStateManager stateManager = new ExecutorStateManagerImpl(ImmutableMap.of());
 
     @Before
     public void setup() {
@@ -398,8 +398,8 @@ public class ExecutorStateManagerTests {
     }
 
     @Test
-    public void testGetBestFit_WithAllocationAttributes() {
-        stateManager = new ExecutorStateManagerImpl("jdk:8,constraint0:whatever");
+    public void testGetBestFit_WithSchedulingAttributes() {
+        stateManager = new ExecutorStateManagerImpl(ImmutableMap.of("jdk", "8", "constraint0", "whatever"));
 
         // register TE with jdk:8
         TaskExecutorRegistration jdk8Te =
@@ -419,7 +419,7 @@ public class ExecutorStateManagerTests {
 
         // register TE with jdk:17
         TaskExecutorRegistration jdk17Te =
-            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_JDK", "17")).build();
+            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17")).build();
 
         stateManager.trackIfAbsent(TaskExecutorID.of("jdk17"), state2);
         state2.onRegistration(jdk17Te);
@@ -436,12 +436,12 @@ public class ExecutorStateManagerTests {
     }
 
     @Test
-    public void testGetBestFit_WithAllocationAttributesDefaults() {
-        stateManager = new ExecutorStateManagerImpl("jdk:8,constraint0:whatever");
+    public void testGetBestFit_WithSchedulingAttributesDefaults() {
+        stateManager = new ExecutorStateManagerImpl(ImmutableMap.of("jdk", "8", "constraint0", "whatever"));
 
         // register TE with jdk:17
         TaskExecutorRegistration jdk17Te =
-            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_JDK", "17")).build();
+            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17")).build();
 
         stateManager.trackIfAbsent(TaskExecutorID.of("jdk17"), state1);
         state1.onRegistration(jdk17Te);
@@ -474,12 +474,12 @@ public class ExecutorStateManagerTests {
     }
 
     @Test
-    public void testGetBestFit_WithMultipleAllocationAttributes() {
-        stateManager = new ExecutorStateManagerImpl("jdk:17,constraint0:whatever");
+    public void testGetBestFit_WithMultipleSchedulingAttributes() {
+        stateManager = new ExecutorStateManagerImpl(ImmutableMap.of("jdk", "17", "constraint0", "whatever"));
 
         // register TE with jdk:8
         TaskExecutorRegistration jdk8Te =
-            getRegistrationBuilder(TaskExecutorID.of("jdk8"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_JDK", "8")).build();
+            getRegistrationBuilder(TaskExecutorID.of("jdk8"), MACHINE_DEFINITION_1, ImmutableMap.of("MANTIS_SCHEDULING_ATTRIBUTE_JDK", "8")).build();
 
         stateManager.trackIfAbsent(TaskExecutorID.of("jdk8"), state1);
         state1.onRegistration(jdk8Te);
@@ -489,7 +489,7 @@ public class ExecutorStateManagerTests {
 
         // register TE with constraint0:another
         TaskExecutorRegistration jdk8Constraint0Te =
-            getRegistrationBuilder(TaskExecutorID.of("constraint0"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_CONSTRAINT0", "another")).build();
+            getRegistrationBuilder(TaskExecutorID.of("constraint0"), MACHINE_DEFINITION_1, ImmutableMap.of("MANTIS_SCHEDULING_ATTRIBUTE_CONSTRAINT0", "another")).build();
 
         stateManager.trackIfAbsent(TaskExecutorID.of("constraint0"), state2);
         state2.onRegistration(jdk8Constraint0Te);
@@ -499,7 +499,7 @@ public class ExecutorStateManagerTests {
 
         // register TE with jdk:17/constraint0:different
         TaskExecutorRegistration jdk17Te =
-            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_JDK", "17")).build();
+            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17")).build();
 
         stateManager.trackIfAbsent(TaskExecutorID.of("jdk17"), state3);
         state3.onRegistration(jdk17Te);
@@ -515,7 +515,7 @@ public class ExecutorStateManagerTests {
 
         // register TE with jdk:17/constraint0:whatever
         TaskExecutorRegistration jdk17Constraint0Te =
-            getRegistrationBuilder(TaskExecutorID.of("jdk17Constraint0"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_JDK", "17", "SCHEDULING_CONSTRAINT_CONSTRAINT0", "whatever")).build();
+            getRegistrationBuilder(TaskExecutorID.of("jdk17Constraint0"), MACHINE_DEFINITION_1, ImmutableMap.of("MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17", "MANTIS_SCHEDULING_ATTRIBUTE_CONSTRAINT0", "whatever")).build();
 
         TaskExecutorState state4 = TaskExecutorState.of(clock, rpc, router);
         stateManager.trackIfAbsent(TaskExecutorID.of("jdk17Constraint0"), state4);

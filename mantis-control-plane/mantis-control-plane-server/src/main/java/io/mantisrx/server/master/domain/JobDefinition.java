@@ -67,13 +67,13 @@ public class JobDefinition {
     private Map<String, Label> labels; // Map label->name to label instance.
     /**
      * A map of scheduling constraints deduced from labels.
-     * The constraints are extracted from labels matching the "SCHEDULING_CONSTRAINT_LABEL_REGEX" pattern.
+     * The constraints are extracted from labels matching the "MANTIS_SCHEDULING_ATTRIBUTE_LABEL_REGEX" pattern.
      * Only the contents of the capturing group (i.e., the key that comes after "_mantis.schedulingConstraint.")
      * are saved. These values are then used as constraints during worker scheduling.
      */
     private final Map<String, String> schedulingConstraints;
 
-    private final static Pattern SCHEDULING_CONSTRAINT_LABEL_REGEX =
+    private final static Pattern MANTIS_SCHEDULING_ATTRIBUTE_LABEL_REGEX =
         Pattern.compile("_mantis\\.schedulingConstraint\\.(.+)");
 
     @JsonCreator
@@ -116,7 +116,7 @@ public class JobDefinition {
         this.withNumberOfStages = withNumberOfStages;
         this.schedulingConstraints = this.labels.entrySet().stream()
             .map(label -> {
-                Matcher matcher = SCHEDULING_CONSTRAINT_LABEL_REGEX.matcher(label.getKey());
+                Matcher matcher = MANTIS_SCHEDULING_ATTRIBUTE_LABEL_REGEX.matcher(label.getKey());
                 return matcher.find() ? Pair.of(matcher.group(1), label.getValue().getValue()) : null;
             })
             .filter(Objects::nonNull)

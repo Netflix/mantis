@@ -24,5 +24,5 @@ public class WorkerConstants {
     // TODO(fdichiara): make this configurable.
     public static final String AUTO_SCALE_GROUP_KEY = "NETFLIX_AUTO_SCALE_GROUP";
     public static final String MANTIS_WORKER_CONTAINER_GENERATION = "MANTIS_WORKER_CONTAINER_GENERATION";
-    public static final Pattern SCHEDULING_CONSTRAINT_PATTERN = Pattern.compile("^SCHEDULING_CONSTRAINT_(.*)$");
+    public static final Pattern MANTIS_SCHEDULING_ATTRIBUTE_PATTERN = Pattern.compile("^MANTIS_SCHEDULING_ATTRIBUTE_(.*)$");
 }

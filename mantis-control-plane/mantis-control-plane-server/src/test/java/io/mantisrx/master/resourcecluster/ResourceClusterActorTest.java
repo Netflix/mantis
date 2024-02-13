@@ -200,7 +200,8 @@ public class ResourceClusterActorTest {
                 jobMessageRouter,
                 0,
                 "",
-                false, "");
+                false,
+                ImmutableMap.of());
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =

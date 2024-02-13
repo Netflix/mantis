@@ -1612,7 +1612,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          * keys from the artifact's tags.
          *
          * @param artifactID the artifact used by the job whose attributes are to be fetched
-         * @return A merged map of assignment attributes. The precedence of keys follows: job definition > artifact's tags.
+         * @return A merged map of scheduling attributes. The precedence of keys follows: job definition > artifact's tags.
          */
         private Map<String, String> mergeJobDefAndArtifactAssigmentAttributes(ArtifactID artifactID) {
             try {
