@@ -25,16 +25,21 @@ import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.GetClusterUsageResponseBuilder;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
+import io.mantisrx.master.scheduler.CpuWeightedFitnessCalculator;
+import io.mantisrx.master.scheduler.FitnessCalculator;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.cache.RemovalListener;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -85,12 +90,21 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
      */
     private final SortedMap<Double, NavigableSet<TaskExecutorHolder>> executorByCores = new ConcurrentSkipListMap<>();
 
+    // TODO(fdichiara): make this configurable
+    private final FitnessCalculator fitnessCalculator = new CpuWeightedFitnessCalculator();
+
+    private final Map<String, String> assignmentAttributesAndDefaults;
+
     private final Cache<TaskExecutorID, TaskExecutorState> archivedState = CacheBuilder.newBuilder()
         .maximumSize(10000)
         .expireAfterWrite(24, TimeUnit.HOURS)
         .removalListener(notification ->
             log.info("Archived TaskExecutor: {} removed due to: {}", notification.getKey(), notification.getCause()))
         .build();
+
+    ExecutorStateManagerImpl(String assignmentAttributesAndDefaults) {
+        this.assignmentAttributesAndDefaults = assignmentAttributesAndDefaults.isEmpty() ? ImmutableMap.of() : Splitter.on(",").withKeyValueSeparator(':').split(assignmentAttributesAndDefaults);
+    }
 
     @Override
     public void trackIfAbsent(TaskExecutorID taskExecutorID, TaskExecutorState state) {
@@ -263,13 +277,13 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         final BestFit bestFit = new BestFit();
         final boolean isJobIdAlreadyPending = pendingJobRequests.getIfPresent(request.getJobId()) != null;
 
-        for (Entry<MachineDefinition, List<TaskExecutorAllocationRequest>> entry : request.getGroupedByMachineDef().entrySet()) {
-            final MachineDefinition machineDefinition = entry.getKey();
+        for (Entry<SchedulingConstraints, List<TaskExecutorAllocationRequest>> entry : request.getGroupedBySchedulingConstraints().entrySet()) {
+            final SchedulingConstraints schedulingConstraints = entry.getKey();
             final List<TaskExecutorAllocationRequest> allocationRequests = entry.getValue();
 
-            Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findTaskExecutorsFor(request, machineDefinition, allocationRequests, isJobIdAlreadyPending, bestFit);
+            Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findTaskExecutorsFor(request, schedulingConstraints, allocationRequests, isJobIdAlreadyPending, bestFit);
 
-            // Mark noResourcesAvailable if we can't find enough TEs for a given machine def
+            // Mark noResourcesAvailable if we can't find enough TEs for a given set of scheduling constraints
             if (!taskExecutors.isPresent()) {
                 noResourcesAvailable = true;
                 break;
@@ -284,19 +298,19 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         }
 
         if (noResourcesAvailable) {
-            log.warn("Not all machine def had enough workers available to fulfill the request {}", request);
+            log.warn("Not all scheduling constraints had enough workers available to fulfill the request {}", request);
             return Optional.empty();
         } else {
-            // Return best fit only if there are enough available TEs for all machine def
+            // Return best fit only if there are enough available TEs for all scheduling constraints
             return Optional.of(bestFit);
         }
 
     }
 
-    private Optional<Map<TaskExecutorID, TaskExecutorState>> findBestFitFor(TaskExecutorBatchAssignmentRequest request, MachineDefinition machineDefinition, Integer numWorkers, BestFit currentBestFit) {
+    private Optional<Map<TaskExecutorID, TaskExecutorState>> findBestFitFor(TaskExecutorBatchAssignmentRequest request, SchedulingConstraints schedulingConstraints, Integer numWorkers, BestFit currentBestFit) {
         // only allow allocation in the lowest CPU cores matching group.
         SortedMap<Double, NavigableSet<TaskExecutorHolder>> targetMap =
-            this.executorByCores.tailMap(machineDefinition.getCpuCores());
+            this.executorByCores.tailMap(schedulingConstraints.getMachineDefinition().getCpuCores());
 
         if (targetMap.isEmpty()) {
             log.warn("Cannot find any executor for request: {}", request);
@@ -305,7 +319,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         Double targetCoreCount = targetMap.firstKey();
         log.debug("Applying assignmentReq: {} to {} cores.", request, targetCoreCount);
 
-        Double requestedCoreCount = machineDefinition.getCpuCores();
+        Double requestedCoreCount = schedulingConstraints.getMachineDefinition().getCpuCores();
         if (Math.abs(targetCoreCount - requestedCoreCount) > 1E-10) {
             // this mismatch should not happen in production and indicates TE registration/spec problem.
             log.warn("Requested core count mismatched. requested: {}, found: {} for {}", requestedCoreCount,
@@ -318,29 +332,71 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             return Optional.empty();
         }
 
-        return Optional.of(
-            this.executorByCores.get(targetCoreCount)
-                .descendingSet()
-                .stream()
-                .filter(teHolder -> {
-                    if (!this.taskExecutorStateMap.containsKey(teHolder.getId())) {
-                        return false;
-                    }
+        Map<TaskExecutorID, TaskExecutorState> availableTEs = findAvailableBestFitTaskExecutors(schedulingConstraints, targetCoreCount, currentBestFit, numWorkers);
+        return availableTEs.size() < numWorkers ? Optional.empty() : Optional.of(availableTEs);
+    }
 
-                    if (currentBestFit.contains(teHolder.getId())) {
-                        return false;
-                    }
+    /**
+     * Identifies 'numWorkers' Task Executors that are available, not currently used, and comply with the given scheduling constraints.
+     * From these, the method selects the ones with the highest fitness score currently based on cpu and memory.
+     *
+     * @param schedulingConstraints The requested scheduling constraints to evaluate each TaskExecutor.
+     * @param targetCoreCount The target core count to select TaskExecutors from.
+     * @param currentBestFit Previously selected best fit TaskExecutors to exclude from consideration.
+     * @param numWorkers The desired number of workers in the final selection.
+     *
+     * @return A map of available TaskExecutorIDs to their TaskExecutorState that best fit the requested scheduling constraints.
+     * The number of entries is limited to `numWorkers`. If no TaskExecutor satisfies the scheduling constraints, this would be an empty map.
+     */
+    private Map<TaskExecutorID, TaskExecutorState> findAvailableBestFitTaskExecutors(SchedulingConstraints schedulingConstraints, Double targetCoreCount, BestFit currentBestFit, Integer numWorkers) {
+        double bestFitnessScore = 0;
+        List<TaskExecutorHolder> bestFittingTEs = new ArrayList<>();
 
-                    TaskExecutorState st = this.taskExecutorStateMap.get(teHolder.getId());
-                    return st.isAvailable() &&
-                        st.getRegistration() != null &&
-                        st.getRegistration().getMachineDefinition().canFit(machineDefinition);
-                })
-                .limit(numWorkers)
-                .map(TaskExecutorHolder::getId)
-                .collect(Collectors.toMap(
-                    taskExecutorID -> taskExecutorID,
-                    this.taskExecutorStateMap::get)));
+        for (TaskExecutorHolder teHolder: this.executorByCores.get(targetCoreCount).descendingSet()) {
+            TaskExecutorState st = this.taskExecutorStateMap.get(teHolder.getId());
+
+            if (st != null && st.isAvailable() && st.getRegistration() != null && !currentBestFit.contains(teHolder.getId()) && areAllocationConstraintsSatisfied(schedulingConstraints, st.getRegistration().getAllocationAttributes())) {
+                double fitnessScore = fitnessCalculator.calculate(schedulingConstraints.getMachineDefinition(), st.getRegistration().getMachineDefinition());
+                if (fitnessScore >= bestFitnessScore) {
+                    if (fitnessScore > bestFitnessScore) {
+                        bestFitnessScore = fitnessScore;
+                        bestFittingTEs.clear();
+                    }
+                    bestFittingTEs.add(teHolder);
+                }
+            }
+        }
+        return bestFittingTEs
+            .stream()
+            .limit(numWorkers)
+            .map(TaskExecutorHolder::getId)
+            .collect(Collectors.toMap(
+                taskExecutorID -> taskExecutorID,
+                this.taskExecutorStateMap::get));
+    }
+
+    /**
+     * Verifies if all allocation constraints are satisfied.
+     *
+     * For each entry in 'assignmentAttributesAndDefaults':
+     * - Fetch the corresponding attribute value from Task Executor assignment attributes, if not present, default to the value from the current entry.
+     * - Fetch the corresponding attribute value from Schedule Request assignment attributes, if not present, default to the value from the current entry.
+     * - Checks if these two values are equal ignoring case. If any pair is not equal, the function returns false.
+     *
+     * Hence, the function ensures that the TaskExecutor assignment attributes match or satisfy the constraints required. If either the TaskExecutor registration or the scheduling request lacks an attribute, it uses the provided defaults.
+     *
+     * @param constraints The schedule request constraints to be satisfied.
+     * @param teAssignmentAttributes The assignment attributes of a Task Executor that needs to satisfy scheduling constraints.
+     *
+     * @return true if all allocation constraints are satisfied, false otherwise.
+     */
+    public boolean areAllocationConstraintsSatisfied(SchedulingConstraints constraints, Map<String, String> teAssignmentAttributes) {
+        return assignmentAttributesAndDefaults.entrySet()
+            .stream()
+            .allMatch(entry -> teAssignmentAttributes
+                .getOrDefault(entry.getKey(), entry.getValue())
+                .equalsIgnoreCase(constraints.getAssignmentAttributes()
+                    .getOrDefault(entry.getKey(), entry.getValue())));
     }
 
     @Override
@@ -438,15 +494,16 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             .orElse(0);
     }
 
-    private Optional<Map<TaskExecutorID, TaskExecutorState>> findTaskExecutorsFor(TaskExecutorBatchAssignmentRequest request, MachineDefinition machineDefinition, List<TaskExecutorAllocationRequest> allocationRequests, boolean isJobIdAlreadyPending, BestFit currentBestFit) {
-        // Finds best fit for N workers of the same machine def
+    private Optional<Map<TaskExecutorID, TaskExecutorState>> findTaskExecutorsFor(TaskExecutorBatchAssignmentRequest request, SchedulingConstraints schedulingConstraints, List<TaskExecutorAllocationRequest> allocationRequests, boolean isJobIdAlreadyPending, BestFit currentBestFit) {
+        // Finds best fit for N workers of the same scheduling constraints
         final Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findBestFitFor(
-            request, machineDefinition, allocationRequests.size(), currentBestFit);
+            request, schedulingConstraints, allocationRequests.size(), currentBestFit);
 
         // Verify that the number of task executors returned matches the asked
         if (taskExecutors.isPresent() && taskExecutors.get().size() == allocationRequests.size()) {
             return taskExecutors;
         } else {
+            MachineDefinition machineDefinition = schedulingConstraints.getMachineDefinition();
             log.warn("Not enough available TEs found for machine def {} with core count: {}, request: {}",
                 machineDefinition, machineDefinition.getCpuCores(), request);
 

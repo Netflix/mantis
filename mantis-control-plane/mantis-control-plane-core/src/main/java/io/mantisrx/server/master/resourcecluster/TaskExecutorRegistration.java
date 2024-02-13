@@ -22,8 +22,12 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -140,5 +144,18 @@ public class TaskExecutorRegistration {
         }
 
         return Optional.empty();
+    }
+
+    @JsonIgnore
+    public Map<String, String> getAllocationAttributes() {
+        return taskExecutorAttributes.entrySet().stream()
+            .flatMap(entry -> {
+                Matcher matcher = WorkerConstants.SCHEDULING_CONSTRAINT_PATTERN.matcher(entry.getKey());
+                return matcher.matches() ? Stream.of(new AbstractMap.SimpleEntry<>(matcher.group(1).toLowerCase(), entry.getValue())) : Stream.empty();
+            })
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> getAttributeByKey(entry.getKey()).orElse(entry.getValue())
+            ));
     }
 }

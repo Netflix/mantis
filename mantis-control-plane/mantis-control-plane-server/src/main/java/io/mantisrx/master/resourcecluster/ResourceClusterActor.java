@@ -28,10 +28,10 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
-import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
@@ -116,8 +116,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final boolean isJobArtifactCachingEnabled;
 
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled, boolean isJobArtifactCachingEnabled) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled, isJobArtifactCachingEnabled)
+    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled, boolean isJobArtifactCachingEnabled, String assignmentAttributesAndDefaults) {
+        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled, isJobArtifactCachingEnabled, assignmentAttributesAndDefaults)
                 .withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -132,7 +132,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         JobMessageRouter jobMessageRouter,
         int maxJobArtifactsToCache,
         String jobClustersWithArtifactCachingEnabled,
-        boolean isJobArtifactCachingEnabled) {
+        boolean isJobArtifactCachingEnabled,
+        String assignmentAttributesAndDefaults) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -148,7 +149,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.maxJobArtifactsToCache = maxJobArtifactsToCache;
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
 
-        this.executorStateManager = new ExecutorStateManagerImpl();
+        this.executorStateManager = new ExecutorStateManagerImpl(assignmentAttributesAndDefaults);
 
         this.metrics = new ResourceClusterActorMetrics();
     }
@@ -858,10 +859,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         Set<TaskExecutorAllocationRequest> allocationRequests;
         ClusterID clusterID;
 
-        public Map<MachineDefinition, List<TaskExecutorAllocationRequest>> getGroupedByMachineDef() {
+        public Map<SchedulingConstraints, List<TaskExecutorAllocationRequest>> getGroupedBySchedulingConstraints() {
             return allocationRequests
                 .stream()
-                .collect(Collectors.groupingBy(a -> a.getConstraints().getMachineDefinition()));
+                .collect(Collectors.groupingBy(TaskExecutorAllocationRequest::getConstraints));
         }
 
         public Map<Double, Integer> getGroupedByCoresCount() {
