@@ -1590,6 +1590,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         workerRequest.getNumberOfPorts(),
                         jobMetadata,
                         mantisJobMetaData.getSla().orElse(new JobSla.Builder().build()).getDurationType(),
+                        // TODO(fdichiara): make this a property of JobStageMetadata. https://github.com/Netflix/mantis/pull/629/files#r1487043262
                         SchedulingConstraints.of(
                             stageMetadata.getMachineDefinition(),
                             mergeJobDefAndArtifactAssigmentAttributes(jobMetadata.getJobArtifact())),
@@ -1617,12 +1618,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             try {
                 JobArtifact artifact = jobStore.getJobArtifact(artifactID);
                 Map<String, String> mergedMap = new HashMap<>(artifact.getTags());
-                mergedMap.putAll(mantisJobMetaData.getJobDefinition().getAssignmentAttributes());
+                mergedMap.putAll(mantisJobMetaData.getJobDefinition().getSchedulingConstraints());
                 return mergedMap;
             } catch (Exception e) {
                 LOGGER.warn("Couldn't find job artifact by id: {}", artifactID, e);
             }
-            return mantisJobMetaData.getJobDefinition().getAssignmentAttributes();
+            return mantisJobMetaData.getJobDefinition().getSchedulingConstraints();
         }
 
         private List<IMantisWorkerMetadata> getInitialWorkers(JobDefinition jobDetails, long submittedAt)

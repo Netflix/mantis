@@ -21,24 +21,18 @@ import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
+import lombok.Value;
 
 /**
- * A class that represents scheduling constraints. These constraints include the resource constraints, and a map of assignment attributes (e.g. jdkVersion:17 or springBootVersion:3).
+ * A class that represents scheduling constraints. These constraints include the resource constraints, and a map of assignment attributes (e.g. jdkVersion:17).
  */
-@RequiredArgsConstructor
-@Getter
-@EqualsAndHashCode
 @AllArgsConstructor(staticName = "of")
-@ToString
+@Value
 public class SchedulingConstraints {
     // Defines the resource constraints for scheduling
     MachineDefinition machineDefinition;
 
-    // Additional attributes for assignment (ie. jdkVersion:17 or springBootVersion:3)
+    // Additional attributes for assignment (ie. jdkVersion:17)
     Map<String, String> assignmentAttributes;
 
     @VisibleForTesting
