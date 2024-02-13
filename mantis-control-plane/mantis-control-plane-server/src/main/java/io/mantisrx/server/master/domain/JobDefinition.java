@@ -65,6 +65,13 @@ public class JobDefinition {
     private final DeploymentStrategy deploymentStrategy;
     private final int withNumberOfStages;
     private Map<String, Label> labels; // Map label->name to label instance.
+    /**
+     * A map of scheduling constraints deduced from labels.
+     * The constraints are extracted from labels matching the "SCHEDULING_CONSTRAINT_LABEL_REGEX" pattern.
+     * Only the contents of the capturing group (i.e., the key that comes after "_mantis.schedulingConstraint.")
+     * are saved. These values are then used as constraints during worker scheduling.
+     */
+    private final Map<String, String> schedulingConstraints;
 
     private final static Pattern SCHEDULING_CONSTRAINT_LABEL_REGEX =
         Pattern.compile("_mantis\\.schedulingConstraint\\.(.+)");
@@ -107,6 +114,16 @@ public class JobDefinition {
         this.schedulingInfo = schedulingInfo;
         this.deploymentStrategy = deploymentStrategy;
         this.withNumberOfStages = withNumberOfStages;
+        this.schedulingConstraints = this.labels.entrySet().stream()
+            .map(label -> {
+                Matcher matcher = SCHEDULING_CONSTRAINT_LABEL_REGEX.matcher(label.getKey());
+                return matcher.find() ? Pair.of(matcher.group(1), label.getValue().getValue()) : null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(
+                Pair::getLeft,
+                Pair::getRight
+            ));
         postProcess();
         validate(true);
     }
@@ -230,6 +247,10 @@ public class JobDefinition {
         return schedulingInfo;
     }
 
+    public Map<String, String> getSchedulingConstraints() {
+        return this.schedulingConstraints;
+    }
+
     public DeploymentStrategy getDeploymentStrategy() { return deploymentStrategy; }
 
     //    // TODO make immutable
@@ -250,26 +271,6 @@ public class JobDefinition {
             .filter(label -> label.getName().equals(MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label))
             .findFirst()
             .map(l -> ClusterID.of(l.getValue()));
-    }
-
-    /**
-     * Returns the map of assignment attributes deduced from labels. The attributes are extracted
-     * from labels matching the "SCHEDULING_CONSTRAINT_LABEL_REGEX" pattern, and only the capturing
-     * group content (i.e., the key that comes after "_mantis.schedulingConstraint.") is saved.
-     *
-     * The return value would be used as constraint during worker scheduling.
-     */
-    public Map<String, String> getAssignmentAttributes() {
-        return labels.entrySet().stream()
-            .map(label -> {
-                final Matcher matcher = SCHEDULING_CONSTRAINT_LABEL_REGEX.matcher(label.getKey());
-                return matcher.find() ? Pair.of(matcher.group(1), label.getValue().getValue()) : null;
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toMap(
-                Pair::getLeft,
-                Pair::getRight
-            ));
     }
 
     @JsonIgnore
