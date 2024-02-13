@@ -200,7 +200,7 @@ public class ResourceClusterActorTest {
                 jobMessageRouter,
                 0,
                 "",
-                false);
+                false, "");
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =

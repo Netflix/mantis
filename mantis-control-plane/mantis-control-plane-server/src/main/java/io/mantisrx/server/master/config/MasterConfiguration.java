@@ -351,6 +351,11 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("false")
     boolean isBatchSchedulingEnabled();
 
+    // Example: "jdk:17"
+    @Config("mantis.scheduler.assignmentAttributesAndDefaults")
+    @Default("")
+    String getAssignmentAttributesAndDefaults();
+
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());
     }

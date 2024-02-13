@@ -44,6 +44,7 @@ import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableSet;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -128,7 +129,7 @@ public class ExecutorStateManagerTests {
             .taskExecutorAttributes(attributes);
     }
 
-    private final ExecutorStateManager stateManager = new ExecutorStateManagerImpl();
+    private ExecutorStateManager stateManager = new ExecutorStateManagerImpl("");
 
     @Before
     public void setup() {
@@ -394,5 +395,222 @@ public class ExecutorStateManagerTests {
 
         assertTrue(bestFitO.isPresent());
         assertEquals(new HashSet<>(Arrays.asList(TASK_EXECUTOR_ID_1, TASK_EXECUTOR_ID_2)), bestFitO.get().getTaskExecutorIDSet());
+    }
+
+    @Test
+    public void testGetBestFit_WithAllocationAttributes() {
+        stateManager = new ExecutorStateManagerImpl("jdk:8,constraint0:whatever");
+
+        // register TE with jdk:8
+        TaskExecutorRegistration jdk8Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk8"), MACHINE_DEFINITION_1, ImmutableMap.of()).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk8"), state1);
+        state1.onRegistration(jdk8Te);
+        state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk8"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk8"));
+
+        // no matching found for jdk:17
+        Optional<BestFit> bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
+        assertFalse(bestFit.isPresent());
+
+        // register TE with jdk:17
+        TaskExecutorRegistration jdk17Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_JDK", "17")).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk17"), state2);
+        state2.onRegistration(jdk17Te);
+        state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk17"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk17"));
+
+        // matching found for jdk:17
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk17"))), bestFit.get().getTaskExecutorIDSet());
+    }
+
+    @Test
+    public void testGetBestFit_WithAllocationAttributesDefaults() {
+        stateManager = new ExecutorStateManagerImpl("jdk:8,constraint0:whatever");
+
+        // register TE with jdk:17
+        TaskExecutorRegistration jdk17Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_JDK", "17")).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk17"), state1);
+        state1.onRegistration(jdk17Te);
+        state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk17"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk17"));
+
+        // no matching found for jdk:8
+        Optional<BestFit> bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "8")), null, 0)), CLUSTER_ID));
+        assertFalse(bestFit.isPresent());
+
+        // register TE with jdk:8
+        TaskExecutorRegistration jdk8Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk8"), MACHINE_DEFINITION_1, ImmutableMap.of()).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk8"), state2);
+        state2.onRegistration(jdk8Te);
+        state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk8"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk8"));
+
+        // best fit found using default allocation attribute
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of()), null, 0)), CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk8"))), bestFit.get().getTaskExecutorIDSet());
+    }
+
+    @Test
+    public void testGetBestFit_WithMultipleAllocationAttributes() {
+        stateManager = new ExecutorStateManagerImpl("jdk:17,constraint0:whatever");
+
+        // register TE with jdk:8
+        TaskExecutorRegistration jdk8Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk8"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_JDK", "8")).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk8"), state1);
+        state1.onRegistration(jdk8Te);
+        state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk8"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk8"));
+
+        // register TE with constraint0:another
+        TaskExecutorRegistration jdk8Constraint0Te =
+            getRegistrationBuilder(TaskExecutorID.of("constraint0"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_CONSTRAINT0", "another")).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("constraint0"), state2);
+        state2.onRegistration(jdk8Constraint0Te);
+        state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("constraint0"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("constraint0"));
+
+        // register TE with jdk:17/constraint0:different
+        TaskExecutorRegistration jdk17Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_JDK", "17")).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk17"), state3);
+        state3.onRegistration(jdk17Te);
+        state3.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk17"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk17"));
+
+        // no matching found for jdk17/constraint0
+        Optional<BestFit> bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "17", "constraint0", "different")), null, 0)), CLUSTER_ID));
+        assertFalse(bestFit.isPresent());
+
+        // register TE with jdk:17/constraint0:whatever
+        TaskExecutorRegistration jdk17Constraint0Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk17Constraint0"), MACHINE_DEFINITION_1, ImmutableMap.of("SCHEDULING_CONSTRAINT_JDK", "17", "SCHEDULING_CONSTRAINT_CONSTRAINT0", "whatever")).build();
+
+        TaskExecutorState state4 = TaskExecutorState.of(clock, rpc, router);
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk17Constraint0"), state4);
+        state4.onRegistration(jdk17Constraint0Te);
+        state4.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk17Constraint0"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk17Constraint0"));
+
+        // matching found for jdk17/constraint0
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, ImmutableMap.of("jdk", "17", "constraint0", "whatever")), null, 0)), CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk17Constraint0"))), bestFit.get().getTaskExecutorIDSet());
+    }
+
+    @Test
+    public void testGetBestFit_WithSameCoresDifferentMemory() {
+        // register TE with 2cores, 14GB mem
+        TaskExecutorRegistration te0 =
+            getRegistrationBuilder(TaskExecutorID.of("te0"), new MachineDefinition(2, 14000, 1024, 1), ImmutableMap.of()).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("te0"), state1);
+        state1.onRegistration(te0);
+        state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("te0"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("te0"));
+
+        // register TE with 2cores, 54GB mem
+        TaskExecutorRegistration te1 =
+            getRegistrationBuilder(TaskExecutorID.of("te1"), new MachineDefinition(2, 54000, 1024, 1), ImmutableMap.of()).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("te1"), state2);
+        state2.onRegistration(te1);
+        state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("te1"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("te1"));
+
+        // no matching found for 2cores, 10GB since the fit TE shape is 2cores, 14GB and there is only 1 TE available
+        Optional<BestFit> bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                new HashSet<>(Arrays.asList(
+                    TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(new MachineDefinition(2, 10000, 1024, 1)), null, 0),
+                    TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-1-2"), SchedulingConstraints.of(new MachineDefinition(2, 10000, 1024, 1)), null, 1))),
+                CLUSTER_ID));
+        assertFalse(bestFit.isPresent());
+
+        // register TE with 2cores, 54GB mem
+        TaskExecutorRegistration te2 =
+            getRegistrationBuilder(TaskExecutorID.of("te2"), new MachineDefinition(2, 54000, 1024, 1), ImmutableMap.of()).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("te2"), state3);
+        state3.onRegistration(te2);
+        state3.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("te2"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("te2"));
+
+        // no matching found for 2cores, 10GB since the fit TE shape is still 2cores, 14GB and there is only 1 TE available
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                new HashSet<>(Arrays.asList(
+                    TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(new MachineDefinition(2, 10000, 1024, 1)), null, 0),
+                    TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-1-2"), SchedulingConstraints.of(new MachineDefinition(2, 10000, 1024, 1)), null, 1))),
+                CLUSTER_ID));
+        assertFalse(bestFit.isPresent());
+
+        // matching found for 2cores, 34GB since the fit TE shape is now 2cores, 54GB and there are 2 TE available
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                new HashSet<>(Arrays.asList(
+                    TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(new MachineDefinition(2, 30000, 1024, 1)), null, 0),
+                    TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-1-2"), SchedulingConstraints.of(new MachineDefinition(2, 30000, 1024, 1)), null, 1))),
+                CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(ImmutableSet.of(TaskExecutorID.of("te1"), TaskExecutorID.of("te2")), bestFit.get().getTaskExecutorIDSet());
+
+        TaskExecutorState state4 = TaskExecutorState.of(clock, rpc, router);
+        TaskExecutorRegistration te3 =
+            getRegistrationBuilder(TaskExecutorID.of("te3"), new MachineDefinition(2, 14000, 1024, 1), ImmutableMap.of()).build();
+
+        // register TE with 2cores, 14GB mem
+        stateManager.trackIfAbsent(TaskExecutorID.of("te3"), state4);
+        state4.onRegistration(te3);
+        state4.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("te3"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("te3"));
+
+        // matching found for 2cores, 14GB since the fit TE shape is now 2cores, 14GB and there are 2 TE available
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                new HashSet<>(Arrays.asList(
+                    TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(new MachineDefinition(2, 10000, 1024, 1)), null, 0),
+                    TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-1-2"), SchedulingConstraints.of(new MachineDefinition(2, 10000, 1024, 1)), null, 1))),
+                CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(ImmutableSet.of(TaskExecutorID.of("te0"), TaskExecutorID.of("te3")), bestFit.get().getTaskExecutorIDSet());
     }
 }
