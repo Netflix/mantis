@@ -29,11 +29,13 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
 /**
@@ -147,15 +149,27 @@ public class TaskExecutorRegistration {
     }
 
     @JsonIgnore
-    public Map<String, String> getAllocationAttributes() {
+    public Map<String, String> getSchedulingAttributes() {
         return taskExecutorAttributes.entrySet().stream()
             .flatMap(entry -> {
-                Matcher matcher = WorkerConstants.SCHEDULING_CONSTRAINT_PATTERN.matcher(entry.getKey());
+                Matcher matcher = WorkerConstants.MANTIS_SCHEDULING_ATTRIBUTE_PATTERN.matcher(entry.getKey());
                 return matcher.matches() ? Stream.of(new AbstractMap.SimpleEntry<>(matcher.group(1).toLowerCase(), entry.getValue())) : Stream.empty();
             })
             .collect(Collectors.toMap(
                 Map.Entry::getKey,
                 entry -> getAttributeByKey(entry.getKey()).orElse(entry.getValue())
             ));
+    }
+
+    @JsonIgnore
+    public TaskExecutorGroupKey getTaskExecutorGroupKey() {
+        return new TaskExecutorGroupKey(machineDefinition, getSchedulingAttributes());
+    }
+
+    @Value
+    @AllArgsConstructor
+    public static class TaskExecutorGroupKey {
+        MachineDefinition machineDefinition;
+        Map<String, String> schedulingAttributes;
     }
 }

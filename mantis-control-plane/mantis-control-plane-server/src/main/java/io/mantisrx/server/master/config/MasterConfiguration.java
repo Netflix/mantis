@@ -19,7 +19,10 @@ package io.mantisrx.server.master.config;
 import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.master.store.KeyValueStore;
+import io.mantisrx.shaded.com.google.common.base.Splitter;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Duration;
+import java.util.Map;
 import org.skife.config.Config;
 import org.skife.config.Default;
 import org.skife.config.DefaultNull;
@@ -352,9 +355,9 @@ public interface MasterConfiguration extends CoreConfiguration {
     boolean isBatchSchedulingEnabled();
 
     // Example: "jdk:17"
-    @Config("mantis.scheduler.assignmentAttributesAndDefaults")
+    @Config("mantis.scheduler.schedulingConstraints")
     @Default("")
-    String getAssignmentAttributesAndDefaults();
+    String getSchedulingConstraintsString();
 
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());
@@ -363,4 +366,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     default Duration getMaxAssignmentThreshold() {
         return Duration.ofMillis(getAssignmentIntervalInMs());
     }
+
+    default Map<String, String> getSchedulingConstraints() { return getSchedulingConstraintsString().isEmpty() ? ImmutableMap.of() : Splitter.on(",").withKeyValueSeparator(':').split(getSchedulingConstraintsString());}
 }

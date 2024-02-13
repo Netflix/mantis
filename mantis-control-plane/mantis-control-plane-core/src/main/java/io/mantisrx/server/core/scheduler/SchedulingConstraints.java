@@ -24,7 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.Value;
 
 /**
- * A class that represents scheduling constraints. These constraints include the resource constraints, and a map of assignment attributes (e.g. jdkVersion:17).
+ * A class that represents scheduling constraints. These constraints include the resource constraints, and a map of scheduling attributes (e.g. jdkVersion:17).
  */
 @AllArgsConstructor(staticName = "of")
 @Value
@@ -32,8 +32,8 @@ public class SchedulingConstraints {
     // Defines the resource constraints for scheduling
     MachineDefinition machineDefinition;
 
-    // Additional attributes for assignment (ie. jdkVersion:17)
-    Map<String, String> assignmentAttributes;
+    // Additional attributes for scheduling (ie. jdkVersion:17)
+    Map<String, String> schedulingAttributes;
 
     @VisibleForTesting
     public static SchedulingConstraints of(MachineDefinition machineDefinition) {

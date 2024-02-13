@@ -69,7 +69,7 @@ public class TaskExecutorRegistrationTest {
         final TaskExecutorRegistration registration =
                 serializer.fromJSON(str, TaskExecutorRegistration.class);
         assertEquals(ImmutableMap.of(), registration.getTaskExecutorAttributes());
-        assertEquals(ImmutableMap.of(), registration.getAllocationAttributes());
+        assertEquals(ImmutableMap.of(), registration.getSchedulingAttributes());
         final TaskExecutorRegistration deserialized =
                 serializer.fromJSON(serializer.toJson(registration), TaskExecutorRegistration.class);
         assertEquals(registration, deserialized);
@@ -125,7 +125,7 @@ public class TaskExecutorRegistrationTest {
             serializer.fromJSON(str, TaskExecutorRegistration.class);
         assertEquals(ImmutableMap.of("attribute1", "attributeValue1", "attribute2", "AttributeValue2", "attribute3",
             "attributeValue3"), registration.getTaskExecutorAttributes());
-        assertEquals(ImmutableMap.of(), registration.getAllocationAttributes());
+        assertEquals(ImmutableMap.of(), registration.getSchedulingAttributes());
         final TaskExecutorRegistration deserialized =
             serializer.fromJSON(serializer.toJson(registration), TaskExecutorRegistration.class);
         assertEquals(registration, deserialized);
@@ -176,7 +176,7 @@ public class TaskExecutorRegistrationTest {
     }
 
     @Test
-    public void testAllocationAttributes() throws Exception {
+    public void testSchedulingAttributes() throws Exception {
         String str = "{\n" +
             "    \"taskExecutorID\":\n" +
             "    {\n" +
@@ -216,12 +216,12 @@ public class TaskExecutorRegistrationTest {
             "    },\n" +
             "    \"taskExecutorAttributes\": {\n" +
             "    \t\"attribute1\": \"attributeValue1\",\n" +
-            "    \t\"SCHEDULING_CONSTRAINT_JDK\": \"17\",\n" +
-            "    \t\"SCHEDULING_CONSTRAINT_another\": \"whatever\"\n" +
+            "    \t\"MANTIS_SCHEDULING_ATTRIBUTE_JDK\": \"17\",\n" +
+            "    \t\"MANTIS_SCHEDULING_ATTRIBUTE_another\": \"whatever\"\n" +
             "    }\n" +
             "}";
         final TaskExecutorRegistration registration =
             serializer.fromJSON(str, TaskExecutorRegistration.class);
-        assertEquals(ImmutableMap.of("jdk", "17", "another", "whatever"), registration.getAllocationAttributes());
+        assertEquals(ImmutableMap.of("jdk", "17", "another", "whatever"), registration.getSchedulingAttributes());
     }
 }

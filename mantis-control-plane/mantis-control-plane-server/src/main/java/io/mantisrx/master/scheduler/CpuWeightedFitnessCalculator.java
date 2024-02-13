@@ -19,7 +19,11 @@ package io.mantisrx.master.scheduler;
 import io.mantisrx.runtime.MachineDefinition;
 
 /**
- * Implementation of FitnessCalculator. Uses cpu cores with higher weight than memory.
+ * `CpuWeightedFitnessCalculator` is designed to optimize machine selection in Netflix's cloud container platform
+ * by focusing on the CPU to memory cost ratio. Given the CPU cost is approximated to be 18 times that of 1GB memory,
+ * this calculator leverages this ratio for optimal task-machine match.
+ *
+ * Note: configurability of weights to adjust to evolving cost dynamics is planned for future improvement.
  */
 public class CpuWeightedFitnessCalculator implements FitnessCalculator {
     @Override
@@ -31,8 +35,7 @@ public class CpuWeightedFitnessCalculator implements FitnessCalculator {
         double cpuScore = 1 - (available.getCpuCores() - requested.getCpuCores()) / available.getCpuCores();
         double memoryScore = 1 - (available.getMemoryMB() - requested.getMemoryMB()) / available.getMemoryMB();
 
-        // The weight for cpuScore is 18 and for memoryScore is 1. Hence, the total weight is 19.
-        // TODO: make these weights configurable.
+        // The weight for cpuScore is 18 and for memoryScore is 1, reflecting the CPU to memory cost ratio in Netflix's container platform
         return ((18 * cpuScore) + memoryScore) / 19;
     }
 }
