@@ -17,7 +17,7 @@
 package io.mantisrx.server.worker.jobmaster.clutch;
 
 import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.CPU;
-import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.Memory;
+import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.JVMMemory;
 import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.Network;
 
 import com.yahoo.labs.samoa.instances.Attribute;
@@ -34,7 +34,6 @@ import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
-import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import moa.core.FastVector;
@@ -112,13 +111,6 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
         return targetScale;
     }
 
-    private static int getMinutesIntoDay() {
-        Calendar now = Calendar.getInstance();
-        int hour = now.get(Calendar.HOUR_OF_DAY);
-        int minute = now.get(Calendar.MINUTE);
-        return ((hour * 60) + minute);
-    }
-
     /**
      * Computes the dampening factor for gain.
      * The objective here is to reduce gain in a situation where actions are varying.
@@ -160,19 +152,19 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
                 .share();
 
         ClutchController cpuController = new ClutchController(CPU, this.stageSchedulingInfo, this.config.cpu.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
-        ClutchController memController = new ClutchController(Memory, this.stageSchedulingInfo, this.config.memory.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
+        ClutchController memController = new ClutchController(JVMMemory, this.stageSchedulingInfo, this.config.memory.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
         ClutchController netController = new ClutchController(Network, this.stageSchedulingInfo, this.config.network.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
 
         Observable<ClutchControllerOutput> cpuSignal = metrics.filter(event -> event.getType().equals(CPU))
                 .compose(cpuController);
-        Observable<ClutchControllerOutput> memorySignal = metrics.filter(event -> event.getType().equals(Memory))
+        Observable<ClutchControllerOutput> memorySignal = metrics.filter(event -> event.getType().equals(JVMMemory))
                 .compose(memController);
         Observable<ClutchControllerOutput> networkSignal = metrics.filter(event -> event.getType().equals(Network))
                 .compose(netController);
 
         Observable<Tuple3<Double, Double, Double>> rawMetricsTuples = Observable.zip(
                 metrics.filter(event -> event.getType().equals(CPU)).map(JobAutoScaler.Event::getValue),
-                metrics.filter(event -> event.getType().equals(Memory)).map(JobAutoScaler.Event::getValue),
+                metrics.filter(event -> event.getType().equals(JVMMemory)).map(JobAutoScaler.Event::getValue),
                 metrics.filter(event -> event.getType().equals(Network)).map(JobAutoScaler.Event::getValue),
                 Tuple::of);
 
@@ -261,10 +253,6 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
             this.integrator = new Integrator(this.initialSize, this.min - 1, this.max + 1);
         }
 
-        public void resetIntegrator(double val) {
-            this.integrator.setSum(val);
-        }
-
         @Override
         public Observable<ClutchControllerOutput> call(Observable<JobAutoScaler.Event> eventObservable) {
             return eventObservable.map(event -> Util.getEffectiveValue(this.stageSchedulingInfo, event.getType(), event.getValue()))
@@ -273,14 +261,5 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
                     .lift(this.integrator)
                     .map(x -> new ClutchControllerOutput(this.metric, x));
         }
-    }
-
-
-    public static void main(String[] args) {
-        System.out.println(Double.NaN + 0.0);
-        System.out.println(Math.ceil(Double.NaN + 0.0));
-        System.out.println(Double.NaN < 1.0);
-        System.out.println(Double.NaN > 1.0);
-
     }
 }
