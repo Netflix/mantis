@@ -69,13 +69,16 @@ import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -160,14 +163,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @return
      */
     public static Props props(
-            final IJobClusterDefinition jobClusterDefinition,
-            final MantisJobMetadataImpl jobMetadata,
-            final MantisJobStore jobStore,
-            final MantisScheduler mantisScheduler,
-            final LifecycleEventPublisher eventPublisher,
-            final CostsCalculator costsCalculator) {
+        final IJobClusterDefinition jobClusterDefinition,
+        final MantisJobMetadataImpl jobMetadata,
+        final MantisJobStore jobStore,
+        final MantisScheduler mantisScheduler,
+        final LifecycleEventPublisher eventPublisher,
+        final CostsCalculator costsCalculator) {
         return Props.create(JobActor.class, jobClusterDefinition, jobMetadata, jobStore,
-                mantisScheduler, eventPublisher, costsCalculator);
+            mantisScheduler, eventPublisher, costsCalculator);
     }
 
     /**
@@ -206,15 +209,15 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         this.metricsGroupId = getMetricGroupId(jobId.getId(), getResourceCluster());
         Metrics m = new Metrics.Builder()
-                .id(metricsGroupId)
-                .addCounter("numWorkerResubmissions")
-                .addCounter("numWorkerResubmitLimitReached")
-                .addCounter("numWorkerTerminated")
-                .addCounter("numScaleStage")
-                .addCounter("numWorkersCompletedNotTerminal")
-                .addCounter("numSchedulingChangesRefreshed")
-                .addCounter("numMissingWorkerPorts")
-                .build();
+            .id(metricsGroupId)
+            .addCounter("numWorkerResubmissions")
+            .addCounter("numWorkerResubmitLimitReached")
+            .addCounter("numWorkerTerminated")
+            .addCounter("numScaleStage")
+            .addCounter("numWorkersCompletedNotTerminal")
+            .addCounter("numSchedulingChangesRefreshed")
+            .addCounter("numMissingWorkerPorts")
+            .build();
         this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
         this.numWorkerResubmissions = metrics.getCounter("numWorkerResubmissions");
         this.numWorkerResubmitLimitReached = metrics.getCounter("numWorkerResubmitLimitReached");
@@ -248,7 +251,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         if (isSubmit) {
             eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
-                    "Job request received", getJobId(), getJobState()));
+                "Job request received", getJobId(), getJobState()));
 
             // Ignore isReady flag, if the job is autoscaled it gets a Job Master
             // this.jobClusterDefinition.getIsReadyForJobMaster() &&
@@ -262,19 +265,19 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         LOGGER.info("Stored mantis job");
 
         this.workerManager = new WorkerManager(this, jobClusterDefinition.getWorkerMigrationConfig(),
-                this.mantisScheduler, isSubmit, ConfigurationProvider.getConfig().isBatchSchedulingEnabled());
+            this.mantisScheduler, isSubmit, ConfigurationProvider.getConfig().isBatchSchedulingEnabled());
 
         long checkAgainInSeconds = getWorkerTimeoutSecs();
         long refreshStageAssignementsDurationMs = ConfigurationProvider.getConfig()
-                .getStageAssignmentRefreshIntervalMs();
+            .getStageAssignmentRefreshIntervalMs();
         getTimers().startPeriodicTimer(CHECK_HB_TIMER_KEY, new JobProto.CheckHeartBeat(),
-                Duration.ofSeconds(checkAgainInSeconds));
+            Duration.ofSeconds(checkAgainInSeconds));
         // -1 indicates disabled, which means all updates will be sent immediately
         if (refreshStageAssignementsDurationMs > 0) {
             getTimers().startPeriodicTimer(
-                    REFRESH_SEND_STAGE_ASSIGNEMNTS_KEY,
-                    new JobProto.SendWorkerAssignementsIfChanged(),
-                    Duration.ofMillis(refreshStageAssignementsDurationMs));
+                REFRESH_SEND_STAGE_ASSIGNEMNTS_KEY,
+                new JobProto.SendWorkerAssignementsIfChanged(),
+                Duration.ofMillis(refreshStageAssignementsDurationMs));
         }
         mantisJobMetaData.getJobDefinition().getJobSla().getRuntimeLimitSecs();
         LOGGER.info("Job {} initialized", this.jobId);
@@ -289,25 +292,25 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     }
 
     private void setupJobMasterStage(SchedulingInfo schedulingInfo)
-            throws io.mantisrx.runtime.command.InvalidJobException {
+        throws io.mantisrx.runtime.command.InvalidJobException {
         LOGGER.info("Job {} is autoscaled setting up Job Master", this.jobId);
         if (schedulingInfo.forStage(0) == null) {
             // create stage 0 schedulingInfo only if not already provided
             // jobMaster stage itself is not scaled
             schedulingInfo.addJobMasterStage(StageSchedulingInfo.builder()
-                    .numberOfInstances(1)
-                    .machineDefinition(getJobMasterMachineDef())
-                    .build());
+                .numberOfInstances(1)
+                .machineDefinition(getJobMasterMachineDef())
+                .build());
 
             // Update jobMetadata with the new stage added
             mantisJobMetaData = new MantisJobMetadataImpl.Builder(mantisJobMetaData)
-                    .withJobDefinition(
-                        new JobDefinition.Builder()
-                            .from(mantisJobMetaData.getJobDefinition())
-                            .withSchedulingInfo(schedulingInfo)
-                            .withNumberOfStages(schedulingInfo.getStages().size())
-                            .build())
-                    .build();
+                .withJobDefinition(
+                    new JobDefinition.Builder()
+                        .from(mantisJobMetaData.getJobDefinition())
+                        .withSchedulingInfo(schedulingInfo)
+                        .withNumberOfStages(schedulingInfo.getStages().size())
+                        .build())
+                .build();
         }
         hasJobMaster = true;
     }
@@ -317,13 +320,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         if (config != null) {
             return new MachineDefinition(
-                    config.getJobMasterCores(), config.getJobMasterMemoryMB(), config.getJobMasterNetworkMbps(),
-                    config.getJobMasterDiskMB(), 1
+                config.getJobMasterCores(), config.getJobMasterMemoryMB(), config.getJobMasterNetworkMbps(),
+                config.getJobMasterDiskMB(), 1
             );
         } else {
             return new MachineDefinition(
-                    DEFAULT_JOB_MASTER_CORES, DEFAULT_JOB_MASTER_MEM, DEFAULT_JOB_MASTER_NW,
-                    DEFAULT_JOB_MASTER_DISK, 1);
+                DEFAULT_JOB_MASTER_CORES, DEFAULT_JOB_MASTER_MEM, DEFAULT_JOB_MASTER_NW,
+                DEFAULT_JOB_MASTER_DISK, 1);
         }
     }
 
@@ -384,62 +387,62 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private Receive getTerminatingBehavior() {
         String state = "terminating";
         return receiveBuilder()
-                // EXPECTED MESSAGES BEGIN//
-                // get Job Details
-                .match(GetJobDetailsRequest.class, this::onGetJobDetails)
+            // EXPECTED MESSAGES BEGIN//
+            // get Job Details
+            .match(GetJobDetailsRequest.class, this::onGetJobDetails)
 
-                // process request to get the given job definition updated with this job actor.
-                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
+            // process request to get the given job definition updated with this job actor.
+            .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
 
-                // list active workers request
-                .match(ListWorkersRequest.class, this::onListActiveWorkers)
+            // list active workers request
+            .match(ListWorkersRequest.class, this::onListActiveWorkers)
 
-                // EXPECTED MESSAGES END//
+            // EXPECTED MESSAGES END//
 
-                // UNEXPECTED MESSAGES BEGIN //
+            // UNEXPECTED MESSAGES BEGIN //
 
-                // Worker related events
-                .match(WorkerEvent.class, (x) -> LOGGER.warn("Job {} is Terminating, ignoring worker Events {}",
-                        this.jobId.getId(), x))
+            // Worker related events
+            .match(WorkerEvent.class, (x) -> LOGGER.warn("Job {} is Terminating, ignoring worker Events {}",
+                this.jobId.getId(), x))
 
-                .match(InitJob.class, (x) -> getSender().tell(new JobInitialized(x.requestId, SUCCESS,
-                        genUnexpectedMsg(x.toString(), this.jobId.getId(), state), this.jobId, x.requstor), getSelf()))
-                // explicit resubmit worker
-                .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(new ResubmitWorkerResponse(x.requestId,
-                        CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.jobId.getId(), state)), getSelf()))
-                // Heart beat accounting timers
-                .match(JobProto.CheckHeartBeat.class, (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(),
-                        this.jobId.getId(), state)))
-                // runtime limit reached
-                .match(JobProto.RuntimeLimitReached.class, (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(),
-                        this.jobId.getId(), state)))
-                // Kill job request
-                .match(JobClusterProto.KillJobRequest.class, (x) -> getSender().tell(new KillJobResponse(x.requestId,
-                        SUCCESS, JobState.Noop, genUnexpectedMsg(x.toString(), this.jobId.getId(), state),
-                        this.jobId, x.user), getSelf()))
-                // scale stage request
-                .match(ScaleStageRequest.class, (x) -> getSender().tell(new ScaleStageResponse(x.requestId,
-                        CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.jobId.getId(), state),
-                        0), getSelf()))
-                // scheduling Info observable
-                .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(
-                        new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR,
-                                genUnexpectedMsg(x.toString(), this.jobId.getId(), state), empty()), getSelf()))
-                .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
-                        new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR,
-                                genUnexpectedMsg(x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+            .match(InitJob.class, (x) -> getSender().tell(new JobInitialized(x.requestId, SUCCESS,
+                genUnexpectedMsg(x.toString(), this.jobId.getId(), state), this.jobId, x.requstor), getSelf()))
+            // explicit resubmit worker
+            .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(new ResubmitWorkerResponse(x.requestId,
+                CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.jobId.getId(), state)), getSelf()))
+            // Heart beat accounting timers
+            .match(JobProto.CheckHeartBeat.class, (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(),
+                this.jobId.getId(), state)))
+            // runtime limit reached
+            .match(JobProto.RuntimeLimitReached.class, (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(),
+                this.jobId.getId(), state)))
+            // Kill job request
+            .match(JobClusterProto.KillJobRequest.class, (x) -> getSender().tell(new KillJobResponse(x.requestId,
+                SUCCESS, JobState.Noop, genUnexpectedMsg(x.toString(), this.jobId.getId(), state),
+                this.jobId, x.user), getSelf()))
+            // scale stage request
+            .match(ScaleStageRequest.class, (x) -> getSender().tell(new ScaleStageResponse(x.requestId,
+                CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.jobId.getId(), state),
+                0), getSelf()))
+            // scheduling Info observable
+            .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(
+                new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR,
+                    genUnexpectedMsg(x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+            .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
+                new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR,
+                    genUnexpectedMsg(x.toString(), this.jobId.getId(), state), empty()), getSelf()))
 
-                .match(
-                        JobProto.SendWorkerAssignementsIfChanged.class,
-                        (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
-                .match(KillJobResponse.class, (x) -> LOGGER.info("Received Kill Job Response in"
-                        + "Terminating State Ignoring"))
+            .match(
+                JobProto.SendWorkerAssignementsIfChanged.class,
+                (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
+            .match(KillJobResponse.class, (x) -> LOGGER.info("Received Kill Job Response in"
+                + "Terminating State Ignoring"))
 
-                .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
+            .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
 
-                // UNEXPECTED MESSAGES END
+            // UNEXPECTED MESSAGES END
 
-                .build();
+            .build();
     }
 
     /**
@@ -450,68 +453,68 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private Receive getTerminatedBehavior() {
         String state = "terminated";
         return receiveBuilder()
-                // EXPECTED MESSAGES BEGIN//
-                // get Job Details
-                .match(GetJobDetailsRequest.class, this::onGetJobDetails)
+            // EXPECTED MESSAGES BEGIN//
+            // get Job Details
+            .match(GetJobDetailsRequest.class, this::onGetJobDetails)
 
-                // process request to get the given job definition updated by this job actor.
-                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
+            // process request to get the given job definition updated by this job actor.
+            .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
 
-                // list active workers request
-                .match(ListWorkersRequest.class, this::onListActiveWorkers)
+            // list active workers request
+            .match(ListWorkersRequest.class, this::onListActiveWorkers)
 
-                // EXPECTED MESSAGES END//
+            // EXPECTED MESSAGES END//
 
-                // UNEXPECTED MESSAGES BEGIN //
+            // UNEXPECTED MESSAGES BEGIN //
 
-                .match(InitJob.class, (x) -> getSender().tell(
-                        new JobInitialized(x.requestId, SUCCESS, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), this.jobId, x.requstor), getSelf()))
-                // explicit resubmit worker
-                .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(
-                        new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR,
-                                genUnexpectedMsg(x.toString(), this.jobId.getId(), state)), getSelf()))
-                // Heart beat accounting timers
-                .match(JobProto.CheckHeartBeat.class, (x) -> LOGGER.warn(
-                        genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
-                // Migrate worker request
-                .match(JobProto.MigrateDisabledVmWorkersRequest.class, (x) -> LOGGER.warn(
-                        genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
-                // runtime limit reached
-                .match(JobProto.RuntimeLimitReached.class, (x) -> LOGGER.warn(
-                        genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
-                // Kill job request
-                .match(JobClusterProto.KillJobRequest.class, (x) -> getSender().tell(
-                        new KillJobResponse(x.requestId, SUCCESS, JobState.Noop,
-                                genUnexpectedMsg(x.toString(), this.jobId.getId(), state), this.jobId, x.user),
-                        getSelf()))
-                // scale stage request
-                .match(ScaleStageRequest.class, (x) -> getSender().tell(
-                        new ScaleStageResponse(x.requestId, CLIENT_ERROR,
-                                genUnexpectedMsg(x.toString(), this.jobId.getId(), state), 0),
-                        getSelf()))
-                // scheduling Info observable
-                .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(
-                        new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), empty()), getSelf()))
-                .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
-                        new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+            .match(InitJob.class, (x) -> getSender().tell(
+                new JobInitialized(x.requestId, SUCCESS, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state), this.jobId, x.requstor), getSelf()))
+            // explicit resubmit worker
+            .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(
+                new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR,
+                    genUnexpectedMsg(x.toString(), this.jobId.getId(), state)), getSelf()))
+            // Heart beat accounting timers
+            .match(JobProto.CheckHeartBeat.class, (x) -> LOGGER.warn(
+                genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
+            // Migrate worker request
+            .match(JobProto.MigrateDisabledVmWorkersRequest.class, (x) -> LOGGER.warn(
+                genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
+            // runtime limit reached
+            .match(JobProto.RuntimeLimitReached.class, (x) -> LOGGER.warn(
+                genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
+            // Kill job request
+            .match(JobClusterProto.KillJobRequest.class, (x) -> getSender().tell(
+                new KillJobResponse(x.requestId, SUCCESS, JobState.Noop,
+                    genUnexpectedMsg(x.toString(), this.jobId.getId(), state), this.jobId, x.user),
+                getSelf()))
+            // scale stage request
+            .match(ScaleStageRequest.class, (x) -> getSender().tell(
+                new ScaleStageResponse(x.requestId, CLIENT_ERROR,
+                    genUnexpectedMsg(x.toString(), this.jobId.getId(), state), 0),
+                getSelf()))
+            // scheduling Info observable
+            .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(
+                new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+            .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
+                new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state), empty()), getSelf()))
 
-                .match(KillJobResponse.class, (x) -> LOGGER.info("Received Kill Job Response in"
-                        + "Terminating State Ignoring"))
+            .match(KillJobResponse.class, (x) -> LOGGER.info("Received Kill Job Response in"
+                + "Terminating State Ignoring"))
 
-                .match(JobProto.SendWorkerAssignementsIfChanged.class, (x) -> LOGGER.warn(genUnexpectedMsg(
-                        x.toString(), this.jobId.getId(), state)))
+            .match(JobProto.SendWorkerAssignementsIfChanged.class, (x) -> LOGGER.warn(genUnexpectedMsg(
+                x.toString(), this.jobId.getId(), state)))
 
-                // Worker related events
-                .match(WorkerEvent.class, (x) -> LOGGER.info("Received worker event  in Terminated State Ignoring"))
+            // Worker related events
+            .match(WorkerEvent.class, (x) -> LOGGER.info("Received worker event  in Terminated State Ignoring"))
 
-                .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
+            .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
 
-                // UNEXPECTED MESSAGES END
+            // UNEXPECTED MESSAGES END
 
-                .build();
+            .build();
     }
 
     /**
@@ -524,43 +527,43 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         String state = "active";
         // get Job Details
         return receiveBuilder()
-                // EXPECTED MESSAGES BEGIN//
-                .match(GetJobDetailsRequest.class, this::onGetJobDetails)
+            // EXPECTED MESSAGES BEGIN//
+            .match(GetJobDetailsRequest.class, this::onGetJobDetails)
 
-                // process request to get the given job definition updated by this job actor.
-                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
+            // process request to get the given job definition updated by this job actor.
+            .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
 
-                // Worker related events
-                .match(WorkerEvent.class, r -> processWorkerEvent(r))
-                // explicit resubmit worker
-                .match(ResubmitWorkerRequest.class, this::onResubmitWorker)
-                // Heart beat accounting timers
-                .match(JobProto.CheckHeartBeat.class, this::onCheckHeartBeats)
-                // Migrate workers from disabled VMs
-                .match(JobProto.MigrateDisabledVmWorkersRequest.class, this::onMigrateWorkers)
-                // runtime limit reached
-                .match(JobProto.RuntimeLimitReached.class, this::onRuntimeLimitReached)
-                // Kill job request
-                .match(JobClusterProto.KillJobRequest.class, this::onJobKill)
-                // scale stage request
-                .match(ScaleStageRequest.class, this::onScaleStage)
-                // list active workers request
-                .match(ListWorkersRequest.class, this::onListActiveWorkers)
-                // scheduling Info observable
-                .match(GetJobSchedInfoRequest.class, this::onGetJobStatusSubject)
-                .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
+            // Worker related events
+            .match(WorkerEvent.class, r -> processWorkerEvent(r))
+            // explicit resubmit worker
+            .match(ResubmitWorkerRequest.class, this::onResubmitWorker)
+            // Heart beat accounting timers
+            .match(JobProto.CheckHeartBeat.class, this::onCheckHeartBeats)
+            // Migrate workers from disabled VMs
+            .match(JobProto.MigrateDisabledVmWorkersRequest.class, this::onMigrateWorkers)
+            // runtime limit reached
+            .match(JobProto.RuntimeLimitReached.class, this::onRuntimeLimitReached)
+            // Kill job request
+            .match(JobClusterProto.KillJobRequest.class, this::onJobKill)
+            // scale stage request
+            .match(ScaleStageRequest.class, this::onScaleStage)
+            // list active workers request
+            .match(ListWorkersRequest.class, this::onListActiveWorkers)
+            // scheduling Info observable
+            .match(GetJobSchedInfoRequest.class, this::onGetJobStatusSubject)
+            .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
 
-                .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
+            .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
 
-                // EXPECTED MESSAGES END//
-                // UNEXPECTED MESSAGES BEGIN //
-                .match(InitJob.class, (x) -> getSender().tell(new JobInitialized(x.requestId, SUCCESS,
-                        genUnexpectedMsg(x.toString(), this.jobId.getId(), state), this.jobId, x.requstor), getSelf()))
+            // EXPECTED MESSAGES END//
+            // UNEXPECTED MESSAGES BEGIN //
+            .match(InitJob.class, (x) -> getSender().tell(new JobInitialized(x.requestId, SUCCESS,
+                genUnexpectedMsg(x.toString(), this.jobId.getId(), state), this.jobId, x.requstor), getSelf()))
 
-                .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
-                // UNEXPECTED MESSAGES END //
+            .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
+            // UNEXPECTED MESSAGES END //
 
-                .build();
+            .build();
     }
 
     /**
@@ -572,47 +575,47 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private Receive getInitializedBehavior() {
         String state = "initialized";
         return receiveBuilder()
-                // EXPECTED MESSAGES BEGIN//
-                // get Job Details
-                .match(GetJobDetailsRequest.class, this::onGetJobDetails)
-                // process request to get the given job definition updated by this job actor.
-                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
-                // Worker related events
-                .match(WorkerEvent.class, r -> processWorkerEvent(r))
-                // Heart beat accounting timers
-                .match(JobProto.CheckHeartBeat.class, this::onCheckHeartBeats)
-                // Migrate workers from disabled VMs
-                .match(JobProto.MigrateDisabledVmWorkersRequest.class, this::onMigrateWorkers)
-                // Kill job request
-                .match(JobClusterProto.KillJobRequest.class, this::onJobKill)
-                // list active workers request
-                .match(ListWorkersRequest.class, this::onListActiveWorkers)
+            // EXPECTED MESSAGES BEGIN//
+            // get Job Details
+            .match(GetJobDetailsRequest.class, this::onGetJobDetails)
+            // process request to get the given job definition updated by this job actor.
+            .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
+            // Worker related events
+            .match(WorkerEvent.class, r -> processWorkerEvent(r))
+            // Heart beat accounting timers
+            .match(JobProto.CheckHeartBeat.class, this::onCheckHeartBeats)
+            // Migrate workers from disabled VMs
+            .match(JobProto.MigrateDisabledVmWorkersRequest.class, this::onMigrateWorkers)
+            // Kill job request
+            .match(JobClusterProto.KillJobRequest.class, this::onJobKill)
+            // list active workers request
+            .match(ListWorkersRequest.class, this::onListActiveWorkers)
 
-                .match(GetJobSchedInfoRequest.class, this::onGetJobStatusSubject)
-                .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
+            .match(GetJobSchedInfoRequest.class, this::onGetJobStatusSubject)
+            .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
 
-                .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
+            .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
 
-                // EXPECTED MESSAGES END//
+            // EXPECTED MESSAGES END//
 
-                // UNEXPECTED MESSAGES BEGIN //
-                // explicit resubmit worker
-                .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(
-                        new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state)), getSelf()))
-                // runtime limit reached
-                .match(JobProto.RuntimeLimitReached.class, (x) -> LOGGER.warn(genUnexpectedMsg(
-                        x.toString(), this.jobId.getId(), state)))
-                // scale stage request
-                .match(ScaleStageRequest.class, (x) -> getSender().tell(
-                        new ScaleStageResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), 0), getSelf()))
+            // UNEXPECTED MESSAGES BEGIN //
+            // explicit resubmit worker
+            .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(
+                new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state)), getSelf()))
+            // runtime limit reached
+            .match(JobProto.RuntimeLimitReached.class, (x) -> LOGGER.warn(genUnexpectedMsg(
+                x.toString(), this.jobId.getId(), state)))
+            // scale stage request
+            .match(ScaleStageRequest.class, (x) -> getSender().tell(
+                new ScaleStageResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state), 0), getSelf()))
 
-                .match(InitJob.class, (x) -> getSender().tell(new JobInitialized(x.requestId, SUCCESS,
-                        genUnexpectedMsg(x.toString(), this.jobId.getId(), state), this.jobId, x.requstor), getSelf()))
-                .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
-                // UNEXPECTED MESSAGES END //
-                .build();
+            .match(InitJob.class, (x) -> getSender().tell(new JobInitialized(x.requestId, SUCCESS,
+                genUnexpectedMsg(x.toString(), this.jobId.getId(), state), this.jobId, x.requstor), getSelf()))
+            .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
+            // UNEXPECTED MESSAGES END //
+            .build();
     }
 
     /**
@@ -623,67 +626,67 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private Receive getInitializingBehavior() {
         String state = "initializing";
         return receiveBuilder()
-                // EXPECTED MESSAGES BEING//
+            // EXPECTED MESSAGES BEING//
 
-                .match(InitJob.class, this::onJobInitialize)
+            .match(InitJob.class, this::onJobInitialize)
 
-                // EXPECTED MESSAGES END//
+            // EXPECTED MESSAGES END//
 
-                //UNEXPECTED MESSAGES BEGIN //
+            //UNEXPECTED MESSAGES BEGIN //
 
-                // get Job Details
-                .match(GetJobDetailsRequest.class, (x) -> getSender().tell(
-                        new GetJobDetailsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+            // get Job Details
+            .match(GetJobDetailsRequest.class, (x) -> getSender().tell(
+                new GetJobDetailsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state), empty()), getSelf()))
 
-                // no invalid metadata to use, return intermediate job definition directly
-                .match(
-                        GetJobDefinitionUpdatedFromJobActorRequest.class,
-                        (r) -> getSender().tell(
-                                new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
-                                        r.requestId, SUCCESS, "", r.getUser(), r.getJobDefinition(),
-                                        r.isAutoResubmit(), r.isQuickSubmit(), r.getOriginalSender()),
-                                getSelf()))
+            // no invalid metadata to use, return intermediate job definition directly
+            .match(
+                GetJobDefinitionUpdatedFromJobActorRequest.class,
+                (r) -> getSender().tell(
+                    new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
+                        r.requestId, SUCCESS, "", r.getUser(), r.getJobDefinition(),
+                        r.isAutoResubmit(), r.isQuickSubmit(), r.getOriginalSender()),
+                    getSelf()))
 
-                // Worker related events
-                .match(WorkerEvent.class, (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
-                // explicit resubmit worker
-                .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(
-                        new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state)), getSelf()))
-                // Heart beat accounting timers
-                .match(JobProto.CheckHeartBeat.class, (x) -> LOGGER.warn(genUnexpectedMsg(
-                        x.toString(), this.jobId.getId(), state)))
-                // Migrate workers request
-                .match(JobProto.MigrateDisabledVmWorkersRequest.class, (x) -> LOGGER.warn(genUnexpectedMsg(
-                        x.toString(), this.jobId.getId(), state)))
-                // runtime limit reached
-                .match(JobProto.RuntimeLimitReached.class, (x) -> LOGGER.warn(genUnexpectedMsg(
-                        x.toString(), this.jobId.getId(), state)))
-                // Kill job request
-                .match(JobClusterProto.KillJobRequest.class, (x) -> getSender().tell(
-                        new KillJobResponse(x.requestId, CLIENT_ERROR, JobState.Noop, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), this.jobId, x.user), getSelf()))
-                // scale stage request
-                .match(ScaleStageRequest.class, (x) -> getSender().tell(
-                        new ScaleStageResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), 0), getSelf()))
-                // list active workers request
-                .match(ListWorkersRequest.class, (x) -> getSender().tell(
-                        new ListWorkersResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), Lists.newArrayList()), getSelf()))
-                // scheduling Info observable
-                .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(
-                        new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), empty()), getSelf()))
-                // latest scheduling Info
-                .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
-                        new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+            // Worker related events
+            .match(WorkerEvent.class, (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
+            // explicit resubmit worker
+            .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(
+                new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state)), getSelf()))
+            // Heart beat accounting timers
+            .match(JobProto.CheckHeartBeat.class, (x) -> LOGGER.warn(genUnexpectedMsg(
+                x.toString(), this.jobId.getId(), state)))
+            // Migrate workers request
+            .match(JobProto.MigrateDisabledVmWorkersRequest.class, (x) -> LOGGER.warn(genUnexpectedMsg(
+                x.toString(), this.jobId.getId(), state)))
+            // runtime limit reached
+            .match(JobProto.RuntimeLimitReached.class, (x) -> LOGGER.warn(genUnexpectedMsg(
+                x.toString(), this.jobId.getId(), state)))
+            // Kill job request
+            .match(JobClusterProto.KillJobRequest.class, (x) -> getSender().tell(
+                new KillJobResponse(x.requestId, CLIENT_ERROR, JobState.Noop, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state), this.jobId, x.user), getSelf()))
+            // scale stage request
+            .match(ScaleStageRequest.class, (x) -> getSender().tell(
+                new ScaleStageResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state), 0), getSelf()))
+            // list active workers request
+            .match(ListWorkersRequest.class, (x) -> getSender().tell(
+                new ListWorkersResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state), Lists.newArrayList()), getSelf()))
+            // scheduling Info observable
+            .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(
+                new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+            // latest scheduling Info
+            .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
+                new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                    x.toString(), this.jobId.getId(), state), empty()), getSelf()))
 
-                //UNEXPECTED MESSAGES END //
-                .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
-                .build();
+            //UNEXPECTED MESSAGES END //
+            .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
+            .build();
     }
 
     //////////////////////////////////////////// Akka Messages sent to the Job Actor Begin/////////////////////
@@ -702,12 +705,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 getContext().become(initializedBehavior);
             }
             sender.tell(new JobInitialized(i.requestId, SUCCESS, String.format(
-                    "Job %s initialized successfully", jobId), jobId, i.requstor), getSelf());
+                "Job %s initialized successfully", jobId), jobId, i.requstor), getSelf());
         } catch (Exception e) {
             LOGGER.error("Exception initializing job ", e);
             sender.tell(
-                    new JobInitialized(i.requestId, SERVER_ERROR, "" + e.getMessage(), jobId, i.requstor),
-                    getSelf());
+                new JobInitialized(i.requestId, SERVER_ERROR, "" + e.getMessage(), jobId, i.requstor),
+                getSelf());
         }
     }
 
@@ -726,8 +729,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     public void onGetJobDefinitionUpdatedFromJobActor(GetJobDefinitionUpdatedFromJobActorRequest r) {
         ActorRef sender = getSender();
         sender.tell(
-                getIntermediateJobDefinition(r),
-                getSelf());
+            getIntermediateJobDefinition(r),
+            getSelf());
     }
 
     /**
@@ -741,7 +744,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         ActorRef sender = getSender();
         if (r.getJobId().equals(this.jobId)) {
             sender.tell(new GetJobSchedInfoResponse(r.requestId, SUCCESS, "",
-                    of(workerManager.getJobStatusSubject())), getSelf());
+                of(workerManager.getJobStatusSubject())), getSelf());
         } else {
             String msg = "JobId in the request " + r.getJobId() + " does not match Job Actors job Id " + this.jobId;
             LOGGER.warn(msg);
@@ -756,17 +759,17 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             JobSchedulingInfo schedulingInfo = workerManager.getJobStatusSubject().getValue();
             if (schedulingInfo != null) {
                 sender.tell(new GetLatestJobDiscoveryInfoResponse(r.requestId, SUCCESS, "",
-                        ofNullable(schedulingInfo)), getSelf());
+                    ofNullable(schedulingInfo)), getSelf());
             } else {
                 LOGGER.info("discoveryInfo from BehaviorSubject is null {}", jobId);
                 sender.tell(new GetLatestJobDiscoveryInfoResponse(r.requestId,
-                        SERVER_ERROR,
-                        "discoveryInfo from BehaviorSubject is null " + jobId,
-                        empty()), getSelf());
+                    SERVER_ERROR,
+                    "discoveryInfo from BehaviorSubject is null " + jobId,
+                    empty()), getSelf());
             }
         } else {
             String msg = "JobCluster in the request " + r.getJobCluster() + " does not match Job Actors job ID "
-                    + this.jobId;
+                + this.jobId;
             LOGGER.warn(msg);
             sender.tell(new GetLatestJobDiscoveryInfoResponse(r.requestId, SERVER_ERROR, msg, empty()), getSelf());
         }
@@ -788,13 +791,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         ActorRef sender = getSender();
         try {
             eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
-                    r.getWorkerNum() + " workerNum resubmit requested by " + r.getUser() + " , reason: "
-                            + r.getReason(),
-                    getJobId(), getJobState()));
+                r.getWorkerNum() + " workerNum resubmit requested by " + r.getUser() + " , reason: "
+                    + r.getReason(),
+                getJobId(), getJobState()));
             this.workerManager.resubmitWorker(r.getWorkerNum());
             numWorkerResubmissions.increment();
             sender.tell(new ResubmitWorkerResponse(r.requestId, SUCCESS,
-                    String.format("Worker %d of job %s resubmitted", r.getWorkerNum(), r.getJobId())), getSelf());
+                String.format("Worker %d of job %s resubmitted", r.getWorkerNum(), r.getJobId())), getSelf());
         } catch (Exception e) {
             sender.tell(new ResubmitWorkerResponse(r.requestId, SERVER_ERROR, e.getMessage()), getSelf());
         }
@@ -819,10 +822,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     public void onRuntimeLimitReached(final JobProto.RuntimeLimitReached r) {
         LOGGER.info("In onRuntimeLimitReached {} for Job {} ", Instant.now(), this.jobId);
         LOGGER.info("Job {} Started at {} and killed at {} due to Runtime limit reached", jobId,
-                mantisJobMetaData.getStartedAtInstant().orElse(Instant.now()), Instant.now());
+            mantisJobMetaData.getStartedAtInstant().orElse(Instant.now()), Instant.now());
         getContext().getParent().tell(new JobClusterProto.KillJobRequest(jobId,
-                "runtime limit reached", JobCompletedReason.Killed,
-                MANTIS_MASTER_USER, ActorRef.noSender()), getSelf());
+            "runtime limit reached", JobCompletedReason.Killed,
+            MANTIS_MASTER_USER, ActorRef.noSender()), getSelf());
     }
 
     @Override
@@ -849,7 +852,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 getJobId(), getJobState()));
             JobState newState;
             if (req.jobCompletedReason.equals(JobCompletedReason.Error)
-                    || req.jobCompletedReason.equals(JobCompletedReason.Lost)) {
+                || req.jobCompletedReason.equals(JobCompletedReason.Lost)) {
                 newState = JobState.Failed;
             } else {
                 newState = JobState.Completed;
@@ -858,7 +861,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             updateStateAndPersist(newState);
             // inform caller
             sender.tell(new JobClusterProto.KillJobResponse(req.requestId, SUCCESS, getJobState(), getJobId()
-                    + " terminated", getJobId(), this.mantisJobMetaData, req.user, req.requestor), getSelf());
+                + " terminated", getJobId(), this.mantisJobMetaData, req.user, req.requestor), getSelf());
             // continue with rest of the shutdown
             getTimers().cancel(CHECK_HB_TIMER_KEY);
             getContext().become(terminatingBehavior);
@@ -870,8 +873,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         } catch (Exception e) {
             LOGGER.error("Failed to kill job {}", jobId, e);
             sender.tell(new JobClusterProto.KillJobResponse(req.requestId, SERVER_ERROR, getJobState(),
-                    getJobId() + " Could not be terminated due to " + e.getMessage(), getJobId(),
-                    this.mantisJobMetaData, req.user, req.requestor), getSelf());
+                getJobId() + " Could not be terminated due to " + e.getMessage(), getJobId(),
+                this.mantisJobMetaData, req.user, req.requestor), getSelf());
         }
     }
 
@@ -885,7 +888,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         if (!stageMeta.isPresent()) {
             LOGGER.warn("Stage {} does not exist in Job {}", scaleStage.getStageNum(), this.jobId);
             sender.tell(new ScaleStageResponse(scaleStage.requestId, CLIENT_ERROR, "Non existent stage "
-                    + scaleStage.getStageNum(), 0), getSelf());
+                + scaleStage.getStageNum(), 0), getSelf());
             return;
         }
 
@@ -894,24 +897,24 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         if (!stageMetaData.getScalable()) {
             LOGGER.warn("Stage {} is not scalable in Job {}", scaleStage.getStageNum(), this.jobId);
             eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(
-                    LifecycleEventsProto.StatusEvent.StatusEventType.WARN,
-                    "Can't change #workers to " + scaleStage.getNumWorkers() + ", stage "
-                            + scaleStage.getStageNum() + " is not scalable", getJobId(), getJobState()));
+                LifecycleEventsProto.StatusEvent.StatusEventType.WARN,
+                "Can't change #workers to " + scaleStage.getNumWorkers() + ", stage "
+                    + scaleStage.getStageNum() + " is not scalable", getJobId(), getJobState()));
             sender.tell(new ScaleStageResponse(scaleStage.requestId, CLIENT_ERROR, "Stage "
-                    + scaleStage.getStageNum() + " is not scalable", 0), getSelf());
+                + scaleStage.getStageNum() + " is not scalable", 0), getSelf());
             return;
         }
 
         try {
             int actualScaleup = this.workerManager.scaleStage(stageMetaData, scaleStage.getNumWorkers(),
-                    scaleStage.getReason());
+                scaleStage.getReason());
 
             LOGGER.info("Scaled stage {} to {} workers for Job {}", scaleStage.getStageNum(), actualScaleup,
-                    this.jobId);
+                this.jobId);
             numScaleStage.increment();
             sender.tell(new ScaleStageResponse(scaleStage.requestId, SUCCESS,
-                    String.format("Scaled stage %d to %d workers", scaleStage.getStageNum(), actualScaleup),
-                    actualScaleup), getSelf());
+                String.format("Scaled stage %d to %d workers", scaleStage.getStageNum(), actualScaleup),
+                actualScaleup), getSelf());
         } catch (Exception e) {
             String msg = String.format("Stage %d scale failed due to %s", scaleStage.getStageNum(), e.getMessage());
             LOGGER.error(msg, e);
@@ -929,7 +932,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         List<IMantisWorkerMetadata> activeWorkers = this.workerManager.getActiveWorkers(listWorkersRequest.getLimit());
 
         sender.tell(new ListWorkersResponse(listWorkersRequest.requestId, SUCCESS, "",
-                Collections.unmodifiableList(activeWorkers)), getSelf());
+            Collections.unmodifiableList(activeWorkers)), getSelf());
     }
 
     //////////////////////////////////////////// Akka Messages sent to the Job Actor End/////////////////////////
@@ -960,9 +963,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             LOGGER.info("All workers completed but job {} in {} state. Request termination", jobId, getJobState());
             allWorkersCompleted = true;
             getContext().parent().tell(
-                    new JobClusterProto.KillJobRequest(
-                            jobId, "Job Completed", JobCompletedReason.Normal, MANTIS_MASTER_USER,
-                            ActorRef.noSender()), getSelf());
+                new JobClusterProto.KillJobRequest(
+                    jobId, "Job Completed", JobCompletedReason.Normal, MANTIS_MASTER_USER,
+                    ActorRef.noSender()), getSelf());
 
             numWorkersCompletedNotTerminal.increment();
         } else {
@@ -985,7 +988,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // update behavior to active
                 getContext().become(activeBehavior);
                 eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
-                        "all workers started, job transitioning to Active", getJobId(), getJobState()));
+                    "all workers started, job transitioning to Active", getJobId(), getJobState()));
 
                 // inform job cluster manager that the job has started
                 getContext().getParent().tell(new JobClusterProto.JobStartedEvent(getJobId()), getSelf());
@@ -1022,14 +1025,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         boolean isSuccess = true;
 
         eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(ERROR,
-                "Worker Resubmit limit reached, shutting down job", getJobId(), getJobState()));
+            "Worker Resubmit limit reached, shutting down job", getJobId(), getJobState()));
         numWorkerResubmitLimitReached.increment();
         //updateStateAndPersist(JobState.Terminating_abnormal);
         // ask Parent to shut it down
         getContext().parent().tell(
-                new JobClusterProto.KillJobRequest(
-                        jobId, "Too many worker resubmits", JobCompletedReason.Error, MANTIS_MASTER_USER,
-                        ActorRef.noSender()), getSelf());
+            new JobClusterProto.KillJobRequest(
+                jobId, "Too many worker resubmits", JobCompletedReason.Error, MANTIS_MASTER_USER,
+                ActorRef.noSender()), getSelf());
         return isSuccess;
     }
 
@@ -1045,25 +1048,25 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     }
 
     public JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse getIntermediateJobDefinition(
-            GetJobDefinitionUpdatedFromJobActorRequest r) {
+        GetJobDefinitionUpdatedFromJobActorRequest r) {
         final JobDefinition givenJobDefn = r.getJobDefinition();
         final boolean forceInheritance = r.isQuickSubmit();
         IMantisJobMetadata lastJobMeta = this.mantisJobMetaData;
         JobDefinition.Builder jobDefnBuilder = new JobDefinition.Builder().fromWithInstanceCountInheritance(
-                givenJobDefn,
-                forceInheritance,
-                (stageId) -> lastJobMeta.getStageMetadata(stageId).map(IMantisStageMetadata::getNumWorkers));
+            givenJobDefn,
+            forceInheritance,
+            (stageId) -> lastJobMeta.getStageMetadata(stageId).map(IMantisStageMetadata::getNumWorkers));
 
         try {
             JobDefinition mergedJobDefn = jobDefnBuilder.build();
             return new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
-                    r.requestId, SUCCESS, "", r.getUser(), mergedJobDefn, r.isAutoResubmit(),
-                    r.isQuickSubmit(), r.getOriginalSender());
+                r.requestId, SUCCESS, "", r.getUser(), mergedJobDefn, r.isAutoResubmit(),
+                r.isQuickSubmit(), r.getOriginalSender());
         } catch (io.mantisrx.runtime.command.InvalidJobException ije) {
             LOGGER.error("Failed to build job definition with inheritance:", ije);
             return new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
-                    r.requestId, SERVER_ERROR, ije.getMessage(), r.getUser(), null, r.isAutoResubmit(),
-                    r.isQuickSubmit(), r.getOriginalSender());
+                r.requestId, SERVER_ERROR, ije.getMessage(), r.getUser(), null, r.isAutoResubmit(),
+                r.isQuickSubmit(), r.getOriginalSender());
         }
     }
 
@@ -1081,11 +1084,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         workerManager.shutdown();
 
         eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
-                "job shutdown, reason: " + reason,
-                getJobId(), state));
+            "job shutdown, reason: " + reason,
+            getJobId(), state));
         eventPublisher.publishAuditEvent(new LifecycleEventsProto.AuditEvent(
-                LifecycleEventsProto.AuditEvent.AuditEventType.JOB_TERMINATE,
-                jobId.getId(), "job shutdown, reason: " + reason));
+            LifecycleEventsProto.AuditEvent.AuditEventType.JOB_TERMINATE,
+            jobId.getId(), "job shutdown, reason: " + reason));
     }
 
     @Override
@@ -1115,10 +1118,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             LOGGER.info("Will terminate Job {} at {} ", jobId, (currentTime.plusSeconds(terminateJobInSecs)));
 
             getTimers().startSingleTimer("RUNTIME_LIMIT", new JobProto.RuntimeLimitReached(),
-                    Duration.ofSeconds(terminateJobInSecs));
+                Duration.ofSeconds(terminateJobInSecs));
         } else {
             LOGGER.info("maxRuntime for Job {} is  {} ignore ", jobId, mantisJobMetaData.getJobDefinition()
-                    .getJobSla().getRuntimeLimitSecs());
+                .getJobSla().getRuntimeLimitSecs());
         }
     }
 
@@ -1153,8 +1156,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             return 0;
         }
         return mjmd.getSubscriptionTimeoutSecs() == 0
-                ? ConfigurationProvider.getConfig().getEphemeralJobUnsubscribedTimeoutSecs()
-                : mjmd.getSubscriptionTimeoutSecs();
+            ? ConfigurationProvider.getConfig().getEphemeralJobUnsubscribedTimeoutSecs()
+            : mjmd.getSubscriptionTimeoutSecs();
     }
 
     static long getHeartbeatIntervalSecs(final IMantisJobMetadata mjmd) {
@@ -1171,11 +1174,15 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         private static final Logger LOGGER = LoggerFactory.getLogger(WorkerNumberGenerator.class);
         private static final int DEFAULT_INCREMENT_STEP = 10;
+        private static final int MAX_ATTEMPTS = 3;
+        private static final long SLEEP_DURATION_MS = Duration.ofSeconds(2).toMillis();
         private final int incrementStep;
         private int lastUsed;
         private int currLimit;
 
         private volatile boolean hasErrored = false;
+        private final AtomicInteger pendingFlushCnt = new AtomicInteger(0);
+        private static final int MAX_PENDING_FLUSH_CNT = 5;
 
         /**
          * Creates an instance of this class.
@@ -1185,9 +1192,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          */
         WorkerNumberGenerator(int lastUsed, int incrementStep) {
             Preconditions.checkArgument(lastUsed >= 0,
-                    "Last Used worker Number cannot be negative {} ", lastUsed);
+                "Last Used worker Number cannot be negative {} ", lastUsed);
             Preconditions.checkArgument(incrementStep >= 1,
-                    "incrementStepcannot be less than 1 {} ", incrementStep);
+                "incrementStep cannot be less than 1 {} ", incrementStep);
 
             this.lastUsed = lastUsed;
             this.currLimit = lastUsed;
@@ -1203,20 +1210,39 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         private void advance(MantisJobMetadataImpl mantisJobMetaData, MantisJobStore jobStore) {
             try {
-                currLimit += incrementStep;
-
-                mantisJobMetaData.setNextWorkerNumberToUse(currLimit, jobStore);
+                final int value = currLimit + incrementStep;
+                // If store operations fail, extraneous workers will be killed since currLimit would be lower
+                setNextWorkerNumberWithRetries(mantisJobMetaData, jobStore, value);
+                currLimit = value;
             } catch (Exception e) {
                 hasErrored = true;
-                LOGGER.error("Exception setting next Worker number to use ", e);
+                LOGGER.error("Exception setting next Worker number to use, " +
+                    "{} consecutive failed attempts", MAX_PENDING_FLUSH_CNT, e);
                 throw new RuntimeException("Unexpected error setting next worker number to use", e);
             }
+        }
+
+        private void setNextWorkerNumberWithRetries(MantisJobMetadataImpl mantisJobMetaData, MantisJobStore jobStore, int value) throws Exception {
+            int attempts = 0;
+            Exception exception = null;
+            while (attempts < MAX_ATTEMPTS) {
+                try {
+                    mantisJobMetaData.setNextWorkerNumberToUse(value, jobStore);
+                    return;
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to setNextWorkerNumberToUse to {} (attempt {}/{})", value, attempts, MAX_ATTEMPTS, e);
+                    exception = e;
+                }
+                Thread.sleep(SLEEP_DURATION_MS);
+                attempts++;
+            }
+            throw exception;
         }
 
         /**
          * Get the next unused worker number.
          * <p>
-         * For performance reasosns, this object updates state in persistence every N calls made to this method.
+         * For performance reasons, this object updates state in persistence every N calls made to this method.
          *
          * @return The next worker number to use for new workers
          * @throws IllegalStateException if there was an error saving the next worker number to use to the job store
@@ -1224,7 +1250,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         int getNextWorkerNumber(MantisJobMetadataImpl mantisJobMetaData, MantisJobStore jobStore) {
             if (hasErrored) {
                 throw new IllegalStateException("Unexpected: Invalid state likely due to getting/setting"
-                        + "next worker number");
+                    + "next worker number");
             }
 
             if (lastUsed == currLimit) {
@@ -1256,8 +1282,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private final WorkerResubmitRateLimiter resubmitRateLimiter = new WorkerResubmitRateLimiter();
         // Use expiring cache to effectively track worker resubmitted in the last hour.
         private Cache<Integer, Boolean> recentErrorWorkersCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(1, TimeUnit.HOURS)
-                .build();
+            .expireAfterWrite(1, TimeUnit.HOURS)
+            .build();
         private volatile boolean stageAssignmentPotentiallyChanged;
         private final boolean batchSchedulingEnabled;
 
@@ -1271,11 +1297,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          * @throws Exception
          */
         WorkerManager(
-                IMantisJobManager jobMgr, WorkerMigrationConfig migrationConfig, MantisScheduler scheduler,
-                boolean isSubmit, boolean batchSchedulingEnabled) throws Exception {
+            IMantisJobManager jobMgr, WorkerMigrationConfig migrationConfig, MantisScheduler scheduler,
+            boolean isSubmit, boolean batchSchedulingEnabled) throws Exception {
 
             workerNumberGenerator = new WorkerNumberGenerator((isSubmit) ? 0
-                    : jobMgr.getJobDetails().getNextWorkerNumberToUse(), WorkerNumberGenerator.DEFAULT_INCREMENT_STEP);
+                : jobMgr.getJobDetails().getNextWorkerNumberToUse(), WorkerNumberGenerator.DEFAULT_INCREMENT_STEP);
             this.scheduler = scheduler;
             this.jobMgr = jobMgr;
             this.batchSchedulingEnabled = batchSchedulingEnabled;
@@ -1337,24 +1363,24 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         // send fake heartbeat
                         try {
                             WorkerEvent fakeHB = new WorkerHeartbeat(new Status(jobId.getId(), stageMeta.getStageNum(),
-                                    wm.getWorkerIndex(), wm.getWorkerNumber(), Status.TYPE.HEARTBEAT, "",
-                                    MantisJobState.Started, System.currentTimeMillis()));
+                                wm.getWorkerIndex(), wm.getWorkerNumber(), Status.TYPE.HEARTBEAT, "",
+                                MantisJobState.Started, System.currentTimeMillis()));
                             worker.processEvent(fakeHB, jobStore);
                         } catch (InvalidWorkerStateChangeException | IOException e) {
                             LOGGER.error("problem sending initial heartbeat for Job {} during initialization",
-                                    worker.getMetadata().getJobId(), e);
+                                worker.getMetadata().getJobId(), e);
                         }
 
                         workerHosts.put(
+                            wm.getWorkerNumber(),
+                            new WorkerHost(
+                                wm.getSlave(),
+                                wm.getWorkerIndex(),
+                                wm.getWorkerPorts().getPorts(),
+                                DataFormatAdapter.convertWorkerStateToMantisJobState(wm.getState()),
                                 wm.getWorkerNumber(),
-                                new WorkerHost(
-                                        wm.getSlave(),
-                                        wm.getWorkerIndex(),
-                                        wm.getWorkerPorts().getPorts(),
-                                        DataFormatAdapter.convertWorkerStateToMantisJobState(wm.getState()),
-                                        wm.getWorkerNumber(),
-                                        wm.getMetricsPort(),
-                                        wm.getCustomPort()));
+                                wm.getMetricsPort(),
+                                wm.getCustomPort()));
 
                         ScheduleRequest scheduleRequest = createSchedulingRequest(wm, empty());
 
@@ -1373,7 +1399,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 if (stageMeta.getStageNum() > 0) {
                     stageAssignments.put(stageMeta.getStageNum(), new WorkerAssignments(stageMeta.getStageNum(),
-                            stageMeta.getNumWorkers(), workerHosts));
+                        stageMeta.getNumWorkers(), workerHosts));
                 }
             }
 
@@ -1392,7 +1418,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     resubmitWorker(jobWorker);
                 } catch (Exception e) {
                     LOGGER.warn("Exception resubmitting worker {} during initializeRunningWorkers due to {}",
-                            jobWorker, e.getMessage(), e);
+                        jobWorker, e.getMessage(), e);
                 }
             }
         }
@@ -1406,10 +1432,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                     Optional<WorkerPorts> workerPortsOptional = wm.getPorts();
                     if (WorkerState.isRunningState(wm.getState()) &&
-                            (!workerPortsOptional.isPresent())) {
+                        (!workerPortsOptional.isPresent())) {
 
                         LOGGER.info("marking corrupted worker {} for Job ID {} as {}",
-                                worker.getMetadata().getWorkerId(), jobId, WorkerState.Failed);
+                            worker.getMetadata().getWorkerId(), jobId, WorkerState.Failed);
                         numMissingWorkerPorts.increment();
                         // Mark this worker as corrupted.
                         corruptedWorkers.add(worker);
@@ -1417,12 +1443,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         // Send initial status event to signal to the worker to mark itself as failed.
                         try {
                             WorkerStatus status = new WorkerStatus(new Status(jobId.getId(), stageMeta.getStageNum(),
-                                    wm.getWorkerIndex(), wm.getWorkerNumber(), Status.TYPE.HEARTBEAT, "",
-                                    MantisJobState.Failed, System.currentTimeMillis()));
+                                wm.getWorkerIndex(), wm.getWorkerNumber(), Status.TYPE.HEARTBEAT, "",
+                                MantisJobState.Failed, System.currentTimeMillis()));
                             worker.processEvent(status, jobStore);
                         } catch (InvalidWorkerStateChangeException | IOException e) {
                             LOGGER.error("problem sending initial heartbeat for Job {} during initialization",
-                                    worker.getMetadata().getJobId(), e);
+                                worker.getMetadata().getJobId(), e);
                         }
                     }
                 }
@@ -1454,15 +1480,15 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     if (WorkerState.isRunningState(wm.getState())) {
 
                         workerHosts.put(
+                            wm.getWorkerNumber(),
+                            new WorkerHost(
+                                wm.getSlave(),
+                                wm.getWorkerIndex(),
+                                wm.getWorkerPorts().getPorts(),
+                                DataFormatAdapter.convertWorkerStateToMantisJobState(wm.getState()),
                                 wm.getWorkerNumber(),
-                                new WorkerHost(
-                                        wm.getSlave(),
-                                        wm.getWorkerIndex(),
-                                        wm.getWorkerPorts().getPorts(),
-                                        DataFormatAdapter.convertWorkerStateToMantisJobState(wm.getState()),
-                                        wm.getWorkerNumber(),
-                                        wm.getMetricsPort(),
-                                        wm.getCustomPort()));
+                                wm.getMetricsPort(),
+                                wm.getCustomPort()));
                         activeWorkers.add(wm);
                         acceptedAndActiveWorkers.add(wm);
                     } else if (wm.getState().equals(WorkerState.Accepted)) {
@@ -1470,14 +1496,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     }
                 }
                 stageAssignments.put(stageMeta.getStageNum(), new WorkerAssignments(stageMeta.getStageNum(),
-                        stageMeta.getNumWorkers(), workerHosts));
+                    stageMeta.getNumWorkers(), workerHosts));
             }
             JobSchedulingInfo jobSchedulingInfo = new JobSchedulingInfo(jobId.getId(), stageAssignments);
 
             jobSchedulingInfoBehaviorSubject.onNext(jobSchedulingInfo);
 
             eventPublisher.publishWorkerListChangedEvent(new LifecycleEventsProto.WorkerListChangedEvent(
-                    new WorkerInfoListHolder(this.jobMgr.getJobId(), acceptedAndActiveWorkers)));
+                new WorkerInfoListHolder(this.jobMgr.getJobId(), acceptedAndActiveWorkers)));
 
             numSchedulingChangesRefreshed.increment();
 
@@ -1486,8 +1512,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         private void submitInitialWorkers() throws Exception {
             List<IMantisWorkerMetadata> workers = getInitialWorkers(
-                    mantisJobMetaData.getJobDefinition(),
-                    System.currentTimeMillis());
+                mantisJobMetaData.getJobDefinition(),
+                System.currentTimeMillis());
 
             try {
                 jobStore.storeNewWorkers(jobMgr.getJobDetails(), workers);
@@ -1527,8 +1553,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         private ScheduleRequest createSchedulingRequest(
-                final IMantisWorkerMetadata workerRequest,
-                final Optional<Long> readyAt) {
+            final IMantisWorkerMetadata workerRequest,
+            final Optional<Long> readyAt) {
             try {
                 final WorkerId workerId = workerRequest.getWorkerId();
 
@@ -1536,7 +1562,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 final List<ConstraintEvaluator> hardConstraints = new ArrayList<>();
                 final List<VMTaskFitnessCalculator> softConstraints = new ArrayList<>();
                 Optional<IMantisStageMetadata> stageMetadataOp =
-                        mantisJobMetaData.getStageMetadata(workerRequest.getStageNum());
+                    mantisJobMetaData.getStageMetadata(workerRequest.getStageNum());
 
                 if (!stageMetadataOp.isPresent()) {
                     throw new RuntimeException(String.format("No such stage %d", workerRequest.getStageNum()));
@@ -1550,7 +1576,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 final Set<String> coTasks = new HashSet<>();
 
                 if ((stageHC != null && !stageHC.isEmpty())
-                        || (stageSC != null && !stageSC.isEmpty())) {
+                    || (stageSC != null && !stageSC.isEmpty())) {
                     for (JobWorker jobWorker : stageMetadata.getAllWorkers()) {
                         if (jobWorker.getMetadata().getWorkerNumber() != workerId.getWorkerNum()) {
                             coTasks.add(workerId.getId());
@@ -1571,26 +1597,26 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 }
 
                 ScheduleRequest sr = new ScheduleRequest(
-                        workerId,
-                        workerRequest.getStageNum(),
-                        workerRequest.getNumberOfPorts(),
-                        new JobMetadata(
-                                mantisJobMetaData.getJobId().getId(),
-                                mantisJobMetaData.getJobJarUrl(),
-                                mantisJobMetaData.getTotalStages(),
-                                mantisJobMetaData.getUser(),
-                                mantisJobMetaData.getSchedulingInfo(),
-                                mantisJobMetaData.getParameters(),
-                                getSubscriptionTimeoutSecs(mantisJobMetaData),
-                                getHeartbeatIntervalSecs(mantisJobMetaData),
-                                mantisJobMetaData.getMinRuntimeSecs()
-                        ),
-                        mantisJobMetaData.getSla().orElse(new JobSla.Builder().build()).getDurationType(),
-                        stageMetadata.getMachineDefinition(),
-                        hardConstraints,
-                        softConstraints,
-                        readyAt.orElse(0L),
-                        workerRequest.getPreferredClusterOptional());
+                    workerId,
+                    workerRequest.getStageNum(),
+                    workerRequest.getNumberOfPorts(),
+                    new JobMetadata(
+                        mantisJobMetaData.getJobId().getId(),
+                        mantisJobMetaData.getJobJarUrl(),
+                        mantisJobMetaData.getTotalStages(),
+                        mantisJobMetaData.getUser(),
+                        mantisJobMetaData.getSchedulingInfo(),
+                        mantisJobMetaData.getParameters(),
+                        getSubscriptionTimeoutSecs(mantisJobMetaData),
+                        getHeartbeatIntervalSecs(mantisJobMetaData),
+                        mantisJobMetaData.getMinRuntimeSecs()
+                    ),
+                    mantisJobMetaData.getSla().orElse(new JobSla.Builder().build()).getDurationType(),
+                    stageMetadata.getMachineDefinition(),
+                    hardConstraints,
+                    softConstraints,
+                    readyAt.orElse(0L),
+                    workerRequest.getPreferredClusterOptional());
                 return sr;
             } catch (Exception e) {
                 LOGGER.error("Exception creating scheduleRequest ", e);
@@ -1599,7 +1625,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         private List<IMantisWorkerMetadata> getInitialWorkers(JobDefinition jobDetails, long submittedAt)
-                throws Exception {
+            throws Exception {
             List<IMantisWorkerMetadata> workerRequests = Lists.newLinkedList();
             SchedulingInfo schedulingInfo = jobDetails.getSchedulingInfo();
             int totalStages = schedulingInfo.getStages().size();
@@ -1608,7 +1634,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             while (it.hasNext()) {
                 int stageNum = it.next();
                 List<IMantisWorkerMetadata> stageWorkers = setupStageWorkers(schedulingInfo, totalStages,
-                        stageNum, submittedAt);
+                    stageNum, submittedAt);
                 workerRequests.addAll(stageWorkers);
             }
 
@@ -1616,8 +1642,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         private List<IMantisWorkerMetadata> setupStageWorkers(
-                SchedulingInfo schedulingInfo, int totalStages,
-                int stageNum, long submittedAt) throws Exception {
+            SchedulingInfo schedulingInfo, int totalStages,
+            int stageNum, long submittedAt) throws Exception {
             List<IMantisWorkerMetadata> workerRequests = new LinkedList<>();
             StageSchedulingInfo stage = schedulingInfo.getStages().get(stageNum);
             if (stage == null) {
@@ -1635,17 +1661,17 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 if (!mantisJobMetaData.getStageMetadata(stageNum).isPresent()) {
                     IMantisStageMetadata msmd = new MantisStageMetadataImpl.Builder().
-                            withJobId(jobId)
-                            .withStageNum(stageNum)
-                            .withNumStages(totalStages)
-                            .withMachineDefinition(stage.getMachineDefinition())
-                            .withNumWorkers(numInstancesAtStage)
-                            .withHardConstraints(stage.getHardConstraints())
-                            .withSoftConstraints(stage.getSoftConstraints())
-                            .withScalingPolicy(stage.getScalingPolicy())
+                        withJobId(jobId)
+                        .withStageNum(stageNum)
+                        .withNumStages(totalStages)
+                        .withMachineDefinition(stage.getMachineDefinition())
+                        .withNumWorkers(numInstancesAtStage)
+                        .withHardConstraints(stage.getHardConstraints())
+                        .withSoftConstraints(stage.getSoftConstraints())
+                        .withScalingPolicy(stage.getScalingPolicy())
 
-                            .isScalable(stage.getScalable())
-                            .build();
+                        .isScalable(stage.getScalable())
+                        .build();
                     mantisJobMetaData.addJobStageIfAbsent(msmd);
                     jobStore.updateStage(msmd);
                 }
@@ -1656,29 +1682,29 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         private IMantisWorkerMetadata addWorker(SchedulingInfo schedulingInfo, int stageNo, int workerIndex)
-                throws InvalidJobException {
+            throws InvalidJobException {
             StageSchedulingInfo stageSchedInfo = schedulingInfo.getStages().get(stageNo);
             int workerNumber = workerNumberGenerator.getNextWorkerNumber(mantisJobMetaData, jobStore);
             JobWorker jw = new JobWorker.Builder()
-                    .withJobId(jobId)
-                    .withWorkerIndex(workerIndex)
-                    .withWorkerNumber(workerNumber)
-                    .withNumberOfPorts(stageSchedInfo.getMachineDefinition().getNumPorts()
-                            + MANTIS_SYSTEM_ALLOCATED_NUM_PORTS)
-                    .withStageNum(stageNo)
-                    .withLifecycleEventsPublisher(eventPublisher)
+                .withJobId(jobId)
+                .withWorkerIndex(workerIndex)
+                .withWorkerNumber(workerNumber)
+                .withNumberOfPorts(stageSchedInfo.getMachineDefinition().getNumPorts()
+                    + MANTIS_SYSTEM_ALLOCATED_NUM_PORTS)
+                .withStageNum(stageNo)
+                .withLifecycleEventsPublisher(eventPublisher)
 
-                    .build();
+                .build();
             if (!mantisJobMetaData.addWorkerMetadata(stageNo, jw)) {
                 Optional<JobWorker> tmp = mantisJobMetaData.getWorkerByIndex(stageNo, workerIndex);
                 if (tmp.isPresent()) {
                     throw new InvalidJobException(mantisJobMetaData.getJobId().getId(), stageNo, workerIndex,
-                            new Exception("Couldn't add worker " + workerNumber + " as index " + workerIndex
-                                    + ", that index already has worker " + tmp.get().getMetadata().getWorkerNumber()));
+                        new Exception("Couldn't add worker " + workerNumber + " as index " + workerIndex
+                            + ", that index already has worker " + tmp.get().getMetadata().getWorkerNumber()));
                 } else {
                     throw new InvalidJobException(mantisJobMetaData.getJobId().getId(), stageNo, workerIndex,
-                            new Exception("Couldn't add worker " + workerNumber + " as index "
-                                    + workerIndex + "doesn't exist "));
+                        new Exception("Couldn't add worker " + workerNumber + " as index "
+                            + workerIndex + "doesn't exist "));
                 }
             }
             mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
@@ -1695,8 +1721,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             }
             //send empty schedulingInfo changes so downstream jobs would explicitly disconnect
             jobSchedulingInfoBehaviorSubject.onNext(new JobSchedulingInfo(
-                    this.jobMgr.getJobId().getId(),
-                    new HashMap<>()));
+                this.jobMgr.getJobId().getId(),
+                new HashMap<>()));
             jobSchedulingInfoBehaviorSubject.onCompleted();
         }
 
@@ -1704,31 +1730,31 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             LOGGER.info("Terminating all workers of job {}", jobId);
 
             Observable.from(mantisJobMetaData.getStageMetadata().values())
-                    .flatMap((st) -> Observable.from(st.getAllWorkers()))
-                    .filter((worker) -> !WorkerState.isTerminalState(worker.getMetadata().getState()))
-                    .map((worker) -> {
-                        LOGGER.info("Terminating " + worker);
-                        terminateWorker(worker.getMetadata(), WorkerState.Completed, JobCompletedReason.Killed);
-                        return worker;
-                    })
-                    .doOnCompleted(() -> markStageAssignmentsChanged(true))
-                    .subscribeOn(Schedulers.io())
+                .flatMap((st) -> Observable.from(st.getAllWorkers()))
+                .filter((worker) -> !WorkerState.isTerminalState(worker.getMetadata().getState()))
+                .map((worker) -> {
+                    LOGGER.info("Terminating " + worker);
+                    terminateWorker(worker.getMetadata(), WorkerState.Completed, JobCompletedReason.Killed);
+                    return worker;
+                })
+                .doOnCompleted(() -> markStageAssignmentsChanged(true))
+                .subscribeOn(Schedulers.io())
 
-                    .subscribe();
+                .subscribe();
 
             LOGGER.info("Terminated all workers of job {}", jobId);
         }
 
         private void terminateWorker(
-                IMantisWorkerMetadata workerMeta, WorkerState finalWorkerState,
-                JobCompletedReason reason) {
+            IMantisWorkerMetadata workerMeta, WorkerState finalWorkerState,
+            JobCompletedReason reason) {
             LOGGER.info("Terminating  worker {} with number {}", workerMeta, workerMeta.getWorkerNumber());
             try {
                 WorkerId workerId = workerMeta.getWorkerId();
                 // call vmservice terminate
                 scheduler.unscheduleAndTerminateWorker(
-                        workerMeta.getWorkerId(),
-                        Optional.ofNullable(workerMeta.getSlave()));
+                    workerMeta.getWorkerId(),
+                    Optional.ofNullable(workerMeta.getSlave()));
 
                 int stageNum = mantisJobMetaData.getWorkerNumberToStageMap().get(workerMeta.getWorkerNumber());
 
@@ -1744,8 +1770,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     if (jobWorkerOp.isPresent()) {
                         jobStore.archiveWorker(jobWorkerOp.get().getMetadata());
                         eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(INFO,
-                                "Terminated worker, reason: " + reason.name(),
-                                workerMeta.getStageNum(), workerMeta.getWorkerId(), workerMeta.getState()));
+                            "Terminated worker, reason: " + reason.name(),
+                            workerMeta.getStageNum(), workerMeta.getWorkerId(), workerMeta.getState()));
                     }
                 } else {
                     LOGGER.error("Stage {} not found while terminating worker {}", stageNum, workerId);
@@ -1756,8 +1782,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         private void terminateAndRemoveWorker(
-                IMantisWorkerMetadata workerMeta, WorkerState finalWorkerState,
-                JobCompletedReason reason) {
+            IMantisWorkerMetadata workerMeta, WorkerState finalWorkerState,
+            JobCompletedReason reason) {
             LOGGER.info("Terminating and removing worker {}", workerMeta.getWorkerId().getId());
             try {
                 WorkerId workerId = workerMeta.getWorkerId();
@@ -1771,14 +1797,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     Optional<JobWorker> workerOp = stageMetaData.processWorkerEvent(terminateEvent, jobStore);
 
                     eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(INFO,
-                            "Removing worker, reason: " + reason.name(),
-                            workerMeta.getStageNum(), workerMeta.getWorkerId(), workerMeta.getState()));
+                        "Removing worker, reason: " + reason.name(),
+                        workerMeta.getStageNum(), workerMeta.getWorkerId(), workerMeta.getState()));
                     // remove this worker index and archives the worker
                     stageMetaData.unsafeRemoveWorker(workerId.getWorkerIndex(), workerId.getWorkerNum(), jobStore);
 
                     // call vmservice terminate
                     scheduler.unscheduleAndTerminateWorker(workerMeta.getWorkerId(), Optional.ofNullable(
-                            workerMeta.getSlave()));
+                        workerMeta.getSlave()));
 
                     //remove from workerNumber to stage map
                     mantisJobMetaData.removeWorkerMetadata(workerMeta.getWorkerNumber());
@@ -1822,7 +1848,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         if (Duration.between(acceptedAt, currentTime).getSeconds() > stuckInSubmitToleranceSecs) {
                             // worker stuck in accepted
                             LOGGER.info("Job {}, Worker {} stuck in accepted state for {}", this.jobMgr.getJobId(),
-                                    workerMeta.getWorkerId(), Duration.between(acceptedAt, currentTime).getSeconds());
+                                workerMeta.getWorkerId(), Duration.between(acceptedAt, currentTime).getSeconds());
 
                             workersToResubmit.add(worker);
                             eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(
@@ -1864,10 +1890,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     resubmitWorker(worker);
                 } catch (Exception e) {
                     LOGGER.warn(
-                            "Exception {} occurred resubmitting Worker {}",
-                            e.getMessage(),
-                            worker.getMetadata(),
-                            e);
+                        "Exception {} occurred resubmitting Worker {}",
+                        e.getMessage(),
+                        worker.getMetadata(),
+                        e);
                 }
             }
             migrateDisabledVmWorkers(currentTime);
@@ -1878,7 +1904,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             if (!workersToMigrate.isEmpty()) {
                 Map<Integer, Integer> workerToStageMap = mantisJobMetaData.getWorkerNumberToStageMap();
                 final List<Integer> workers = migrationStrategy.execute(workersToMigrate,
-                        getNumberOfWorkersInStartedState(), getTotalWorkerCount(), lastWorkerMigrationTimestamp);
+                    getNumberOfWorkersInStartedState(), getTotalWorkerCount(), lastWorkerMigrationTimestamp);
                 if (!workers.isEmpty()) {
                     LOGGER.info("Job {} Going to migrate {} workers in this iteration", jobId, workers.size());
                 }
@@ -1892,22 +1918,22 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                 jobWorker = stageMetaOp.get().getWorkerByWorkerNumber(w);
                                 IMantisWorkerMetadata wm = jobWorker.getMetadata();
                                 LOGGER.info("Moving worker {} of job {} away from disabled VM", wm.getWorkerId(),
-                                        jobId);
+                                    jobId);
                                 eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(INFO,
-                                        " Moving out of disabled VM " + wm.getSlave(), wm.getStageNum(),
-                                        wm.getWorkerId(), wm.getState()));
+                                    " Moving out of disabled VM " + wm.getSlave(), wm.getStageNum(),
+                                    wm.getWorkerId(), wm.getState()));
                                 resubmitWorker(jobWorker);
                                 lastWorkerMigrationTimestamp = System.currentTimeMillis();
                             } catch (Exception e) {
                                 LOGGER.warn("Exception resubmitting worker {} during migration due to {}",
-                                        jobWorker, e.getMessage(), e);
+                                    jobWorker, e.getMessage(), e);
                             }
                         } else {
                             LOGGER.warn("Stage {} Not Found. Skip move for worker {} in Job {}", stageNo, w, jobId);
                         }
                     } else {
                         LOGGER.warn("worker {} not found in workerToStageMap {} for Job {}", w, workerToStageMap,
-                                jobId);
+                            jobId);
                     }
                 });
             }
@@ -1933,7 +1959,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private void terminateUnknownWorkerIfNonTerminal(final WorkerEvent event) {
             if (!JobHelper.isTerminalWorkerEvent(event)) {
                 LOGGER.warn("Non terminal event from Unknown worker {} in Job {}. Request Termination",
-                        event.getWorkerId(), this.jobMgr.getJobId());
+                    event.getWorkerId(), this.jobMgr.getJobId());
                 Optional<String> host = JobHelper.getWorkerHostFromWorkerEvent(event);
 
                 scheduler.unscheduleAndTerminateWorker(event.getWorkerId(), host);
@@ -1954,14 +1980,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // its state
                 if (event instanceof WorkerUnscheduleable) {
                     scheduler.updateWorkerSchedulingReadyTime(
+                        event.getWorkerId(),
+                        resubmitRateLimiter.getWorkerResubmitTime(
                             event.getWorkerId(),
-                            resubmitRateLimiter.getWorkerResubmitTime(
-                                    event.getWorkerId(),
-                                    stageMetaOp.get().getStageNum()));
+                            stageMetaOp.get().getStageNum()));
                     eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(
-                            LifecycleEventsProto.StatusEvent.StatusEventType.ERROR,
-                            "rate limiting: no resources to fit worker",
-                            ((WorkerUnscheduleable) event).getStageNum(), event.getWorkerId(), WorkerState.Accepted));
+                        LifecycleEventsProto.StatusEvent.StatusEventType.ERROR,
+                        "rate limiting: no resources to fit worker",
+                        ((WorkerUnscheduleable) event).getStageNum(), event.getWorkerId(), WorkerState.Accepted));
                     return;
                 }
 
@@ -1977,17 +2003,16 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         if (currentWorkerNum > eventWorkerNum) {
                             // event is from a different worker number on same worker index
                             LOGGER.error(
-                                    "[Corrupted state] StaleWorkerEvent: {}, current worker at {}, Terminate stale "
-                                            + "worker",
-                                    event.getWorkerId(),
-                                    currentWorkerNum);
-                        }
-                        else if (currentWorkerNum < eventWorkerNum) {
+                                "[Corrupted state] StaleWorkerEvent: {}, current worker at {}, Terminate stale "
+                                    + "worker",
+                                event.getWorkerId(),
+                                currentWorkerNum);
+                        } else if (currentWorkerNum < eventWorkerNum) {
                             // this case should not happen as new worker assignment should update state and persist first.
                             LOGGER.error(
-                                    "[Corrupted state] Newer worker num received: {}, Current stage worker: {}",
-                                    event,
-                                    currentWorkerNum);
+                                "[Corrupted state] Newer worker num received: {}, Current stage worker: {}",
+                                event,
+                                currentWorkerNum);
                         }
                     }
                 } catch (InvalidJobException ije) {
@@ -2012,8 +2037,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     // Worker transitioned to terminal state resubmit
                     if (WorkerState.isErrorState(wm.getState()) && !JobState.isTerminalState(jobState)) {
                         eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(WARN,
-                                "resubmitting lost worker ", wm.getStageNum(),
-                                wm.getWorkerId(), wm.getState()));
+                            "resubmitting lost worker ", wm.getStageNum(),
+                            wm.getWorkerId(), wm.getState()));
                         recentErrorWorkersCache.put(wm.getWorkerNumber(), true);
                         resubmitWorker(workerOp.get());
                         return;
@@ -2021,7 +2046,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         // completed complete job
                         jobStore.archiveWorker(wm);
                         LOGGER.info("Received Worker Complete signal. Wait for all workers to complete before "
-                                + "terminating Job {}", jobId);
+                            + "terminating Job {}", jobId);
                     }
 
                     if (!(event instanceof WorkerHeartbeat)) {
@@ -2057,7 +2082,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private boolean allWorkerStarted() {
 
             Iterator<? extends IMantisStageMetadata> iterator =
-                    mantisJobMetaData.getStageMetadata().values().iterator();
+                mantisJobMetaData.getStageMetadata().values().iterator();
             while (iterator.hasNext()) {
                 MantisStageMetadataImpl stageMeta = (MantisStageMetadataImpl) iterator.next();
                 if (!stageMeta.isAllWorkerStarted()) {
@@ -2070,20 +2095,20 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private int getNumberOfWorkersInStartedState() {
 
             return mantisJobMetaData.getStageMetadata().values().stream()
-                    .map((stageMeta) -> ((MantisStageMetadataImpl) stageMeta).getNumStartedWorkers())
-                    .reduce(0, (acc, num) -> acc + num);
+                .map((stageMeta) -> ((MantisStageMetadataImpl) stageMeta).getNumStartedWorkers())
+                .reduce(0, (acc, num) -> acc + num);
         }
 
         private int getTotalWorkerCount() {
 
             return mantisJobMetaData.getStageMetadata().values().stream()
-                    .map(IMantisStageMetadata::getNumWorkers)
-                    .reduce(0, (acc, num) -> acc + num);
+                .map(IMantisStageMetadata::getNumWorkers)
+                .reduce(0, (acc, num) -> acc + num);
         }
 
         private boolean allWorkerCompleted() {
             Iterator<? extends IMantisStageMetadata> iterator =
-                    mantisJobMetaData.getStageMetadata().values().iterator();
+                mantisJobMetaData.getStageMetadata().values().iterator();
             while (iterator.hasNext()) {
                 MantisStageMetadataImpl stageMeta = (MantisStageMetadataImpl) iterator.next();
                 // skip job master worker
@@ -2108,7 +2133,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     resubmitWorker(worker);
                 } else {
                     throw new Exception(String.format("Invalid stage %d in resubmit Worker request %d", stageNum,
-                            workerNum));
+                        workerNum));
                 }
             } else {
                 LOGGER.warn("No such Worker number {} in Job with ID {}", workerNum, jobId);
@@ -2119,11 +2144,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         @Override
         public List<IMantisWorkerMetadata> getActiveWorkers(int limit) {
             List<IMantisWorkerMetadata> workers = mantisJobMetaData.getStageMetadata().values()
-                    .stream()
-                    .flatMap((st) -> st.getAllWorkers().stream())
-                    .filter((worker) -> !WorkerState.isTerminalState(worker.getMetadata().getState()))
-                    .map(JobWorker::getMetadata)
-                    .collect(Collectors.toList());
+                .stream()
+                .flatMap((st) -> st.getAllWorkers().stream())
+                .filter((worker) -> !WorkerState.isTerminalState(worker.getMetadata().getState()))
+                .map(JobWorker::getMetadata)
+                .collect(Collectors.toList());
 
             if (workers.size() > limit) {
                 return workers.subList(0, limit);
@@ -2143,19 +2168,19 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
             IMantisWorkerMetadata oldWorkerMetadata = oldWorker.getMetadata();
             if (recentErrorWorkersCache.size()
-                    < ConfigurationProvider.getConfig().getMaximumResubmissionsPerWorker()) {
+                < ConfigurationProvider.getConfig().getMaximumResubmissionsPerWorker()) {
 
                 Integer stageNo = workerToStageMap.get(oldWorkerMetadata.getWorkerId().getWorkerNum());
                 if (stageNo == null) {
                     String errMsg = String.format("Stage %d not found in Job %s while resubmiting worker %s",
-                            stageNo, jobId, oldWorker);
+                        stageNo, jobId, oldWorker);
                     LOGGER.warn(errMsg);
                     throw new Exception(errMsg);
                 }
                 Optional<IMantisStageMetadata> stageMetaOp = mantisJobMetaData.getStageMetadata(stageNo);
                 if (!stageMetaOp.isPresent()) {
                     String errMsg = String.format("Stage %d not found in Job %s while resubmiting worker %s",
-                            stageNo, jobId, oldWorker);
+                        stageNo, jobId, oldWorker);
                     LOGGER.warn(errMsg);
                     throw new Exception(errMsg);
                 }
@@ -2163,28 +2188,28 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 MantisStageMetadataImpl stageMeta = (MantisStageMetadataImpl) stageMetaOp.get();
 
                 JobWorker newWorker = new JobWorker.Builder()
-                        .withJobId(jobId)
-                        .withWorkerIndex(oldWorkerMetadata.getWorkerIndex())
-                        .withWorkerNumber(workerNumberGenerator.getNextWorkerNumber(mantisJobMetaData, jobStore))
-                        .withNumberOfPorts(stageMeta.getMachineDefinition().getNumPorts()
-                                + MANTIS_SYSTEM_ALLOCATED_NUM_PORTS)
-                        .withStageNum(oldWorkerMetadata.getStageNum())
-                        .withResubmitCount(oldWorkerMetadata.getTotalResubmitCount() + 1)
-                        .withResubmitOf(oldWorkerMetadata.getWorkerNumber())
-                        .withLifecycleEventsPublisher(eventPublisher)
-                        .build();
+                    .withJobId(jobId)
+                    .withWorkerIndex(oldWorkerMetadata.getWorkerIndex())
+                    .withWorkerNumber(workerNumberGenerator.getNextWorkerNumber(mantisJobMetaData, jobStore))
+                    .withNumberOfPorts(stageMeta.getMachineDefinition().getNumPorts()
+                        + MANTIS_SYSTEM_ALLOCATED_NUM_PORTS)
+                    .withStageNum(oldWorkerMetadata.getStageNum())
+                    .withResubmitCount(oldWorkerMetadata.getTotalResubmitCount() + 1)
+                    .withResubmitOf(oldWorkerMetadata.getWorkerNumber())
+                    .withLifecycleEventsPublisher(eventPublisher)
+                    .build();
 
                 mantisJobMetaData.replaceWorkerMetaData(oldWorkerMetadata.getStageNum(), newWorker, oldWorker,
-                        jobStore);
+                    jobStore);
                 mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
 
                 // kill the task if it is still running
                 scheduler.unscheduleAndTerminateWorker(
-                        oldWorkerMetadata.getWorkerId(),
-                        Optional.ofNullable(oldWorkerMetadata.getSlave()));
+                    oldWorkerMetadata.getWorkerId(),
+                    Optional.ofNullable(oldWorkerMetadata.getSlave()));
 
                 long workerResubmitTime = resubmitRateLimiter.getWorkerResubmitTime(
-                        newWorker.getMetadata().getWorkerId(), stageMeta.getStageNum());
+                    newWorker.getMetadata().getWorkerId(), stageMeta.getStageNum());
                 Optional<Long> delayDuration = of(workerResubmitTime);
                 // publish a refresh before enqueuing new Task to Scheduler
                 markStageAssignmentsChanged(true);
@@ -2222,15 +2247,15 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 try {
                     stageMetaData.unsafeSetNumWorkers(newNumWorkerCount, jobStore);
                     eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
-                            String.format("Setting #workers to %d for stage %d, reason=%s", newNumWorkerCount,
-                                    stageMetaData.getStageNum(), reason), getJobId(), getJobState()));
+                        String.format("Setting #workers to %d for stage %d, reason=%s", newNumWorkerCount,
+                            stageMetaData.getStageNum(), reason), getJobId(), getJobState()));
                 } catch (Exception e) {
                     String error = String.format("Exception updating stage %d worker count for Job %s due to %s",
-                            stageMetaData.getStageNum(), jobId, e.getMessage());
+                        stageMetaData.getStageNum(), jobId, e.getMessage());
                     LOGGER.warn(error);
                     eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(WARN,
-                            String.format("Scaling stage failed for stage %d reason: %s", stageMetaData.getStageNum(), e.getMessage()),
-                            getJobId(), getJobState()));
+                        String.format("Scaling stage failed for stage %d reason: %s", stageMetaData.getStageNum(), e.getMessage()),
+                        getJobId(), getJobState()));
                     throw new RuntimeException(error);
                 }
                 if (newNumWorkerCount > oldNumWorkers) {
@@ -2239,7 +2264,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             int newWorkerIndex = oldNumWorkers + i;
                             SchedulingInfo schedInfo = mantisJobMetaData.getJobDefinition().getSchedulingInfo();
                             IMantisWorkerMetadata workerRequest = addWorker(schedInfo, stageMetaData.getStageNum(),
-                                    newWorkerIndex);
+                                newWorkerIndex);
                             jobStore.storeNewWorker(workerRequest);
                             markStageAssignmentsChanged(true);
                             queueTask(workerRequest);
