@@ -23,6 +23,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Singular;
@@ -89,16 +90,25 @@ public class MantisResourceClusterSpec {
 
         String imageId;
 
+        @Deprecated
         int cpuCoreCount;
 
+        @Deprecated
         int memorySizeInMB;
 
+        @Deprecated
         int networkMbps;
 
+        @Deprecated
         int diskSizeInMB;
 
         @Singular
         Map<String, String> skuMetadataFields;
+
+        // TODO(fdichiara): Currently nullable for backward compatibility.
+        // Plan to remove nullable after upgrading all existing SKU specs.
+        @Nullable
+        SkuSizeSpec size;
 
         @JsonCreator
         public SkuTypeSpec(
@@ -109,7 +119,8 @@ public class MantisResourceClusterSpec {
                 @JsonProperty("memorySizeInBytes") final int memorySizeInMB,
                 @JsonProperty("networkMbps") final int networkMbps,
                 @JsonProperty("diskSizeInBytes") final int diskSizeInMB,
-                @JsonProperty("skuMetadataFields") final Map<String, String> skuMetadataFields) {
+                @JsonProperty("skuMetadataFields") final Map<String, String> skuMetadataFields,
+                @JsonProperty("size") final SkuSizeSpec size) {
             this.skuId = skuId;
             this.capacity = capacity;
             this.imageId = imageId;
@@ -118,6 +129,7 @@ public class MantisResourceClusterSpec {
             this.networkMbps = networkMbps;
             this.diskSizeInMB = diskSizeInMB;
             this.skuMetadataFields = skuMetadataFields;
+            this.size = size;
         }
     }
 
