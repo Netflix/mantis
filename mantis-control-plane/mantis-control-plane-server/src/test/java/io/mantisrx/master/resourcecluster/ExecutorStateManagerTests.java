@@ -613,4 +613,83 @@ public class ExecutorStateManagerTests {
         assertTrue(bestFit.isPresent());
         assertEquals(ImmutableSet.of(TaskExecutorID.of("te0"), TaskExecutorID.of("te3")), bestFit.get().getTaskExecutorIDSet());
     }
+
+    @Test
+    public void testGetBestFit_WithSizeName() {
+        stateManager = new ExecutorStateManagerImpl(ImmutableMap.of("jdk", "8", "constraint0", "whatever"));
+
+        // register small TE with (default) jdk:8
+        TaskExecutorRegistration jdk8Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk8"), MACHINE_DEFINITION_1, ImmutableMap.of(WorkerConstants.MANTIS_CONTAINER_SIZE_NAME_KEY, "small")).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk8"), state1);
+        state1.onRegistration(jdk8Te);
+        state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk8"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk8"));
+
+        // register small TE with jdk:17
+        TaskExecutorRegistration jdk17Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17", WorkerConstants.MANTIS_CONTAINER_SIZE_NAME_KEY, "small")).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk17"), state2);
+        state2.onRegistration(jdk17Te);
+        state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk17"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk17"));
+
+        // no matching found for large + jdk17
+        Optional<BestFit> bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, Optional.of("large"), ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
+        assertFalse(bestFit.isPresent());
+
+        // matching the only small + jdk17 --> machine definition is not taken into account
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2, Optional.of("small"), ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk17"))), bestFit.get().getTaskExecutorIDSet());
+
+        // matching the only small + jdk8 --> machine definition is not taken into account
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2, Optional.of("small"), ImmutableMap.of("jdk", "8")), null, 0)), CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk8"))), bestFit.get().getTaskExecutorIDSet());
+    }
+
+
+    @Test
+    public void testGetBestFit_WithSizeNameOnRequestButNotTaskExecutor() {
+        // backward compatibility test where only the scheduling request asks for small containers + machine definition
+        stateManager = new ExecutorStateManagerImpl(ImmutableMap.of("jdk", "8", "constraint0", "whatever"));
+
+        // register TE with (default) jdk:8 with no size
+        TaskExecutorRegistration jdk8Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk8"), MACHINE_DEFINITION_1, ImmutableMap.of()).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk8"), state1);
+        state1.onRegistration(jdk8Te);
+        state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk8"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk8"));
+
+        // register TE with jdk:17
+        TaskExecutorRegistration jdk17Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk17"), MACHINE_DEFINITION_1, ImmutableMap.of("MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17")).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk17"), state2);
+        state2.onRegistration(jdk17Te);
+        state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk17"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk17"));
+
+        // matching found for small using machine definition
+        Optional<BestFit> bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, Optional.of("small"), ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk17"))), bestFit.get().getTaskExecutorIDSet());
+    }
 }

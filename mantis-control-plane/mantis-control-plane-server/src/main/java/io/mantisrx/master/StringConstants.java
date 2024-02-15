@@ -19,4 +19,5 @@ package io.mantisrx.master;
 public class StringConstants {
     // User for actions performed by Mantis master
     public static final String MANTIS_MASTER_USER = "MantisMaster";
+    public static final String MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY = "_mantis.stageContainerSizeName";
 }

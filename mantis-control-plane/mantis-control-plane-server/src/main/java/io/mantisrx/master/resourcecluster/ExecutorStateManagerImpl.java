@@ -41,6 +41,7 @@ import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.cache.RemovalListener;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -93,7 +94,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             if (!bestGroup.isPresent()) {
                 log.warn("No fitting group found for provided constraints {}", constraints);
             }
-            return bestGroup.orElse(new TaskExecutorGroupKey(constraints.getMachineDefinition(), constraints.getSchedulingAttributes()));
+            return bestGroup.orElse(new TaskExecutorGroupKey(constraints.getMachineDefinition(), constraints.getSizeName(), constraints.getSchedulingAttributes()));
         }
     }
 
@@ -491,15 +492,13 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         if (taskExecutors.isPresent() && taskExecutors.get().size() == allocationRequests.size()) {
             return taskExecutors;
         } else {
-            MachineDefinition machineDefinition = schedulingConstraints.getMachineDefinition();
-            log.warn("Not enough available TEs found for machine def {} with core count: {}, request: {}",
-                machineDefinition, machineDefinition.getCpuCores(), request);
+            log.warn("Not enough available TEs found for scheduling constraints {}, request: {}", schedulingConstraints, request);
 
             // If there are not enough workers with the given spec then add the request the pending ones
             if (!isJobIdAlreadyPending && request.getAllocationRequests().size() > 2) {
                 // Add jobId to pending requests only once
                 if (pendingJobRequests.getIfPresent(request.getJobId()) == null) {
-                    log.info("Adding job {} to pending requests for {} machine {}", request.getJobId(), allocationRequests.size(), machineDefinition);
+                    log.info("Adding job {} to pending requests for {} scheduling constraints {}", request.getJobId(), allocationRequests.size(), schedulingConstraints);
                     pendingJobRequests.put(request.getJobId(), new JobRequirements(request.getGroupedBySchedulingConstraints()));
                 }
             }
@@ -511,19 +510,59 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
      * Finds the best fit Task Executor Group Key from the current set of executors
      * based on the provided `requestedConstraints`.
      *
-     * It filters the keys such that they satisfy the `requestedConstraints` and have a positive fitness score,
-     * then decides the best fit based on the highest fitness score.
+     * The method filters the groups that satisfy the `requestedConstraints`,
+     * then decides the best fit based on either matching `sizeName`
+     * or highest fitness score.
      *
-     * @param requestedConstraints Constraints of the scheduling request, serving as the reference for determining the best fit.
+     * @param requestedConstraints Constraints of the scheduling request,
+     * serving as the reference for determining the best fit.
      *
-     * @return An Optional wrapping the Task Executor Group Key with the best fit constraints. If no fitting constraints
-     * are found, it returns an empty Optional.
+     * @return An Optional wrapping the Task Executor Group Key with the best fit constraints.
+     * If no fitting constraints are found, it returns an empty Optional.
      */
     private Optional<TaskExecutorGroupKey> findBestGroup(SchedulingConstraints requestedConstraints) {
-        return executorsByGroup.keySet()
+        // Partition the keys into two sets: those that match the sizeName and those that don't
+        // A match occurs only if both sizeName values are present and equal
+        Map<Boolean, List<TaskExecutorGroupKey>> partitionedKeys = executorsByGroup.keySet()
             .stream()
+            // filter out keys that have different sizeName from the requestedConstraints
+            .filter(key -> !(key.getSizeName().isPresent()
+                && requestedConstraints.getSizeName().isPresent()
+                && !key.getSizeName().equals(requestedConstraints.getSizeName())))
             // filter in the keys that have satisfied allocation constraints
             .filter(taskExecutorGroupKey -> areSchedulingAttributeConstraintsSatisfied(requestedConstraints, taskExecutorGroupKey.getSchedulingAttributes()))
+            // Divide into two groups: keys where sizeName matches the requestedConstraints and keys where sizeName is not set in either the key or the requestedConstraints
+            .collect(Collectors.partitioningBy(key -> key.getSizeName().isPresent()
+                && requestedConstraints.getSizeName().isPresent()
+                && key.getSizeName().equals(requestedConstraints.getSizeName())));
+
+        // Try to find a key that matches the sizeName
+        List<TaskExecutorGroupKey> matchingSizeNameKeys = partitionedKeys.getOrDefault(true, Collections.emptyList());
+
+        // If match found, return the first matched key
+        // Otherwise, calculate the fitness for keys that don't match the sizeName
+        // based on the highest fitness score.
+        return !matchingSizeNameKeys.isEmpty() ?
+            Optional.of(matchingSizeNameKeys.get(0)) :
+            findBestFitUsingFitnessCalculator(partitionedKeys.getOrDefault(false, Collections.emptyList()), requestedConstraints);
+    }
+
+    /**
+     * Finds the best fit Task Executor Group Key among groups by using a fitnessCalculator.
+     *
+     * The calculation is done based on the requestedConstraints' machine definition
+     * and each group's machine definition. Groups with non-positive fitness scores are filtered out.
+     * The group with the highest fitness score is selected as the best fit.
+     *
+     * @param taskExecutorGroups List containing the Task Executor Group Keys
+     * @param requestedConstraints Constraints of the scheduling request,
+     * serving as the reference for calculating the fitness.
+     *
+     * @return An Optional wrapping the Task Executor Group Key with the best fit constraints.
+     * If no suitable group is found, it returns an empty Optional.
+     */
+    private Optional<TaskExecutorGroupKey> findBestFitUsingFitnessCalculator(List<TaskExecutorGroupKey> taskExecutorGroups, SchedulingConstraints requestedConstraints) {
+        return taskExecutorGroups.stream()
             // Map each TaskExecutorGroupKey to a Pair containing the key and its corresponding fitness score
             .map(key -> new AbstractMap.SimpleEntry<>(
                 key,

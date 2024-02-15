@@ -15,6 +15,8 @@
  */
 package io.mantisrx.server.master.resourcecluster;
 
+import static io.mantisrx.common.WorkerConstants.MANTIS_CONTAINER_SIZE_NAME_KEY;
+
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
@@ -163,13 +165,14 @@ public class TaskExecutorRegistration {
 
     @JsonIgnore
     public TaskExecutorGroupKey getTaskExecutorGroupKey() {
-        return new TaskExecutorGroupKey(machineDefinition, getSchedulingAttributes());
+        return new TaskExecutorGroupKey(machineDefinition, getAttributeByKey(MANTIS_CONTAINER_SIZE_NAME_KEY), getSchedulingAttributes());
     }
 
     @Value
     @AllArgsConstructor
     public static class TaskExecutorGroupKey {
         MachineDefinition machineDefinition;
+        Optional<String> sizeName;
         Map<String, String> schedulingAttributes;
     }
 }

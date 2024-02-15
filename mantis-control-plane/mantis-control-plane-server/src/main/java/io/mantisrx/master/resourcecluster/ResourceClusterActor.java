@@ -23,6 +23,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
+import com.netflix.spectator.api.Tag;
 import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
@@ -627,15 +628,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         } else {
             request.allocationRequests.forEach(req -> metrics.incrementCounter(
                 ResourceClusterActorMetrics.NO_RESOURCES_AVAILABLE,
-                TagList.create(ImmutableMap.of(
-                    "resourceCluster",
-                    clusterID.getResourceID(),
-                    "workerId",
-                    req.getWorkerId().getId(),
-                    "jobCluster",
-                    req.getWorkerId().getJobCluster(),
-                    "cpuCores",
-                    String.valueOf(req.getConstraints().getMachineDefinition().getCpuCores())))));
+                createTagListFrom(req)));
             sender().tell(new Status.Failure(new NoResourceAvailableException(
                 String.format("No resource available for request %s: resource overview: %s", request,
                     getResourceOverview()))), self());
@@ -845,6 +838,33 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private Set<String> getJobClustersWithArtifactCachingEnabled() {
         return new HashSet<>(Arrays.asList(jobClustersWithArtifactCachingEnabled.split(",")));
+    }
+
+    /**
+     * Creates a list of tags from the provided TaskExecutorAllocationRequest.
+     * The list includes resource cluster, workerId, jobCluster, and either sizeName or cpuCores and memoryMB
+     * based on whether sizeName is present in the request's constraints.
+     *
+     * @param req The task executor allocation request from which the tag list will be generated.
+     *
+     * @return An iterable list of tags created from the task executor allocation request.
+     */
+    private Iterable<Tag> createTagListFrom(TaskExecutorAllocationRequest req) {
+        // Basic tags that will always be included
+        ImmutableMap.Builder<String, String> tagsBuilder = ImmutableMap.<String, String>builder()
+            .put("resourceCluster", clusterID.getResourceID())
+            .put("workerId", req.getWorkerId().getId())
+            .put("jobCluster", req.getWorkerId().getJobCluster());
+
+        // Add the sizeName tag if it exists, otherwise add the cpuCores and memoryMB tags
+        if (req.getConstraints().getSizeName().isPresent()) {
+            tagsBuilder.put("sizeName", req.getConstraints().getSizeName().get());
+        } else {
+            tagsBuilder.put("cpuCores", String.valueOf(req.getConstraints().getMachineDefinition().getCpuCores()))
+                .put("memoryMB", String.valueOf(req.getConstraints().getMachineDefinition().getMemoryMB()));
+        }
+
+        return TagList.create(tagsBuilder.build());
     }
 
     @Value

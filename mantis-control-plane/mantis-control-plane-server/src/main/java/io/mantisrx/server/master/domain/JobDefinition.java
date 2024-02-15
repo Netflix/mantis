@@ -74,7 +74,7 @@ public class JobDefinition {
     private final Map<String, String> schedulingConstraints;
 
     private final static Pattern MANTIS_SCHEDULING_ATTRIBUTE_LABEL_REGEX =
-        Pattern.compile("_mantis\\.schedulingConstraint\\.(.+)");
+        Pattern.compile("_mantis\\.schedulingAttribute\\.(.+)");
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)

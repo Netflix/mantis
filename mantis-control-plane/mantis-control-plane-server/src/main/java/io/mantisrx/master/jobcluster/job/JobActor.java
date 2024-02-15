@@ -17,6 +17,7 @@
 package io.mantisrx.master.jobcluster.job;
 
 import static io.mantisrx.master.StringConstants.MANTIS_MASTER_USER;
+import static io.mantisrx.master.StringConstants.MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY;
 import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.*;
 import static io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.MANTIS_SYSTEM_ALLOCATED_NUM_PORTS;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.*;
@@ -1593,6 +1594,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         // TODO(fdichiara): make this a property of JobStageMetadata. https://github.com/Netflix/mantis/pull/629/files#r1487043262
                         SchedulingConstraints.of(
                             stageMetadata.getMachineDefinition(),
+                            mantisJobMetaData.getStageAttribute(stageMetadata.getStageNum(), MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY),
                             mergeJobDefAndArtifactAssigmentAttributes(jobMetadata.getJobArtifact())),
                         hardConstraints,
                         softConstraints,

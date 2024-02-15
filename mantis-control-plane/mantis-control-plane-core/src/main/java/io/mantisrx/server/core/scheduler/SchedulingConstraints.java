@@ -20,11 +20,15 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
 /**
- * A class that represents scheduling constraints. These constraints include the resource constraints, and a map of scheduling attributes (e.g. jdkVersion:17).
+ * A class that represents scheduling constraints.
+ * These constraints include the resource constraints for scheduling,
+ * the size name that could match the size label of a Task Executor,
+ * and a map of scheduling attributes (e.g., jdkVersion:17).
  */
 @AllArgsConstructor(staticName = "of")
 @Value
@@ -32,11 +36,20 @@ public class SchedulingConstraints {
     // Defines the resource constraints for scheduling
     MachineDefinition machineDefinition;
 
+    // Optional field to set predefined size name. When present, the scheduling system tries
+    // to match this field with the size name of a Task Executor.
+    Optional<String> sizeName;
+
     // Additional attributes for scheduling (ie. jdkVersion:17)
     Map<String, String> schedulingAttributes;
 
     @VisibleForTesting
     public static SchedulingConstraints of(MachineDefinition machineDefinition) {
-        return SchedulingConstraints.of(machineDefinition, ImmutableMap.of());
+        return SchedulingConstraints.of(machineDefinition, Optional.empty(), ImmutableMap.of());
+    }
+
+    @VisibleForTesting
+    public static SchedulingConstraints of(MachineDefinition machineDefinition, Map<String, String> schedulingAttributes) {
+        return SchedulingConstraints.of(machineDefinition, Optional.empty(), schedulingAttributes);
     }
 }

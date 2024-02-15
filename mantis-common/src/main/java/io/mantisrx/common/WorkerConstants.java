@@ -25,4 +25,5 @@ public class WorkerConstants {
     public static final String AUTO_SCALE_GROUP_KEY = "NETFLIX_AUTO_SCALE_GROUP";
     public static final String MANTIS_WORKER_CONTAINER_GENERATION = "MANTIS_WORKER_CONTAINER_GENERATION";
     public static final Pattern MANTIS_SCHEDULING_ATTRIBUTE_PATTERN = Pattern.compile("^MANTIS_SCHEDULING_ATTRIBUTE_(.*)$");
+    public static final String MANTIS_CONTAINER_SIZE_NAME_KEY = "MANTIS_WORKER_CONTAINER_SIZE_NAME";
 }
