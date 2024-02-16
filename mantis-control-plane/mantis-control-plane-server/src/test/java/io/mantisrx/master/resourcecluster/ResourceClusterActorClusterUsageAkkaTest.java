@@ -54,9 +54,12 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableSet;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -256,6 +259,141 @@ public class ResourceClusterActorClusterUsageAkkaTest {
         assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_1.getResourceID(), 0, 1);
         assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_2.getResourceID(), 1, 1);
         assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_3.getResourceID(), -1, 1);
+    }
+
+    @Test
+    public void testGetTaskExecutorsUsage_WithSizeName() throws Exception {
+        // registering 3 Task Executors with sizeName
+        registerTEsWithSizeName();
+
+        // Test get cluster usage
+        TestKit probe = new TestKit(actorSystem);
+        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            probe.getRef());
+        GetClusterUsageResponse usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
+        assertEquals(5, usageRes.getUsages().size());
+
+        // sku1, sku2, sku3, sku4 (with size name) -> 1 idle and 1 total. sku5 (with size name) -> 2 idle - 2 total
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_1.getResourceID(), 1, 1);
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_2.getResourceID(), 1, 1);
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_3.getResourceID(), 1, 1);
+        assertIdleAndTotalCount(usageRes, "SKU3-JDK17", 1, 1);
+        assertIdleAndTotalCount(usageRes, "SKU4-JDK17", 2, 2);
+    }
+
+    @Test
+    public void testGetTaskExecutorsUsage_WithSizeNameAndAllocation() throws Exception {
+        // registering 3 Task Executors with sizeName
+        registerTEsWithSizeName();
+
+        // Requesting 3 workers with size name: 1 small & 2 large --> all available will decrement count as well
+        Set<TaskExecutorAllocationRequest> requests = ImmutableSet.of(
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(MACHINE_DEFINITION_1, Optional.of("small"), ImmutableMap.of("jdk", "17")), null, 0),
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-1-2"), SchedulingConstraints.of(MACHINE_DEFINITION_2, Optional.of("large"), ImmutableMap.of("jdk", "17")), null, 1),
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-1-3"), SchedulingConstraints.of(MACHINE_DEFINITION_2, Optional.of("large"), ImmutableMap.of("jdk", "17")), null, 1));
+        assertEquals(
+            ImmutableSet.of("taskExecutorId4", "taskExecutorId5", "taskExecutorId6"),
+            new HashSet<>(resourceCluster.getTaskExecutorsFor(requests).get().values().stream().map(TaskExecutorID::getResourceId).collect(Collectors.toList())));
+
+        // Test get cluster usage
+        TestKit probe = new TestKit(actorSystem);
+        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            probe.getRef());
+        GetClusterUsageResponse usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
+        assertEquals(5, usageRes.getUsages().size());
+
+        // sku1, sku2, sku3 -> 1 idle and 1 total | sku4 (with size name) -> 0 idle (used by request) and 1 total | sku5 (with size name) -> 0 idle (used by request) and 2 total
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_1.getResourceID(), 1, 1);
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_2.getResourceID(), 1, 1);
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_3.getResourceID(), 1, 1);
+        assertIdleAndTotalCount(usageRes, "SKU3-JDK17", 0, 1);
+        assertIdleAndTotalCount(usageRes, "SKU4-JDK17", 0, 2);
+    }
+    @Test
+    public void testGetTaskExecutorsUsage_WithSizeNameAndPending() throws Exception {
+        // registering 3 Task Executors with sizeName
+        registerTEsWithSizeName();
+
+        // Requesting 3 workers with size name: 1 small & 3 large --> cannot find enough large available -> add to pending
+        Set<TaskExecutorAllocationRequest> requests = ImmutableSet.of(
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1"), SchedulingConstraints.of(MACHINE_DEFINITION_1, Optional.of("small"), ImmutableMap.of("jdk", "17")), null, 0),
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-1-2"), SchedulingConstraints.of(MACHINE_DEFINITION_2, Optional.of("large"), ImmutableMap.of("jdk", "17")), null, 1),
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-1-3"), SchedulingConstraints.of(MACHINE_DEFINITION_2, Optional.of("large"), ImmutableMap.of("jdk", "17")), null, 1),
+            TaskExecutorAllocationRequest.of(WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-1-4"), SchedulingConstraints.of(MACHINE_DEFINITION_2, Optional.of("large"), ImmutableMap.of("jdk", "17")), null, 1));
+        assertThrows(ExecutionException.class, () -> resourceCluster.getTaskExecutorsFor(requests).get());
+
+        // Test get cluster usage
+        TestKit probe = new TestKit(actorSystem);
+        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            probe.getRef());
+        GetClusterUsageResponse usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
+        assertEquals(5, usageRes.getUsages().size());
+
+        // sku1, sku2, sku3 -> 1 idle and 1 total | sku4 (with size name) -> 0 idle (pending from request) and 1 total | sku5 (with size name) -> 1 idle (pending from request) and 2 total
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_1.getResourceID(), 1, 1);
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_2.getResourceID(), 1, 1);
+        assertIdleAndTotalCount(usageRes, CONTAINER_DEF_ID_3.getResourceID(), 1, 1);
+        assertIdleAndTotalCount(usageRes, "SKU3-JDK17", 0, 1);
+        assertIdleAndTotalCount(usageRes, "SKU4-JDK17", -1, 2);
+    }
+
+    private void registerTEsWithSizeName() throws Exception {
+        ContainerSkuID c3 = ContainerSkuID.of("SKU3-JDK17");
+        ContainerSkuID c4 = ContainerSkuID.of("SKU4-JDK17");
+
+        // 4th TE identical to taskExecutorId1 but with size name --> should be on a separate TE group
+        TaskExecutorRegistration r4 =
+            TaskExecutorRegistration.builder()
+                .taskExecutorID(TaskExecutorID.of("taskExecutorId4"))
+                .clusterID(CLUSTER_ID)
+                .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+                .hostname(HOST_NAME)
+                .workerPorts(WORKER_PORTS)
+                .machineDefinition(MACHINE_DEFINITION_1)
+                .taskExecutorAttributes(
+                    ImmutableMap.of(
+                        WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, c3.getResourceID(),
+                        "MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17",
+                        "MANTIS_WORKER_CONTAINER_SIZE_NAME", "small"))
+                .build();
+
+
+        // 5th TE identical to taskExecutorId3 but with size name --> should be on a separate TE group
+        TaskExecutorRegistration r5 =
+            TaskExecutorRegistration.builder()
+                .taskExecutorID(TaskExecutorID.of("taskExecutorId5"))
+                .clusterID(CLUSTER_ID)
+                .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+                .hostname(HOST_NAME)
+                .workerPorts(WORKER_PORTS)
+                .machineDefinition(MACHINE_DEFINITION_2)
+                .taskExecutorAttributes(
+                    ImmutableMap.of(
+                        WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, c4.getResourceID(),
+                        "MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17",
+                        "MANTIS_WORKER_CONTAINER_SIZE_NAME", "large"))
+                .build();
+
+        // 6th TE identical to taskExecutorId6 but with size name --> same TE group
+        TaskExecutorRegistration r6 =
+            TaskExecutorRegistration.builder()
+                .taskExecutorID(TaskExecutorID.of("taskExecutorId6"))
+                .clusterID(CLUSTER_ID)
+                .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+                .hostname(HOST_NAME)
+                .workerPorts(WORKER_PORTS)
+                .machineDefinition(MACHINE_DEFINITION_2)
+                .taskExecutorAttributes(
+                    ImmutableMap.of(
+                        WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, c4.getResourceID(),
+                        "MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17",
+                        "MANTIS_WORKER_CONTAINER_SIZE_NAME", "large"))
+                .build();
+
+        // register 3 new TEs
+        registerTE(r4);
+        registerTE(r5);
+        registerTE(r6);
     }
 
     private void registerTEs() throws Exception {

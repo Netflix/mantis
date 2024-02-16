@@ -194,6 +194,4 @@ public interface IMantisJobMetadata {
      * is past timeout secs
      */
     long getWorkerTimeoutSecs();
-
-    Optional<String> getStageAttribute(int stageNum, String sizeName);
 }

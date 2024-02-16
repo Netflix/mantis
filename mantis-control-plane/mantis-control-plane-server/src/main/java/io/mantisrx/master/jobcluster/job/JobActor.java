@@ -1594,7 +1594,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         // TODO(fdichiara): make this a property of JobStageMetadata. https://github.com/Netflix/mantis/pull/629/files#r1487043262
                         SchedulingConstraints.of(
                             stageMetadata.getMachineDefinition(),
-                            mantisJobMetaData.getStageAttribute(stageMetadata.getStageNum(), MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY),
+                            // Fetch the 'sizeName' for the given stage among its container attributes
+                            stageMetadata.getSizeAttribute(),
                             mergeJobDefAndArtifactAssigmentAttributes(jobMetadata.getJobArtifact())),
                         hardConstraints,
                         softConstraints,
@@ -1673,6 +1674,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             .withHardConstraints(stage.getHardConstraints())
                             .withSoftConstraints(stage.getSoftConstraints())
                             .withScalingPolicy(stage.getScalingPolicy())
+                            .withSizeAttribute(Optional.ofNullable(stage.getContainerAttributes()).map(attrs -> attrs.get(MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY)).orElse(null))
 
                             .isScalable(stage.getScalable())
                             .build();

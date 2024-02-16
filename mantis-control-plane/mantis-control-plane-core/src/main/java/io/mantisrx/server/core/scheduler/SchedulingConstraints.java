@@ -33,14 +33,21 @@ import lombok.Value;
 @AllArgsConstructor(staticName = "of")
 @Value
 public class SchedulingConstraints {
-    // Defines the resource constraints for scheduling
+    /**
+     * Defines the resource constraints for scheduling
+     */
     MachineDefinition machineDefinition;
 
-    // Optional field to set predefined size name. When present, the scheduling system tries
-    // to match this field with the size name of a Task Executor.
+    /**
+     * Optional field to set a predefined size name. When this field is present, the scheduling system prioritizes
+     * matching this field with the size name of a Task Executor Group during the worker allocation process. If no match is found,
+     * the function falls back to a fitness calculation on machine definition.
+     */
     Optional<String> sizeName;
 
-    // Additional attributes for scheduling (ie. jdkVersion:17)
+    /**
+     * Additional attributes for scheduling (ie. jdkVersion:17)
+     */
     Map<String, String> schedulingAttributes;
 
     @VisibleForTesting
