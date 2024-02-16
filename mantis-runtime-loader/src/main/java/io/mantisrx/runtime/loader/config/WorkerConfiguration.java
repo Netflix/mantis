@@ -155,6 +155,18 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @DefaultNull
     File getLocalStorageDir();
 
+    @Config("mantis.taskexecutor.hardware.cpu-cores")
+    @DefaultNull
+    Double getCpuCores();
+
+    @Config("mantis.taskexecutor.hardware.memory-in-mb")
+    @DefaultNull
+    Double getMemoryInMB();
+
+    @Config("mantis.taskexecutor.hardware.disk-in-mb")
+    @DefaultNull
+    Double getDiskInMB();
+
     @Config("mantis.taskexecutor.hardware.network-bandwidth-in-mb")
     @Default(value = "128.0")
     double getNetworkBandwidthInMB();
