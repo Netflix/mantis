@@ -31,7 +31,6 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -165,14 +164,30 @@ public class TaskExecutorRegistration {
 
     @JsonIgnore
     public TaskExecutorGroupKey getTaskExecutorGroupKey() {
-        return new TaskExecutorGroupKey(machineDefinition, getAttributeByKey(MANTIS_CONTAINER_SIZE_NAME_KEY), getSchedulingAttributes());
+        Optional<String> sizeName = getAttributeByKey(MANTIS_CONTAINER_SIZE_NAME_KEY)
+            .filter(name -> !name.matches("\\$\\{.*\\}"));
+        return new TaskExecutorGroupKey(machineDefinition, sizeName, getSchedulingAttributes());
     }
 
     @Value
-    @AllArgsConstructor
     public static class TaskExecutorGroupKey {
         MachineDefinition machineDefinition;
         Optional<String> sizeName;
         Map<String, String> schedulingAttributes;
+
+        public TaskExecutorGroupKey(MachineDefinition machineDefinition,
+                                    Optional<String> sizeName,
+                                    Map<String, String> schedulingAttributes) {
+            this.machineDefinition = new MachineDefinition(
+                Math.round(machineDefinition.getCpuCores()),
+                Math.round(machineDefinition.getMemoryMB()),
+                Math.round(machineDefinition.getNetworkMbps()),
+                Math.round(machineDefinition.getDiskMB()),
+                // TODO: remove this value.
+                machineDefinition.getNumPorts());
+
+            this.sizeName = sizeName;
+            this.schedulingAttributes = schedulingAttributes;
+        }
     }
 }

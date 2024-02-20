@@ -25,7 +25,9 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.master.domain.JobClusterConfig;
 import io.mantisrx.server.master.domain.JobDefinition;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -76,8 +78,14 @@ public class JobDefinitionResolver {
         // inherit params from cluster if not specified
         List<Parameter> parameters = (resolvedJobDefn.getParameters() != null && !resolvedJobDefn.getParameters().isEmpty()) ? resolvedJobDefn.getParameters() : jobClusterMetadata.getJobClusterDefinition().getParameters();
 
-        // inherit labels from cluster if not specified
-        List<Label> labels = (resolvedJobDefn.getLabels() != null && !resolvedJobDefn.getLabels().isEmpty()) ? resolvedJobDefn.getLabels() : jobClusterMetadata.getJobClusterDefinition().getLabels();
+        // Inherit labels from cluster, if resolvedJobDefn has labels, override the existing ones
+        Map<String, Label> labelMap = jobClusterMetadata.getJobClusterDefinition().getLabels().stream()
+            .collect(Collectors.toMap(Label::getName, label -> label));
+        if (resolvedJobDefn.getLabels() != null && !resolvedJobDefn.getLabels().isEmpty()) {
+            resolvedJobDefn.getLabels()
+                .forEach(label -> labelMap.put(label.getName(), label));
+        }
+        List<Label> labels = new ArrayList<>(labelMap.values());
 
         String artifactName = resolvedJobDefn.getArtifactName();
         SchedulingInfo schedulingInfo = resolvedJobDefn.getSchedulingInfo();

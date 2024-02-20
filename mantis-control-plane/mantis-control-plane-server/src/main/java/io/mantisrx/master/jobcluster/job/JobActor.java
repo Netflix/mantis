@@ -1596,7 +1596,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             stageMetadata.getMachineDefinition(),
                             // Fetch the 'sizeName' for the given stage among its container attributes
                             stageMetadata.getSizeAttribute(),
-                            mergeJobDefAndArtifactAssigmentAttributes(jobMetadata.getJobArtifact())),
+                            mergeJobDefAndArtifactAssigmentAttributes(mantisJobMetaData.getArtifactName())),
                         hardConstraints,
                         softConstraints,
                         readyAt.orElse(0L),
@@ -1614,17 +1614,19 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          * attributes from the job definition itself. The keys from the job definition take precedence over the
          * keys from the artifact's tags.
          *
-         * @param artifactID the artifact used by the job whose attributes are to be fetched
+         * @param artifactName the artifact used by the job whose attributes are to be fetched
          * @return A merged map of scheduling attributes. The precedence of keys follows: job definition > artifact's tags.
          */
-        private Map<String, String> mergeJobDefAndArtifactAssigmentAttributes(ArtifactID artifactID) {
+        private Map<String, String> mergeJobDefAndArtifactAssigmentAttributes(String artifactName) {
             try {
-                JobArtifact artifact = jobStore.getJobArtifact(artifactID);
+                LOGGER.info("[fdc-91] mergeJobDefAndArtifactAssigmentAttributes() artifactName --> {}   ---> {}", artifactName, artifactName.substring(0, artifactName.indexOf('.')));
+
+                JobArtifact artifact = jobStore.getJobArtifact(ArtifactID.of(artifactName.substring(0, artifactName.indexOf('.'))));
                 Map<String, String> mergedMap = new HashMap<>(artifact.getTags());
                 mergedMap.putAll(mantisJobMetaData.getJobDefinition().getSchedulingConstraints());
                 return mergedMap;
             } catch (Exception e) {
-                LOGGER.warn("Couldn't find job artifact by id: {}", artifactID, e);
+                LOGGER.warn("Couldn't find job artifact by id: {}", artifactName, e);
             }
             return mantisJobMetaData.getJobDefinition().getSchedulingConstraints();
         }

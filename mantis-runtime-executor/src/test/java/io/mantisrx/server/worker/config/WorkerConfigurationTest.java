@@ -51,4 +51,13 @@ public class WorkerConfigurationTest {
         final WorkerConfiguration workerConfiguration = new StaticPropertiesConfigurationFactory(props).getConfig();
         assertEquals(ImmutableMap.of("key1", "val1", "key2", "val2", "key3", "val3"), workerConfiguration.getTaskExecutorAttributes());
     }
+
+    @Test
+    public void testExcludeUnresolvedAttribute() {
+        final Properties props = new Properties();
+        props.setProperty("mantis.taskexecutor.attributes", "key1:val1,key2:${val2},key3:val3");
+        props.setProperty("mantis.zookeeper.root", "");
+        final WorkerConfiguration workerConfiguration = new StaticPropertiesConfigurationFactory(props).getConfig();
+        assertEquals(ImmutableMap.of("key1", "val1", "key3", "val3"), workerConfiguration.getTaskExecutorAttributes());
+    }
 }

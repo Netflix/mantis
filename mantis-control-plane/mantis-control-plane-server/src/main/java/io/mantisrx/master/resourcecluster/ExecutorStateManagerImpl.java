@@ -372,12 +372,23 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
      * @return true if all allocation constraints are satisfied, false otherwise.
      */
     public boolean areSchedulingAttributeConstraintsSatisfied(SchedulingConstraints constraints, Map<String, String> teAssignmentAttributes) {
+        Map<String, String> teAssignmentAttributesLowercased = teAssignmentAttributes.entrySet()
+            .stream()
+            .collect(Collectors.toMap(entry -> entry.getKey().toLowerCase(), Map.Entry::getValue));
+
+        Map<String, String> constraintsAttributesLowercased = constraints.getSchedulingAttributes().entrySet()
+            .stream()
+            .collect(Collectors.toMap(entry -> entry.getKey().toLowerCase(), Map.Entry::getValue));
+
         return schedulingAttributes.entrySet()
             .stream()
-            .allMatch(entry -> teAssignmentAttributes
-                .getOrDefault(entry.getKey(), entry.getValue())
-                .equalsIgnoreCase(constraints.getSchedulingAttributes()
-                    .getOrDefault(entry.getKey(), entry.getValue())));
+            .allMatch(entry -> {
+                String lowerCaseKey = entry.getKey().toLowerCase();
+                return teAssignmentAttributesLowercased
+                    .getOrDefault(lowerCaseKey, entry.getValue())
+                    .equalsIgnoreCase(constraintsAttributesLowercased
+                        .getOrDefault(lowerCaseKey, entry.getValue()));
+            });
     }
 
     @Override
