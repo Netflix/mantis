@@ -1,7 +1,7 @@
 {
     "annotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.22"
         }
     },
     "baseline-exact-dependencies-main": {
@@ -90,7 +90,7 @@
             "locked": "1.2.1"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
+            "locked": "2.23.4"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
@@ -152,7 +152,7 @@
             "locked": "1.2.1"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.22"
         },
         "org.slf4j:slf4j-api": {
             "locked": "1.7.6"
@@ -166,7 +166,7 @@
     },
     "lombok": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.22"
         }
     },
     "runtimeClasspath": {
@@ -224,7 +224,7 @@
     },
     "testAnnotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.22"
         }
     },
     "testCompileClasspath": {
@@ -311,10 +311,10 @@
             "locked": "1.2.1"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
+            "locked": "2.23.4"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.22"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
@@ -337,7 +337,7 @@
     },
     "testFixturesAnnotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.22"
         }
     },
     "testFixturesCompileClasspath": {
@@ -400,7 +400,7 @@
             "locked": "1.2.1"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.22"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
@@ -613,7 +613,7 @@
             "locked": "1.2.1"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
+            "locked": "2.23.4"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
