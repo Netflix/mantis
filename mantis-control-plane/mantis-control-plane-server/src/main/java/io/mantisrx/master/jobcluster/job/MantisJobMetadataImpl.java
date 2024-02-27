@@ -121,7 +121,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         return nextWorkerNumberToUse;
     }
 
-    public void setNextWorkerNumberToUse(int n, MantisJobStore store) throws Exception{
+    public void setNextWorkerNumberToUse(int n, MantisJobStore store) throws Exception {
         this.nextWorkerNumberToUse = n;
         store.updateJob(this);
     }

@@ -69,9 +69,9 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
     private final List<JobConstraints> hardConstraints;
     private final List<JobConstraints> softConstraints;
     // scaling policy be null
-    private StageScalingPolicy scalingPolicy;
-    private boolean scalable;
-    private String sizeAttribute;
+    private final StageScalingPolicy scalingPolicy;
+    private final boolean scalable;
+    private final String sizeAttribute;
     @JsonIgnore
     private final ConcurrentMap<Integer, JobWorker> workerByIndexMetadataSet;
     @JsonIgnore

@@ -1221,7 +1221,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         /**
          * Get the next unused worker number.
          * <p>
-         * For performance reasosns, this object updates state in persistence every N calls made to this method.
+         * For performance reasons, this object updates state in persistence every N calls made to this method.
          *
          * @return The next worker number to use for new workers
          * @throws IllegalStateException if there was an error saving the next worker number to use to the job store

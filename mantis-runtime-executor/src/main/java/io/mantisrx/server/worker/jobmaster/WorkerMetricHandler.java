@@ -312,14 +312,17 @@ import rx.subjects.PublishSubject;
                                         new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.CPU, stage,
                                                 cpuUsageCurr, numWorkers, ""));
                                 jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, stage,
-                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.TOT_MEM_USAGE_CURR), numWorkers, ""));
-                                jobAutoScaleObserver.onNext(
                                         new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Network, stage,
                                                 allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.NW_BYTES_USAGE_CURR), numWorkers, ""));
+                                // Divide by 1024 * 1024 to account for bytes to MB conversion.
+                                // Making memory usage metric interchangeable with jvm memory usage metric since memory usage is not suitable for autoscaling in a JVM based system.
                                 jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.JVMMemory, stage,
-                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes"), numWorkers, "")
+                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, stage,
+                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes") / (1024 * 1024), numWorkers, "")
+                                );
+                                jobAutoScaleObserver.onNext(
+                                    new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.JVMMemory, stage,
+                                        allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes") / (1024 * 1024), numWorkers, "")
                                 );
                             }
 
