@@ -150,6 +150,7 @@ public class StageScalingPolicy implements Serializable {
 
     public enum ScalingReason {
         CPU,
+        @Deprecated
         Memory,
         Network,
         DataDrop,
