@@ -97,14 +97,6 @@ public class JobAutoScaler {
         this.context = context;
     }
 
-    public static void main(String[] args) {
-        Observable.interval(1, TimeUnit.DAYS)
-                .doOnNext(x -> System.out.println(x))
-                .take(1)
-                .toBlocking()
-                .last();
-    }
-
     Observer<Event> getObserver() {
         return new SerializedObserver<>(subject);
     }

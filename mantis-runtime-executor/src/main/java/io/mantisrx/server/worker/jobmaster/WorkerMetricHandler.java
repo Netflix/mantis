@@ -19,6 +19,7 @@ package io.mantisrx.server.worker.jobmaster;
 import static io.mantisrx.server.core.stats.MetricStringConstants.*;
 
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason;
 import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.master.client.MantisMasterGateway;
@@ -312,14 +313,15 @@ import rx.subjects.PublishSubject;
                                         new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.CPU, stage,
                                                 cpuUsageCurr, numWorkers, ""));
                                 jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, stage,
-                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.TOT_MEM_USAGE_CURR), numWorkers, ""));
-                                jobAutoScaleObserver.onNext(
                                         new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Network, stage,
                                                 allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.NW_BYTES_USAGE_CURR), numWorkers, ""));
                                 jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.JVMMemory, stage,
-                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes"), numWorkers, "")
+                                        new JobAutoScaler.Event(ScalingReason.Memory, stage,
+                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes") / (1024 * 1024), numWorkers, "")
+                                );
+                                jobAutoScaleObserver.onNext(
+                                    new JobAutoScaler.Event(ScalingReason.JVMMemory, stage,
+                                        allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes") / (1024 * 1024), numWorkers, "")
                                 );
                             }
 
