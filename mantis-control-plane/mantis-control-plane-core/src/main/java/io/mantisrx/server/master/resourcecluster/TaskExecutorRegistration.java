@@ -15,6 +15,8 @@
  */
 package io.mantisrx.server.master.resourcecluster;
 
+import static io.mantisrx.common.WorkerConstants.MANTIS_CONTAINER_SIZE_NAME_KEY;
+
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
@@ -22,14 +24,19 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
 /**
@@ -140,5 +147,47 @@ public class TaskExecutorRegistration {
         }
 
         return Optional.empty();
+    }
+
+    @JsonIgnore
+    public Map<String, String> getSchedulingAttributes() {
+        return taskExecutorAttributes.entrySet().stream()
+            .flatMap(entry -> {
+                Matcher matcher = WorkerConstants.MANTIS_SCHEDULING_ATTRIBUTE_PATTERN.matcher(entry.getKey());
+                return matcher.matches() ? Stream.of(new AbstractMap.SimpleEntry<>(matcher.group(1).toLowerCase(), entry.getValue())) : Stream.empty();
+            })
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> getAttributeByKey(entry.getKey()).orElse(entry.getValue())
+            ));
+    }
+
+    @JsonIgnore
+    public TaskExecutorGroupKey getGroup() {
+        Optional<String> sizeName = getAttributeByKey(MANTIS_CONTAINER_SIZE_NAME_KEY)
+            .filter(name -> !name.matches("\\$\\{.*\\}"));
+        return new TaskExecutorGroupKey(machineDefinition, sizeName, getSchedulingAttributes());
+    }
+
+    @Value
+    public static class TaskExecutorGroupKey {
+        MachineDefinition machineDefinition;
+        Optional<String> sizeName;
+        Map<String, String> schedulingAttributes;
+
+        public TaskExecutorGroupKey(MachineDefinition machineDefinition,
+                                    Optional<String> sizeName,
+                                    Map<String, String> schedulingAttributes) {
+            this.machineDefinition = new MachineDefinition(
+                Math.round(machineDefinition.getCpuCores()),
+                Math.round(machineDefinition.getMemoryMB()),
+                Math.round(machineDefinition.getNetworkMbps()),
+                Math.round(machineDefinition.getDiskMB()),
+                // TODO: remove this value.
+                machineDefinition.getNumPorts());
+
+            this.sizeName = sizeName;
+            this.schedulingAttributes = schedulingAttributes;
+        }
     }
 }

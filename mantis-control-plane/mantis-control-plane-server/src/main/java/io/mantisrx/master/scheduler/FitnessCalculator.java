@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2024 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master;
+package io.mantisrx.master.scheduler;
 
-public class StringConstants {
-    // User for actions performed by Mantis master
-    public static final String MANTIS_MASTER_USER = "MantisMaster";
-    // Key to define the size name within a stage container's attributes map
-    public static final String MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY = "_mantis.stageContainerSizeName";
+import io.mantisrx.runtime.MachineDefinition;
+
+/**
+ * Interface definition for computing the fitness score between machine definitions.
+ */
+public interface FitnessCalculator {
+    double calculate(MachineDefinition requested, MachineDefinition available);
 }

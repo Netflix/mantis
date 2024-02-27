@@ -26,6 +26,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents Metadata associated with a Mantis Job stage.
@@ -128,4 +129,12 @@ public interface IMantisStageMetadata {
      * @throws InvalidJobException
      */
     JobWorker getWorkerByWorkerNumber(int workerNumber) throws InvalidJobException;
+
+
+    /**
+     * Retrieves the value of the "size" attribute from the stage container attributes map, if it's not null and the key exists.
+     *
+     * @return
+     */
+    Optional<String> getSizeAttribute();
 }

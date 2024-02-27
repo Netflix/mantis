@@ -504,7 +504,6 @@ public class JobClusterManagerAkkaTest {
             Duration.of(10, ChronoUnit.MINUTES),
             GetJobDetailsResponse.class);
 
-        System.out.println("[fdc-92] acceptedResponse -> " + acceptedResponse);
         // Ensure its Accepted
         assertEquals(SUCCESS, acceptedResponse.responseCode);
         assertEquals(JobState.Accepted, acceptedResponse.getJobMetadata().get().getState());
@@ -578,7 +577,6 @@ public class JobClusterManagerAkkaTest {
         resp2 = probe.expectMsgClass(Duration.of(10, ChronoUnit.MINUTES),
             GetJobDetailsResponse.class);
 
-        System.out.println("[fdc-92] resp -> " + resp2);
         // Ensure its Accepted
         assertEquals(SUCCESS, resp2.responseCode);
         assertEquals(JobState.Accepted, resp2.getJobMetadata().get().getState());

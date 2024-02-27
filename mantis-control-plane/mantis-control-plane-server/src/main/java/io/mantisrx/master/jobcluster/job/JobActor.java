@@ -17,6 +17,7 @@
 package io.mantisrx.master.jobcluster.job;
 
 import static io.mantisrx.master.StringConstants.MANTIS_MASTER_USER;
+import static io.mantisrx.master.StringConstants.MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY;
 import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.*;
 import static io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.MANTIS_SYSTEM_ALLOCATED_NUM_PORTS;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.*;
@@ -48,8 +49,11 @@ import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.domain.ArtifactID;
+import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.InvalidJobRequest;
 import io.mantisrx.server.master.agentdeploy.MigrationStrategyFactory;
@@ -70,6 +74,7 @@ import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -1570,23 +1575,29 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     }
                 }
 
+                JobMetadata jobMetadata = new JobMetadata(
+                    mantisJobMetaData.getJobId().getId(),
+                    mantisJobMetaData.getJobJarUrl(),
+                    mantisJobMetaData.getTotalStages(),
+                    mantisJobMetaData.getUser(),
+                    mantisJobMetaData.getSchedulingInfo(),
+                    mantisJobMetaData.getParameters(),
+                    getSubscriptionTimeoutSecs(mantisJobMetaData),
+                    getHeartbeatIntervalSecs(mantisJobMetaData),
+                    mantisJobMetaData.getMinRuntimeSecs()
+                );
                 ScheduleRequest sr = new ScheduleRequest(
                         workerId,
                         workerRequest.getStageNum(),
                         workerRequest.getNumberOfPorts(),
-                        new JobMetadata(
-                                mantisJobMetaData.getJobId().getId(),
-                                mantisJobMetaData.getJobJarUrl(),
-                                mantisJobMetaData.getTotalStages(),
-                                mantisJobMetaData.getUser(),
-                                mantisJobMetaData.getSchedulingInfo(),
-                                mantisJobMetaData.getParameters(),
-                                getSubscriptionTimeoutSecs(mantisJobMetaData),
-                                getHeartbeatIntervalSecs(mantisJobMetaData),
-                                mantisJobMetaData.getMinRuntimeSecs()
-                        ),
+                        jobMetadata,
                         mantisJobMetaData.getSla().orElse(new JobSla.Builder().build()).getDurationType(),
-                        stageMetadata.getMachineDefinition(),
+                        // TODO(fdichiara): make this a property of JobStageMetadata. https://github.com/Netflix/mantis/pull/629/files#r1487043262
+                        SchedulingConstraints.of(
+                            stageMetadata.getMachineDefinition(),
+                            // Fetch the 'sizeName' for the given stage among its container attributes
+                            stageMetadata.getSizeAttribute(),
+                            mergeJobDefAndArtifactAssigmentAttributes(jobMetadata.getJobJarUrl())),
                         hardConstraints,
                         softConstraints,
                         readyAt.orElse(0L),
@@ -1596,6 +1607,33 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 LOGGER.error("Exception creating scheduleRequest ", e);
                 throw e;
             }
+        }
+
+        /**
+         * Merges attributes assignment between job and artifact definitions. It does it by first fetching
+         * the associated JobArtifact tags using the artifact ID from the job, and then merging them with the assignment
+         * attributes from the job definition itself. The keys from the job definition take precedence over the
+         * keys from the artifact's tags.
+         *
+         * @param artifactUrl The URL of the artifact leveraged by the job for which the attributes are to be collated
+         * @return A merged map of scheduling attributes. The precedence of keys follows: job definition > artifact's tags.
+         */
+        private Map<String, String> mergeJobDefAndArtifactAssigmentAttributes(URL artifactUrl) {
+            try {
+                Optional<String> artifactName = DataFormatAdapter.extractArtifactBaseName(artifactUrl);
+                if (artifactName.isPresent()) {
+                    JobArtifact artifact = jobStore.getJobArtifact(ArtifactID.of(artifactName.get()));
+                    if (artifact != null && artifact.getTags() != null) {
+                        Map<String, String> mergedMap = new HashMap<>(artifact.getTags());
+                        mergedMap.putAll(mantisJobMetaData.getJobDefinition().getSchedulingConstraints());
+                        return mergedMap;
+                    }
+                }
+
+            } catch (Exception e) {
+                LOGGER.warn("Couldn't find job artifact by id: {}", artifactUrl, e);
+            }
+            return mantisJobMetaData.getJobDefinition().getSchedulingConstraints();
         }
 
         private List<IMantisWorkerMetadata> getInitialWorkers(JobDefinition jobDetails, long submittedAt)
@@ -1643,6 +1681,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             .withHardConstraints(stage.getHardConstraints())
                             .withSoftConstraints(stage.getSoftConstraints())
                             .withScalingPolicy(stage.getScalingPolicy())
+                            .withSizeAttribute(Optional.ofNullable(stage.getContainerAttributes()).map(attrs -> attrs.get(MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY)).orElse(null))
 
                             .isScalable(stage.getScalable())
                             .build();

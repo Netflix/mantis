@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.jobcluster.job;
 
+import static io.mantisrx.master.StringConstants.MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY;
 import static java.util.Optional.of;
 
 import com.netflix.spectator.impl.Preconditions;
@@ -70,6 +71,7 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
     // scaling policy be null
     private StageScalingPolicy scalingPolicy;
     private boolean scalable;
+    private String sizeAttribute;
     @JsonIgnore
     private final ConcurrentMap<Integer, JobWorker> workerByIndexMetadataSet;
     @JsonIgnore
@@ -87,6 +89,7 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
      * @param softConstraints
      * @param scalingPolicy
      * @param scalable
+     * @param sizeAttribute
      */
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -98,7 +101,8 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
                                    @JsonProperty("hardConstraints") List<JobConstraints> hardConstraints,
                                    @JsonProperty("softConstraints") List<JobConstraints> softConstraints,
                                    @JsonProperty("scalingPolicy") StageScalingPolicy scalingPolicy,
-                                   @JsonProperty("scalable") boolean scalable) {
+                                   @JsonProperty("scalable") boolean scalable,
+                                   @JsonProperty("sizeAttribute") String sizeAttribute) {
         this.jobId = jobId;
         this.stageNum = stageNum;
         this.numStages = numStages;
@@ -108,6 +112,7 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
         this.softConstraints = softConstraints;
         this.scalingPolicy = scalingPolicy;
         this.scalable = scalable;
+        this.sizeAttribute = sizeAttribute;
         workerByIndexMetadataSet = new ConcurrentHashMap<>();
         workerByNumberMetadataSet = new ConcurrentHashMap<>();
 
@@ -168,6 +173,7 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
         private List<JobConstraints> softConstraints = Collections.emptyList();
         private StageScalingPolicy scalingPolicy;
         private boolean scalable;
+        private String sizeAttribute;
 
         /**
          * Ctor.
@@ -270,6 +276,11 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
             return this;
         }
 
+        public Builder withSizeAttribute(String s) {
+            sizeAttribute = s;
+            return this;
+        }
+
         /**
          * Convenience method to clone data from an old worker of this stage.
          * @param workerRequest
@@ -289,6 +300,7 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
             this.scalingPolicy = (workerRequest.getSchedulingInfo().forStage(
                     workerRequest.getWorkerStage()).getScalingPolicy());
             this.scalable = (workerRequest.getSchedulingInfo().forStage(workerRequest.getWorkerStage()).getScalable());
+            this.sizeAttribute = Optional.ofNullable(workerRequest.getSchedulingInfo().forStage(workerRequest.getWorkerStage()).getContainerAttributes()).map(attrs -> attrs.get(MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY)).orElse(null);
             return this;
         }
 
@@ -309,9 +321,8 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
 
 
             return new MantisStageMetadataImpl(jobId, stageNum, numStages, machineDefinition, numWorkers,
-                    hardConstraints, softConstraints, scalingPolicy, scalable);
+                    hardConstraints, softConstraints, scalingPolicy, scalable, sizeAttribute);
         }
-
     }
 
     /**
@@ -404,6 +415,11 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
         if (worker == null)
             throw new InvalidJobException(jobId, -1, workerNumber);
         return worker;
+    }
+
+    @Override
+    public Optional<String> getSizeAttribute() {
+        return Optional.ofNullable(sizeAttribute);
     }
 
     /**

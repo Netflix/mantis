@@ -23,15 +23,16 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
+import com.netflix.spectator.api.Tag;
 import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
-import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
@@ -116,8 +117,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final boolean isJobArtifactCachingEnabled;
 
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled, boolean isJobArtifactCachingEnabled) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled, isJobArtifactCachingEnabled)
+    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled, boolean isJobArtifactCachingEnabled, Map<String, String> schedulingAttributes) {
+        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled, isJobArtifactCachingEnabled, schedulingAttributes)
                 .withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -132,7 +133,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         JobMessageRouter jobMessageRouter,
         int maxJobArtifactsToCache,
         String jobClustersWithArtifactCachingEnabled,
-        boolean isJobArtifactCachingEnabled) {
+        boolean isJobArtifactCachingEnabled,
+        Map<String, String> schedulingAttributes) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -148,7 +150,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.maxJobArtifactsToCache = maxJobArtifactsToCache;
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
 
-        this.executorStateManager = new ExecutorStateManagerImpl();
+        this.executorStateManager = new ExecutorStateManagerImpl(schedulingAttributes);
 
         this.metrics = new ResourceClusterActorMetrics();
     }
@@ -626,15 +628,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         } else {
             request.allocationRequests.forEach(req -> metrics.incrementCounter(
                 ResourceClusterActorMetrics.NO_RESOURCES_AVAILABLE,
-                TagList.create(ImmutableMap.of(
-                    "resourceCluster",
-                    clusterID.getResourceID(),
-                    "workerId",
-                    req.getWorkerId().getId(),
-                    "jobCluster",
-                    req.getWorkerId().getJobCluster(),
-                    "cpuCores",
-                    String.valueOf(req.getMachineDefinition().getCpuCores())))));
+                createTagListFrom(req)));
             sender().tell(new Status.Failure(new NoResourceAvailableException(
                 String.format("No resource available for request %s: resource overview: %s", request,
                     getResourceOverview()))), self());
@@ -846,6 +840,33 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         return new HashSet<>(Arrays.asList(jobClustersWithArtifactCachingEnabled.split(",")));
     }
 
+    /**
+     * Creates a list of tags from the provided TaskExecutorAllocationRequest.
+     * The list includes resource cluster, workerId, jobCluster, and either sizeName or cpuCores and memoryMB
+     * based on whether sizeName is present in the request's constraints.
+     *
+     * @param req The task executor allocation request from which the tag list will be generated.
+     *
+     * @return An iterable list of tags created from the task executor allocation request.
+     */
+    private Iterable<Tag> createTagListFrom(TaskExecutorAllocationRequest req) {
+        // Basic tags that will always be included
+        ImmutableMap.Builder<String, String> tagsBuilder = ImmutableMap.<String, String>builder()
+            .put("resourceCluster", clusterID.getResourceID())
+            .put("workerId", req.getWorkerId().getId())
+            .put("jobCluster", req.getWorkerId().getJobCluster());
+
+        // Add the sizeName tag if it exists, otherwise add the cpuCores and memoryMB tags
+        if (req.getConstraints().getSizeName().isPresent()) {
+            tagsBuilder.put("sizeName", req.getConstraints().getSizeName().get());
+        } else {
+            tagsBuilder.put("cpuCores", String.valueOf(req.getConstraints().getMachineDefinition().getCpuCores()))
+                .put("memoryMB", String.valueOf(req.getConstraints().getMachineDefinition().getMemoryMB()));
+        }
+
+        return TagList.create(tagsBuilder.build());
+    }
+
     @Value
     static class HeartbeatTimeout {
 
@@ -858,23 +879,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         Set<TaskExecutorAllocationRequest> allocationRequests;
         ClusterID clusterID;
 
-        public Map<MachineDefinition, List<TaskExecutorAllocationRequest>> getGroupedByMachineDef() {
+        public Map<SchedulingConstraints, List<TaskExecutorAllocationRequest>> getGroupedBySchedulingConstraints() {
             return allocationRequests
                 .stream()
-                .collect(Collectors.groupingBy(TaskExecutorAllocationRequest::getMachineDefinition));
-        }
-
-        public Map<Double, Integer> getGroupedByCoresCount() {
-            return allocationRequests
-                .stream()
-                .collect(Collectors.groupingBy(TaskExecutorAllocationRequest::getMachineDefinition))
-                .entrySet()
-                .stream()
-                .collect(Collectors.toMap(
-                    e -> e.getKey().getCpuCores(),
-                    e -> e.getValue().size(),
-                    Integer::sum
-                ));
+                .collect(Collectors.groupingBy(TaskExecutorAllocationRequest::getConstraints));
         }
 
         public String getJobId() {

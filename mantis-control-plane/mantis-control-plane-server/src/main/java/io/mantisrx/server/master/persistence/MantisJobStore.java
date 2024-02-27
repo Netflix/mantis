@@ -24,6 +24,7 @@ import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
+import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobId;
@@ -275,6 +276,10 @@ public class MantisJobStore {
 
     public List<String> getJobArtifactsToCache(ClusterID clusterID) throws IOException {
         return storageProvider.listJobArtifactsToCache(clusterID);
+    }
+
+    public JobArtifact getJobArtifact(ArtifactID artifactID) throws IOException {
+        return storageProvider.getArtifactById(artifactID.getResourceID());
     }
 
     private static class TerminatedJob implements Comparable<TerminatedJob> {

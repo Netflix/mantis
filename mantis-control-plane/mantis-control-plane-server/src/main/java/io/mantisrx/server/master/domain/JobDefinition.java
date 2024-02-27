@@ -44,8 +44,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.ToString;
+import org.apache.commons.lang3.tuple.Pair;
 
 @ToString
 public class JobDefinition {
@@ -62,6 +65,16 @@ public class JobDefinition {
     private final DeploymentStrategy deploymentStrategy;
     private final int withNumberOfStages;
     private Map<String, Label> labels; // Map label->name to label instance.
+    /**
+     * A map of scheduling constraints deduced from labels.
+     * The constraints are extracted from labels matching the "MANTIS_SCHEDULING_ATTRIBUTE_LABEL_REGEX" pattern.
+     * Only the contents of the capturing group (i.e., the key that comes after "_mantis.schedulingConstraint.")
+     * are saved. These values are then used as constraints during worker scheduling.
+     */
+    private final Map<String, String> schedulingConstraints;
+
+    private final static Pattern MANTIS_SCHEDULING_ATTRIBUTE_LABEL_REGEX =
+        Pattern.compile("_mantis\\.schedulingAttribute\\.(.+)", Pattern.CASE_INSENSITIVE);
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -101,6 +114,16 @@ public class JobDefinition {
         this.schedulingInfo = schedulingInfo;
         this.deploymentStrategy = deploymentStrategy;
         this.withNumberOfStages = withNumberOfStages;
+        this.schedulingConstraints = this.labels.entrySet().stream()
+            .map(label -> {
+                Matcher matcher = MANTIS_SCHEDULING_ATTRIBUTE_LABEL_REGEX.matcher(label.getKey());
+                return matcher.find() ? Pair.of(matcher.group(1), label.getValue().getValue()) : null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(
+                Pair::getLeft,
+                Pair::getRight
+            ));
         postProcess();
         validate(true);
     }
@@ -222,6 +245,10 @@ public class JobDefinition {
 
     public SchedulingInfo getSchedulingInfo() {
         return schedulingInfo;
+    }
+
+    public Map<String, String> getSchedulingConstraints() {
+        return this.schedulingConstraints;
     }
 
     public DeploymentStrategy getDeploymentStrategy() { return deploymentStrategy; }

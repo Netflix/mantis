@@ -206,6 +206,34 @@ public class DataFormatAdapter {
         return empty();
     }
 
+    /**
+     * Extracts the base part of an artifact from a URL, excluding the .zip extension if present.
+     * @param jar The URL of the artifact.
+     * @return An optional that, if possible, contains the extracted artifact base name.
+     */
+    public static Optional<String> extractArtifactBaseName(URL jar) {
+        if(jar != null) {
+            String jarStr = jar.toString();
+            return extractArtifactBaseName(jarStr);
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> extractArtifactBaseName(String jarStr) {
+        Optional<String> artifactNameOpt = extractArtifactName(jarStr);
+        if (artifactNameOpt.isPresent()) {
+            String artifactName = artifactNameOpt.get();
+            if (artifactName.endsWith(".zip")) {
+                // If the name ends with .zip, remove it
+                return Optional.of(artifactName.substring(0, artifactName.length() - 4));
+            } else {
+                // If there's no .zip extension, return the entire string
+                return Optional.of(artifactName);
+            }
+        }
+        logger.warn("Could not extract artifactBaseName from " + jarStr);
+        return Optional.empty();
+    }
 
     public static NamedJob.SLA convertSLAToNamedJobSLA(io.mantisrx.server.master.domain.SLA sla) {
 
