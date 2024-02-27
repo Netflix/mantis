@@ -74,6 +74,7 @@ import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -1596,7 +1597,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             stageMetadata.getMachineDefinition(),
                             // Fetch the 'sizeName' for the given stage among its container attributes
                             stageMetadata.getSizeAttribute(),
-                            mergeJobDefAndArtifactAssigmentAttributes(mantisJobMetaData.getArtifactName())),
+                            mergeJobDefAndArtifactAssigmentAttributes(jobMetadata.getJobJarUrl())),
                         hardConstraints,
                         softConstraints,
                         readyAt.orElse(0L),
@@ -1614,19 +1615,23 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          * attributes from the job definition itself. The keys from the job definition take precedence over the
          * keys from the artifact's tags.
          *
-         * @param artifactName the artifact used by the job whose attributes are to be fetched
+         * @param artifactUrl The URL of the artifact leveraged by the job for which the attributes are to be collated
          * @return A merged map of scheduling attributes. The precedence of keys follows: job definition > artifact's tags.
          */
-        private Map<String, String> mergeJobDefAndArtifactAssigmentAttributes(String artifactName) {
+        private Map<String, String> mergeJobDefAndArtifactAssigmentAttributes(URL artifactUrl) {
             try {
-                LOGGER.info("[fdc-91] mergeJobDefAndArtifactAssigmentAttributes() artifactName --> {}   ---> {}", artifactName, artifactName.substring(0, artifactName.indexOf('.')));
+                Optional<String> artifactName = DataFormatAdapter.extractArtifactBaseName(artifactUrl);
+                if (artifactName.isPresent()) {
+                    JobArtifact artifact = jobStore.getJobArtifact(ArtifactID.of(artifactName.get()));
+                    if (artifact != null && artifact.getTags() != null) {
+                        Map<String, String> mergedMap = new HashMap<>(artifact.getTags());
+                        mergedMap.putAll(mantisJobMetaData.getJobDefinition().getSchedulingConstraints());
+                        return mergedMap;
+                    }
+                }
 
-                JobArtifact artifact = jobStore.getJobArtifact(ArtifactID.of(artifactName.substring(0, artifactName.indexOf('.'))));
-                Map<String, String> mergedMap = new HashMap<>(artifact.getTags());
-                mergedMap.putAll(mantisJobMetaData.getJobDefinition().getSchedulingConstraints());
-                return mergedMap;
             } catch (Exception e) {
-                LOGGER.warn("Couldn't find job artifact by id: {}", artifactName, e);
+                LOGGER.warn("Couldn't find job artifact by id: {}", artifactUrl, e);
             }
             return mantisJobMetaData.getJobDefinition().getSchedulingConstraints();
         }

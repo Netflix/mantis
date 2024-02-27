@@ -26,6 +26,7 @@ import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.master.domain.JobClusterConfig;
 import io.mantisrx.server.master.domain.JobDefinition;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -85,7 +86,7 @@ public class JobDefinitionResolver {
             resolvedJobDefn.getLabels()
                 .forEach(label -> labelMap.put(label.getName(), label));
         }
-        List<Label> labels = new ArrayList<>(labelMap.values());
+        List<Label> labels = Collections.unmodifiableList(new ArrayList<>(labelMap.values()));
 
         String artifactName = resolvedJobDefn.getArtifactName();
         SchedulingInfo schedulingInfo = resolvedJobDefn.getSchedulingInfo();

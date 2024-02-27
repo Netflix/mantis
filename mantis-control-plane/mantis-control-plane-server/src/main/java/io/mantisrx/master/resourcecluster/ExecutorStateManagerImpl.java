@@ -140,7 +140,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         if (state.isAvailable() && state.getRegistration() != null) {
             TaskExecutorHolder teHolder = TaskExecutorHolder.of(taskExecutorID, state.getRegistration());
             log.debug("Marking executor {} as available for matching.", teHolder);
-            TaskExecutorGroupKey taskExecutorGroupKey = state.getRegistration().getTaskExecutorGroupKey();
+            TaskExecutorGroupKey taskExecutorGroupKey = state.getRegistration().getGroup();
             if (!this.executorsByGroup.containsKey(taskExecutorGroupKey)) {
                 log.info("[executorsByGroup] adding {} from TE: {}", taskExecutorGroupKey, teHolder);
                 this.executorsByGroup.putIfAbsent(
@@ -173,7 +173,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         if (this.taskExecutorStateMap.containsKey(taskExecutorID)) {
             TaskExecutorState taskExecutorState = this.taskExecutorStateMap.get(taskExecutorID);
             if (taskExecutorState.getRegistration() != null) {
-                TaskExecutorGroupKey taskExecutorGroupKey = taskExecutorState.getRegistration().getTaskExecutorGroupKey();
+                TaskExecutorGroupKey taskExecutorGroupKey = taskExecutorState.getRegistration().getGroup();
                 if (this.executorsByGroup.containsKey(taskExecutorGroupKey)) {
                     this.executorsByGroup.get(taskExecutorGroupKey)
                         .remove(TaskExecutorHolder.of(taskExecutorID, taskExecutorState.getRegistration()));
@@ -451,7 +451,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             if (!pendingCountByGroupKey.containsKey(groupKey)) {
                 pendingCountByGroupKey.put(
                     groupKey,
-                    getPendingCountByTaskExecutorGroup(value.getRegistration().getTaskExecutorGroupKey()));
+                    getPendingCountByTaskExecutorGroup(value.getRegistration().getGroup()));
             }
         });
 

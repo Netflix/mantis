@@ -57,6 +57,6 @@ public class JobMetadata {
 
     public ArtifactID getJobArtifact() {
         final String urlString = jobJarUrl.toString();
-        return  ArtifactID.of(urlString.substring(urlString.lastIndexOf('/') + 1));
+        return ArtifactID.of(urlString.substring(urlString.lastIndexOf('/') + 1));
     }
 }

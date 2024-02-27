@@ -163,7 +163,7 @@ public class TaskExecutorRegistration {
     }
 
     @JsonIgnore
-    public TaskExecutorGroupKey getTaskExecutorGroupKey() {
+    public TaskExecutorGroupKey getGroup() {
         Optional<String> sizeName = getAttributeByKey(MANTIS_CONTAINER_SIZE_NAME_KEY)
             .filter(name -> !name.matches("\\$\\{.*\\}"));
         return new TaskExecutorGroupKey(machineDefinition, sizeName, getSchedulingAttributes());
