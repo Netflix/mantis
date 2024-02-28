@@ -296,6 +296,106 @@ public class DataFormatAdapterTest {
     }
 
     @Test
+    public void jobClusterMetadataConversionTestDisabledInvalidJob() {
+        String artifactName = "artifact1";
+        String version = "0.0.1";
+        List<Parameter> parameterList = new ArrayList<>();
+        Parameter parameter = new Parameter("param1", "value1");
+        parameterList.add(parameter);
+
+
+        List<Label> labels = new ArrayList<>();
+        Label label = new Label("label1", "labelvalue1");
+        labels.add(label);
+
+        long uAt = 1234l;
+        JobClusterConfig jobClusterConfig =  new JobClusterConfig.Builder()
+            .withArtifactName(artifactName)
+            .withSchedulingInfo(DEFAULT_SCHED_INFO)
+            .withVersion(version)
+            .withUploadedAt(uAt)
+            .build();
+
+        String clusterName = "clusterName1";
+        JobOwner owner = new JobOwner("Neeraj", "Mantis", "desc", "nma@netflix.com", "repo");
+        boolean isReadyForMaster = true;
+        SLA sla = new SLA(1, 10, null, null);
+        JobClusterDefinitionImpl clusterDefn = new JobClusterDefinitionImpl.Builder()
+            .withJobClusterConfig(jobClusterConfig)
+            .withName(clusterName)
+            .withUser("user1")
+            .withIsReadyForJobMaster(isReadyForMaster)
+            .withOwner(owner)
+            .withMigrationConfig(WorkerMigrationConfig.DEFAULT)
+            .withSla(sla)
+            .withParameters(parameterList)
+            .withLabels(labels)
+            .withIsDisabled(true)
+            .build();
+
+        int lastJobCnt = 10;
+        boolean disabled = true;
+        IJobClusterMetadata clusterMeta = new JobClusterMetadataImpl.Builder()
+            .withJobClusterDefinition(clusterDefn)
+            .withLastJobCount(lastJobCnt)
+            .withIsDisabled(disabled)
+            .build();
+
+        NamedJob namedJob = DataFormatAdapter.convertJobClusterMetadataToNamedJob(clusterMeta);
+
+        assertEquals(disabled,namedJob.getDisabled());
+        assertEquals(clusterName, namedJob.getName());
+        assertEquals(lastJobCnt,namedJob.getLastJobCount());
+        assertEquals(1, namedJob.getLabels().size());
+        assertEquals(label, namedJob.getLabels().get(0));
+        assertEquals(owner, namedJob.getOwner());
+        assertEquals(isReadyForMaster, namedJob.getIsReadyForJobMaster());
+        assertEquals(WorkerMigrationConfig.DEFAULT, namedJob.getMigrationConfig());
+
+        // assert parameters
+        assertEquals(parameterList.size(), namedJob.getParameters().size());
+        assertEquals(parameter, namedJob.getParameters().get(0));
+
+        // assert sla
+        assertEquals(sla.getMin(), namedJob.getSla().getMin());
+        assertEquals(sla.getMax(), namedJob.getSla().getMax());
+
+        // assert jar info
+        assertEquals(1, namedJob.getJars().size());
+
+        // jar info
+        NamedJob.Jar jar = namedJob.getJars().get(0);
+        assertEquals(uAt, jar.getUploadedAt());
+        assertEquals(DEFAULT_SCHED_INFO,jar.getSchedulingInfo());
+        assertEquals(version, jar.getVersion());
+        assertEquals(artifactName, DataFormatAdapter.extractArtifactName(jar.getUrl()).orElse(""));
+
+        IJobClusterMetadata reconvertedJobCluster = DataFormatAdapter.convertNamedJobToJobClusterMetadata(namedJob);
+
+        assertEquals(disabled,reconvertedJobCluster.isDisabled());
+        assertEquals(clusterName,reconvertedJobCluster.getJobClusterDefinition().getName());
+        assertEquals(lastJobCnt,reconvertedJobCluster.getLastJobCount());
+        assertEquals(1, reconvertedJobCluster.getJobClusterDefinition().getLabels().size());
+        assertEquals(label, reconvertedJobCluster.getJobClusterDefinition().getLabels().get(0));
+        assertEquals(owner, reconvertedJobCluster.getJobClusterDefinition().getOwner());
+        assertEquals(isReadyForMaster,reconvertedJobCluster.getJobClusterDefinition().getIsReadyForJobMaster());
+        assertEquals(WorkerMigrationConfig.DEFAULT,reconvertedJobCluster.getJobClusterDefinition().getWorkerMigrationConfig());
+
+        assertEquals(parameterList.size(), reconvertedJobCluster.getJobClusterDefinition().getParameters().size());
+        assertEquals(parameter, reconvertedJobCluster.getJobClusterDefinition().getParameters().get(0));
+
+        assertEquals(sla.getMin(), reconvertedJobCluster.getJobClusterDefinition().getSLA().getMin());
+        assertEquals(sla.getMax(), reconvertedJobCluster.getJobClusterDefinition().getSLA().getMax());
+
+        JobClusterConfig clusterConfig1 = reconvertedJobCluster.getJobClusterDefinition().getJobClusterConfig();
+        assertEquals(uAt,clusterConfig1.getUploadedAt());
+        assertEquals(DEFAULT_SCHED_INFO,clusterConfig1.getSchedulingInfo());
+        assertEquals(version,clusterConfig1.getVersion());
+        assertEquals(artifactName, clusterConfig1.getArtifactName());
+
+    }
+
+    @Test
     public void completedJobToNamedJobCompletedJobTest() {
         String name = "name";
         String jobId = "name-1";
