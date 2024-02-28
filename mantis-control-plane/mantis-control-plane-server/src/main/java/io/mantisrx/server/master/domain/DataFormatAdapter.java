@@ -115,6 +115,7 @@ public class DataFormatAdapter {
                         .withLabels(nJob.getLabels())
                         .withParameters(nJob.getParameters())
                         .withJobClusterConfigs(DataFormatAdapter.convertJarsToJobClusterConfigs(nJob.getJars()))
+                        .withIsDisabled(nJob.getDisabled())
                         .build())
                 .build();
 

@@ -59,7 +59,8 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
                                     @JsonProperty("migrationConfig") WorkerMigrationConfig migrationConfig,
                                     @JsonProperty("isReadyForJobMaster") boolean isReadyForJobMaster,
                                     @JsonProperty("parameters") List<Parameter> parameters,
-                                    @JsonProperty("labels") List<Label> labels
+                                    @JsonProperty("labels") List<Label> labels,
+                                    @JsonProperty("isDisabled") boolean isDisabled
     ) {
         Preconditions.checkNotNull(jobClusterConfigs);
         Preconditions.checkArgument(!jobClusterConfigs.isEmpty());
@@ -75,14 +76,27 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
         this.user = user;
 
         // Todo move the resource cluster label to a property
-        Preconditions.checkNotNull(labels, "labels cannot be empty.");
-        Preconditions.checkArgument(
-            labels.stream()
-                .anyMatch(l ->
-                    l.getName().equalsIgnoreCase(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label)),
-            "Missing required label: " + SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label);
+        if (!isDisabled) {
+            Preconditions.checkNotNull(labels, "labels cannot be empty.");
+            Preconditions.checkArgument(
+                labels.stream()
+                    .anyMatch(l ->
+                        l.getName().equalsIgnoreCase(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label)),
+                "Missing required label: " + SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label);
+        }
     }
 
+    public JobClusterDefinitionImpl(String name,
+        List<JobClusterConfig> jobClusterConfigs,
+        JobOwner owner,
+        String user,
+        SLA sla,
+        WorkerMigrationConfig migrationConfig,
+        boolean isReadyForJobMaster,
+        List<Parameter> parameters,
+        List<Label> labels) {
+        this(name, jobClusterConfigs, owner, user, sla, migrationConfig, isReadyForJobMaster, parameters, labels, false);
+    }
 
     /* (non-Javadoc)
      * @see io.mantisrx.server.master.domain.IJobClusterDefinition#getOwner()
@@ -313,6 +327,7 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
         String user = "default";
         List<Parameter> parameters = Lists.newArrayList();
         List<Label> labels = Lists.newArrayList();
+        boolean isDisabled = false;
 
         public Builder() {}
 
@@ -384,6 +399,10 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
             return this;
         }
 
+        public Builder withIsDisabled(boolean isDisabled) {
+            this.isDisabled = isDisabled;
+            return this;
+        }
 
         public Builder from(IJobClusterDefinition defn) {
             migrationConfig = defn.getWorkerMigrationConfig();
@@ -435,7 +454,17 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
             Preconditions.checkNotNull(user);
             Preconditions.checkNotNull(jobClusterConfigs);
             Preconditions.checkArgument(!jobClusterConfigs.isEmpty());
-            return new JobClusterDefinitionImpl(name, jobClusterConfigs, owner, user, sla, migrationConfig, isReadyForJobMaster, parameters, labels);
+            return new JobClusterDefinitionImpl(
+                name,
+                jobClusterConfigs,
+                owner,
+                user,
+                sla,
+                migrationConfig,
+                isReadyForJobMaster,
+                parameters,
+                labels,
+                isDisabled);
         }
 
     }
