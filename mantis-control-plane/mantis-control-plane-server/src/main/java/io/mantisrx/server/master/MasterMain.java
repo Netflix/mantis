@@ -22,9 +22,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.DeadLetter;
 import akka.actor.Props;
-import com.netflix.fenzo.AutoScaleAction;
-import com.netflix.fenzo.AutoScaleRule;
-import com.netflix.fenzo.VirtualMachineLease;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
@@ -86,7 +83,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -98,7 +94,6 @@ import org.apache.flink.runtime.rpc.RpcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
-import rx.Observer;
 import rx.subjects.PublishSubject;
 
 
@@ -282,51 +277,6 @@ public class MasterMain implements Service {
         return is;
     }
 
-    private static void setupDummyAgentClusterAutoScaler() {
-        final AutoScaleRule dummyAutoScaleRule = new AutoScaleRule() {
-            @Override
-            public String getRuleName() {
-                return "test";
-            }
-
-            @Override
-            public int getMinIdleHostsToKeep() {
-                return 1;
-            }
-
-            @Override
-            public int getMaxIdleHostsToKeep() {
-                return 10;
-            }
-
-            @Override
-            public long getCoolDownSecs() {
-                return 300;
-            }
-
-            @Override
-            public boolean idleMachineTooSmall(VirtualMachineLease lease) {
-                return false;
-            }
-        };
-        AgentClustersAutoScaler.initialize(() -> new HashSet<>(Collections.singletonList(dummyAutoScaleRule)), new Observer<AutoScaleAction>() {
-            @Override
-            public void onCompleted() {
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onNext(AutoScaleAction autoScaleAction) {
-
-            }
-        });
-    }
-
     public static void main(String[] args) {
         try {
             Args.parse(MasterMain.class, args);
@@ -342,7 +292,6 @@ public class MasterMain implements Service {
             props.putAll(System.getProperties());
             props.putAll(loadProperties(propFile));
             StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
-            setupDummyAgentClusterAutoScaler();
             final AuditEventSubscriber auditEventSubscriber = new AuditEventSubscriberLoggingImpl();
             final MantisPropertiesLoader propertiesLoader = new DefaultMantisPropertiesLoader(System.getProperties());
             MasterMain master = new MasterMain(factory, propertiesLoader, auditEventSubscriber);

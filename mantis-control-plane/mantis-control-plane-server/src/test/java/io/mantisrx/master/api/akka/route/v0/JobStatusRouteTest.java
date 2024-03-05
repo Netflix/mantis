@@ -84,8 +84,6 @@ public class JobStatusRouteTest {
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
                 jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(fakeSchedulerFactory, false), ActorRef.noSender());
 
-                agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(fakeScheduler), ActorRef.noSender());
-
                 final JobStatusRouteHandler jobStatusRouteHandler = new JobStatusRouteHandlerAkkaImpl(system, statusEventBrokerActor);
 
                 final JobStatusRoute jobStatusRoute = new JobStatusRoute(jobStatusRouteHandler);

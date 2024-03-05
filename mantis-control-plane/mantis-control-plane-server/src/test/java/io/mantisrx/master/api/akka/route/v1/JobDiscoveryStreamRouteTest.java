@@ -100,7 +100,6 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
                 jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(fakeSchedulerFactory, false), ActorRef.noSender());
 
                 agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props());
-                agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(fakeScheduler), ActorRef.noSender());
                 Duration idleTimeout = system.settings().config().getDuration("akka.http.server.idle-timeout");
                 logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
                 final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, idleTimeout);
