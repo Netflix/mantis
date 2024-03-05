@@ -33,11 +33,15 @@ import akka.stream.javadsl.Flow;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandlerAkkaImpl;
-import io.mantisrx.master.events.*;
+import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.events.LifecycleEventPublisherImpl;
+import io.mantisrx.master.events.StatusEventBrokerActor;
+import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -60,8 +64,7 @@ public class JobStatusRouteTest {
 
     private static CompletionStage<ServerBinding> binding;
     private static ActorSystem system = ActorSystem.create("JobStatusRoute");
-    private static ActorRef agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props());
-    private static ActorRef statusEventBrokerActor = system.actorOf(StatusEventBrokerActor.props(agentsErrorMonitorActor));
+    private static ActorRef statusEventBrokerActor = system.actorOf(StatusEventBrokerActor.props());
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -83,8 +86,6 @@ public class JobStatusRouteTest {
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
                 jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(fakeSchedulerFactory, false), ActorRef.noSender());
-
-                agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(fakeScheduler), ActorRef.noSender());
 
                 final JobStatusRouteHandler jobStatusRouteHandler = new JobStatusRouteHandlerAkkaImpl(system, statusEventBrokerActor);
 

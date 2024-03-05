@@ -22,9 +22,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.DeadLetter;
 import akka.actor.Props;
-import com.netflix.fenzo.AutoScaleAction;
-import com.netflix.fenzo.AutoScaleRule;
-import com.netflix.fenzo.VirtualMachineLease;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
@@ -52,7 +49,6 @@ import io.mantisrx.master.events.WorkerRegistryV2;
 import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
-import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.zk.LeaderElector;
 import io.mantisrx.server.core.BaseService;
@@ -86,7 +82,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -98,8 +93,6 @@ import org.apache.flink.runtime.rpc.RpcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
-import rx.Observer;
-import rx.subjects.PublishSubject;
 
 
 public class MasterMain implements Service {
@@ -139,9 +132,6 @@ public class MasterMain implements Service {
             // shutdown hook
             Runtime.getRuntime().addShutdownHook(t);
 
-            // shared state
-            PublishSubject<String> vmLeaseRescindedSubject = PublishSubject.create();
-
             final ActorSystem system = ActorSystem.create("MantisMaster");
             // log the configuration of the actor system
             system.logConfiguration();
@@ -150,8 +140,7 @@ public class MasterMain implements Service {
             final ActorRef actor = system.actorOf(Props.create(DeadLetterActor.class), "MantisDeadLetter");
             system.eventStream().subscribe(actor, DeadLetter.class);
 
-            ActorRef agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props(), "AgentsErrorMonitor");
-            ActorRef statusEventBrokerActor = system.actorOf(StatusEventBrokerActor.props(agentsErrorMonitorActor), "StatusEventBroker");
+            ActorRef statusEventBrokerActor = system.actorOf(StatusEventBrokerActor.props(), "StatusEventBroker");
             ActorRef auditEventBrokerActor = system.actorOf(AuditEventBrokerActor.props(auditEventSubscriber), "AuditEventBroker");
             final StatusEventSubscriber statusEventSubscriber = new StatusEventSubscriberAkkaImpl(statusEventBrokerActor);
             final AuditEventSubscriber auditEventSubscriberAkka = new AuditEventSubscriberAkkaImpl(auditEventBrokerActor);
@@ -282,51 +271,6 @@ public class MasterMain implements Service {
         return is;
     }
 
-    private static void setupDummyAgentClusterAutoScaler() {
-        final AutoScaleRule dummyAutoScaleRule = new AutoScaleRule() {
-            @Override
-            public String getRuleName() {
-                return "test";
-            }
-
-            @Override
-            public int getMinIdleHostsToKeep() {
-                return 1;
-            }
-
-            @Override
-            public int getMaxIdleHostsToKeep() {
-                return 10;
-            }
-
-            @Override
-            public long getCoolDownSecs() {
-                return 300;
-            }
-
-            @Override
-            public boolean idleMachineTooSmall(VirtualMachineLease lease) {
-                return false;
-            }
-        };
-        AgentClustersAutoScaler.initialize(() -> new HashSet<>(Collections.singletonList(dummyAutoScaleRule)), new Observer<AutoScaleAction>() {
-            @Override
-            public void onCompleted() {
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onNext(AutoScaleAction autoScaleAction) {
-
-            }
-        });
-    }
-
     public static void main(String[] args) {
         try {
             Args.parse(MasterMain.class, args);
@@ -342,7 +286,6 @@ public class MasterMain implements Service {
             props.putAll(System.getProperties());
             props.putAll(loadProperties(propFile));
             StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
-            setupDummyAgentClusterAutoScaler();
             final AuditEventSubscriber auditEventSubscriber = new AuditEventSubscriberLoggingImpl();
             final MantisPropertiesLoader propertiesLoader = new DefaultMantisPropertiesLoader(System.getProperties());
             MasterMain master = new MasterMain(factory, propertiesLoader, auditEventSubscriber);

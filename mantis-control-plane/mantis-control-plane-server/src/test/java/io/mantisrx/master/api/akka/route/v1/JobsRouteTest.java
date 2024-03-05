@@ -52,12 +52,15 @@ import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
 import io.mantisrx.master.api.akka.route.v0.JobRoute;
 import io.mantisrx.master.api.akka.route.v0.JobStatusRoute;
 import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
-import io.mantisrx.master.events.*;
+import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.events.LifecycleEventPublisherImpl;
+import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
-import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
@@ -151,7 +154,6 @@ public class JobsRouteTest extends RouteTestBase {
                                              .getDuration("akka.http.server.idle-timeout");
 
                 logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
-                final AgentClusterOperations mockAgentClusterOps = mock(AgentClusterOperations.class);
                 final JobStatusRouteHandler jobStatusRouteHandler = mock(JobStatusRouteHandler.class);
                 when(jobStatusRouteHandler.jobStatus(anyString())).thenReturn(Flow.create());
 

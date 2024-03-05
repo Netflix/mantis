@@ -44,17 +44,15 @@ public class StatusEventBrokerActor extends AbstractActor
     private final Logger logger = LoggerFactory.getLogger(StatusEventBrokerActor.class);
     private final Map<String, Set<ActorRef>>  jobIdToActorMap = new HashMap<>();
     private final Map<ActorRef, String>  actorToJobIdMap = new HashMap<>();
-    private final ActorRef agentsErrorMonitorActorRef;
 
     private final Map<String, EvictingQueue<Status>> jobIdToStatusEventsBuf = new HashMap<>();
     public static final int MAX_STATUS_HISTORY_PER_JOB = 100;
 
-    public static Props props(ActorRef agentsErrorMonitorActorRef) {
-        return Props.create(StatusEventBrokerActor.class, agentsErrorMonitorActorRef);
+    public static Props props() {
+        return Props.create(StatusEventBrokerActor.class);
     }
 
-    public StatusEventBrokerActor(ActorRef agentsErrorMonitorActorRef) {
-        this.agentsErrorMonitorActorRef = agentsErrorMonitorActorRef;
+    public StatusEventBrokerActor() {
     }
 
 
@@ -131,10 +129,6 @@ public class StatusEventBrokerActor extends AbstractActor
             jobStatusActiveConnections.forEach(connActor -> connActor.tell(new JobStatus(status), self()));
         } else {
             logger.debug("Job status dropped, no active subscribers for {}", jobId);
-        }
-
-        if(se instanceof LifecycleEventsProto.WorkerStatusEvent) {
-            this.agentsErrorMonitorActorRef.tell(se, getSelf());
         }
     }
 

@@ -42,7 +42,6 @@ import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
@@ -70,7 +69,6 @@ public class JobDiscoveryRouteTest {
 
     private static volatile CompletionStage<ServerBinding> binding;
     private static ActorSystem system = ActorSystem.create("JobDiscoveryRoute");
-    private static ActorRef agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props());
     private final TestMantisClient mantisClient = new TestMantisClient(serverPort);
 
     @BeforeClass
@@ -99,7 +97,6 @@ public class JobDiscoveryRouteTest {
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
                 jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(fakeSchedulerFactory, false), ActorRef.noSender());
 
-                agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(fakeScheduler), ActorRef.noSender());
                 Duration idleTimeout = system.settings().config().getDuration("akka.http.server.idle-timeout");
                 logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
                 final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, idleTimeout);
