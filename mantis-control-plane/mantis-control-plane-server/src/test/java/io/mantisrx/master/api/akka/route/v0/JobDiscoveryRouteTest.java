@@ -42,7 +42,6 @@ import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
@@ -70,7 +69,6 @@ public class JobDiscoveryRouteTest {
 
     private static volatile CompletionStage<ServerBinding> binding;
     private static ActorSystem system = ActorSystem.create("JobDiscoveryRoute");
-    private static ActorRef agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props());
     private final TestMantisClient mantisClient = new TestMantisClient(serverPort);
 
     @BeforeClass
