@@ -81,7 +81,11 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             this.groupToTaskExecutorCount = constraintsToTaskAllocationRequests
                 .entrySet()
                 .stream()
-                .collect(Collectors.toMap(entry -> findBestFitGroupOrDefault(entry.getKey()), entry -> entry.getValue().size()));
+                .collect(Collectors.toMap(
+                    entry -> findBestFitGroupOrDefault(entry.getKey()),
+                    entry -> entry.getValue().size(),
+                    Integer::sum
+                ));
         }
 
         public int getTotalWorkers() {
@@ -553,7 +557,15 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             // Verify scheduling attribute constraints
             .filter(taskExecutorGroupKey -> areSchedulingAttributeConstraintsSatisfied(requestedConstraints,
                 taskExecutorGroupKey.getSchedulingAttributes()))
-            .findFirst();
+            // Get highest generation group
+            .max(Comparator.comparing(taskExecutorGroupKey -> {
+                NavigableSet<TaskExecutorHolder> holders = executorsByGroup.get(taskExecutorGroupKey);
+                if (holders.isEmpty()) {
+                    return null;
+                } else {
+                    return holders.last().getGeneration();
+                }
+            }, Comparator.nullsLast(Comparator.reverseOrder())));
     }
 
     /**
@@ -589,9 +601,24 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             ))
             // Filter out entries with non-positive fitness scores (aka. requested machine doesn't fit in TE)
             .filter(entry -> entry.getValue() > 0)
-            // Find the entry with the highest fitness score (if it exists)
-            .max(Entry.comparingByValue())
-            .map(AbstractMap.SimpleEntry::getKey);
+            // During the process of adding size metadata to an existing SKU and initiating corresponding ASG updates,
+            // TEs from both new and existing ASGs are now grouped separately in the resource cluster actor, i.e.,
+            // one with size and one without. Due to this, issues may arise during task migrations as it's not
+            // predictable which TEs will be chosen by the scheduler. While, instead, we want to always use TEs from the latest ASGs.
+            .sorted((entry1, entry2) -> {
+                int fitnessComparison = entry2.getValue().compareTo(entry1.getValue());
+                if (fitnessComparison != 0) {
+                    return fitnessComparison;
+                } else {
+                    NavigableSet<TaskExecutorHolder> holders1 = executorsByGroup.get(entry1.getKey());
+                    NavigableSet<TaskExecutorHolder> holders2 = executorsByGroup.get(entry2.getKey());
+                    String generation1 = holders1.isEmpty() ? null : holders1.last().getGeneration();
+                    String generation2 = holders2.isEmpty() ? null : holders2.last().getGeneration();
+                    return Comparator.<String>nullsLast(Comparator.reverseOrder()).compare(generation1, generation2);
+                }
+            })
+            .map(AbstractMap.SimpleEntry::getKey)
+            .findFirst();
     }
 
     /**

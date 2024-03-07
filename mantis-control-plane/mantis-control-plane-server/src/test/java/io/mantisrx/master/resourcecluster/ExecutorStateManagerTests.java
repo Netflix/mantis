@@ -96,6 +96,7 @@ public class ExecutorStateManagerTests {
 
     private static final String SCALE_GROUP_1 = "io-mantisrx-v001";
     private static final String SCALE_GROUP_2 = "io-mantisrx-v002";
+    private static final String SCALE_GROUP_3 = "io-mantisrx-v003";
 
     private static final Map<String, String> ATTRIBUTES_WITH_SCALE_GROUP_1 =
         ImmutableMap.of(WorkerConstants.AUTO_SCALE_GROUP_KEY, SCALE_GROUP_1);
@@ -691,5 +692,52 @@ public class ExecutorStateManagerTests {
                 Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, Optional.of("small"), ImmutableMap.of("jdk", "17")), null, 0)), CLUSTER_ID));
         assertTrue(bestFit.isPresent());
         assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk17"))), bestFit.get().getTaskExecutorIDSet());
+    }
+
+    @Test
+    public void testGetBestFit_WithSameSizeSelectYoungerGeneration() {
+        // register TE with no size - gen 1
+        TaskExecutorRegistration jdk8Te =
+            getRegistrationBuilder(TaskExecutorID.of("jdk8"), MACHINE_DEFINITION_1, ImmutableMap.of(WorkerConstants.AUTO_SCALE_GROUP_KEY, SCALE_GROUP_1)).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk8"), state1);
+        state1.onRegistration(jdk8Te);
+        state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk8"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk8"));
+
+        // register TE with size - gen 2
+        TaskExecutorRegistration jdk8TeWithSize =
+            getRegistrationBuilder(TaskExecutorID.of("jdk8TeWithSize"), MACHINE_DEFINITION_1, ImmutableMap.of(WorkerConstants.MANTIS_CONTAINER_SIZE_NAME_KEY, "small", WorkerConstants.AUTO_SCALE_GROUP_KEY, SCALE_GROUP_2)).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk8TeWithSize"), state2);
+        state2.onRegistration(jdk8TeWithSize);
+        state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk8TeWithSize"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk8TeWithSize"));
+
+        // matching found for gen 2
+        Optional<BestFit> bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, Optional.empty(), ImmutableMap.of()), null, 0)), CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk8TeWithSize"))), bestFit.get().getTaskExecutorIDSet());
+
+        // register TE with size - gen 2
+        TaskExecutorRegistration jdk8TeWithSizeGen3 =
+            getRegistrationBuilder(TaskExecutorID.of("jdk8TeWithSizeGen3"), MACHINE_DEFINITION_1, ImmutableMap.of(WorkerConstants.MANTIS_CONTAINER_SIZE_NAME_KEY, "small", WorkerConstants.AUTO_SCALE_GROUP_KEY, SCALE_GROUP_3)).build();
+
+        stateManager.trackIfAbsent(TaskExecutorID.of("jdk8TeWithSizeGen3"), state3);
+        state3.onRegistration(jdk8TeWithSizeGen3);
+        state3.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TaskExecutorID.of("jdk8TeWithSizeGen3"), CLUSTER_ID,
+            TaskExecutorReport.available()));
+        stateManager.tryMarkAvailable(TaskExecutorID.of("jdk8TeWithSizeGen3"));
+
+        // matching not found for gen 3
+        bestFit =
+            stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
+                Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1, Optional.empty(), ImmutableMap.of()), null, 0)), CLUSTER_ID));
+        assertTrue(bestFit.isPresent());
+        assertEquals(new HashSet<>(Collections.singletonList(TaskExecutorID.of("jdk8TeWithSizeGen3"))), bestFit.get().getTaskExecutorIDSet());
     }
 }
