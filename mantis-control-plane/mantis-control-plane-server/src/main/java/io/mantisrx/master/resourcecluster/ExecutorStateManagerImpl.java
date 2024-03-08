@@ -563,7 +563,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
                 if (holders.isEmpty()) {
                     return null;
                 } else {
-                    return holders.last().getGeneration();
+                    return holders.first().getGeneration();
                 }
             }, Comparator.nullsLast(Comparator.reverseOrder())));
     }
@@ -606,18 +606,23 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             // one with size and one without. Due to this, issues may arise during task migrations as it's not
             // predictable which TEs will be chosen by the scheduler. While, instead, we want to always use TEs from the latest ASGs.
             .sorted((entry1, entry2) -> {
+                log.info("[findBestGroupByFitnessCalculator::fitness comparison] {} vs {}", entry2, entry1);
                 int fitnessComparison = entry2.getValue().compareTo(entry1.getValue());
                 if (fitnessComparison != 0) {
                     return fitnessComparison;
                 } else {
                     NavigableSet<TaskExecutorHolder> holders1 = executorsByGroup.get(entry1.getKey());
                     NavigableSet<TaskExecutorHolder> holders2 = executorsByGroup.get(entry2.getKey());
-                    String generation1 = holders1.isEmpty() ? null : holders1.last().getGeneration();
-                    String generation2 = holders2.isEmpty() ? null : holders2.last().getGeneration();
+                    String generation1 = holders1.isEmpty() ? null : holders1.first().getGeneration();
+                    String generation2 = holders2.isEmpty() ? null : holders2.first().getGeneration();
+                    log.info("[findBestGroupByFitnessCalculator::generation comparison] {} --> {} vs {} --> {}", entry2, generation2, entry1, generation1);
                     return Comparator.<String>nullsLast(Comparator.reverseOrder()).compare(generation1, generation2);
                 }
             })
-            .map(AbstractMap.SimpleEntry::getKey)
+            .map(entry -> {
+                log.info("[findBestGroupByFitnessCalculator::winner] {}", entry.getKey());
+                return entry.getKey();
+            })
             .findFirst();
     }
 
