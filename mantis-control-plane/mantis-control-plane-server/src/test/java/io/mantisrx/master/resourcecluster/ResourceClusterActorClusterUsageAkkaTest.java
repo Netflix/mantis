@@ -33,6 +33,7 @@ import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
+import io.mantisrx.master.scheduler.CpuWeightedFitnessCalculator;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -171,7 +172,8 @@ public class ResourceClusterActorClusterUsageAkkaTest {
                 0,
                 "",
                 false,
-                ImmutableMap.of("jdk", "8"));
+                ImmutableMap.of("jdk", "8"),
+                new CpuWeightedFitnessCalculator());
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =

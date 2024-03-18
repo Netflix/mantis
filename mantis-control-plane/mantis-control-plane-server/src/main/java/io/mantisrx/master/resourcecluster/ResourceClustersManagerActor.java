@@ -174,7 +174,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                     masterConfiguration.getMaxJobArtifactsToCache(),
                     masterConfiguration.getJobClustersWithArtifactCachingEnabled(),
                     masterConfiguration.isJobArtifactCachingEnabled(),
-                    masterConfiguration.getSchedulingConstraints()),
+                    masterConfiguration.getSchedulingConstraints(),
+                    masterConfiguration.getFitnessCalculator()),
                 "ResourceClusterActor-" + clusterID.getResourceID());
         log.info("Created resource cluster actor for {}", clusterID);
         return clusterActor;

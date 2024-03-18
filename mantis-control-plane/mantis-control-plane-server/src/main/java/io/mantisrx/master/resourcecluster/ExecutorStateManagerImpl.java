@@ -106,8 +106,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
      */
     private final Map<TaskExecutorGroupKey, NavigableSet<TaskExecutorHolder>> executorsByGroup = new HashMap<>();
 
-    // TODO(fdichiara): make this configurable
-    private final FitnessCalculator fitnessCalculator = new CpuWeightedFitnessCalculator();
+    private final FitnessCalculator fitnessCalculator;
 
     private final Map<String, String> schedulingAttributes;
 
@@ -120,6 +119,12 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
 
     ExecutorStateManagerImpl(Map<String, String> schedulingAttributes) {
         this.schedulingAttributes = schedulingAttributes;
+        this.fitnessCalculator = new CpuWeightedFitnessCalculator();
+    }
+
+    ExecutorStateManagerImpl(Map<String, String> schedulingAttributes, FitnessCalculator fitnessCalculator) {
+        this.schedulingAttributes = schedulingAttributes;
+        this.fitnessCalculator = fitnessCalculator;
     }
 
     @Override
