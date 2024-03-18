@@ -91,7 +91,7 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
             actorSystem.actorOf(
                 ResourceClustersManagerActor.props(config, Clock.systemDefaultZone(),
                     rpcService, mantisJobStore, resourceClusterHostActorRef, persistenceProvider,
-                    jobMessageRouter, config.getFitnessCalculator()));
+                    jobMessageRouter));
 
         final Duration askTimeout = java.time.Duration.ofMillis(
             ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs());
