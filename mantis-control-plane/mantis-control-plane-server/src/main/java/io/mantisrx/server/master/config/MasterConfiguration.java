@@ -17,6 +17,7 @@
 package io.mantisrx.server.master.config;
 
 import io.mantisrx.master.jobcluster.job.CostsCalculator;
+import io.mantisrx.master.scheduler.FitnessCalculator;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.master.store.KeyValueStore;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
@@ -154,6 +155,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.scheduler.retry-interval.millis")
     @Default("60000") // 1 minute
     int getSchedulerIntervalBetweenRetriesInMs();
+
+    @Config("mantis.master.scheduler.fitnessCalculator.class")
+    @Default("io.mantisrx.master.scheduler.CpuWeightedFitnessCalculator")
+    FitnessCalculator getFitnessCalculator();
 
     default Duration getSchedulerIntervalBetweenRetries() {
         return Duration.ofMillis(getSchedulerIntervalBetweenRetriesInMs());

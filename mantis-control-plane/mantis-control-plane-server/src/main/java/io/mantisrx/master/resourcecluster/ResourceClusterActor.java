@@ -29,6 +29,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
+import io.mantisrx.master.scheduler.FitnessCalculator;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -117,8 +118,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final boolean isJobArtifactCachingEnabled;
 
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled, boolean isJobArtifactCachingEnabled, Map<String, String> schedulingAttributes) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled, isJobArtifactCachingEnabled, schedulingAttributes)
+    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled, boolean isJobArtifactCachingEnabled, Map<String, String> schedulingAttributes, FitnessCalculator fitnessCalculator) {
+        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled, isJobArtifactCachingEnabled, schedulingAttributes, fitnessCalculator)
                 .withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -134,7 +135,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         int maxJobArtifactsToCache,
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
-        Map<String, String> schedulingAttributes) {
+        Map<String, String> schedulingAttributes,
+        FitnessCalculator fitnessCalculator) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -150,7 +152,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.maxJobArtifactsToCache = maxJobArtifactsToCache;
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
 
-        this.executorStateManager = new ExecutorStateManagerImpl(schedulingAttributes);
+        this.executorStateManager = new ExecutorStateManagerImpl(schedulingAttributes, fitnessCalculator);
 
         this.metrics = new ResourceClusterActorMetrics();
     }

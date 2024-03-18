@@ -38,6 +38,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatew
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
+import io.mantisrx.master.scheduler.FitnessCalculator;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -82,7 +83,8 @@ class ResourceClustersManagerActor extends AbstractActor {
         MantisJobStore mantisJobStore,
         ActorRef resourceClusterHostActorRef,
         IMantisPersistenceProvider mantisPersistenceProvider,
-        JobMessageRouter jobMessageRouter) {
+        JobMessageRouter jobMessageRouter,
+        FitnessCalculator fitnessCalculator) {
         return Props.create(
             ResourceClustersManagerActor.class,
             masterConfiguration,
@@ -91,7 +93,8 @@ class ResourceClustersManagerActor extends AbstractActor {
             mantisJobStore,
             resourceClusterHostActorRef,
             mantisPersistenceProvider,
-            jobMessageRouter);
+            jobMessageRouter,
+            fitnessCalculator);
     }
 
     public ResourceClustersManagerActor(
@@ -174,7 +177,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                     masterConfiguration.getMaxJobArtifactsToCache(),
                     masterConfiguration.getJobClustersWithArtifactCachingEnabled(),
                     masterConfiguration.isJobArtifactCachingEnabled(),
-                    masterConfiguration.getSchedulingConstraints()),
+                    masterConfiguration.getSchedulingConstraints(),
+                    masterConfiguration.getFitnessCalculator()),
                 "ResourceClusterActor-" + clusterID.getResourceID());
         log.info("Created resource cluster actor for {}", clusterID);
         return clusterActor;
