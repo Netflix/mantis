@@ -60,6 +60,7 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.util.Precision;
 
 @Slf4j
 class ExecutorStateManagerImpl implements ExecutorStateManager {
@@ -611,7 +612,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             // one with size and one without. Due to this, issues may arise during task migrations as it's not
             // predictable which TEs will be chosen by the scheduler. While, instead, we want to always use TEs from the latest ASGs.
             .sorted((entry1, entry2) -> {
-                int fitnessComparison = entry2.getValue().compareTo(entry1.getValue());
+                int fitnessComparison = Precision.compareTo(entry2.getValue(), entry1.getValue(), 0.0001);
                 if (fitnessComparison != 0) {
                     return fitnessComparison;
                 } else {

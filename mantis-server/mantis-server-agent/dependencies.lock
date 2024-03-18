@@ -96,30 +96,22 @@
         },
         "io.mantisrx:mantis-runtime": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
+            "project": true
+        },
+        "io.mantisrx:mantis-runtime-executor": {
             "project": true
         },
         "io.mantisrx:mantis-runtime-loader": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent",
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
-            "project": true
-        },
-        "io.mantisrx:mantis-server-agent": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker"
-            ],
-            "project": true
-        },
-        "io.mantisrx:mantis-server-worker": {
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent",
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
         },
@@ -164,7 +156,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -344,7 +336,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "net.lingala.zip4j:zip4j": {
             "locked": "2.9.0"
@@ -546,6 +538,7 @@
         },
         "io.vavr:vavr": {
             "firstLevelTransitive": [
+                "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-shaded"
             ],
             "locked": "0.10.2"
@@ -554,7 +547,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -717,30 +710,22 @@
         },
         "io.mantisrx:mantis-runtime": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
+            "project": true
+        },
+        "io.mantisrx:mantis-runtime-executor": {
             "project": true
         },
         "io.mantisrx:mantis-runtime-loader": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent",
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
-            "project": true
-        },
-        "io.mantisrx:mantis-server-agent": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker"
-            ],
-            "project": true
-        },
-        "io.mantisrx:mantis-server-worker": {
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent",
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
         },
@@ -788,7 +773,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -891,8 +876,7 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent",
-                "io.mantisrx:mantis-server-worker",
+                "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-server-worker-client"
             ],
             "locked": "1.3.10"
@@ -905,29 +889,24 @@
         },
         "com.spotify:completable-futures": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-client",
-                "io.mantisrx:mantis-server-agent"
+                "io.mantisrx:mantis-control-plane-client"
             ],
             "locked": "0.3.1"
         },
         "com.yahoo.datasketches:sketches-core": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "locked": "0.9.1"
         },
         "commons-io:commons-io": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common",
-                "io.mantisrx:mantis-control-plane-core",
-                "io.mantisrx:mantis-server-agent"
+                "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "2.11.0"
         },
         "io.github.resilience4j:resilience4j-retry": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent"
-            ],
             "locked": "1.5.0"
         },
         "io.mantisrx:mantis-common": {
@@ -975,36 +954,28 @@
         },
         "io.mantisrx:mantis-runtime": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
+            "project": true
+        },
+        "io.mantisrx:mantis-runtime-executor": {
             "project": true
         },
         "io.mantisrx:mantis-runtime-loader": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent",
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
         },
         "io.mantisrx:mantis-rxcontrol": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "locked": "1.3.20"
         },
-        "io.mantisrx:mantis-server-agent": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker"
-            ],
-            "project": true
-        },
-        "io.mantisrx:mantis-server-worker": {
-            "project": true
-        },
         "io.mantisrx:mantis-server-worker-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent",
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
         },
@@ -1054,8 +1025,8 @@
         },
         "io.vavr:vavr": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent",
-                "io.mantisrx:mantis-server-worker",
+                "io.mantisrx:mantis-runtime-executor",
+                "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-shaded"
             ],
             "locked": "0.10.2"
@@ -1064,7 +1035,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -1079,14 +1050,11 @@
             "locked": "1.0"
         },
         "net.lingala.zip4j:zip4j": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent"
-            ],
             "locked": "2.9.0"
         },
         "nz.ac.waikato.cms.moa:moa": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "locked": "2017.06"
         },
@@ -1109,21 +1077,17 @@
             "locked": "1.14.2"
         },
         "org.apache.hadoop:hadoop-common": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-agent"
-            ],
             "locked": "2.7.7"
         },
         "org.apache.httpcomponents:httpclient": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "locked": "4.5.14"
         },
         "org.apache.mesos:mesos": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core",
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.7.2"
         },
@@ -1165,8 +1129,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime",
-                "io.mantisrx:mantis-server-agent",
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "locked": "1.7.36"
         },
@@ -1174,8 +1137,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-remote-observable",
-                "io.mantisrx:mantis-server-agent",
-                "io.mantisrx:mantis-server-worker"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "locked": "1.7.10"
         },
