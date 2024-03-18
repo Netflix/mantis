@@ -106,7 +106,6 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
      */
     private final Map<TaskExecutorGroupKey, NavigableSet<TaskExecutorHolder>> executorsByGroup = new HashMap<>();
 
-    // TODO(fdichiara): make this configurable
     private final FitnessCalculator fitnessCalculator;
 
     private final Map<String, String> schedulingAttributes;
