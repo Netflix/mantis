@@ -83,8 +83,7 @@ class ResourceClustersManagerActor extends AbstractActor {
         MantisJobStore mantisJobStore,
         ActorRef resourceClusterHostActorRef,
         IMantisPersistenceProvider mantisPersistenceProvider,
-        JobMessageRouter jobMessageRouter,
-        FitnessCalculator fitnessCalculator) {
+        JobMessageRouter jobMessageRouter) {
         return Props.create(
             ResourceClustersManagerActor.class,
             masterConfiguration,
@@ -93,8 +92,7 @@ class ResourceClustersManagerActor extends AbstractActor {
             mantisJobStore,
             resourceClusterHostActorRef,
             mantisPersistenceProvider,
-            jobMessageRouter,
-            fitnessCalculator);
+            jobMessageRouter);
     }
 
     public ResourceClustersManagerActor(
