@@ -38,6 +38,7 @@ buildscript {
 }
 
 ext.versions = [
+        commons  : "3.5",
         flink    : "1.14.2",
         hadoop   : "2.7.7",
         jsr305   : "3.0.1",
@@ -53,7 +54,8 @@ ext.versions = [
 ext.libraries = [
         asyncHttpClient: "org.asynchttpclient:async-http-client:2.12.3",
         commonsIo      : "commons-io:commons-io:2.11.0",
-        commonsLang3   : 'org.apache.commons:commons-lang3:3.5',
+        commonsLang3   : "org.apache.commons:commons-lang3:${versions.commons}",
+        commonsMath3   : "org.apache.commons:commons-math3:${versions.commons}",
         flinkCore      : "org.apache.flink:flink-core:${versions.flink}",
         flinkRpcApi    : [
                 "org.apache.flink:flink-rpc-core:${versions.flink}",

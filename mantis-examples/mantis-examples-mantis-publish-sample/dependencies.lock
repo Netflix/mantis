@@ -12,13 +12,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-guice": {
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -79,13 +79,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-guice": {
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -149,7 +149,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
@@ -157,19 +157,19 @@
                 "io.mantisrx:mantis-publish-netty",
                 "io.mantisrx:mantis-publish-netty-guice"
             ],
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-guice": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-netty-guice"
             ],
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.7.5"
+            "locked": "1.7.8"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
@@ -177,7 +177,7 @@
                 "io.mantisrx:mantis-publish-netty",
                 "io.mantisrx:mantis-publish-netty-guice"
             ],
-            "locked": "1.7.5"
+            "locked": "1.7.8"
         },
         "com.netflix.spectator:spectator-nflx-plugin": {
             "firstLevelTransitive": [
@@ -269,13 +269,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-guice": {
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -340,7 +340,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
@@ -348,19 +348,19 @@
                 "io.mantisrx:mantis-publish-netty",
                 "io.mantisrx:mantis-publish-netty-guice"
             ],
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-guice": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-netty-guice"
             ],
-            "locked": "2.7.0"
+            "locked": "2.7.5"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.7.5"
+            "locked": "1.7.8"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
@@ -368,7 +368,7 @@
                 "io.mantisrx:mantis-publish-netty",
                 "io.mantisrx:mantis-publish-netty-guice"
             ],
-            "locked": "1.7.5"
+            "locked": "1.7.8"
         },
         "com.netflix.spectator:spectator-nflx-plugin": {
             "firstLevelTransitive": [

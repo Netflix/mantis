@@ -13,6 +13,9 @@
         },
         "io.vavr:vavr": {
             "locked": "0.9.2"
+        },
+        "org.apache.commons:commons-math3": {
+            "locked": "3.5"
         }
     },
     "baseline-exact-dependencies-test": {
@@ -279,6 +282,9 @@
             ],
             "locked": "2.12.7"
         },
+        "org.apache.commons:commons-math3": {
+            "locked": "3.5"
+        },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -471,6 +477,9 @@
             ],
             "locked": "1.0"
         },
+        "org.apache.commons:commons-math3": {
+            "locked": "3.5"
+        },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -662,6 +671,9 @@
         },
         "junit:junit-dep": {
             "locked": "4.11"
+        },
+        "org.apache.commons:commons-math3": {
+            "locked": "3.5"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -871,6 +883,9 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "1.0"
+        },
+        "org.apache.commons:commons-math3": {
+            "locked": "3.5"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [

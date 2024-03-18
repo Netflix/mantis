@@ -50,6 +50,7 @@ dependencies {
 
     implementation libraries.vavr
     implementation libraries.spotifyFutures
+    implementation libraries.commonsMath3
 
     // todo: separate worker entrypoint and move this to testImplementation instead.
     implementation libraries.spectatorApi

@@ -27,7 +27,7 @@
             "locked": "0.4.19.1"
         },
         "com.squareup.okhttp3:okhttp": {
-            "locked": "5.0.0-alpha.11"
+            "locked": "5.0.0-alpha.12"
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
@@ -98,7 +98,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -222,7 +222,7 @@
             "locked": "0.4.19.1"
         },
         "com.squareup.okhttp3:okhttp": {
-            "locked": "5.0.0-alpha.11"
+            "locked": "5.0.0-alpha.12"
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
@@ -293,7 +293,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -409,7 +409,7 @@
             "locked": "0.3.1"
         },
         "com.squareup.okhttp3:okhttp": {
-            "locked": "5.0.0-alpha.11"
+            "locked": "5.0.0-alpha.12"
         },
         "commons-io:commons-io": {
             "firstLevelTransitive": [
@@ -500,7 +500,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [

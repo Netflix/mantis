@@ -136,7 +136,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.6.2"
+            "locked": "2.7.5"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -233,7 +233,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -322,13 +322,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.6.2"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.6.2"
+            "locked": "2.7.5"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -460,7 +460,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -555,7 +555,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.6.2"
+            "locked": "2.7.5"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -652,7 +652,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -745,13 +745,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.6.2"
+            "locked": "2.7.5"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.6.2"
+            "locked": "2.7.5"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -883,7 +883,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.5"
+            "locked": "2.12.7"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
