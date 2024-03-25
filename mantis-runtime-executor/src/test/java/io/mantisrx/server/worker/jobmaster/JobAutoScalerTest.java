@@ -94,13 +94,13 @@ public class JobAutoScalerTest {
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
         // should trigger a scale up (above 45% scaleUp threshold)
-        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleUpAbovePct / 100.0 + 0.01), numStage1Workers, ""));
+        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleUpAbovePct / 100.0 + 0.01), scaleUpAbovePct + 0.01, numStage1Workers));
 
         verify(mockMasterClientApi, timeout(1000).times(1)).scaleJobStage(jobId, scalingStageNum, numStage1Workers + increment, String.format("Memory with value %1$,.2f exceeded scaleUp threshold of 45.0", (scaleUpAbovePct / 100.0 + 0.01) * 100.0));
 
         // should *not* trigger a scale up before cooldown period (above 45% scaleUp threshold)
-        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleUpAbovePct / 100.0 + 0.01), numStage1Workers + increment, ""));
-        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleUpAbovePct / 100.0 + 0.01), numStage1Workers + increment, ""));
+        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleUpAbovePct / 100.0 + 0.01), scaleUpAbovePct + 0.01, numStage1Workers + increment));
+        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleUpAbovePct / 100.0 + 0.01), scaleUpAbovePct + 0.01, numStage1Workers + increment));
 
         Thread.sleep(coolDownSec * 1000);
 
@@ -117,7 +117,7 @@ public class JobAutoScalerTest {
         do {
             logger.info("sending Job auto scale Event");
             // should trigger a scale up after cooldown period (above 45% scaleUp threshold)
-            jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleUpAbovePct / 100.0 + 0.01), numStage1Workers + increment, ""));
+            jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleUpAbovePct / 100.0 + 0.01), scaleUpAbovePct + 0.01, numStage1Workers + increment));
         } while (!retryLatch.await(1, TimeUnit.SECONDS));
 
         verify(mockMasterClientApi, timeout(1000).times(1)).scaleJobStage(jobId, scalingStageNum, numStage1Workers + 2 * increment, String.format("Memory with value %1$,.2f exceeded scaleUp threshold of 45.0", (scaleUpAbovePct / 100.0 + 0.01) * 100.0));
@@ -173,7 +173,7 @@ public class JobAutoScalerTest {
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
         // should trigger a scale up (above 45% scaleUp threshold)
-        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleUpAbovePct / 100.0 + 0.01), numStage1Workers, ""));
+        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleUpAbovePct / 100.0 + 0.01), scaleUpAbovePct + 0.01, numStage1Workers));
 
         verify(mockMasterClientApi, timeout(1000).times(1)).scaleJobStage(jobId, scalingStageNum, numStage1Workers + increment, String.format("Memory with value %1$,.2f exceeded scaleUp threshold of 45.0", (scaleUpAbovePct / 100.0 + 0.01) * 100.0));
 
@@ -217,19 +217,19 @@ public class JobAutoScalerTest {
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
         // should trigger a scale down (below 15% scaleDown threshold)
-        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), numStage1Workers, ""));
+        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), scaleDownBelowPct - 0.01, numStage1Workers));
 
         verify(mockMasterClientApi, timeout(1000).times(1)).scaleJobStage(jobId, scalingStageNum, numStage1Workers - decrement, String.format("Memory with value %1$,.2f is below scaleDown threshold of %2$,.1f", (scaleDownBelowPct / 100.0 - 0.01) * 100.0, scaleDownBelowPct));
 
         // should *not* trigger a scale down before cooldown period (below 15% scaleDown threshold)
-        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), numStage1Workers - decrement, ""));
-        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), numStage1Workers - decrement, ""));
+        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), scaleDownBelowPct - 0.01,  numStage1Workers - decrement));
+        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), scaleDownBelowPct - 0.01, numStage1Workers - decrement));
 
         Thread.sleep(coolDownSec * 1000);
 
         if (numStage1Workers - decrement == min) {
             // should not trigger a scale down after cooldown period if numWorkers=min (below 15% scaleDown threshold)
-            jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), numStage1Workers - decrement, ""));
+            jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), scaleDownBelowPct - 0.01, numStage1Workers - decrement));
             verifyNoMoreInteractions(mockMasterClientApi);
         }
     }
@@ -271,7 +271,7 @@ public class JobAutoScalerTest {
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
         // should trigger a scale down (below 15% scaleDown threshold)
-        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), numStage1Workers, ""));
+        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), scaleDownBelowPct - 0.01, numStage1Workers));
 
         verify(mockMasterClientApi, timeout(1000).times(1)).scaleJobStage(jobId, scalingStageNum, min, String.format("Memory with value %1$,.2f is below scaleDown threshold of %2$,.1f", (scaleDownBelowPct / 100.0 - 0.01) * 100.0, scaleDownBelowPct));
         verifyNoMoreInteractions(mockMasterClientApi);
@@ -317,13 +317,13 @@ public class JobAutoScalerTest {
             final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
             // should trigger a scale up (above scaleUp threshold)
-            jobAutoScalerObserver.onNext(new JobAutoScaler.Event(scalingReason, scalingStageNum, scaleUpAbove + 0.01, numStage1Workers, ""));
+            jobAutoScalerObserver.onNext(new JobAutoScaler.Event(scalingReason, scalingStageNum, scaleUpAbove + 0.01, scaleUpAbove + 0.01, numStage1Workers));
 
             verify(mockMasterClientApi, timeout(1000).times(1)).scaleJobStage(jobId, scalingStageNum, numStage1Workers + increment, String.format("%s with value %2$.2f exceeded scaleUp threshold of %3$.1f", scalingReason.name(), (scaleUpAbove + 0.01), scaleUpAbove));
 
             // should *not* trigger a scale up before cooldown period (above scaleUp threshold)
-            jobAutoScalerObserver.onNext(new JobAutoScaler.Event(scalingReason, scalingStageNum, scaleUpAbove + 0.01, numStage1Workers + increment, ""));
-            jobAutoScalerObserver.onNext(new JobAutoScaler.Event(scalingReason, scalingStageNum, scaleUpAbove + 0.01, numStage1Workers + increment, ""));
+            jobAutoScalerObserver.onNext(new JobAutoScaler.Event(scalingReason, scalingStageNum, scaleUpAbove + 0.01, scaleUpAbove + 0.01, numStage1Workers + increment));
+            jobAutoScalerObserver.onNext(new JobAutoScaler.Event(scalingReason, scalingStageNum, scaleUpAbove + 0.01, scaleUpAbove + 0.01, numStage1Workers + increment));
 
             Thread.sleep(coolDownSec * 1000);
 
@@ -340,7 +340,7 @@ public class JobAutoScalerTest {
             do {
                 logger.info("sending Job auto scale Event");
                 // should trigger a scale up after cooldown period (above scaleUp threshold)
-                jobAutoScalerObserver.onNext(new JobAutoScaler.Event(scalingReason, scalingStageNum, scaleUpAbove + 0.01, numStage1Workers + increment, ""));
+                jobAutoScalerObserver.onNext(new JobAutoScaler.Event(scalingReason, scalingStageNum, scaleUpAbove + 0.01, scaleUpAbove + 0.01, numStage1Workers + increment));
             } while (!retryLatch.await(1, TimeUnit.SECONDS));
 
             verify(mockMasterClientApi, timeout(1000).times(1)).scaleJobStage(jobId, scalingStageNum, numStage1Workers + 2 * increment, String.format("%s with value %2$.2f exceeded scaleUp threshold of %3$.1f", scalingReason.name(), (scaleUpAbove + 0.01), scaleUpAbove));

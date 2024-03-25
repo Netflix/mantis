@@ -96,7 +96,7 @@ public class WorkerMetricHandlerTest {
             @Override
             public void onNext(JobAutoScaler.Event event) {
                 logger.info("got auto scale event {}", event);
-                JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage, dropPercent, 1, "");
+                JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage, dropPercent, dropPercent, 1);
                 assertEquals(expected, event);
                 latch.countDown();
             }
@@ -164,12 +164,12 @@ public class WorkerMetricHandlerTest {
                 logger.info("got auto scale event {}", event);
                 final long count = latch.getCount();
                 if (count == 2) {
-                    JobAutoScaler.Event expected1 = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.UserDefined, stage, metricValue * 3 / 4, numWorkers, "");
+                    JobAutoScaler.Event expected1 = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.UserDefined, stage, metricValue * 3 / 4, metricValue * 3 / 4, numWorkers);
                     assertEquals(expected1, event);
                     latch.countDown();
                 }
                 if (count == 1) {
-                    JobAutoScaler.Event expected2 = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.KafkaLag, stage, kafkaLag, numWorkers, "");
+                    JobAutoScaler.Event expected2 = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.KafkaLag, stage, kafkaLag, kafkaLag, numWorkers);
                     assertEquals(expected2, event);
                     latch.countDown();
                 }
@@ -262,7 +262,7 @@ public class WorkerMetricHandlerTest {
             @Override
             public void onNext(JobAutoScaler.Event event) {
                 logger.info("got auto scale event {}", event);
-                JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage, dropPercent / numWorkers, numWorkers, "");
+                JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage, dropPercent / numWorkers, dropPercent / numWorkers, numWorkers);
                 assertEquals(expected, event);
                 autoScaleLatch.countDown();
             }
@@ -317,7 +317,7 @@ public class WorkerMetricHandlerTest {
             public void onNext(JobAutoScaler.Event event) {
                 logger.info("got auto scale event {}", event);
                 // Expected metric value should be (1 + 2 + 3 + 6) / 6.0 / 2
-                JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage, 1.0, 2, "");
+                JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage, 1.0, 1.0, 2);
                 if (expected.equals(event)) {
                     latch.countDown();
                 }

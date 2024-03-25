@@ -24,7 +24,6 @@ import com.yahoo.labs.samoa.instances.Attribute;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
-import io.mantisrx.server.worker.jobmaster.Util;
 import io.mantisrx.server.worker.jobmaster.control.actuators.ClutchMantisStageActuator;
 import io.mantisrx.server.worker.jobmaster.control.controllers.PIDController;
 import io.mantisrx.server.worker.jobmaster.control.utils.ErrorComputer;
@@ -255,7 +254,7 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
 
         @Override
         public Observable<ClutchControllerOutput> call(Observable<JobAutoScaler.Event> eventObservable) {
-            return eventObservable.map(event -> Util.getEffectiveValue(this.stageSchedulingInfo, event.getType(), event.getValue()))
+            return eventObservable.map(event -> event.getEffectiveValue())
                     .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
                     .lift(PIDController.of(config.kp, 0.0, config.kd, 1.0, this.gainFactor))
                     .lift(this.integrator)
