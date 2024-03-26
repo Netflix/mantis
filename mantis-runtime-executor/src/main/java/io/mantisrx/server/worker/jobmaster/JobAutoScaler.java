@@ -23,6 +23,7 @@ import io.mantisrx.common.SystemParameters;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.stats.UsageDataStats;
 import io.mantisrx.server.master.client.MantisMasterGateway;
@@ -47,6 +48,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.BackpressureOverflow;
@@ -101,9 +104,9 @@ public class JobAutoScaler {
         return new SerializedObserver<>(subject);
     }
 
-    private com.netflix.control.clutch.Event mantisEventToClutchEvent(StageSchedulingInfo stageSchedulingInfo, Event event) {
-        return new com.netflix.control.clutch.Event(metricMap.get(event.type),
-                Util.getEffectiveValue(stageSchedulingInfo, event.getType(), event.getValue()));
+    private com.netflix.control.clutch.Event mantisEventToClutchEvent(Event event) {
+        logger.debug("Converting Mantis event to Clutch event: {}", event);
+        return new com.netflix.control.clutch.Event(metricMap.get(event.type), event.getEffectiveValue());
     }
 
     void start() {
@@ -117,9 +120,9 @@ public class JobAutoScaler {
                     Integer stage = Optional.ofNullable(go.getKey()).orElse(-1);
 
                     final StageSchedulingInfo stageSchedulingInfo = schedulingInfo.forStage(stage);
-                    logger.info("System Environment:");
+                    logger.debug("System Environment:");
                     System.getenv().forEach((key, value) -> {
-                        logger.info("{} = {}", key, value);
+                        logger.debug("{} = {}", key, value);
                     });
 
                     Optional<String> clutchCustomConfiguration =
@@ -184,7 +187,7 @@ public class JobAutoScaler {
                         MantisStageActuator actuator = new MantisStageActuator(initialSize, scaler);
 
                         Observable.Transformer<Event, com.netflix.control.clutch.Event> transformToClutchEvent =
-                                obs -> obs.map(event -> this.mantisEventToClutchEvent(stageSchedulingInfo, event))
+                                obs -> obs.map(event -> this.mantisEventToClutchEvent(event))
                                         .filter(event -> event.metric != null);
                         Observable<Integer> workerCounts = context.getWorkerMapObservable()
                                 .map(x -> x.getWorkersForStage(go.getKey()).size())
@@ -271,80 +274,25 @@ public class JobAutoScaler {
         }).get());
     }
 
+    @Value
+    @RequiredArgsConstructor
     public static class Event {
 
-      private final StageScalingPolicy.ScalingReason type;
-      private final int stage;
-      private final double value;
-      private final int numWorkers;
-      private final String message;
+      StageScalingPolicy.ScalingReason type;
+      int stage;
+      double value;
+      double effectiveValue;
+      int numWorkers;
+      String message;
 
-      public Event(StageScalingPolicy.ScalingReason type, int stage, double value, int numWorkers, String message) {
-        this.type = type;
-        this.stage = stage;
-        this.value = value;
-        this.numWorkers = numWorkers;
-        this.message = message;
-      }
-
-      public StageScalingPolicy.ScalingReason getType() {
-        return type;
-      }
-
-      public int getStage() {
-        return stage;
-      }
-
-      public double getValue() {
-        return value;
-      }
-
-      public int getNumWorkers() {
-        return numWorkers;
-      }
-
-      public String getMessage() {
-        return message;
-      }
-
-      @Override
-      public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Event event = (Event) o;
-
-        if (stage != event.stage) return false;
-        if (Double.compare(event.value, value) != 0) return false;
-        if (numWorkers != event.numWorkers) return false;
-        if (type != event.type) return false;
-        return message != null ? message.equals(event.message) : event.message == null;
-
-      }
-
-      @Override
-      public int hashCode() {
-        int result;
-        long temp;
-        result = type != null ? type.hashCode() : 0;
-        result = 31 * result + stage;
-        temp = Double.doubleToLongBits(value);
-        result = 31 * result + (int) (temp ^ (temp >>> 32));
-        result = 31 * result + numWorkers;
-        result = 31 * result + (message != null ? message.hashCode() : 0);
-        return result;
-      }
-
-      @Override
-      public String toString() {
-        return "Event{" +
-          "type=" + type +
-          ", stage=" + stage +
-          ", value=" + value +
-          ", numWorkers=" + numWorkers +
-          ", message='" + message + '\'' +
-          '}';
-      }
+        public Event(ScalingReason type, int stage, double value, double effectiveValue, int numWorkers) {
+            this.type = type;
+            this.stage = stage;
+            this.value = value;
+            this.effectiveValue = effectiveValue;
+            this.numWorkers = numWorkers;
+            this.message = "";
+        }
     }
 
     public class StageScaler {
@@ -482,7 +430,7 @@ public class JobAutoScaler {
             if (scalable && scalingPolicy != null) {
               final StageScalingPolicy.Strategy strategy = scalingPolicy.getStrategies().get(event.getType());
               if (strategy != null) {
-                double effectiveValue = Util.getEffectiveValue(stageSchedulingInfo, event.getType(), event.getValue());
+                double effectiveValue = event.getEffectiveValue();
                 UsageDataStats stats = dataStatsMap.get(event.getType());
                 if (stats == null) {
                   stats = new UsageDataStats(

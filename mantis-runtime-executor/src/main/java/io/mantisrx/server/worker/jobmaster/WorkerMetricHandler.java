@@ -286,8 +286,11 @@ import rx.subjects.PublishSubject;
                                         logger.debug("no gauge data found for UserDefined (metric={})", userDefinedMetric);
                                     } else {
                                         jobAutoScaleObserver.onNext(
-                                                new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.UserDefined, stage,
-                                                        allWorkerAggregates.get(metricGrp).getGauges().get(metric), numWorkers, ""));
+                                            new JobAutoScaler.Event(
+                                                StageScalingPolicy.ScalingReason.UserDefined, stage,
+                                                allWorkerAggregates.get(metricGrp).getGauges().get(metric),
+                                                allWorkerAggregates.get(metricGrp).getGauges().get(metric),
+                                                numWorkers));
                                     }
                                 }
                             }
@@ -295,35 +298,65 @@ import rx.subjects.PublishSubject;
                                 final Map<String, Double> gauges = allWorkerAggregates.get(KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP).getGauges();
                                 if (gauges.containsKey(KAFKA_LAG)) {
                                     jobAutoScaleObserver.onNext(
-                                            new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.KafkaLag, stage,
-                                                    gauges.get(KAFKA_LAG), numWorkers, "")
-                                    );
+                                            new JobAutoScaler.Event(
+                                                StageScalingPolicy.ScalingReason.KafkaLag,
+                                                stage,
+                                                gauges.get(KAFKA_LAG),
+                                                gauges.get(KAFKA_LAG),
+                                                numWorkers));
                                 }
                                 if (gauges.containsKey(KAFKA_PROCESSED)) {
                                     jobAutoScaleObserver.onNext(
-                                            new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.KafkaProcessed, stage,
-                                                    gauges.get(KAFKA_PROCESSED), numWorkers, ""));
+                                            new JobAutoScaler.Event(
+                                                StageScalingPolicy.ScalingReason.KafkaProcessed,
+                                                stage,
+                                                gauges.get(KAFKA_PROCESSED),
+                                                gauges.get(KAFKA_PROCESSED),
+                                                numWorkers));
                                 }
                             }
                             if (allWorkerAggregates.containsKey(RESOURCE_USAGE_METRIC_GROUP)) {
                                 // cpuPctUsageCurr is Published as (cpuUsageCurr * 100.0) from ResourceUsagePayloadSetter, reverse transform to retrieve curr cpu usage
                                 double cpuUsageCurr = allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.CPU_PCT_USAGE_CURR) / 100.0;
+                                double cpuUsageLimit = allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.CPU_PCT_LIMIT) / 100.0;
+                                double cpuUsageEffectiveValue = 100.0 * cpuUsageCurr / cpuUsageLimit;
                                 jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.CPU, stage,
-                                                cpuUsageCurr, numWorkers, ""));
+                                    new JobAutoScaler.Event(
+                                        StageScalingPolicy.ScalingReason.CPU,
+                                        stage,
+                                        cpuUsageCurr,
+                                        cpuUsageEffectiveValue,
+                                        numWorkers));
+
+                                double nwBytesUsageCurr = allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.NW_BYTES_USAGE_CURR);
+                                double nwBytesLimit = allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.NW_BYTES_LIMIT);
+                                double nwBytesEffectiveValue = 100.0 * nwBytesUsageCurr / nwBytesLimit;
                                 jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Network, stage,
-                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.NW_BYTES_USAGE_CURR), numWorkers, ""));
+                                        new JobAutoScaler.Event(
+                                            StageScalingPolicy.ScalingReason.Network,
+                                            stage,
+                                            nwBytesUsageCurr,
+                                            nwBytesEffectiveValue,
+                                            numWorkers));
                                 // Divide by 1024 * 1024 to account for bytes to MB conversion.
                                 // Making memory usage metric interchangeable with jvm memory usage metric since memory usage is not suitable for autoscaling in a JVM based system.
+                                double memoryUsageInMB = allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes") / (1024 * 1024);
+                                double memoryLimitInMB = allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.MEM_LIMIT);
+                                double effectiveValue = 100.0 * memoryUsageInMB / memoryLimitInMB;
                                 jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, stage,
-                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes") / (1024 * 1024), numWorkers, "")
-                                );
+                                    new JobAutoScaler.Event(
+                                        StageScalingPolicy.ScalingReason.Memory,
+                                        stage,
+                                        memoryUsageInMB,
+                                        effectiveValue,
+                                        numWorkers));
                                 jobAutoScaleObserver.onNext(
-                                    new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.JVMMemory, stage,
-                                        allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes") / (1024 * 1024), numWorkers, "")
-                                );
+                                    new JobAutoScaler.Event(
+                                        StageScalingPolicy.ScalingReason.JVMMemory,
+                                        stage,
+                                        memoryUsageInMB,
+                                        effectiveValue,
+                                        numWorkers));
                             }
 
                             if (allWorkerAggregates.containsKey(DATA_DROP_METRIC_GROUP)) {
@@ -331,8 +364,11 @@ import rx.subjects.PublishSubject;
                                 final Map<String, Double> gauges = gaugeData.getGauges();
                                 if (gauges.containsKey(DROP_PERCENT)) {
                                     jobAutoScaleObserver.onNext(
-                                            new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage,
-                                                    gauges.get(DROP_PERCENT), numWorkers, ""));
+                                        new JobAutoScaler.Event(
+                                            StageScalingPolicy.ScalingReason.DataDrop, stage,
+                                            gauges.get(DROP_PERCENT),
+                                            gauges.get(DROP_PERCENT),
+                                            numWorkers));
                                 }
                             }
 
@@ -342,8 +378,12 @@ import rx.subjects.PublishSubject;
                                 if (gauges.containsKey(ON_NEXT_GAUGE)) {
                                     // Divide by 6 to account for 6 second reset by Atlas on counter metric.
                                     jobAutoScaleObserver.onNext(
-                                            new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.RPS, stage,
-                                                    gauges.get(ON_NEXT_GAUGE) / 6.0, numWorkers, ""));
+                                        new JobAutoScaler.Event(
+                                            StageScalingPolicy.ScalingReason.RPS,
+                                            stage,
+                                            gauges.get(ON_NEXT_GAUGE) / 6.0,
+                                            gauges.get(ON_NEXT_GAUGE) / 6.0,
+                                            numWorkers));
                                 }
                             }
 
@@ -367,8 +407,12 @@ import rx.subjects.PublishSubject;
                                 logger.info("Job stage {}, source job drop metrics: {}", stage, sourceJobDrops);
                                 // Divide by 6 to account for 6 second reset by Atlas on counter metric.
                                 jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage,
-                                                sourceJobDrops / 6.0 / numWorkers, numWorkers, ""));
+                                        new JobAutoScaler.Event(
+                                            StageScalingPolicy.ScalingReason.SourceJobDrop,
+                                            stage,
+                                            sourceJobDrops / 6.0 / numWorkers,
+                                            sourceJobDrops / 6.0 / numWorkers,
+                                            numWorkers));
                             }
                         }
                     }, metricsIntervalSeconds, metricsIntervalSeconds, TimeUnit.SECONDS
