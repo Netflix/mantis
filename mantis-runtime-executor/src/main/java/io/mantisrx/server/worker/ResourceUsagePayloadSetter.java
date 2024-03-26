@@ -73,9 +73,9 @@ public class ResourceUsagePayloadSetter implements Closeable {
     private double peakBytesWritten = 0.0;
     private StatusPayloads.ResourceUsage oldUsage = null;
 
-    public ResourceUsagePayloadSetter(Heartbeat heartbeat, WorkerConfiguration config, double networkMbps) {
+    public ResourceUsagePayloadSetter(Heartbeat heartbeat, WorkerConfiguration config) {
         this.heartbeat = heartbeat;
-        this.nwBytesLimit = networkMbps * 1024.0 * 1024.0 / 8.0; // convert from bits to bytes
+        this.nwBytesLimit = config.getNetworkBandwidthInMB() * 1024.0 * 1024.0; // convert from bits to bytes
         executor = new ScheduledThreadPoolExecutor(1);
         String defaultReportingSchedule = "5,5,10,10,20,30";
         StringTokenizer tokenizer = new StringTokenizer(defaultReportingSchedule, ",");

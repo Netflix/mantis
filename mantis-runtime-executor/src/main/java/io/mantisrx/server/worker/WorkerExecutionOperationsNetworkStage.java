@@ -208,7 +208,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
     }
 
-    private Closeable startSendingHeartbeats(final Observer<Status> jobStatusObserver, double networkMbps, long heartbeatIntervalSecs) {
+    private Closeable startSendingHeartbeats(final Observer<Status> jobStatusObserver, long heartbeatIntervalSecs) {
         heartbeatRef.get().setPayload(String.valueOf(StatusPayloads.Type.SubscriptionState), "false");
         Future<?> heartbeatFuture = scheduledExecutorService.scheduleWithFixedDelay(
             () -> jobStatusObserver.onNext(heartbeatRef.get().getCurrentHeartbeatStatus()),
@@ -219,7 +219,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         DataDroppedPayloadSetter droppedPayloadSetter = new DataDroppedPayloadSetter(heartbeatRef.get());
         droppedPayloadSetter.start(heartbeatIntervalSecs);
 
-        ResourceUsagePayloadSetter usagePayloadSetter = new ResourceUsagePayloadSetter(heartbeatRef.get(), config, networkMbps);
+        ResourceUsagePayloadSetter usagePayloadSetter = new ResourceUsagePayloadSetter(heartbeatRef.get(), config);
         usagePayloadSetter.start(heartbeatIntervalSecs);
 
         return Closeables.combine(() -> heartbeatFuture.cancel(false), droppedPayloadSetter, usagePayloadSetter);
@@ -363,7 +363,8 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             heartbeatRef.set(new Heartbeat(rw.getJobId(),
                     rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum(), config.getTaskExecutorHostName()));
             final double networkMbps = executionRequest.getSchedulingInfo().forStage(rw.getStageNum()).getMachineDefinition().getNetworkMbps();
-            Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(), networkMbps, executionRequest.getHeartbeatIntervalSecs());
+            Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(),
+                executionRequest.getHeartbeatIntervalSecs());
             closeables.add(heartbeatCloseable);
 
             // execute stage
