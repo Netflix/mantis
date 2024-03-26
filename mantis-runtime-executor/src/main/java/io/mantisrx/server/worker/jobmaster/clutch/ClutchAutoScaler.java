@@ -254,11 +254,14 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
 
         @Override
         public Observable<ClutchControllerOutput> call(Observable<JobAutoScaler.Event> eventObservable) {
-            return eventObservable.map(event -> event.getEffectiveValue())
-                    .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
-                    .lift(PIDController.of(config.kp, 0.0, config.kd, 1.0, this.gainFactor))
-                    .lift(this.integrator)
-                    .map(x -> new ClutchControllerOutput(this.metric, x));
+            return eventObservable.map(event -> {
+                    log.debug("Received event: {}", event);
+                    return event.getEffectiveValue();
+                })
+                .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
+                .lift(PIDController.of(config.kp, 0.0, config.kd, 1.0, this.gainFactor))
+                .lift(this.integrator)
+                .map(x -> new ClutchControllerOutput(this.metric, x));
         }
     }
 }

@@ -105,6 +105,7 @@ public class JobAutoScaler {
     }
 
     private com.netflix.control.clutch.Event mantisEventToClutchEvent(Event event) {
+        logger.debug("Converting Mantis event to Clutch event: {}", event);
         return new com.netflix.control.clutch.Event(metricMap.get(event.type), event.getEffectiveValue());
     }
 
@@ -119,9 +120,9 @@ public class JobAutoScaler {
                     Integer stage = Optional.ofNullable(go.getKey()).orElse(-1);
 
                     final StageSchedulingInfo stageSchedulingInfo = schedulingInfo.forStage(stage);
-                    logger.info("System Environment:");
+                    logger.debug("System Environment:");
                     System.getenv().forEach((key, value) -> {
-                        logger.info("{} = {}", key, value);
+                        logger.debug("{} = {}", key, value);
                     });
 
                     Optional<String> clutchCustomConfiguration =
