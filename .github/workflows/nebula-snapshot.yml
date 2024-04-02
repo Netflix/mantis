@@ -1,6 +1,7 @@
 name: "Publish snapshot to NetflixOSS and Maven Central"
 
-on: [pull_request_target]
+on:
+  pull_request:
 
 jobs:
   approve: # First step
