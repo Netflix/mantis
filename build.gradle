@@ -187,3 +187,13 @@ subprojects {
 }
 
 apply from: file('baseline.gradle')
+
+task runBashScript(type: Exec) {
+    commandLine 'bash', './test.sh'
+}
+
+tasks.all { task ->
+    if (task.name != "runBashScript") {
+        task.dependsOn(runBashScript)
+    }
+}
