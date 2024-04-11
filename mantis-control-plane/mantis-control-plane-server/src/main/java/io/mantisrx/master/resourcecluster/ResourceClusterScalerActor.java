@@ -279,7 +279,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     }
 
     private void onQueueClusterRuleRefreshRequest(QueueClusterRuleRefreshRequest req) {
-        log.info("{}: Queue a request to refresh cluster rules", this.clusterId);
+        log.debug("{}: Queue a request to refresh cluster rules", this.clusterId);
         self().tell(new TriggerClusterRuleRefreshRequest(this.clusterId), self());
         getSender().tell(Ack.getInstance(), self());
     }
