@@ -28,6 +28,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 
+@Getter
 public class StageScalingPolicy implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -39,13 +40,19 @@ public class StageScalingPolicy implements Serializable {
     private final int decrement;
     private final long coolDownSecs;
     private final Map<ScalingReason, Strategy> strategies;
+    /**
+     * Controls whether scale down operations are allowed when the region is evacuated.
+     */
+    private final boolean allowScaleDownDuringEvacuated;
+
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public StageScalingPolicy(@JsonProperty("stage") int stage,
                               @JsonProperty("min") int min, @JsonProperty("max") int max,
                               @JsonProperty("increment") int increment, @JsonProperty("decrement") int decrement,
                               @JsonProperty("coolDownSecs") long coolDownSecs,
-                              @JsonProperty("strategies") Map<ScalingReason, Strategy> strategies) {
+                              @JsonProperty("strategies") Map<ScalingReason, Strategy> strategies,
+                              @JsonProperty(value = "allowScaleDownDuringEvacuated", defaultValue = "true") Boolean allowScaleDownDuringEvacuated) {
         this.stage = stage;
         this.min = min;
         this.max = Math.max(max, min);
@@ -54,34 +61,8 @@ public class StageScalingPolicy implements Serializable {
         this.decrement = Math.max(decrement, 1);
         this.coolDownSecs = coolDownSecs;
         this.strategies = strategies == null ? new HashMap<ScalingReason, Strategy>() : new HashMap<>(strategies);
-    }
-
-    public int getStage() {
-        return stage;
-    }
-
-    public int getMin() {
-        return min;
-    }
-
-    public int getMax() {
-        return max;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public int getIncrement() {
-        return increment;
-    }
-
-    public int getDecrement() {
-        return decrement;
-    }
-
-    public long getCoolDownSecs() {
-        return coolDownSecs;
+        // `defaultValue` is for documentation purpose only, use `Boolean` to determine if the field is missing on `null`
+        this.allowScaleDownDuringEvacuated = allowScaleDownDuringEvacuated == null || allowScaleDownDuringEvacuated;
     }
 
     public Map<ScalingReason, Strategy> getStrategies() {
@@ -99,6 +80,7 @@ public class StageScalingPolicy implements Serializable {
                 ", decrement=" + decrement +
                 ", coolDownSecs=" + coolDownSecs +
                 ", strategies=" + strategies +
+                ", allowScaleDownDuringEvacuated=" + allowScaleDownDuringEvacuated +
                 '}';
     }
 
@@ -114,6 +96,7 @@ public class StageScalingPolicy implements Serializable {
         result = prime * result + min;
         result = prime * result + stage;
         result = prime * result + ((strategies == null) ? 0 : strategies.hashCode());
+        result = prime * result + (allowScaleDownDuringEvacuated ? 1231 : 1237);
         return result;
     }
 
@@ -141,11 +124,10 @@ public class StageScalingPolicy implements Serializable {
         if (stage != other.stage)
             return false;
         if (strategies == null) {
-            if (other.strategies != null)
-                return false;
-        } else if (!strategies.equals(other.strategies))
+            return other.strategies == null;
+        } else if (!strategies.equals(other.strategies)) {
             return false;
-        return true;
+        } else return allowScaleDownDuringEvacuated == other.allowScaleDownDuringEvacuated;
     }
 
     public enum ScalingReason {
@@ -162,7 +144,8 @@ public class StageScalingPolicy implements Serializable {
         ClutchRps,
         RPS,
         JVMMemory,
-        SourceJobDrop
+        SourceJobDrop,
+        FailoverAware
     }
 
     @Getter

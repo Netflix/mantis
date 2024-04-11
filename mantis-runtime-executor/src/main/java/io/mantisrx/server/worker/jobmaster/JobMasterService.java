@@ -25,6 +25,7 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.SourceJobParameters;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.stats.MetricStringConstants;
+import io.mantisrx.server.master.FailoverStatusClient;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
@@ -65,6 +66,7 @@ public class JobMasterService implements Service {
                             final WorkerMetricsClient workerMetricsClient,
                             final AutoScaleMetricsConfig autoScaleMetricsConfig,
                             final MantisMasterGateway masterClientApi,
+                            final FailoverStatusClient failoverStatusClient,
                             final Context context,
                             final Action0 observableOnCompleteCallback,
                             final Action1<Throwable> observableOnErrorCallback,
@@ -73,8 +75,8 @@ public class JobMasterService implements Service {
         this.workerMetricsClient = workerMetricsClient;
         this.autoScaleMetricsConfig = autoScaleMetricsConfig;
         this.masterClientApi = masterClientApi;
-        this.jobAutoScaler = new JobAutoScaler(jobId, schedInfo, masterClientApi, context);
-        this.metricObserver = new WorkerMetricHandler(jobId, jobAutoScaler.getObserver(), masterClientApi, autoScaleMetricsConfig).initAndGetMetricDataObserver();
+        this.jobAutoScaler = new JobAutoScaler(jobId, schedInfo, masterClientApi, context, failoverStatusClient);
+        this.metricObserver = new WorkerMetricHandler(jobId, jobAutoScaler.getObserver(), masterClientApi, autoScaleMetricsConfig, failoverStatusClient).initAndGetMetricDataObserver();
         this.observableOnCompleteCallback = observableOnCompleteCallback;
         this.observableOnErrorCallback = observableOnErrorCallback;
         this.observableOnTerminateCallback = observableOnTerminateCallback;
@@ -97,7 +99,7 @@ public class JobMasterService implements Service {
                 stage = 1;
                 if (gauges.isEmpty()) {
                     gauges = measurements.getCounters().stream().map(counter ->
-                            new GaugeMeasurement(counter.getEvent(), counter.getCount())).collect(Collectors.toList());
+                        new GaugeMeasurement(counter.getEvent(), counter.getCount())).collect(Collectors.toList());
                 }
             }
             metricObserver.onNext(new MetricData(jobId, stage, workerIdx, workerNum, measurements.getName(), gauges));
@@ -122,33 +124,33 @@ public class JobMasterService implements Service {
         Observable<Observable<MantisServerSentEvent>> metrics = workerMetricSubscription.getMetricsClient().getResults();
 
         boolean isSourceJobMetricEnabled = (boolean) context.getParameters().get(
-                SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM, false);
+            SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM, false);
         if (isSourceJobMetricEnabled) {
             metrics = metrics.mergeWith(getSourceJobMetrics());
         }
 
         subscription = Observable.merge(metrics)
-                .map(event -> handleMetricEvent(event.getEventAsString()))
-                .doOnTerminate(observableOnTerminateCallback)
-                .doOnCompleted(observableOnCompleteCallback)
-                .doOnError(observableOnErrorCallback)
-                .subscribe();
+            .map(event -> handleMetricEvent(event.getEventAsString()))
+            .doOnTerminate(observableOnTerminateCallback)
+            .doOnCompleted(observableOnCompleteCallback)
+            .doOnError(observableOnErrorCallback)
+            .subscribe();
     }
 
     protected Observable<Observable<MantisServerSentEvent>> getSourceJobMetrics() {
         List<SourceJobParameters.TargetInfo> targetInfos = SourceJobParameters.parseTargetInfo(
-                (String) context.getParameters().get(SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM, "{}"));
+            (String) context.getParameters().get(SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM, "{}"));
         if (targetInfos.isEmpty()) {
             targetInfos = SourceJobParameters.parseInputParameters(context);
         }
         targetInfos = SourceJobParameters.enforceClientIdConsistency(targetInfos, jobId);
 
         String additionalDropMetricPatterns =
-                (String) context.getParameters().get(SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM, "");
+            (String) context.getParameters().get(SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM, "");
         autoScaleMetricsConfig.addSourceJobDropMetrics(additionalDropMetricPatterns);
 
         SourceJobWorkerMetricsSubscription sourceSub = new SourceJobWorkerMetricsSubscription(
-                targetInfos, masterClientApi, workerMetricsClient, autoScaleMetricsConfig);
+            targetInfos, masterClientApi, workerMetricsClient, autoScaleMetricsConfig);
 
         return sourceSub.getResults();
     }

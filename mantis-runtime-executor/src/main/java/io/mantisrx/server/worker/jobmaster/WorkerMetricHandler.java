@@ -21,6 +21,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.stats.MetricStringConstants;
+import io.mantisrx.server.master.FailoverStatusClient;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
@@ -71,16 +72,19 @@ import rx.subjects.PublishSubject;
             return -1;
         }
     };
+    private final FailoverStatusClient failoverStatusClient;
 
     public WorkerMetricHandler(final String jobId,
                                final Observer<JobAutoScaler.Event> jobAutoScaleObserver,
                                final MantisMasterGateway masterClientApi,
-                               final AutoScaleMetricsConfig autoScaleMetricsConfig) {
+                               final AutoScaleMetricsConfig autoScaleMetricsConfig,
+                               final FailoverStatusClient failoverStatusClient) {
         this.jobId = jobId;
         this.jobAutoScaleObserver = jobAutoScaleObserver;
         this.masterClientApi = masterClientApi;
         this.autoScaleMetricsConfig = autoScaleMetricsConfig;
         this.metricAggregator = new MetricAggregator(autoScaleMetricsConfig);
+        this.failoverStatusClient = failoverStatusClient;
     }
 
     public Observer<MetricData> initAndGetMetricDataObserver() {
@@ -94,10 +98,9 @@ import rx.subjects.PublishSubject;
 
         for (Map<String, GaugeData> datapoint : dataPointsList) {
             for (Map.Entry<String, GaugeData> gauge : datapoint.entrySet()) {
-                if (!transformed.containsKey(gauge.getKey())) {
-                    transformed.put(gauge.getKey(), new ArrayList<>());
-                }
-                transformed.get(gauge.getKey()).add(gauge.getValue());
+                transformed
+                    .computeIfAbsent(gauge.getKey(), (k) -> new ArrayList<>())
+                    .add(gauge.getValue());
             }
         }
 
@@ -276,8 +279,8 @@ import rx.subjects.PublishSubject;
                             final int numWorkers = numStageWorkersFn.call(stage);
                             // get the aggregate metric values by metric group for all workers in stage
                             Map<String, GaugeData> allWorkerAggregates = getAggregates(listofAggregates);
-                            logger.info("Job stage " + stage + " avgResUsage from " +
-                                    workersMap.size() + " workers: " + allWorkerAggregates.toString());
+                            logger.info("Job stage {} avgResUsage from {} workers: {}", stage, workersMap.size(), allWorkerAggregates.toString());
+                            // TODO(hmitnflx): Add a failover mode based event into jobAutoScaleObserver
 
                             for (Map.Entry<String, Set<String>> userDefinedMetric : autoScaleMetricsConfig.getUserDefinedMetrics().entrySet()) {
                                 final String metricGrp = userDefinedMetric.getKey();
@@ -387,33 +390,7 @@ import rx.subjects.PublishSubject;
                                 }
                             }
 
-                            double sourceJobDrops = 0;
-                            boolean hasSourceJobDropsMetric = false;
-                            Map<String, String> sourceMetricsRecent = sourceJobMetricsRecent.asMap();
-                            for (Map.Entry<String, WorkerMetrics> worker : sourceJobWorkersMap.entrySet()) {
-                                Map<String, GaugeData> metricGroups = metricAggregator.getAggregates(worker.getValue().getGaugesByMetricGrp());
-                                for (Map.Entry<String, GaugeData> group : metricGroups.entrySet()) {
-                                    String metricKey = worker.getKey() + ":" + group.getKey();
-                                    for (Map.Entry<String, Double> gauge : group.getValue().getGauges().entrySet()) {
-                                        if (sourceMetricsRecent.containsKey(metricKey) &&
-                                                autoScaleMetricsConfig.isSourceJobDropMetric(group.getKey(), gauge.getKey())) {
-                                            sourceJobDrops += gauge.getValue();
-                                            hasSourceJobDropsMetric = true;
-                                        }
-                                    }
-                                }
-                            }
-                            if (hasSourceJobDropsMetric) {
-                                logger.info("Job stage {}, source job drop metrics: {}", stage, sourceJobDrops);
-                                // Divide by 6 to account for 6 second reset by Atlas on counter metric.
-                                jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(
-                                            StageScalingPolicy.ScalingReason.SourceJobDrop,
-                                            stage,
-                                            sourceJobDrops / 6.0 / numWorkers,
-                                            sourceJobDrops / 6.0 / numWorkers,
-                                            numWorkers));
-                            }
+                            addScalerEventForSourceJobDrops(numWorkers);
                         }
                     }, metricsIntervalSeconds, metricsIntervalSeconds, TimeUnit.SECONDS
             ));
@@ -439,6 +416,36 @@ import rx.subjects.PublishSubject;
                     }
                 }
             };
+        }
+
+        private void addScalerEventForSourceJobDrops(int numWorkers) {
+            double sourceJobDrops = 0;
+            boolean hasSourceJobDropsMetric = false;
+            Map<String, String> sourceMetricsRecent = sourceJobMetricsRecent.asMap();
+            for (Map.Entry<String, WorkerMetrics> worker : sourceJobWorkersMap.entrySet()) {
+                Map<String, GaugeData> metricGroups = metricAggregator.getAggregates(worker.getValue().getGaugesByMetricGrp());
+                for (Map.Entry<String, GaugeData> group : metricGroups.entrySet()) {
+                    String metricKey = worker.getKey() + ":" + group.getKey();
+                    for (Map.Entry<String, Double> gauge : group.getValue().getGauges().entrySet()) {
+                        if (sourceMetricsRecent.containsKey(metricKey) &&
+                                autoScaleMetricsConfig.isSourceJobDropMetric(group.getKey(), gauge.getKey())) {
+                            sourceJobDrops += gauge.getValue();
+                            hasSourceJobDropsMetric = true;
+                        }
+                    }
+                }
+            }
+            if (hasSourceJobDropsMetric) {
+                logger.info("Job stage {}, source job drop metrics: {}", stage, sourceJobDrops);
+                // Divide by 6 to account for 6 second reset by Atlas on counter metric.
+                jobAutoScaleObserver.onNext(
+                        new JobAutoScaler.Event(
+                            StageScalingPolicy.ScalingReason.SourceJobDrop,
+                            stage,
+                            sourceJobDrops / 6.0 / numWorkers,
+                            sourceJobDrops / 6.0 / numWorkers,
+                            numWorkers));
+            }
         }
     }
 

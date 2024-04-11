@@ -2416,7 +2416,7 @@ public class JobClusterAkkaTest {
             smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
 
             SchedulingInfo SINGLE_WORKER_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1)
-                    .multiWorkerScalableStageWithConstraints(1,DEFAULT_MACHINE_DEFINITION,Lists.newArrayList(),Lists.newArrayList(),new StageScalingPolicy(1,1,10,1,1,1, smap)).build();
+                    .multiWorkerScalableStageWithConstraints(1,DEFAULT_MACHINE_DEFINITION,Lists.newArrayList(),Lists.newArrayList(),new StageScalingPolicy(1,1,10,1,1,1, smap, true)).build();
 
             final JobDefinition jobDefn = createJob(clusterName, 1, MantisJobDurationType.Transient, "USER_TYPE", SINGLE_WORKER_SCHED_INFO, Lists.newArrayList());
 

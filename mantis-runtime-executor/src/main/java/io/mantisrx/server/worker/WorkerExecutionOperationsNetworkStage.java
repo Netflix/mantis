@@ -52,6 +52,7 @@ import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
+import io.mantisrx.server.master.FailoverStatusClient;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
@@ -110,17 +111,20 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private final List<Closeable> closeables = new ArrayList<>();
     private final ScheduledExecutorService scheduledExecutorService;
     private final ClassLoader classLoader;
+    private final FailoverStatusClient failoverStatusClient;
     private Observer<Status> jobStatusObserver;
 
     public WorkerExecutionOperationsNetworkStage(
         MantisMasterGateway mantisMasterApi,
         WorkerConfiguration config,
         WorkerMetricsClient workerMetricsClient,
+        FailoverStatusClient failoverStatusClient,
         SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
         ClassLoader classLoader) {
         this.mantisMasterApi = mantisMasterApi;
         this.config = config;
         this.workerMetricsClient = workerMetricsClient;
+        this.failoverStatusClient = failoverStatusClient;
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
         this.classLoader = classLoader;
 
@@ -413,7 +417,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 }
 
                 JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
-                        workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback());
+                        workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, failoverStatusClient, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback());
                 jobMasterService.start();
                 closeables.add(jobMasterService::shutdown);
 

@@ -34,6 +34,7 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.stats.MetricStringConstants;
+import io.mantisrx.server.master.FailoverStatusClient;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -100,7 +101,7 @@ public class WorkerMetricHandlerTest {
                 assertEquals(expected, event);
                 latch.countDown();
             }
-        }, mockMasterClientApi, aggregationConfig);
+        }, mockMasterClientApi, aggregationConfig, FailoverStatusClient.DEFAULT);
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
 
@@ -174,7 +175,7 @@ public class WorkerMetricHandlerTest {
                     latch.countDown();
                 }
             }
-        }, mockMasterClientApi, aggregationConfig);
+        }, mockMasterClientApi, aggregationConfig, FailoverStatusClient.DEFAULT);
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
 
@@ -266,7 +267,7 @@ public class WorkerMetricHandlerTest {
                 assertEquals(expected, event);
                 autoScaleLatch.countDown();
             }
-        }, mockMasterClientApi, aggregationConfig);
+        }, mockMasterClientApi, aggregationConfig, FailoverStatusClient.DEFAULT);
 
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
@@ -322,7 +323,7 @@ public class WorkerMetricHandlerTest {
                     latch.countDown();
                 }
             }
-        }, mockMasterClientApi, aggregationConfig);
+        }, mockMasterClientApi, aggregationConfig, FailoverStatusClient.DEFAULT);
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
 

@@ -30,6 +30,7 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
+import io.mantisrx.server.master.FailoverStatusClient;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration;
 import io.mantisrx.server.worker.jobmaster.clutch.rps.ClutchRpsPIDConfig;
@@ -78,7 +79,7 @@ public class JobAutoScalerTest {
                 .machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
                 .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
-                        new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
+                        new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2))), true))
                 .scalable(true)
                 .build();
 
@@ -89,7 +90,7 @@ public class JobAutoScalerTest {
         Context context = mock(Context.class);
         when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, FailoverStatusClient.DEFAULT);
         jobAutoScaler.start();
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -143,8 +144,12 @@ public class JobAutoScalerTest {
                 .numberOfInstances(numStage1Workers)
                 .machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
                 .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
-                    Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
-                        new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
+                    new HashMap<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy>() {
+                        {
+                            put(StageScalingPolicy.ScalingReason.Memory, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)));
+                            put(StageScalingPolicy.ScalingReason.FailoverAware, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.FailoverAware, 0.0, 0.0, new StageScalingPolicy.RollingCount(1, 2)));
+                        }
+                    }, true))
                 .scalable(true)
                 .build();
 
@@ -168,7 +173,7 @@ public class JobAutoScalerTest {
         Context context = mock(Context.class);
         when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, FailoverStatusClient.DEFAULT);
         jobAutoScaler.start();
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -201,7 +206,7 @@ public class JobAutoScalerTest {
                 .machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
                 .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
-                        new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
+                        new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2))), true))
                 .scalable(true)
                 .build();
 
@@ -212,7 +217,7 @@ public class JobAutoScalerTest {
         Context context = mock(Context.class);
         when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, FailoverStatusClient.DEFAULT);
         jobAutoScaler.start();
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -255,7 +260,7 @@ public class JobAutoScalerTest {
                 .numberOfInstances(numStage1Workers).machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
                 .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
-                        new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
+                        new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2))), true))
                 .scalable(true)
                 .build();
 
@@ -266,7 +271,7 @@ public class JobAutoScalerTest {
         Context context = mock(Context.class);
         when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, FailoverStatusClient.DEFAULT);
         jobAutoScaler.start();
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -301,7 +306,7 @@ public class JobAutoScalerTest {
                     .machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
                     .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
                         Collections.singletonMap(scalingReason,
-                            new StageScalingPolicy.Strategy(scalingReason, scaleDownBelow, scaleUpAbove, new StageScalingPolicy.RollingCount(1, 2)))))
+                            new StageScalingPolicy.Strategy(scalingReason, scaleDownBelow, scaleUpAbove, new StageScalingPolicy.RollingCount(1, 2))), true))
                     .scalable(true)
                     .build();
 
@@ -312,7 +317,7 @@ public class JobAutoScalerTest {
             Context context = mock(Context.class);
             when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-            final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
+            final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, FailoverStatusClient.DEFAULT);
             jobAutoScaler.start();
             final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -357,7 +362,7 @@ public class JobAutoScalerTest {
                 "    \"scaleUpMultiplier\": 1.5" +
                 "  }" +
                 "}";
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler("jobId", null, null, null);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler("jobId", null, null, null, FailoverStatusClient.DEFAULT);
         ClutchConfiguration config = jobAutoScaler.getClutchConfiguration(json).get(1);
 
         ClutchRpsPIDConfig expected = new ClutchRpsPIDConfig(0.0, Tuple.of(30.0, 0.0), 0.0, 0.0, Option.of(75.0), Option.of(30.0), Option.of(0.0), Option.of(1.5), Option.of(1.0));
