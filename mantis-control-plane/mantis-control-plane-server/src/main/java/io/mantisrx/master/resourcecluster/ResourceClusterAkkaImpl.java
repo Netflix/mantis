@@ -39,7 +39,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatew
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsAllocation;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsList;
-import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.QueueClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -242,7 +242,7 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
         return Patterns
             .ask(
                 resourceClusterManagerActor,
-                TriggerClusterRuleRefreshRequest.builder().clusterID(this.clusterID).build(),
+                QueueClusterRuleRefreshRequest.builder().clusterID(this.clusterID).build(),
                 askTimeout)
             .thenApply(Ack.class::cast)
             .toCompletableFuture();

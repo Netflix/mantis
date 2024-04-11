@@ -148,6 +148,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 .create()
                 .match(TriggerClusterUsageRequest.class, this::onTriggerClusterUsageRequest)
                 .match(TriggerClusterRuleRefreshRequest.class, this::onTriggerClusterRuleRefreshRequest)
+                .match(QueueClusterRuleRefreshRequest.class, this::onQueueClusterRuleRefreshRequest)
                 .match(GetRuleSetRequest.class,
                     req -> getSender().tell(
                         GetRuleSetResponse.builder().rules(ImmutableMap.copyOf(this.skuToRuleMap)).build(), self()))
@@ -277,6 +278,12 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.fetchRuleSet();
     }
 
+    private void onQueueClusterRuleRefreshRequest(QueueClusterRuleRefreshRequest req) {
+        log.debug("{}: Queue a request to refresh cluster rules", this.clusterId);
+        self().tell(new TriggerClusterRuleRefreshRequest(this.clusterId), self());
+        getSender().tell(Ack.getInstance(), self());
+    }
+
     private void fetchRuleSet() {
         try {
             ResourceClusterScaleRulesWritable rules =
@@ -371,6 +378,12 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     @Value
     @Builder
     static class TriggerClusterRuleRefreshRequest {
+        ClusterID clusterID;
+    }
+
+    @Value
+    @Builder
+    static class QueueClusterRuleRefreshRequest {
         ClusterID clusterID;
     }
 

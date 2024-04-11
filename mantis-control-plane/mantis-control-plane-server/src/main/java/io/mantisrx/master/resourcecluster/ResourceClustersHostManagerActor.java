@@ -95,6 +95,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
 
             // Upgrade section
             .match(UpgradeClusterContainersRequest.class, this::onUpgradeClusterContainersRequest)
+            .match(UpgradeClusterContainersResponse.class, this::onUpgradeClusterContainersResponse)
 
             .build();
     }
@@ -194,6 +195,14 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
 
     private void onResourceClusterProvisionResponse(ResourceClusterProvisionSubmissionResponse resp) {
         this.resourceClusterProvider.getResponseHandler().handleProvisionResponse(resp);
+    }
+
+    private void onUpgradeClusterContainersResponse(UpgradeClusterContainersResponse resp) {
+        if (resp.responseCode.getValue() >= 300) {
+            log.error("Unexpected error response from upgradeClusterContainers: {}", resp);
+        } else {
+            log.info("Success response from upgradeClusterContainers request: {}", resp);
+        }
     }
 
     private void onDeleteResourceCluster(DeleteResourceClusterRequest req) {
@@ -331,7 +340,8 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                 this.resourceClusterProvider
                     .provisionClusterIfNotPresent(req)
                     .exceptionally(err -> ResourceClusterProvisionSubmissionResponse.builder().error(err).build());
-            pipe(provisionFut, getContext().dispatcher()).to(getSelf());
+
+            pipe(provisionFut, getContext().getDispatcher()).to(getSelf());
         }
     }
 
@@ -344,7 +354,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
     }
 
     private void onUpgradeClusterContainersRequest(UpgradeClusterContainersRequest req) {
-        log.info("Entering onScaleResourceClusterRequest: " + req);
+        log.info("Entering onUpgradeClusterContainersRequest: {}", req);
         // [Notes] for scaling-up the request can go straight into provider to increase desire size.
         // For scaling-down the decision requires getting idle hosts first.
         // if enableSkuSpecUpgrade is true, first fetch the latest spec to override the sku spec during upgrade
@@ -380,7 +390,19 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                 this.resourceClusterProvider.upgradeContainerResource(ResourceClusterProviderUpgradeRequest.from(req));
         }
 
-        pipe(upgradeFut, getContext().dispatcher()).to(getSender());
+        pipe(upgradeFut, getContext().getDispatcher()).to(getSelf());
+
+        getSender().tell(
+            UpgradeClusterContainersResponse
+                .builder()
+                .responseCode(ResponseCode.SUCCESS)
+                .message("Upgrade request submitted")
+                .clusterId(req.getClusterId())
+                .optionalSkuId(req.getOptionalSkuId())
+                .optionalEnvType(req.getOptionalEnvType())
+                .region(req.getRegion())
+                .build(),
+            getSelf());
     }
 
     private static Optional<String> validateClusterSpec(ProvisionResourceClusterRequest req) {
