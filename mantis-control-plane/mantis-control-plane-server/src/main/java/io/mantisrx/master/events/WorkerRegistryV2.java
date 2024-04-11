@@ -19,6 +19,9 @@ package io.mantisrx.master.events;
 import static java.util.stream.Collectors.toMap;
 
 import akka.actor.Props;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.events.LifecycleEventsProto.WorkerStatusEvent;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
@@ -27,7 +30,10 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -41,17 +47,24 @@ import org.slf4j.LoggerFactory;
  * The LifeCycleEventPublisher then forwards them to this Actor.
  */
 public class WorkerRegistryV2 implements WorkerRegistry, WorkerEventSubscriber {
-
     private final Logger logger = LoggerFactory.getLogger(WorkerRegistryV2.class);
     private final ConcurrentMap<JobId, List<IMantisWorkerMetadata>> jobToWorkerInfoMap = new ConcurrentHashMap<>();
 
     public static final WorkerRegistryV2 INSTANCE = new WorkerRegistryV2();
+    private final Metrics metrics;
+    private final Counter numStatusEvents;
     public static Props props() {
         return Props.create(WorkerRegistryV2.class);
     }
 
      WorkerRegistryV2() {
         logger.info("WorkerRegistryV2 created");
+         Metrics m = new Metrics.Builder()
+             .id("WorkerRegistryMetrics")
+             .addCounter("numStatusEvents")
+             .build();
+         this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
+         this.numStatusEvents = metrics.getCounter("numStatusEvents");
     }
 
 
@@ -180,6 +193,7 @@ public class WorkerRegistryV2 implements WorkerRegistry, WorkerEventSubscriber {
     @Override
     public void process(LifecycleEventsProto.JobStatusEvent statusEvent) {
         if(logger.isDebugEnabled()) {  logger.debug("In JobStatusEvent {}", statusEvent); }
+        this.numStatusEvents.increment();
         JobState jobState = statusEvent.getJobState();
         if(JobState.isTerminalState(jobState)) {
             final JobId jobId = statusEvent.getJobId();
@@ -189,6 +203,6 @@ public class WorkerRegistryV2 implements WorkerRegistry, WorkerEventSubscriber {
 
     @Override
     public void process(WorkerStatusEvent workerStatusEvent) {
-
+        this.numStatusEvents.increment();
     }
 }
