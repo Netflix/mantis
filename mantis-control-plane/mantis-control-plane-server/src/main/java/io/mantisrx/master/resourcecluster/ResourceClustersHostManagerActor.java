@@ -53,7 +53,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import scala.concurrent.ExecutionContextExecutor;
 
 /**
  * This actor is responsible to translate requests for resource cluster related operations from API server and other
@@ -342,10 +341,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                     .provisionClusterIfNotPresent(req)
                     .exceptionally(err -> ResourceClusterProvisionSubmissionResponse.builder().error(err).build());
 
-            // move the slow provision future to io dispatcher
-            ExecutionContextExecutor ioDispatcher =
-                getContext().getSystem().dispatchers().lookup("akka.actor.default-blocking-io-dispatcher");
-            pipe(provisionFut, ioDispatcher).to(getSelf());
+            pipe(provisionFut, getContext().getDispatcher()).to(getSelf());
         }
     }
 
@@ -358,7 +354,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
     }
 
     private void onUpgradeClusterContainersRequest(UpgradeClusterContainersRequest req) {
-        log.info("Entering onScaleResourceClusterRequest: " + req);
+        log.info("Entering onUpgradeClusterContainersRequest: {}", req);
         // [Notes] for scaling-up the request can go straight into provider to increase desire size.
         // For scaling-down the decision requires getting idle hosts first.
         // if enableSkuSpecUpgrade is true, first fetch the latest spec to override the sku spec during upgrade
@@ -394,10 +390,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                 this.resourceClusterProvider.upgradeContainerResource(ResourceClusterProviderUpgradeRequest.from(req));
         }
 
-        // move the slow provision future to io dispatcher
-        ExecutionContextExecutor ioDispatcher =
-            getContext().getSystem().dispatchers().lookup("akka.actor.default-blocking-io-dispatcher");
-        pipe(upgradeFut, ioDispatcher).to(getSelf());
+        pipe(upgradeFut, getContext().getDispatcher()).to(getSelf());
 
         getSender().tell(
             UpgradeClusterContainersResponse
