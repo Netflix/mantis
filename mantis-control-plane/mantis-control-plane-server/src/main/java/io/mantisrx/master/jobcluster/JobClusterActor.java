@@ -73,6 +73,8 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsR
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastLaunchedJobIdStreamRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastLaunchedJobIdStreamResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
@@ -139,6 +141,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -222,6 +225,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final LifecycleEventPublisher eventPublisher;
 
     private final BehaviorSubject<JobId> jobIdSubmissionSubject;
+    private final BehaviorSubject<JobId> jobIdLaunchedSubject;
+
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
     private final Metrics metrics;
 
@@ -240,6 +245,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, costsCalculator);
 
         jobIdSubmissionSubject = BehaviorSubject.create();
+        jobIdLaunchedSubject = BehaviorSubject.create();
 
         initializedBehavior =  buildInitializedBehavior();
         disabledBehavior = buildDisabledBehavior();
@@ -422,6 +428,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetLastSubmittedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastSubmittedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
+            .match(GetLastLaunchedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastLaunchedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(ListJobIdsRequest.class, (x) -> getSender().tell(new ListJobIdsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), new ArrayList()), getSelf()))
             .match(ListJobsRequest.class, (x) -> getSender().tell(new ListJobsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), new ArrayList()), getSelf()))
             .match(ListWorkersRequest.class, (x) -> getSender().tell(new ListWorkersResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), new ArrayList()), getSelf()))
@@ -516,6 +523,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetLastSubmittedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastSubmittedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
+            .match(GetLastLaunchedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastLaunchedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(ListJobIdsRequest.class, (x) -> getSender().tell(new ListJobIdsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
             .match(ListJobsRequest.class, (x) -> getSender().tell(new ListJobsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
             .match(ListWorkersRequest.class, (x) -> getSender().tell(new ListWorkersResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
@@ -610,6 +618,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .match(JobProto.JobInitialized.class, this::onJobInitialized)
                 .match(JobStartedEvent.class, this::onJobStarted)
                 .match(GetLastSubmittedJobIdStreamRequest.class, this::onGetLastSubmittedJobIdSubject)
+                .match(GetLastLaunchedJobIdStreamRequest.class, this::onGetLastLaunchedJobIdSubject)
                 .match(ScaleStageRequest.class, this::onScaleStage)
                  // EXPECTED MESSAGES END //
                  // EXPECTED MESSAGES BEGIN //
@@ -854,7 +863,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                                  JobId lastJobId = new JobId(this.name, initReq.lastJobNumber);
                                  this.jobIdSubmissionSubject.onNext(lastJobId);
                              }
-
+                            initReq.jobList.stream()
+                             .filter(m -> m.getState() == JobState.Launched)
+                             .max(Comparator.comparingLong(m -> m.getJobId().getJobNum()))
+                             .ifPresent(m -> this.jobIdLaunchedSubject.onNext(m.getJobId()));
 
                              setBookkeepingTimer(BOOKKEEPING_INTERVAL_SECS);
 
@@ -1615,13 +1627,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     public void onJobStarted(final JobStartedEvent startedEvent) {
         logger.info("job {} started event", startedEvent.jobid);
 
-        Optional<JobInfo> jobInfoOp = jobManager.getJobInfoForNonTerminalJob(startedEvent.jobid);
-
-        if(jobInfoOp.isPresent()) {
-            // enforce SLA
-            jobManager.markJobStarted(jobInfoOp.get());
-            getSelf().tell(new JobClusterProto.EnforceSLARequest(Instant.now(), of(jobInfoOp.get().jobDefinition)), getSelf());
-        }
+        jobManager
+            .getJobInfoForNonTerminalJob(startedEvent.jobid)
+            .ifPresent(jobInfo -> {
+                jobIdLaunchedSubject.onNext(startedEvent.jobid);
+                jobManager.markJobStarted(jobInfo);
+                // Enforce SLA
+                getSelf().tell(new JobClusterProto.EnforceSLARequest(Instant.now(), of(jobInfo.jobDefinition)), getSelf());
+            });
 
     }
 
@@ -1905,7 +1918,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(logger.isTraceEnabled()) { logger.trace("Enter onGetLatestJobDiscoveryInfo {}", request); }
         ActorRef sender = getSender();
         if(this.name.equals(request.getJobCluster())) {
-            JobId latestJobId = jobIdSubmissionSubject.getValue();
+            // TODO: I think this might be wrong.
+            JobId latestJobId = jobIdLaunchedSubject.getValue();
             logger.debug("[{}] latest job Id for cluster: {}", name, latestJobId);
             if (latestJobId != null) {
                 Optional<JobInfo> jInfo = jobManager.getJobInfoForNonTerminalJob(latestJobId);
@@ -1968,6 +1982,18 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         }
         if(logger.isTraceEnabled()) { logger.trace("Exit onGetLastSubmittedJobIdSubject {}", request); }
 
+    }
+
+    @Override
+    public void onGetLastLaunchedJobIdSubject(GetLastLaunchedJobIdStreamRequest request) {
+        ActorRef sender = getSender();
+        if(this.name.equals(request.getClusterName())) {
+            sender.tell(new GetLastLaunchedJobIdStreamResponse(request.requestId, SUCCESS,"", of(this.jobIdLaunchedSubject)),getSelf());
+        } else {
+            String msg = "Job Cluster " + request.getClusterName() + " In request does not match the name of this actor " + this.name;
+            logger.warn(msg);
+            sender.tell(new GetLastLaunchedJobIdStreamResponse(request.requestId, CLIENT_ERROR ,msg,empty()),getSelf());
+        }
     }
 
     @Override

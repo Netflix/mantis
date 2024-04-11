@@ -39,6 +39,9 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.domain.JobId;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -49,6 +52,9 @@ import rx.RxReactiveStreams;
 
 public class JobDiscoveryRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobDiscoveryRoute.class);
+
+    // return latest Launched job
+    private final List<String> namedJobsReferToLaunched;
     private final JobDiscoveryRouteHandler jobDiscoveryRouteHandler;
 
     private final Metrics metrics;
@@ -56,6 +62,11 @@ public class JobDiscoveryRoute extends BaseRoute {
     private final Counter jobClusterInfoStreamGET;
 
     public JobDiscoveryRoute(final JobDiscoveryRouteHandler jobDiscoveryRouteHandler) {
+        this(Collections.emptyList(), jobDiscoveryRouteHandler);
+    }
+
+    public JobDiscoveryRoute(final List<String> namedJobsReferToLaunched, final JobDiscoveryRouteHandler jobDiscoveryRouteHandler) {
+        this.namedJobsReferToLaunched = namedJobsReferToLaunched;
         this.jobDiscoveryRouteHandler = jobDiscoveryRouteHandler;
         Metrics m = new Metrics.Builder()
                 .id("JobDiscoveryRoute")
@@ -103,13 +114,9 @@ public class JobDiscoveryRoute extends BaseRoute {
                                                                     .get();
                                                             Source<ServerSentEvent, NotUsed> schedInfoSource =
                                                                     Source.fromPublisher(
-                                                                            RxReactiveStreams.toPublisher(
-                                                                                    schedulingInfoObs))
-                                                                          .map(j -> StreamingUtils.from(
-                                                                                  j)
-                                                                                                  .orElse(null))
-                                                                          .filter(sse -> sse !=
-                                                                                         null);
+                                                                            RxReactiveStreams.toPublisher(schedulingInfoObs))
+                                                                        .map(j -> StreamingUtils.from(j).orElse(null))
+                                                                        .filter(Objects::nonNull);
                                                             return completeOK(
                                                                     schedInfoSource,
                                                                     EventStreamMarshalling.toEventStream());
@@ -134,14 +141,24 @@ public class JobDiscoveryRoute extends BaseRoute {
                                                     "/namedjobs/{} called",
                                                     jobCluster);
                                             jobClusterInfoStreamGET.increment();
-                                            JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest req =
+                                            final CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> jobClusterInfoRespCS;
+                                            boolean jobClusterRefersToLaunched = namedJobsReferToLaunched.stream()
+                                                .anyMatch(item -> item.equalsIgnoreCase(jobCluster));
+                                            if (jobClusterRefersToLaunched) {
+                                                JobClusterManagerProto.GetLastLaunchedJobIdStreamRequest req =
+                                                    new JobClusterManagerProto.GetLastLaunchedJobIdStreamRequest(
+                                                        jobCluster);
+
+                                                jobClusterInfoRespCS = jobDiscoveryRouteHandler.lastLaunchedJobIdStream(
+                                                    req, sendHeartbeats.orElse(false));
+                                            } else {
+                                                JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest req =
                                                     new JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest(
                                                             jobCluster);
 
-                                            CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> jobClusterInfoRespCS =
-                                                    jobDiscoveryRouteHandler.lastSubmittedJobIdStream(
-                                                            req,
-                                                            sendHeartbeats.orElse(false));
+                                                jobClusterInfoRespCS = jobDiscoveryRouteHandler.lastSubmittedJobIdStream(
+                                                    req, sendHeartbeats.orElse(false));
+                                            }
                                             return completeAsync(
                                                     jobClusterInfoRespCS,
                                                     r -> {
