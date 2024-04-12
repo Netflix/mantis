@@ -48,7 +48,6 @@ public class WorkerConfigurationUtils {
             .isLocalMode(configSource.isLocalMode())
             .leaderAnnouncementPath(configSource.getLeaderAnnouncementPath())
             .localStorageDir(configSource.getLocalStorageDir())
-            .mesosSlavePort(configSource.getMesosSlavePort())
             .metricsCollector(configSource.getUsageSupplier())
             .metricsPort(configSource.getMetricsPort())
             .metricsPublisher(configSource.getMetricsPublisher())

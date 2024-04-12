@@ -143,12 +143,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -331,12 +325,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
@@ -598,12 +586,6 @@
             ],
             "locked": "4.5.14"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.asynchttpclient:async-http-client": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-client"
@@ -801,12 +783,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
@@ -1062,12 +1038,6 @@
                 "io.mantisrx:mantis-runtime-executor"
             ],
             "locked": "4.5.14"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.asynchttpclient:async-http-client": {
             "firstLevelTransitive": [

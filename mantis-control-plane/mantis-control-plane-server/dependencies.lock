@@ -120,12 +120,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -187,9 +181,6 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "3.0.1"
-        },
-        "com.netflix.fenzo:fenzo-core": {
-            "locked": "0.13.8"
         },
         "com.netflix.fenzo:fenzo-triggers": {
             "locked": "0.13.8"
@@ -297,12 +288,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -366,9 +351,6 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "3.0.1"
-        },
-        "com.netflix.fenzo:fenzo-core": {
-            "locked": "0.13.8"
         },
         "com.netflix.fenzo:fenzo-triggers": {
             "locked": "0.13.8"
@@ -492,12 +474,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -558,9 +534,6 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "3.0.1"
-        },
-        "com.netflix.fenzo:fenzo-core": {
-            "locked": "0.13.8"
         },
         "com.netflix.fenzo:fenzo-triggers": {
             "locked": "0.13.8"
@@ -687,12 +660,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -757,9 +724,6 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "3.0.1"
-        },
-        "com.netflix.fenzo:fenzo-core": {
-            "locked": "0.13.8"
         },
         "com.netflix.fenzo:fenzo-triggers": {
             "locked": "0.13.8"
@@ -904,12 +868,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [

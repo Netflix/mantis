@@ -2,31 +2,14 @@
 
 ## Prerequisites
 
-> Install Docker on your local machine (if you don't already have it) 
+> Install Docker on your local machine (if you don't already have it)
 >
 1. [Mac](https://docs.docker.com/docker-for-mac/install/)
 2. [Windows](https://docs.docker.com/docker-for-windows/install)
 3. [Linux](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
 
 ## Bootstraping your first Mantis Cluster in Docker
-
-### Download the docker-compose file
-
-Download the [docker-compose.yml](https://github.com/Netflix/mantis/blob/master/docker-compose.yml)
-to a local folder *mantis*
-```bash
-$ cd <mantis>
-$ docker-compose -f docker-compose.yml up 
-```
-This starts up the following Docker containers:
-
-- Zookeeper
-- Mesos Master
-- Mantis Master
-- Mantis API
-- Mesos Slave and Mantis Worker run on a single container (mantisagent)
-- A simple hello world web application that sends events to Mantis
-- A simple Java application that sends events to Mantis
+See [mantis-helm](https://github.com/Netflix/mantis-helm)
 
 ### Mantis Admin UI
 
@@ -60,7 +43,7 @@ coordinates of a sine wave.
 
 2. [Twitter Sample](../samples/twitter.md) - Connects to a twitter stream using consumer and token
 keys specified and performs a streaming word count.
- 
+
 3. [On Demand Sample](../samples/on-demand.md) - Demonstrates
 how Mantis Jobs can pull events on demand from external applications.
 
@@ -71,9 +54,4 @@ how Mantis Jobs can pull events on demand from external applications.
 
 * Write your [first Mantis Job](../../develop/writing-jobs/word-count.md)
 
-To teardown the Mantis cluster, issue the following command
-
-```bash
-$ cd <mantis>
-$ docker-compose -f docker-compose.yml down
 ```

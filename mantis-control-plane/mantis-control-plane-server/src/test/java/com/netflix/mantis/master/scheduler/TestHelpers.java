@@ -32,7 +32,6 @@ import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.Properties;
 
 public class TestHelpers {
@@ -61,7 +60,6 @@ public class TestHelpers {
             return new ScheduleRequest(
                     workerId,
                     stageNum,
-                    numStages,
                     new JobMetadata(mantisJobMetadata.getJobId().getId(),
                             mantisJobMetadata.getJobJarUrl(),
                             mantisJobMetadata.getTotalStages(),
@@ -74,9 +72,7 @@ public class TestHelpers {
                     ),
                     mantisJobMetadata.getSla().get().getDurationType(),
                     SchedulingConstraints.of(machineDefinition),
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    0,Optional.empty()
+                    0
             );
         } catch (Exception e) {
             e.printStackTrace();

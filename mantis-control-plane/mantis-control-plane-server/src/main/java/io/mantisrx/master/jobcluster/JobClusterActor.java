@@ -111,13 +111,10 @@ import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.JobStartedEvent;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
 import io.mantisrx.master.jobcluster.proto.JobProto;
-import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.command.InvalidJobException;
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
-import io.mantisrx.server.master.ConstraintsEvaluators;
-import io.mantisrx.server.master.InvalidJobRequest;
+import io.mantisrx.server.master.InvalidJobRequestException;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.IJobClusterDefinition.CronPolicy;
@@ -1570,7 +1567,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             numJobSubmissions.increment();
         } catch (PersistException pe) {
             throw pe;
-        } catch (InvalidJobRequest e) {
+        } catch (InvalidJobRequestException e) {
             logger.error( "Invalid jobcluster : {} error {}", jobClusterMetadata, e.getMessage(), e);
             numJobSubmissionFailures.increment();
             throw new IllegalArgumentException(e);
@@ -1655,54 +1652,22 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     /**
      *
      * @param definition Job Definition to be validated
-     * @throws InvalidJobRequest If the job definition is invalid
+     * @throws InvalidJobRequestException If the job definition is invalid
      */
-    private void validateJobDefinition(JobDefinition definition) throws InvalidJobRequest {
+    private void validateJobDefinition(JobDefinition definition) throws InvalidJobRequestException {
         if (definition == null) {
-            throw new InvalidJobRequest(null, "MantisJobDefinition cannot be null");
+            throw new InvalidJobRequestException("MantisJobDefinition cannot be null");
         }
         if (definition.getArtifactName() == null) {
-            throw new InvalidJobRequest(null, "MantisJobDefinition job artifactName attribute cannot be null");
+            throw new InvalidJobRequestException("MantisJobDefinition job artifactName attribute cannot be null");
         }
         if (definition.getName() == null) {
-            throw new InvalidJobRequest(null, "MantisJobDefinition name attribute cannot be null");
+            throw new InvalidJobRequestException("MantisJobDefinition name attribute cannot be null");
         }
 
         if (definition.getSchedulingInfo() == null) {
-            throw new InvalidJobRequest(null, "MantisJobDefinition schedulingInfo cannot be null");
+            throw new InvalidJobRequestException("MantisJobDefinition schedulingInfo cannot be null");
         }
-
-        for (StageSchedulingInfo ssi : definition.getSchedulingInfo().getStages().values()) {
-            validateConstraints(ssi.getSoftConstraints(), ssi.getHardConstraints());
-        }
-    }
-
-    private void validateConstraints(List<JobConstraints> softConstraints, List<JobConstraints> hardConstraints) throws InvalidJobRequest {
-        // ok to have null constraints as they will get replaced later with empty list in JobActor.setupStageWorkers
-        if(softConstraints != null) {
-
-            for (JobConstraints jc : softConstraints) {
-                if (ConstraintsEvaluators.softConstraint(jc, new HashSet<>()) == null) {
-                    logger.error("Invalid Soft Job Constraint {}", jc);
-                    throw new InvalidJobRequest(null, "Unknown constraint " + jc);
-
-                }
-            }
-            ;
-        }
-
-        if(hardConstraints != null ) {
-            for (JobConstraints jc : hardConstraints) {
-                if (ConstraintsEvaluators.hardConstraint(jc, new HashSet<>()) == null) {
-                    logger.error("Invalid Hard Job Constraint {}", jc);
-                    throw new InvalidJobRequest(null, "Unknown constraint " + jc);
-
-                }
-            }
-            ;
-        }
-
-
     }
 
     @Override

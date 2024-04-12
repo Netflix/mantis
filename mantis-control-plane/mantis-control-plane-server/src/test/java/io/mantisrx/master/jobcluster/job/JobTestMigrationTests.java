@@ -24,8 +24,6 @@ import static org.mockito.Mockito.mock;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.netflix.fenzo.VirtualMachineCurrentState;
-import com.netflix.fenzo.VirtualMachineLease;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -50,7 +48,6 @@ import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -212,49 +209,6 @@ public class JobTestMigrationTests {
             // TODO Auto-generated method stub
 
         }
-
-        @Override
-        public void rescindOffer(String offerId) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void rescindOffers(String hostname) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void addOffers(List<VirtualMachineLease> offers) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void disableVM(String hostname, long durationMillis) throws IllegalStateException {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enableVM(String hostname) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public List<VirtualMachineCurrentState> getCurrentVMState() {
-            // TODO Auto-generated method stub
-            return null;
-        }
-
-        @Override
-        public void setActiveVmGroups(List<String> activeVmGroups) {
-            // TODO Auto-generated method stub
-
-        }
-
     }
 
     public static void main(String[] args) {
