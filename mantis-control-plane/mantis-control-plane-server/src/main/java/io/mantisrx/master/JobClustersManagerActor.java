@@ -112,6 +112,7 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -142,6 +143,12 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
+
+    @VisibleForTesting
+    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator) {
+        return props(jobStore, eventPublisher, costsCalculator, Collections.emptyList());
+    }
+
     public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator, final List<String> namedJobsReferToLaunched) {
         return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, costsCalculator, namedJobsReferToLaunched)
             .withMailbox("akka.actor.metered-mailbox");

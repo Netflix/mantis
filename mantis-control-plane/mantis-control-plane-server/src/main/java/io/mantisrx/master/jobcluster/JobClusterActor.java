@@ -134,6 +134,7 @@ import io.mantisrx.server.master.persistence.exceptions.JobClusterAlreadyExistsE
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
@@ -200,6 +201,15 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final Counter numJobClusterUpdateErrors;
     private final Counter numSLAEnforcementExecutions;
 
+    @VisibleForTesting
+    public static Props props(
+        final String name,
+        final MantisJobStore jobStore,
+        final MantisSchedulerFactory mantisSchedulerFactory,
+        final LifecycleEventPublisher eventPublisher,
+        final CostsCalculator costsCalculator) {
+        return props(name, jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator, Collections.emptyList());
+    }
 
     public static Props props(
         final String name,
