@@ -22,7 +22,6 @@ ext {
     hdrHistogramVersion = '2.+'
     jodaTimeVersion = '2.+'
     jsonVersion = '20180813'
-    mesosVersion = '1.7.2'
     testngVersion = '6.14.+'
 }
 

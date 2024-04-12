@@ -48,7 +48,6 @@ public class WorkerConfigurationWritableTest {
 
         props.setProperty("mantis.taskexecutor.id", "testId1");
         props.setProperty("mantis.taskexecutor.heartbeats.interval", "999");
-        props.setProperty("mantis.agent.mesos.slave.port", "998");
 
         WorkerConfiguration configSource = new StaticPropertiesConfigurationFactory(props).getConfig();
 
