@@ -14,7 +14,8 @@ request)
 
 So the answer is a qualified `yes` but it is much more than a stream processing engine.   
 
-## Does Mantis process events in micro batches or event a time ?
+## Does Mantis process events in micro batches or one at a time ?
+
 By default Mantis Jobs process events one at a time. Users can however create their own micro batches
 using ReactiveX operators.
 
