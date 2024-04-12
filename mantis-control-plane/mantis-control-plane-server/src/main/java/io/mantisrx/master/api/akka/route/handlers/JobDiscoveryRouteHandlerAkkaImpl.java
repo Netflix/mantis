@@ -174,6 +174,7 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
     public CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> lastSubmittedJobIdStream(
         final GetLastSubmittedJobIdStreamRequest request, final boolean sendHeartbeats) {
 
+        logger.info("[fdc-91] lastSubmittedJobIdStream --> {}", request.getClusterName());
         try {
             CompletionStage<GetLastSubmittedJobIdStreamResponse> response = lastSubmittedJobIdStreamRespCache.get(request);
             return response.thenApply(r -> streamJobIdBehaviorSubject(r, r.getjobIdBehaviorSubject(), sendHeartbeats, lastSubmittedJobIdStreamErrors));
@@ -198,6 +199,7 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
     public CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> lastLaunchedJobIdStream(
         final GetLastLaunchedJobIdStreamRequest request, final boolean sendHeartbeats) {
 
+        logger.info("[fdc-91] lastLaunchedJobIdStream --> {}", request.getClusterName());
         try {
             CompletionStage<GetLastLaunchedJobIdStreamResponse> response = lastLaunchedJobIdStreamRespCache.get(request);
             return response.thenApply(r -> streamJobIdBehaviorSubject(r, r.getjobIdBehaviorSubject(), sendHeartbeats, lastLaunchedJobIdStreamErrors));
