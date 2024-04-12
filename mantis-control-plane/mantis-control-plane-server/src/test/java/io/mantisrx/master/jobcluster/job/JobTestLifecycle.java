@@ -19,7 +19,6 @@ package io.mantisrx.master.jobcluster.job;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
-import static java.util.Optional.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -34,7 +33,11 @@ import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
 import akka.testkit.javadsl.TestKit;
 import com.netflix.mantis.master.scheduler.TestHelpers;
-import io.mantisrx.master.events.*;
+import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.events.LifecycleEventPublisherImpl;
+import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.job.JobActor.WorkerNumberGenerator;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
@@ -303,8 +306,8 @@ public class JobTestLifecycle {
 
             JobMetadata jobMetadata = new JobMetadata(jobId, new URL("http://myart" +
                     ""),1,"njoshi",schedInfo,Lists.newArrayList(),0,10, 0);
-            ScheduleRequest scheduleRequest = new ScheduleRequest(workerId,
-                    1,4, jobMetadata,MantisJobDurationType.Perpetual, SchedulingConstraints.of(machineDefinition),Lists.newArrayList(),Lists.newArrayList(),0,empty());
+            ScheduleRequest scheduleRequest = new ScheduleRequest(
+                workerId, 1, jobMetadata,MantisJobDurationType.Perpetual, SchedulingConstraints.of(machineDefinition),0);
             BatchScheduleRequest expectedRequest = new BatchScheduleRequest(Collections.singletonList(scheduleRequest));
             verify(schedulerMock).scheduleWorkers(expectedRequest);
 

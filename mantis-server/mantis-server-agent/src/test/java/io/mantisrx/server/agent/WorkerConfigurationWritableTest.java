@@ -48,7 +48,6 @@ public class WorkerConfigurationWritableTest {
 
         props.setProperty("mantis.taskexecutor.id", "testId1");
         props.setProperty("mantis.taskexecutor.heartbeats.interval", "999");
-        props.setProperty("mantis.agent.mesos.slave.port", "998");
 
         WorkerConfiguration configSource = new StaticPropertiesConfigurationFactory(props).getConfig();
 
@@ -56,7 +55,6 @@ public class WorkerConfigurationWritableTest {
         assertNotNull(configurationWritable);
         assertEquals("testId1", configurationWritable.getTaskExecutorId());
         assertEquals(999, configurationWritable.getHeartbeatInternalInMs());
-        assertEquals(998, configurationWritable.getMesosSlavePort());
         assertNotNull(configurationWritable.getUsageSupplier());
 
         String configStr = ConfigWritableToString(configurationWritable);
@@ -65,7 +63,6 @@ public class WorkerConfigurationWritableTest {
         assertNotNull(configurationWritable);
         assertEquals("testId1", configurationWritable2.getTaskExecutorId());
         assertEquals(999, configurationWritable2.getHeartbeatInternalInMs());
-        assertEquals(998, configurationWritable2.getMesosSlavePort());
         assertNull(configurationWritable2.getUsageSupplier());
     }
 }

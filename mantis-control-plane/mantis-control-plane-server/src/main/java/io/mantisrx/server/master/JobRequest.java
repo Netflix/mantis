@@ -29,8 +29,7 @@ public class JobRequest {
     public JobRequest(final String jobId,
                       final MantisJobDefinition jobDefinition,
                       final NamedJob namedJob,
-                      final MantisScheduler scheduler,
-                      final VirtualMachineMasterService vmService) {
+                      final MantisScheduler scheduler) {
         this.jobId = jobId;
         this.jobDefinition = jobDefinition;
     }

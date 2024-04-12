@@ -20,7 +20,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import org.apache.flink.util.UserCodeClassLoader;
 
 /**
- * Interface to load core runtime work load from external host (mesos or TaskExecutor).
+ * Interface to load core runtime work load from external host (TaskExecutor).
  * [Note] To avoid dependency conflicts in TaskExecutors running in custom structure
  * e.g. SpringBoot based runtime, adding dependency here shall be carefully reviewed.
  * Do not have any shared Mantis library that will be used on both TaskExecutor and implementations of

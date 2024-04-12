@@ -30,12 +30,6 @@ import org.skife.config.Default;
 import org.skife.config.DefaultNull;
 
 public interface WorkerConfiguration extends CoreConfiguration {
-
-    // Old configurations for mesos
-    @Config("mantis.agent.mesos.slave.port")
-    @Default("5051")
-    int getMesosSlavePort();
-
     // ------------------------------------------------------------------------
     //  Task Executor machine related configurations
     // ------------------------------------------------------------------------
