@@ -55,7 +55,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
 
     private final List<Service> mantisServices = new ArrayList<>();
 
-    // HA service instance on TaskExecutor path. Could be null in mesos task.
+    // HA service instance on TaskExecutor path.
     private HighAvailabilityServices highAvailabilityServices;
 
     private TaskStatusUpdateHandler taskStatusUpdateHandler;
