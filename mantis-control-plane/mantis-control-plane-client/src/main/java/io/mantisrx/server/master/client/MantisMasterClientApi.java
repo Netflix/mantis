@@ -749,6 +749,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                             return response.getContent()
                                     .map(event -> {
                                         try {
+                                            logger.info("[fdc-91] namedJobInfo - {}", event);
                                             return objectMapper.readValue(event.contentAsString(), NamedJobInfo.class);
                                         } catch (IOException e) {
                                             throw new RuntimeException("Invalid namedJobInfo json: " + e.getMessage(), e);
