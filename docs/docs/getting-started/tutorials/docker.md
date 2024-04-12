@@ -9,7 +9,7 @@
 3. [Linux](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
 
 ## Bootstraping your first Mantis Cluster in Docker
-See [Mantis-help](https://github.com/Netflix/mantis-helm)
+See [mantis-helm](https://github.com/Netflix/mantis-helm)
 
 ### Mantis Admin UI
 
