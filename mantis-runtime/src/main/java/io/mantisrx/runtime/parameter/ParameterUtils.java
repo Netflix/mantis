@@ -16,17 +16,7 @@
 
 package io.mantisrx.runtime.parameter;
 
-import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
-import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM;
-import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM;
-import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM;
-import static io.mantisrx.common.SystemParameters.JOB_MASTER_CLUTCH_EXPERIMENTAL_PARAM;
-import static io.mantisrx.common.SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM;
-import static io.mantisrx.common.SystemParameters.JOB_WORKER_HEARTBEAT_INTERVAL_SECS;
-import static io.mantisrx.common.SystemParameters.JOB_WORKER_TIMEOUT_SECS;
-import static io.mantisrx.common.SystemParameters.MAX_NUM_STAGES_FOR_JVM_OPTS_OVERRIDE;
-import static io.mantisrx.common.SystemParameters.PER_STAGE_JVM_OPTS_FORMAT;
-import static io.mantisrx.common.SystemParameters.STAGE_CONCURRENCY;
+import static io.mantisrx.common.SystemParameters.*;
 
 import com.mantisrx.common.utils.MantisSSEConstants;
 import io.mantisrx.common.compression.CompressionUtils;
@@ -181,15 +171,6 @@ public class ParameterUtils {
                 .build();
         systemParams.put(clutchExperimentalEnabled.getName(), clutchExperimentalEnabled);
 
-        // set MantisWorker commandline JVM options for all stages of a job
-        ParameterDefinition<String> jvmOptions = new StringParameter()
-                .name("MANTIS_WORKER_JVM_OPTS")
-                .validator(Validators.alwaysPass())
-                .defaultValue("")
-                .description("command line options for the mantis worker JVM, setting this field would override the default GC settings")
-                .build();
-        systemParams.put(jvmOptions.getName(), jvmOptions);
-
         ParameterDefinition<Integer> stageConcurrency = new IntParameter()
                 .name(STAGE_CONCURRENCY)
                 .validator(Validators.range(-1, 16))
@@ -197,17 +178,6 @@ public class ParameterUtils {
                 .description("Number of cores to use for stage processing")
                 .build();
         systemParams.put(stageConcurrency.getName(), stageConcurrency);
-
-        // set per stage mantis worker commandline JVM args, this takes precedence over MANTIS_WORKER_JVM_OPTS
-        for (int stageNum = 0; stageNum <= MAX_NUM_STAGES_FOR_JVM_OPTS_OVERRIDE; stageNum++) {
-            final String paramName = String.format(PER_STAGE_JVM_OPTS_FORMAT, stageNum);
-            systemParams.put(paramName, new StringParameter()
-                    .name(paramName)
-                    .validator(Validators.alwaysPass())
-                    .defaultValue("")
-                    .description("command line options for stage " + stageNum + " mantis worker JVM, setting this field would override the default GC settings")
-                    .build());
-        }
 
         ParameterDefinition<Boolean> sseBinary = new BooleanParameter()
                 .name(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION)
@@ -351,7 +321,10 @@ public class ParameterUtils {
             definition = parameterDefinitions.get(name);
 
             if (definition == null) {
-                if (name.startsWith("mantis.") || name.startsWith("MANTIS")) {
+                if (name.equals("MANTIS_WORKER_JVM_OPTS") || name.startsWith(MANTIS_WORKER_JVM_OPTS_STAGE_PREFIX)) {
+                    log.warn("Ignoring invalid parameter definitions with name: {}, will skip parameter", name);
+                    continue;
+                } else if (name.startsWith("mantis.") || name.startsWith("MANTIS")) {
                     log.info("mantis runtime parameter {} used, looking up definition >>>", name);
                     definition = systemParams.get(name);
                 } else {

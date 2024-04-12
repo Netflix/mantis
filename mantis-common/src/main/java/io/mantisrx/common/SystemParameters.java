@@ -26,8 +26,15 @@ public final class SystemParameters {
     public static final String JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM = "mantis.jobmaster.autoscale.sourcejob.dropMetricPatterns";
     public static final String JOB_WORKER_HEARTBEAT_INTERVAL_SECS = "mantis.job.worker.heartbeat.interval.secs";
     public static final String JOB_WORKER_TIMEOUT_SECS = "mantis.job.worker.timeout.secs";
-    public static final String PER_STAGE_JVM_OPTS_FORMAT = "MANTIS_WORKER_JVM_OPTS_STAGE%d";
+
+    @Deprecated
+    public static final String MANTIS_WORKER_JVM_OPTS_STAGE_PREFIX = "MANTIS_WORKER_JVM_OPTS_STAGE";
+
+    @Deprecated
+    public static final String PER_STAGE_JVM_OPTS_FORMAT = MANTIS_WORKER_JVM_OPTS_STAGE_PREFIX + "%d";
     public static final String STAGE_CONCURRENCY = "mantis.stageConcurrency";
+
+    @Deprecated
     public static final int MAX_NUM_STAGES_FOR_JVM_OPTS_OVERRIDE = 5;
 
     private SystemParameters() {}
