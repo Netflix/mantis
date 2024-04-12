@@ -194,12 +194,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.asynchttpclient:async-http-client": {
             "locked": "2.12.3"
         },
@@ -375,12 +369,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.asynchttpclient:async-http-client": {
             "locked": "2.12.3"
         },
@@ -532,12 +520,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.asynchttpclient:async-http-client": {
             "locked": "2.12.3"
@@ -721,12 +703,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.asynchttpclient:async-http-client": {
             "locked": "2.12.3"

@@ -18,14 +18,22 @@ package io.mantisrx.master.jobcluster.job;
 
 import static io.mantisrx.master.StringConstants.MANTIS_MASTER_USER;
 import static io.mantisrx.master.StringConstants.MANTIS_STAGE_CONTAINER_SIZE_NAME_KEY;
-import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.*;
+import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.ERROR;
+import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.INFO;
+import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.WARN;
 import static io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.MANTIS_SYSTEM_ALLOCATED_NUM_PORTS;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.*;
-import static java.util.Optional.*;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
 
-import akka.actor.*;
-import com.netflix.fenzo.ConstraintEvaluator;
-import com.netflix.fenzo.VMTaskFitnessCalculator;
+import akka.actor.AbstractActorWithTimers;
+import akka.actor.ActorRef;
+import akka.actor.PoisonPill;
+import akka.actor.Props;
+import akka.actor.SupervisorStrategy;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.Counter;
@@ -36,26 +44,51 @@ import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.WorkerInfoListHolder;
-import io.mantisrx.master.jobcluster.job.worker.*;
+import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
+import io.mantisrx.master.jobcluster.job.worker.JobWorker;
+import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
+import io.mantisrx.master.jobcluster.job.worker.WorkerState;
+import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
+import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.*;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.KillJobResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListWorkersRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListWorkersResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ScaleStageRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ScaleStageResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.master.jobcluster.proto.JobProto.InitJob;
 import io.mantisrx.master.jobcluster.proto.JobProto.JobInitialized;
-import io.mantisrx.runtime.*;
+import io.mantisrx.runtime.JobConstraints;
+import io.mantisrx.runtime.JobSla;
+import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobDurationType;
+import io.mantisrx.runtime.MantisJobState;
+import io.mantisrx.runtime.MigrationStrategy;
+import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-import io.mantisrx.server.core.*;
+import io.mantisrx.server.core.JobCompletedReason;
+import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.WorkerAssignments;
+import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
-import io.mantisrx.server.master.ConstraintsEvaluators;
-import io.mantisrx.server.master.InvalidJobRequest;
 import io.mantisrx.server.master.agentdeploy.MigrationStrategyFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
@@ -67,7 +100,12 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.scheduler.*;
+import io.mantisrx.server.master.scheduler.BatchScheduleRequest;
+import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.scheduler.ScheduleRequest;
+import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
+import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
@@ -77,7 +115,16 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -1175,6 +1222,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     static class WorkerNumberGenerator {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(WorkerNumberGenerator.class);
+        private static final int MAX_ATTEMPTS = 10;
+        private static final long SLEEP_DURATION_MS = Duration.ofSeconds(2).toMillis();
         private static final int DEFAULT_INCREMENT_STEP = 10;
         private final int incrementStep;
         private int lastUsed;
@@ -1208,14 +1257,31 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         private void advance(MantisJobMetadataImpl mantisJobMetaData, MantisJobStore jobStore) {
             try {
-                currLimit += incrementStep;
-
-                mantisJobMetaData.setNextWorkerNumberToUse(currLimit, jobStore);
+                final int value = currLimit + incrementStep;
+                // If store operations fail, extraneous workers will be killed since currLimit would be lower
+                setNextWorkerNumberWithRetries(mantisJobMetaData, jobStore, value);
+                currLimit = value;
             } catch (Exception e) {
                 hasErrored = true;
-                LOGGER.error("Exception setting next Worker number to use ", e);
+                LOGGER.error("Exception setting nextWorkerNumberToUse after {} consecutive attempts", MAX_ATTEMPTS, e);
                 throw new RuntimeException("Unexpected error setting next worker number to use", e);
             }
+        }
+        private void setNextWorkerNumberWithRetries(MantisJobMetadataImpl mantisJobMetaData, MantisJobStore jobStore, int value) throws Exception {
+            int attempts = 0;
+            Exception exception = null;
+            while (attempts < MAX_ATTEMPTS) {
+                try {
+                    mantisJobMetaData.setNextWorkerNumberToUse(value, jobStore);
+                    return;
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to setNextWorkerNumberToUse to {} (attempt {}/{})", value, attempts, MAX_ATTEMPTS, e);
+                    exception = e;
+                }
+                Thread.sleep(SLEEP_DURATION_MS);
+                attempts++;
+            }
+            throw exception;
         }
 
         /**
@@ -1538,8 +1604,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 final WorkerId workerId = workerRequest.getWorkerId();
 
                 // setup constraints
-                final List<ConstraintEvaluator> hardConstraints = new ArrayList<>();
-                final List<VMTaskFitnessCalculator> softConstraints = new ArrayList<>();
                 Optional<IMantisStageMetadata> stageMetadataOp =
                         mantisJobMetaData.getStageMetadata(workerRequest.getStageNum());
 
@@ -1563,18 +1627,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     }
                 }
 
-                if (stageHC != null && !stageHC.isEmpty()) {
-                    for (JobConstraints c : stageHC) {
-                        hardConstraints.add(ConstraintsEvaluators.hardConstraint(c, coTasks));
-                    }
-                }
-
-                if (stageSC != null && !stageSC.isEmpty()) {
-                    for (JobConstraints c : stageSC) {
-                        softConstraints.add(ConstraintsEvaluators.softConstraint(c, coTasks));
-                    }
-                }
-
                 JobMetadata jobMetadata = new JobMetadata(
                     mantisJobMetaData.getJobId().getId(),
                     mantisJobMetaData.getJobJarUrl(),
@@ -1589,7 +1641,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 ScheduleRequest sr = new ScheduleRequest(
                         workerId,
                         workerRequest.getStageNum(),
-                        workerRequest.getNumberOfPorts(),
                         jobMetadata,
                         mantisJobMetaData.getSla().orElse(new JobSla.Builder().build()).getDurationType(),
                         // TODO(fdichiara): make this a property of JobStageMetadata. https://github.com/Netflix/mantis/pull/629/files#r1487043262
@@ -1598,10 +1649,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             // Fetch the 'sizeName' for the given stage among its container attributes
                             stageMetadata.getSizeAttribute(),
                             mergeJobDefAndArtifactAssigmentAttributes(jobMetadata.getJobJarUrl())),
-                        hardConstraints,
-                        softConstraints,
-                        readyAt.orElse(0L),
-                        workerRequest.getPreferredClusterOptional());
+                        readyAt.orElse(0L));
                 return sr;
             } catch (Exception e) {
                 LOGGER.error("Exception creating scheduleRequest ", e);
@@ -2020,8 +2068,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                             + "worker",
                                     event.getWorkerId(),
                                     currentWorkerNum);
-                        }
-                        else if (currentWorkerNum < eventWorkerNum) {
+                        } else if (currentWorkerNum < eventWorkerNum) {
                             // this case should not happen as new worker assignment should update state and persist first.
                             LOGGER.error(
                                     "[Corrupted state] Newer worker num received: {}, Current stage worker: {}",

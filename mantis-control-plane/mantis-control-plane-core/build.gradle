@@ -22,7 +22,6 @@ ext {
     hdrHistogramVersion = '2.+'
     jodaTimeVersion = '2.+'
     jsonVersion = '20180813'
-    mesosVersion = '1.7.2'
     testngVersion = '6.14.+'
 }
 
@@ -37,7 +36,6 @@ dependencies {
     compileOnly libraries.jsr305
     compileOnly libraries.flinkRpcImpl // Provided by copyLibs task
 
-    api "org.apache.mesos:mesos:$mesosVersion"
     api "org.json:json:$jsonVersion"
     api "org.hdrhistogram:HdrHistogram:$hdrHistogramVersion"
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"

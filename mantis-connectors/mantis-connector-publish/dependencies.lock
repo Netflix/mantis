@@ -136,7 +136,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.5"
+            "locked": "2.7.6"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -247,12 +247,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -322,13 +316,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.5"
+            "locked": "2.7.6"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.5"
+            "locked": "2.7.6"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -480,12 +474,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -555,7 +543,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.5"
+            "locked": "2.7.6"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -665,12 +653,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
@@ -745,13 +727,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.5"
+            "locked": "2.7.6"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.7.5"
+            "locked": "2.7.6"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -902,12 +884,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [

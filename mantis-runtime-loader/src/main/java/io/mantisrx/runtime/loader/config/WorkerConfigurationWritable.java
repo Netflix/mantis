@@ -31,7 +31,6 @@ import lombok.Data;
 @Builder
 public class WorkerConfigurationWritable implements WorkerConfiguration {
 
-    int mesosSlavePort;
     int zkConnectionTimeoutMs;
     int zkConnectionRetrySleepMs;
     int zkConnectionMaxRetries;
@@ -124,11 +123,6 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     @Override
     public int getMetricsPublisherFrequencyInSeconds() {
         return this.metricsPublisherFrequencyInSeconds;
-    }
-
-    @Override
-    public int getMesosSlavePort() {
-        return this.mesosSlavePort;
     }
 
     @Override

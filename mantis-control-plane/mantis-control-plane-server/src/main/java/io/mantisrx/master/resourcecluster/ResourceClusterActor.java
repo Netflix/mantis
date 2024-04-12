@@ -20,8 +20,11 @@ import static java.util.stream.Collectors.groupingBy;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
+import akka.actor.OneForOneStrategy;
 import akka.actor.Props;
 import akka.actor.Status;
+import akka.actor.SupervisorStrategy;
+import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.netflix.spectator.api.Tag;
 import com.netflix.spectator.api.TagList;
@@ -95,6 +98,24 @@ import org.apache.flink.runtime.rpc.RpcService;
 @ToString(of = {"clusterID"})
 @Slf4j
 class ResourceClusterActor extends AbstractActorWithTimers {
+    /**
+     * For ResourceClusterActor instances, we need to ensure they are always running after encountering error so that
+     * TaskExecutors can still remain connected. If there is a fatal error that needs to be escalated to terminate the
+     * whole system/leader you can define a fatal exception type and override its behavior to
+     * SupervisorStrategy.escalate() instead.
+     */
+    private static SupervisorStrategy resourceClusterActorStrategy =
+        new OneForOneStrategy(
+            3,
+            Duration.ofSeconds(60),
+            DeciderBuilder
+                .match(Exception.class, e -> SupervisorStrategy.restart())
+                .build());
+
+    @Override
+    public SupervisorStrategy supervisorStrategy() {
+        return resourceClusterActorStrategy;
+    }
 
     private final Duration heartbeatTimeout;
     private final Duration assignmentTimeout;

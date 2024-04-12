@@ -63,10 +63,9 @@ public interface MasterConfiguration extends CoreConfiguration {
     @DefaultNull
     String getMasterIP();
 
-    @Config("mesos.worker.timeoutSecondsToReportStart")
+    @Config("mantis.worker.timeoutSecondsToReportStart")
     @Default("10")
     int getTimeoutSecondsToReportStart();
-
 
     @Config("mantis.master.leader.mismatch.retry.count")
     @Default("5")
@@ -204,10 +203,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("60000")
     long getIntervalMoveWorkersOnDisabledVMsMillis();
 
-    @Config("mesos.lease.offer.expiry.secs")
-    @Default("300")
-    long getMesosLeaseOfferExpirySecs();
-
     @Config("mantis.jobs.max.jars.per.named.job")
     @Default("10")
     int getMaximumNumberOfJarsPerJobName();
@@ -261,10 +256,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.max.archived.jobs.to.cache")
     @Default("1000")
     int getMaxArchivedJobsToCache();
-
-    @Config("mesos.slave.attribute.zone.name")
-    @Default("AWSZone")
-    String getHostZoneAttributeName();
 
     @Config("mantis.agent.cluster.autoscale.by.attribute.name")
     @Default("CLUSTER_NAME")

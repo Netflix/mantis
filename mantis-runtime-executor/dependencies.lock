@@ -126,12 +126,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.hamcrest:hamcrest-all": {
             "locked": "1.3"
         },
@@ -322,12 +316,6 @@
         },
         "org.apache.httpcomponents:httpclient": {
             "locked": "4.5.14"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
@@ -563,12 +551,6 @@
         "org.apache.httpcomponents:httpclient": {
             "locked": "4.5.14"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.asynchttpclient:async-http-client": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-client"
@@ -778,12 +760,6 @@
         },
         "org.apache.httpcomponents:httpclient": {
             "locked": "4.5.14"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hamcrest:hamcrest-all": {
             "locked": "1.3"
@@ -1036,12 +1012,6 @@
         },
         "org.apache.httpcomponents:httpclient": {
             "locked": "4.5.14"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.asynchttpclient:async-http-client": {
             "firstLevelTransitive": [

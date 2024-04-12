@@ -43,7 +43,6 @@ dependencies {
     api "com.typesafe.akka:akka-actor_$scalaBinaryVersion:$akkaVersion"
 
     api "io.reactivex:rxjava-reactive-streams:$rxJavaReactiveStreamsVersion"
-    api "com.netflix.fenzo:fenzo-core:$fenzoVersion"
     api "com.netflix.fenzo:fenzo-triggers:$fenzoVersion"
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "org.skife.config:config-magic:$configMagicVersion"

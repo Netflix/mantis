@@ -13,15 +13,11 @@ task execute(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
-ext {
-    mantisConnectorsVersion = '1.2.5'
-}
-
 dependencies {
     api libraries.mantisShaded
 
     implementation project(':mantis-runtime')
-    implementation "io.mantisrx:mantis-connector-job:$mantisConnectorsVersion"
+    implementation project(':mantis-connectors:mantis-connector-job')
 
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12

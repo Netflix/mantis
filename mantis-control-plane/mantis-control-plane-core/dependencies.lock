@@ -101,12 +101,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
-        },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -228,9 +222,6 @@
         },
         "org.apache.flink:flink-rpc-core": {
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "locked": "2.1.12"
@@ -356,9 +347,6 @@
         },
         "org.apache.flink:flink-rpc-core": {
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "locked": "2.1.12"
@@ -493,12 +481,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
@@ -639,12 +621,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
@@ -796,12 +772,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
@@ -962,12 +932,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.mesos:mesos": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.7.2"
         },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [

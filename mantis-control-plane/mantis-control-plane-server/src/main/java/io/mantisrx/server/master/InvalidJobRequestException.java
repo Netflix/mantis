@@ -16,19 +16,12 @@
 
 package io.mantisrx.server.master;
 
-import com.netflix.fenzo.VirtualMachineLease;
-import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.scheduler.LaunchTaskRequest;
-import io.mantisrx.server.master.scheduler.ScheduleRequest;
-import java.util.List;
-import java.util.Map;
 
+public class InvalidJobRequestException extends Exception {
 
-public interface VirtualMachineMasterService {
+    private static final long serialVersionUID = 1L;
 
-    Map<ScheduleRequest, LaunchTaskException> launchTasks(List<LaunchTaskRequest> requests, List<VirtualMachineLease> leases);
-
-    void rejectLease(VirtualMachineLease lease);
-
-    void killTask(final WorkerId workerId);
+    public InvalidJobRequestException(String msg) {
+        super(msg);
+    }
 }

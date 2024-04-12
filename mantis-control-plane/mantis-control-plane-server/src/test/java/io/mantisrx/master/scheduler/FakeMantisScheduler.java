@@ -17,16 +17,12 @@
 package io.mantisrx.master.scheduler;
 
 import akka.actor.ActorRef;
-import com.netflix.fenzo.VirtualMachineCurrentState;
-import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.scheduler.BatchScheduleRequest;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 public class FakeMantisScheduler implements MantisScheduler {
@@ -36,41 +32,6 @@ public class FakeMantisScheduler implements MantisScheduler {
     public FakeMantisScheduler(final ActorRef jobClusterManagerActor) {
         this.jobClusterManagerActor = jobClusterManagerActor;
     }
-
-//    @Override
-//    public void scheduleWorker(final ScheduleRequest scheduleRequest) {
-//        // Worker Launched
-//        final WorkerEvent workerLaunched = new WorkerLaunched(scheduleRequest.getWorkerId(),
-//            scheduleRequest.getStageNum(),
-//            "host1",
-//            "vm1",
-//            scheduleRequest.getPreferredCluster(), Optional.empty(), new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
-//
-//        jobClusterManagerActor.tell(workerLaunched, ActorRef.noSender());
-//
-//        // fake Worker Start initiated event
-//        final WorkerEvent workerStartInit = new WorkerStatus(new Status(
-//            scheduleRequest.getWorkerId().getJobId(),
-//            scheduleRequest.getStageNum(),
-//            scheduleRequest.getWorkerId().getWorkerIndex(),
-//            scheduleRequest.getWorkerId().getWorkerNum(),
-//            Status.TYPE.INFO,
-//            "fake Start Initiated",
-//            MantisJobState.StartInitiated));
-//
-//        jobClusterManagerActor.tell(workerStartInit, ActorRef.noSender());
-//
-//        // fake Worker Heartbeat event
-//        final WorkerEvent workerHeartbeat = new WorkerHeartbeat(new Status(
-//            scheduleRequest.getWorkerId().getJobId(),
-//            scheduleRequest.getStageNum(),
-//            scheduleRequest.getWorkerId().getWorkerIndex(),
-//            scheduleRequest.getWorkerId().getWorkerNum(),
-//            Status.TYPE.HEARTBEAT,
-//            "fake heartbeat event",
-//            MantisJobState.Started));
-//        jobClusterManagerActor.tell(workerHeartbeat, ActorRef.noSender());
-//    }
 
     @Override
     public void scheduleWorkers(BatchScheduleRequest scheduleRequest) {
@@ -102,41 +63,5 @@ public class FakeMantisScheduler implements MantisScheduler {
     @Override
     public void initializeRunningWorker(final ScheduleRequest scheduleRequest, final String hostname, final String hostID) {
         // no-op
-    }
-
-    @Override
-    public void rescindOffer(final String offerId) {
-        // TBD
-    }
-
-    @Override
-    public void rescindOffers(final String hostname) {
-        // TBD
-    }
-
-    @Override
-    public void addOffers(final List<VirtualMachineLease> offers) {
-        // TBD
-    }
-
-    @Override
-    public void disableVM(final String hostname, final long durationMillis) throws IllegalStateException {
-        // TBD
-    }
-
-    @Override
-    public void enableVM(final String hostname) {
-        // TBD
-    }
-
-    @Override
-    public List<VirtualMachineCurrentState> getCurrentVMState() {
-        // TBD
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void setActiveVmGroups(final List<String> activeVmGroups) {
-        // TBD
     }
 }
