@@ -158,7 +158,7 @@ public class MasterMain implements Service {
 
             storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
-            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, config.getJobCostsCalculator()), "JobClustersManager");
+            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, config.getJobCostsCalculator(), config.getNamedJobsReferToLaunched()), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
 
             // Beginning of new stuff

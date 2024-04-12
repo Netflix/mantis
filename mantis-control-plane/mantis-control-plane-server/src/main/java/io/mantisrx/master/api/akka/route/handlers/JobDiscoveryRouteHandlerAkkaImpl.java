@@ -202,12 +202,12 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
             CompletionStage<GetLastLaunchedJobIdStreamResponse> response = lastLaunchedJobIdStreamRespCache.get(request);
             return response.thenApply(r -> streamJobIdBehaviorSubject(r, r.getjobIdBehaviorSubject(), sendHeartbeats, lastLaunchedJobIdStreamErrors));
         } catch (Exception e) {
-            logger.error("caught exception fetching lastSubmittedJobId stream for {}", request.getClusterName(), e);
+            logger.error("caught exception fetching lastLaunchedJobId stream for {}", request.getClusterName(), e);
             lastLaunchedJobIdStreamErrors.increment();
             return CompletableFuture.completedFuture(new JobClusterInfoResponse(
                 0,
                 BaseResponse.ResponseCode.SERVER_ERROR,
-                "Failed to get last submitted jobId stream for " + request.getClusterName() + " error: " + e.getMessage()
+                "Failed to get last launched jobId stream for " + request.getClusterName() + " error: " + e.getMessage()
             ));
         }
     }

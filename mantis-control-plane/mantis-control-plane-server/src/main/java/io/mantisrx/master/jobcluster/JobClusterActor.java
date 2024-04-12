@@ -206,8 +206,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         final MantisJobStore jobStore,
         final MantisSchedulerFactory mantisSchedulerFactory,
         final LifecycleEventPublisher eventPublisher,
-        final CostsCalculator costsCalculator) {
-        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator);
+        final CostsCalculator costsCalculator,
+        final List<String> namedJobsReferToLaunched) {
+        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator, namedJobsReferToLaunched);
     }
 
     private final Receive initializedBehavior;
@@ -218,6 +219,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final MantisJobStore jobStore;
     private IJobClusterMetadata jobClusterMetadata;
     private CronManager cronManager;
+    private List<String> namedJobsReferToLaunched;
 
     private SLAEnforcer slaEnforcer;
     private final JobManager jobManager;
@@ -236,11 +238,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         final MantisJobStore jobStore,
         final MantisSchedulerFactory schedulerFactory,
         final LifecycleEventPublisher eventPublisher,
-        final CostsCalculator costsCalculator) {
+        final CostsCalculator costsCalculator,
+        final List<String> namedJobsReferToLaunched) {
         this.name = name;
         this.jobStore = jobStore;
         this.mantisSchedulerFactory = schedulerFactory;
         this.eventPublisher = eventPublisher;
+        this.namedJobsReferToLaunched = namedJobsReferToLaunched;
 
         this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, costsCalculator);
 
@@ -1919,7 +1923,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         ActorRef sender = getSender();
         if(this.name.equals(request.getJobCluster())) {
             // TODO: I think this might be wrong.
-            JobId latestJobId = jobIdLaunchedSubject.getValue();
+            boolean jobClusterRefersToLaunched = namedJobsReferToLaunched.stream()
+                .anyMatch(item -> item.equalsIgnoreCase(request.getJobCluster()));
+            JobId latestJobId;
+            if (jobClusterRefersToLaunched) {
+                latestJobId = jobIdLaunchedSubject.getValue();
+            } else {
+                latestJobId = jobIdSubmissionSubject.getValue();
+            }
             logger.debug("[{}] latest job Id for cluster: {}", name, latestJobId);
             if (latestJobId != null) {
                 Optional<JobInfo> jInfo = jobManager.getJobInfoForNonTerminalJob(latestJobId);

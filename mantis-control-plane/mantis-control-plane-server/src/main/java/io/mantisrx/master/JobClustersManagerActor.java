@@ -142,23 +142,25 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
-    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator) {
-        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, costsCalculator)
+    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator, final List<String> namedJobsReferToLaunched) {
+        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, costsCalculator, namedJobsReferToLaunched)
             .withMailbox("akka.actor.metered-mailbox");
     }
 
     private final MantisJobStore jobStore;
     private final LifecycleEventPublisher eventPublisher;
     private final CostsCalculator costsCalculator;
+    private final List<String> namedJobsReferToLaunched;
     private MantisSchedulerFactory mantisSchedulerFactory = null;
 
     JobClusterInfoManager jobClusterInfoManager;
 
     private ActorRef jobListHelperActor;
-    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator) {
+    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator, final List<String> namedJobsReferToLaunched) {
         this.jobStore = store;
         this.eventPublisher = eventPublisher;
         this.costsCalculator = costsCalculator;
+        this.namedJobsReferToLaunched = namedJobsReferToLaunched;
 
         MetricGroupId metricGroupId = getMetricGroupId();
         Metrics m = new Metrics.Builder()
@@ -327,7 +329,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             mantisSchedulerFactory = initMsg.getScheduler();
             Map<String, IJobClusterMetadata> jobClusterMap = new HashMap<>();
 
-            this.jobClusterInfoManager = new JobClusterInfoManager(jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator);
+            this.jobClusterInfoManager = new JobClusterInfoManager(jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator, namedJobsReferToLaunched);
 
             if (!initMsg.isLoadJobsFromStore()) {
                 getContext().become(initializedBehavior);
@@ -842,12 +844,14 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         private final MantisJobStore jobStore;
         private final Metrics metrics;
         private final CostsCalculator costsCalculator;
+        private final List<String> namedJobsReferToLaunched;
 
-        JobClusterInfoManager(MantisJobStore jobStore, MantisSchedulerFactory mantisSchedulerFactory, LifecycleEventPublisher eventPublisher, CostsCalculator costsCalculator) {
+        JobClusterInfoManager(MantisJobStore jobStore, MantisSchedulerFactory mantisSchedulerFactory, LifecycleEventPublisher eventPublisher, CostsCalculator costsCalculator, List<String> namedJobsReferToLaunched) {
             this.eventPublisher = eventPublisher;
             this.mantisSchedulerFactory  = mantisSchedulerFactory;
             this.jobStore = jobStore;
             this.costsCalculator = costsCalculator;
+            this.namedJobsReferToLaunched = namedJobsReferToLaunched;
 
 
             MetricGroupId metricGroupId = new MetricGroupId("JobClusterInfoManager");
@@ -875,7 +879,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 }
                 ActorRef jobClusterActor =
                     getContext().actorOf(
-                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, this.costsCalculator),
+                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, this.costsCalculator, this.namedJobsReferToLaunched),
                         "JobClusterActor-" + clusterName);
                 getContext().watch(jobClusterActor);
 
