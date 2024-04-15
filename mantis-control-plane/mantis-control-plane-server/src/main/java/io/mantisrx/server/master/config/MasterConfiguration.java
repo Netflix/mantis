@@ -23,6 +23,7 @@ import io.mantisrx.server.master.store.KeyValueStore;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import org.skife.config.Config;
 import org.skife.config.Default;
@@ -355,6 +356,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("")
     String getSchedulingConstraintsString();
 
+    @Config("mantis.route.namedjobs.useLaunched")
+    @Default("")
+    String getNamedJobsReferToLaunchedString();
+
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());
     }
@@ -364,4 +369,8 @@ public interface MasterConfiguration extends CoreConfiguration {
     }
 
     default Map<String, String> getSchedulingConstraints() { return getSchedulingConstraintsString().isEmpty() ? ImmutableMap.of() : Splitter.on(",").withKeyValueSeparator(':').split(getSchedulingConstraintsString());}
+
+    default List<String> getNamedJobsReferToLaunched() {
+        return Splitter.on(",").omitEmptyStrings().trimResults().splitToList(getNamedJobsReferToLaunchedString());
+    }
 }

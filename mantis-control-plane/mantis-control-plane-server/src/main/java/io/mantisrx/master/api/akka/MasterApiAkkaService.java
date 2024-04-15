@@ -61,6 +61,7 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import java.util.concurrent.CompletionStage;
@@ -91,6 +92,7 @@ public class MasterApiAkkaService extends BaseService {
     private final Materializer materializer;
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
+    private final MasterConfiguration masterConfig;
 
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
@@ -101,7 +103,8 @@ public class MasterApiAkkaService extends BaseService {
                                 final int serverPort,
                                 final IMantisPersistenceProvider mantisStorageProvider,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
-                                final ILeadershipManager leadershipManager) {
+                                final ILeadershipManager leadershipManager,
+                                final MasterConfiguration masterConfig) {
         super(true);
         Preconditions.checkNotNull(masterMonitor, "MasterMonitor");
         Preconditions.checkNotNull(masterDescription, "masterDescription");
@@ -110,6 +113,7 @@ public class MasterApiAkkaService extends BaseService {
         Preconditions.checkNotNull(mantisStorageProvider, "mantisStorageProvider");
         Preconditions.checkNotNull(lifecycleEventPublisher, "lifecycleEventPublisher");
         Preconditions.checkNotNull(leadershipManager, "leadershipManager");
+        this.masterConfig = masterConfig;
         this.masterMonitor = masterMonitor;
         this.masterDescription = masterDescription;
         this.jobClustersManagerActor = jobClustersManagerActor;
@@ -151,7 +155,7 @@ public class MasterApiAkkaService extends BaseService {
         final JobStatusRouteHandler jobStatusRouteHandler = new JobStatusRouteHandlerAkkaImpl(actorSystem, statusEventBrokerActor);
         final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, idleTimeout);
 
-        final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(jobDiscoveryRouteHandler);
+        final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(masterConfig.getNamedJobsReferToLaunched(), jobDiscoveryRouteHandler);
         final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(jobClusterRouteHandler, jobRouteHandler, actorSystem);
         final JobStatusRoute v0JobStatusRoute = new JobStatusRoute(jobStatusRouteHandler);
 
