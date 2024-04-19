@@ -365,10 +365,10 @@ public class JobsRoute extends BaseRoute {
     private Route getJobInstanceRoute(Optional<String> clusterName, String jobId) {
         String endpoint;
         if (clusterName.isPresent()) {
-            logger.info("GET /api/v1/jobClusters/{}/jobs/{} called", clusterName.get(), jobId);
+            logger.debug("GET /api/v1/jobClusters/{}/jobs/{} called", clusterName.get(), jobId);
             endpoint = HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_JOBS;
         } else {
-            logger.info("GET /api/v1/jobs/{} called", jobId);
+            logger.debug("GET /api/v1/jobs/{} called", jobId);
             endpoint = HttpRequestMetrics.Endpoints.JOBS;
         }
 

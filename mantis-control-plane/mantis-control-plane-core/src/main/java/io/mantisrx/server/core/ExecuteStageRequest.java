@@ -123,7 +123,7 @@ public class ExecuteStageRequest implements Serializable {
         this.schedulingInfo = schedulingInfo;
         this.durationType = durationType;
         this.heartbeatIntervalSecs = (heartbeatIntervalSecs > 0) ? heartbeatIntervalSecs : DEFAULT_HEARTBEAT_INTERVAL_SECS;
-        log.info("heartbeat interval {}, using {}", heartbeatIntervalSecs, this.heartbeatIntervalSecs);
+        log.debug("heartbeat interval {}, using {}", heartbeatIntervalSecs, this.heartbeatIntervalSecs);
         this.hasJobMaster = schedulingInfo != null && schedulingInfo.forStage(0) != null;
         this.subscriptionTimeoutSecs = subscriptionTimeoutSecs;
         this.minRuntimeSecs = minRuntimeSecs;
