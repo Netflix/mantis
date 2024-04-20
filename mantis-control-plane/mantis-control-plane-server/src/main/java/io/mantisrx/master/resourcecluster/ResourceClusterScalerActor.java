@@ -155,13 +155,13 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 .match(GetClusterUsageResponse.class, this::onGetClusterUsageResponse)
                 .match(GetClusterIdleInstancesResponse.class, this::onGetClusterIdleInstancesResponse)
                 .match(GetRuleSetResponse.class,
-                    s -> log.info("[{}] Refreshed rule size: {}", s.getClusterID(), s.getRules().size()))
+                    s -> log.debug("[{}] Refreshed rule size: {}", s.getClusterID(), s.getRules().size()))
                 .match(SetResourceClusterScalerStatusRequest.class, req -> {
                     onSetScalerStatus(req);
                     getSender().tell(Ack.getInstance(), self());
                 })
                 .match(ExpireSetScalerStatusRequest.class, this::onExpireSetScalerStatus)
-                .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
+                .match(Ack.class, ack -> log.debug("Received ack from {}", sender()))
                 .build();
     }
 
@@ -203,7 +203,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                     log.info("Informing scale decision: {}", decisionO.get());
                     switch (decisionO.get().getType()) {
                         case ScaleDown:
-                            log.info("Scaling down, fetching idle instances.");
+                            log.info("Scaling down, fetching idle instances: {}.", decisionO.get());
                             this.numScaleDown.increment();
                             this.resourceClusterActor.tell(
                                 GetClusterIdleInstancesRequest.builder()
@@ -274,7 +274,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     }
 
     private void onTriggerClusterRuleRefreshRequest(TriggerClusterRuleRefreshRequest req) {
-        log.info("{}: Requesting cluster rule refresh", this.clusterId);
+        log.debug("{}: Requesting cluster rule refresh", this.clusterId);
         this.fetchRuleSet();
     }
 

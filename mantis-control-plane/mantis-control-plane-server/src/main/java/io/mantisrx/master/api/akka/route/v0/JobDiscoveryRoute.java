@@ -76,13 +76,14 @@ public class JobDiscoveryRoute extends BaseRoute {
         return route(
                 get(() -> route(
                         path(segment("assignmentresults").slash(PathMatchers.segment()), (jobId) ->
-                                parameterOptional(
+                                extractClientIP(clientIp ->
+                                    parameterOptional(
                                         StringUnmarshallers.BOOLEAN,
                                         "sendHB",
                                         (sendHeartbeats) -> {
                                             logger.debug(
-                                                    "/assignmentresults/{} called",
-                                                    jobId);
+                                                    "/assignmentresults/{} called by {}",
+                                                    jobId, clientIp);
                                             schedulingInfoStreamGET.increment();
                                             JobClusterManagerProto.GetJobSchedInfoRequest req =
                                                     new JobClusterManagerProto.GetJobSchedInfoRequest(
@@ -123,7 +124,7 @@ public class JobDiscoveryRoute extends BaseRoute {
                                                                     jobId);
                                                         }
                                                     });
-                                        })
+                                        }))
                         ),
                         path(segment("namedjobs").slash(PathMatchers.segment()), (jobCluster) ->
                                 parameterOptional(
