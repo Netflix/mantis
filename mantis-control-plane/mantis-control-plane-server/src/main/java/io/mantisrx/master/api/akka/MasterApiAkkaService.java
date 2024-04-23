@@ -25,7 +25,6 @@ import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.ServerBuilder;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.model.HttpsConnectionContext;
 import akka.http.javadsl.settings.ServerSettings;
 import akka.http.javadsl.settings.WebSocketSettings;
 import akka.stream.Materializer;
