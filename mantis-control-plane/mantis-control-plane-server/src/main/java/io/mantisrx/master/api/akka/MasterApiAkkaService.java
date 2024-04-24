@@ -20,7 +20,9 @@ import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.http.javadsl.Http;
+import akka.http.javadsl.HttpsConnectionContext;
 import akka.http.javadsl.ServerBinding;
+import akka.http.javadsl.ServerBuilder;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.settings.ServerSettings;
@@ -91,6 +93,7 @@ public class MasterApiAkkaService extends BaseService {
     private final Materializer materializer;
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
+    private final HttpsConnectionContext httpsConnectionContext;
 
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
@@ -101,7 +104,33 @@ public class MasterApiAkkaService extends BaseService {
                                 final int serverPort,
                                 final IMantisPersistenceProvider mantisStorageProvider,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
-                                final ILeadershipManager leadershipManager) {
+                                final ILeadershipManager leadershipManager
+                                ) {
+        this(
+            masterMonitor,
+            masterDescription,
+            jobClustersManagerActor,
+            statusEventBrokerActor,
+            resourceClusters,
+            resourceClustersHostManagerActor,
+            serverPort,
+            mantisStorageProvider,
+            lifecycleEventPublisher,
+            leadershipManager,
+            null
+        );
+    }
+    public MasterApiAkkaService(final MasterMonitor masterMonitor,
+                                final MasterDescription masterDescription,
+                                final ActorRef jobClustersManagerActor,
+                                final ActorRef statusEventBrokerActor,
+                                final ResourceClusters resourceClusters,
+                                final ActorRef resourceClustersHostManagerActor,
+                                final int serverPort,
+                                final IMantisPersistenceProvider mantisStorageProvider,
+                                final LifecycleEventPublisher lifecycleEventPublisher,
+                                final ILeadershipManager leadershipManager,
+                                final HttpsConnectionContext httpsConnectionContext) {
         super(true);
         Preconditions.checkNotNull(masterMonitor, "MasterMonitor");
         Preconditions.checkNotNull(masterDescription, "masterDescription");
@@ -123,6 +152,7 @@ public class MasterApiAkkaService extends BaseService {
         this.system = ActorSystem.create("MasterApiActorSystem");
         this.materializer = Materializer.createMaterializer(system);
         this.mantisMasterRoute = configureApiRoutes(this.system);
+        this.httpsConnectionContext = httpsConnectionContext;
         this.executorService = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "MasterApiAkkaServiceThread");
             t.setDaemon(true);
@@ -200,8 +230,14 @@ public class MasterApiAkkaService extends BaseService {
 
         ServerSettings customServerSettings = defaultSettings.withWebsocketSettings(customWebsocketSettings);
 
-        final CompletionStage<ServerBinding> binding = Http.get(system)
-                .newServerAt("0.0.0.0", port)
+        ServerBuilder httpServerBuilder = Http.get(system)
+            .newServerAt("0.0.0.0", port);
+
+        if(this.httpsConnectionContext != null) {
+            httpServerBuilder.enableHttps(this.httpsConnectionContext);
+        }
+
+        final CompletionStage<ServerBinding> binding = httpServerBuilder
                 .withSettings(customServerSettings)
                 .connectionSource()
                 .to(Sink.foreach(connection -> {
