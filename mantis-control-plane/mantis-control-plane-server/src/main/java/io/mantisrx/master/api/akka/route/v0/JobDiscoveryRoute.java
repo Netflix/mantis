@@ -35,6 +35,7 @@ import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
 import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto;
 import io.mantisrx.master.api.akka.route.utils.StreamingUtils;
+import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.domain.JobId;
@@ -97,6 +98,16 @@ public class JobDiscoveryRoute extends BaseRoute {
                                             return completeAsync(
                                                     schedulingInfoRespCS,
                                                     r -> {
+                                                        if (r.responseCode.equals(ResponseCode.CLIENT_ERROR_NOT_FOUND)) {
+                                                            logger.warn(
+                                                                "Sched info stream not found for job {}",
+                                                                jobId);
+                                                            return complete(
+                                                                StatusCodes.NOT_FOUND,
+                                                                "Sched info stream not found for job " +
+                                                                    jobId);
+                                                        }
+
                                                         Optional<Observable<JobSchedulingInfo>> schedInfoStreamO = r
                                                                 .getSchedInfoStream();
                                                         if (schedInfoStreamO.isPresent()) {
