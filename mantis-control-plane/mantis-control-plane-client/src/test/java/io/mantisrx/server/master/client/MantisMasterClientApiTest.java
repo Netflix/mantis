@@ -26,10 +26,12 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -38,8 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServer;
-import mantis.io.reactivex.netty.protocol.http.server.HttpServerRequest;
-import mantis.io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import mantis.io.reactivex.netty.protocol.http.server.RequestHandler;
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -68,20 +68,21 @@ public class MantisMasterClientApiTest {
         }
     }
 
-    public HttpServer<String, String> createHttpServer(int port) {
+    public HttpServer<String, String> createHttpServer(int port, RequestHandler<String, String> requestHandler) {
         final HttpServer<String, String> server = RxNetty.newHttpServerBuilder(
                 port,
-                new RequestHandler<String, String>() {
-                    @Override
-                    public Observable<Void> handle(HttpServerRequest<String> req, HttpServerResponse<String> resp) {
-                        resp.writeAndFlush("200 OK");
-                        return Observable.empty();
-                    }
-                })
-                .pipelineConfigurator(PipelineConfigurators.httpServerConfigurator())
-                .channelOption(ChannelOption.WRITE_BUFFER_WATER_MARK, WriteBufferWaterMark.DEFAULT)
-                .build();
+                requestHandler)
+            .pipelineConfigurator(PipelineConfigurators.httpServerConfigurator())
+            .channelOption(ChannelOption.WRITE_BUFFER_WATER_MARK, WriteBufferWaterMark.DEFAULT)
+            .build();
         return server;
+    }
+
+    public HttpServer<String, String> createHttpServer(int port) {
+        return createHttpServer(port, (req, resp) -> {
+            resp.writeAndFlush("200 OK");
+            return Observable.empty();
+        });
     }
 
     @Test
@@ -233,5 +234,42 @@ public class MantisMasterClientApiTest {
 
         assertTrue(retryLatch.await(5, TimeUnit.SECONDS));
         assertTrue(completedLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testGetSchedulingInfoRetry() throws InterruptedException {
+        // This test is to validate mantisMasterClientApi.schedulingChanges() stream can handle completed/closed job.
+        MasterMonitor mockMasterMonitor = mock(MasterMonitor.class);
+        final BehaviorSubject<MasterDescription> mdSubject = BehaviorSubject.create();
+        when(mockMasterMonitor.getMasterObservable()).thenReturn(mdSubject);
+        MantisMasterClientApi mantisMasterClientApi = new MantisMasterClientApi(mockMasterMonitor);
+
+        final int apiPort = port.incrementAndGet();
+        Schedulers.newThread().createWorker().schedule(() -> {
+            final HttpServer<String, String> httpServer = createHttpServer(
+                apiPort,
+                (req, resp) -> {
+                    resp.setStatus(HttpResponseStatus.NOT_FOUND);
+                    return Observable.empty();
+                });
+            startedServers.add(httpServer);
+            httpServer.start();
+        });
+
+        final String jobId = "test-job-id1";
+        mdSubject.onNext(new MasterDescription("localhost", "127.0.0.1", apiPort, apiPort, apiPort, "status", apiPort, System.currentTimeMillis()));
+        final Observable<JobSchedulingInfo> resultObs = mantisMasterClientApi.schedulingChanges(jobId);
+        final CountDownLatch completedLatch = new CountDownLatch(1);
+
+        resultObs
+            .doOnError(throwable -> {
+                logger.info("Got expected error: ", throwable);
+                completedLatch.countDown();
+            })
+            .doOnCompleted(() -> {
+                fail("Obs should fail to doOnError");
+            }).subscribe();
+
+        assertTrue(completedLatch.await(3, TimeUnit.SECONDS));
     }
 }
