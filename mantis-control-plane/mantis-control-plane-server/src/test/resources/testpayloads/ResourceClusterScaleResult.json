@@ -1,8 +1,0 @@
-{
-    "clusterId": {"resourceID": "mantisResourceClusterUT1"},
-    "skuId": {"resourceID": "small"},
-    "region": "us-east-1",
-    "envType": "Prod",
-    "desireSize": 11,
-    "responseCode": "SUCCESS"
-}
