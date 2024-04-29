@@ -41,7 +41,7 @@ public class DisableTaskExecutorsRequest {
     Optional<TaskExecutorID> taskExecutorID;
 
     boolean isRequestByAttributes() {
-        return attributes.size() > 0;
+        return attributes != null && attributes.size() > 0;
     }
 
     boolean isExpired(Instant now) {
