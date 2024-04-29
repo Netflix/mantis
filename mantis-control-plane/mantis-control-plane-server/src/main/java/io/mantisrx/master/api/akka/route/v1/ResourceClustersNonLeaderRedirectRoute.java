@@ -78,6 +78,7 @@ import lombok.extern.slf4j.Slf4j;
  * /api/v1/resourceClusters/{}/getResourceOverview                    (GET)
  * /api/v1/resourceClusters/{}/getRegisteredTaskExecutors             (GET)
  * /api/v1/resourceClusters/{}/getBusyTaskExecutors                   (GET)
+ * /api/v1/resourceClusters/{}/getDisabledTaskExecutors               (GET)
  * /api/v1/resourceClusters/{}/getAvailableTaskExecutors              (GET)
  * /api/v1/resourceClusters/{}/getUnregisteredTaskExecutors           (GET)
  * /api/v1/resourceClusters/{}/scaleSku                               (POST)
@@ -216,7 +217,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(
                         get(() -> mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getBusyTaskExecutors(req.getAttributes())))))
                 ),
-                // /{}/getBusyTaskExecutors
+                // /{}/getDisabledTaskExecutors
                 path(
                     PathMatchers.segment().slash("getDisabledTaskExecutors"),
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(
