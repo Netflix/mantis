@@ -26,6 +26,7 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.client.ClientMetricsEvent;
 import mantis.io.reactivex.netty.metrics.ClientMetricEventsListener;
 
@@ -33,6 +34,7 @@ import mantis.io.reactivex.netty.metrics.ClientMetricEventsListener;
 /**
  * @author Neeraj Joshi
  */
+@Slf4j
 public class TcpClientListener<T extends ClientMetricsEvent<?>> extends ClientMetricEventsListener<T> {
 
     private final Gauge liveConnections;
@@ -68,9 +70,11 @@ public class TcpClientListener<T extends ClientMetricsEvent<?>> extends ClientMe
     //private  Timer flushTimes;
     //private final RefCountingMonitor refCounter;
     private final String monitorId;
+    private final Metrics metrics;
 
     protected TcpClientListener(String monitorId) {
 
+        log.info("Creating TcpClientListener with monitorId: {}", monitorId);
         this.monitorId = monitorId;
         final String idValue = Optional.ofNullable(monitorId).orElse("none");
         final BasicTag idTag = new BasicTag(GROUP_ID_TAG, idValue);
@@ -98,7 +102,7 @@ public class TcpClientListener<T extends ClientMetricsEvent<?>> extends ClientMe
                 .addCounter("failedFlushes")
                 .build();
 
-        m = MetricsRegistry.getInstance().registerAndGet(m);
+        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
 
         //refCounter = new RefCountingMonitor(monitorId);
         liveConnections = m.getGauge("liveConnections");
@@ -138,6 +142,7 @@ public class TcpClientListener<T extends ClientMetricsEvent<?>> extends ClientMe
 
     @Override
     protected void onByteRead(long bytesRead) {
+        log.debug("Bytes read: {}", bytesRead);
         this.bytesRead.increment(bytesRead);
     }
 
