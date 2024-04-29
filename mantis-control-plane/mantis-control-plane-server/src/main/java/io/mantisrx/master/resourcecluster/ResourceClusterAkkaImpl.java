@@ -26,6 +26,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequ
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetBusyTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetDisabledTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
@@ -113,6 +114,16 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
         return Patterns.ask(
                 resourceClusterManagerActor,
                 new GetBusyTaskExecutorsRequest(clusterID, attributes), askTimeout)
+            .thenApply(TaskExecutorsList.class::cast)
+            .toCompletableFuture()
+            .thenApply(l -> l.getTaskExecutors());
+    }
+
+    @Override
+    public CompletableFuture<List<TaskExecutorID>> getDisabledTaskExecutors(Map<String, String> attributes) {
+        return Patterns.ask(
+                resourceClusterManagerActor,
+                new GetDisabledTaskExecutorsRequest(clusterID, attributes), askTimeout)
             .thenApply(TaskExecutorsList.class::cast)
             .toCompletableFuture()
             .thenApply(l -> l.getTaskExecutors());

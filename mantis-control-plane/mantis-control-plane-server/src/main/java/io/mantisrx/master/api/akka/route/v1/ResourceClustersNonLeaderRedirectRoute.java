@@ -216,6 +216,12 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(
                         get(() -> mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getBusyTaskExecutors(req.getAttributes())))))
                 ),
+                // /{}/getBusyTaskExecutors
+                path(
+                    PathMatchers.segment().slash("getDisabledTaskExecutors"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        get(() -> mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getDisabledTaskExecutors(req.getAttributes())))))
+                ),
                 // /{}/getAvailableTaskExecutors
                 path(
                     PathMatchers.segment().slash("getAvailableTaskExecutors"),
