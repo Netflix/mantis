@@ -16,9 +16,9 @@
 
 package io.mantisrx.server.worker.jobmaster.clutch.rps;
 
-import com.netflix.control.clutch.Clutch;
-import com.netflix.control.clutch.ClutchConfiguration;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
+import io.mantisrx.control.clutch.Clutch;
+import io.mantisrx.control.clutch.ClutchConfiguration;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.vavr.Function1;
 import io.vavr.Tuple2;
@@ -51,7 +51,7 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
         double ki = 0.0;
         double kd = 1.0 / Math.max(setPoint, 1.0) / Math.max(getCumulativeIntegralDivisor(getIntegralScaler(), deltaT), 1.0);
 
-        ClutchConfiguration config = com.netflix.control.clutch.ClutchConfiguration.builder()
+        ClutchConfiguration config = ClutchConfiguration.builder()
                 .metric(Clutch.Metric.RPS)
                 .setPoint(setPoint)
                 .kp(kp)

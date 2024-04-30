@@ -15,8 +15,8 @@
  */
 package io.mantisrx.server.worker.jobmaster.clutch.rps;
 
-import com.netflix.control.clutch.ClutchConfiguration;
-import com.netflix.control.clutch.IScaleComputer;
+import io.mantisrx.control.clutch.ClutchConfiguration;
+import io.mantisrx.control.clutch.IScaleComputer;
 
 public class RpsScaleComputer implements IScaleComputer {
     private final ClutchRpsPIDConfig rpsConfig;

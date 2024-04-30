@@ -43,7 +43,7 @@ dependencies {
 
 task runScaler(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
-    main = 'com.netflix.control.ExperimentRunner'
+    main = 'io.mantisrx.control.ExperimentRunner'
 }
 
 //apply from: file('gradle/check.gradle')

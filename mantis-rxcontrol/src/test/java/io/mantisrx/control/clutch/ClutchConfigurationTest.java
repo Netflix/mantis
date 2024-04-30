@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Netflix, Inc.
+ * Copyright 2024 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,21 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.worker.jobmaster.clutch.rps;
+package io.mantisrx.control.clutch;
 
 import static org.junit.Assert.assertEquals;
 
-import io.mantisrx.control.clutch.Clutch;
-import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-import java.util.Map;
 import org.junit.Test;
 
-public class RpsMetricComputerTest {
+public class ClutchConfigurationTest {
     @Test
-    public void testApply() {
+    public void shouldCreateClutchConfiguration() {
+        ClutchConfiguration config = ClutchConfiguration.builder().kd(1.0).build();
+        assertEquals(1.0, config.kd, 1e-10);
+        assertEquals(1.0, config.integralDecay, 1e-10);
 
-        Map<Clutch.Metric, Double> metrics = ImmutableMap.of(
-                Clutch.Metric.RPS, 1000.0,
-                Clutch.Metric.DROPS, 20.0,
-                Clutch.Metric.LAG, 300.0,
-                Clutch.Metric.SOURCEJOB_DROP, 4.0
-        );
-        double result = new RpsMetricComputer().apply(null, metrics);
-        assertEquals(1504.0, result, 1e-10);
+        config = ClutchConfiguration.builder().kd(1.0).integralDecay(0.9).build();
+        assertEquals(1.0, config.kd, 1e-10);
+        assertEquals(0.9, config.integralDecay, 1e-10);
     }
 }
