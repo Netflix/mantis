@@ -421,11 +421,6 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
                 return;
             }
 
-            // do not count the disabled TEs.
-            if (value.isDisabled()) {
-                return;
-            }
-
             Optional<String> groupKeyO =
                 req.getGroupKeyFunc().apply(value.getRegistration());
 
@@ -437,7 +432,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             String groupKey = groupKeyO.get();
 
             Pair<Integer, Integer> kvState = Pair.of(
-                value.isAvailable() ? 1 : 0,
+                value.isAvailable() && !value.isDisabled() ? 1 : 0,
                 value.isRegistered() ? 1 : 0);
 
             if (usageByGroupKey.containsKey(groupKey)) {

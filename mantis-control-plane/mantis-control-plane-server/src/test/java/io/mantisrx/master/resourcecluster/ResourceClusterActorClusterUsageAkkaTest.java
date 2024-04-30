@@ -54,6 +54,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableSet;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -284,6 +285,43 @@ public class ResourceClusterActorClusterUsageAkkaTest {
     }
 
     @Test
+    public void testGetTaskExecutorsUsage_WithDisabledTEs() throws Exception {
+        registerTE(TaskExecutorRegistration.builder()
+            .taskExecutorID(TaskExecutorID.of("TE4"))
+            .clusterID(CLUSTER_ID)
+            .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+            .hostname(HOST_NAME)
+            .workerPorts(WORKER_PORTS)
+            .machineDefinition(MACHINE_DEFINITION_1)
+            .taskExecutorAttributes(
+                ImmutableMap.of(
+                    WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_1.getResourceID(),
+                    "MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17"))
+            .build());
+        registerTE(TaskExecutorRegistration.builder()
+            .taskExecutorID(TaskExecutorID.of("TE5"))
+            .clusterID(CLUSTER_ID)
+            .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+            .hostname(HOST_NAME)
+            .workerPorts(WORKER_PORTS)
+            .machineDefinition(MACHINE_DEFINITION_1)
+            .taskExecutorAttributes(
+                ImmutableMap.of(
+                    WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_1.getResourceID(),
+                    "MANTIS_SCHEDULING_ATTRIBUTE_JDK", "17"))
+            .build());
+        disableTE(TaskExecutorID.of("TE5"));
+
+        // Test get cluster usage
+        TestKit probe = new TestKit(actorSystem);
+        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            probe.getRef());
+        GetClusterUsageResponse usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
+        assertEquals(3, usageRes.getUsages().size());
+        assertIdleAndTotalCount(usageRes, "SKU1-JDK17", 2, 3);
+    }
+
+    @Test
     public void testGetTaskExecutorsUsage_WithSizeNameAndAllocation() throws Exception {
         // registering 3 Task Executors with sizeName
         registerTEsWithSizeName();
@@ -413,6 +451,14 @@ public class ResourceClusterActorClusterUsageAkkaTest {
                         registration.getTaskExecutorID(),
                         CLUSTER_ID,
                         TaskExecutorReport.available())).get());
+    }
+
+    private void disableTE(TaskExecutorID taskExecutorID) throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.disableTaskExecutorsFor(
+            null,
+            Instant.now().plus(Duration.ofHours(1)),
+            Optional.of(taskExecutorID))
+            .get());
     }
 
     private static void assertIdleAndTotalCount(GetClusterUsageResponse usageRes, String skuID, int idleCount, int totalCount) {

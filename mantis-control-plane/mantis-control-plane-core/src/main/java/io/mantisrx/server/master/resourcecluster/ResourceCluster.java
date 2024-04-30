@@ -85,6 +85,8 @@ public interface ResourceCluster extends ResourceClusterGateway {
 
     CompletableFuture<List<TaskExecutorID>> getBusyTaskExecutors(Map<String, String> attributes);
 
+    CompletableFuture<List<TaskExecutorID>> getDisabledTaskExecutors(Map<String, String> attributes);
+
     default CompletableFuture<List<TaskExecutorID>> getUnregisteredTaskExecutors() {
         return getUnregisteredTaskExecutors(Collections.emptyMap());
     }
