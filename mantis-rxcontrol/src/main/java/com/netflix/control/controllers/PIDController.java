@@ -16,11 +16,11 @@
 
 package com.netflix.control.controllers;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import com.netflix.control.IController;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 
 /**
- * The Feedback Principle: Constantly compare the actual output to the 
+ * The Feedback Principle: Constantly compare the actual output to the
  * setpoint; then apply a corrective action in the proper direction and
  * approximately of the correct size.
  *

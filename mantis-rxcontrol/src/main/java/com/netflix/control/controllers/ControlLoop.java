@@ -16,18 +16,15 @@
 
 package com.netflix.control.controllers;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
-import com.google.common.util.concurrent.AtomicDouble;
 import com.netflix.control.IActuator;
 import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchConfiguration;
 import com.netflix.control.clutch.Event;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
-import rx.schedulers.Schedulers;
 
 
 @Slf4j

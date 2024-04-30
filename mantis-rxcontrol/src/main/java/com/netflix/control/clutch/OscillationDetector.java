@@ -16,13 +16,11 @@
 
 package com.netflix.control.clutch;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-
+import com.netflix.control.IController;
+import io.mantisrx.shaded.com.google.common.cache.Cache;
+import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
-import com.netflix.control.IController;
 
 /**
  * The OscillationDetctor collects scaling events from the actuator and

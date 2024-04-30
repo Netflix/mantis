@@ -21,7 +21,6 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.Set;
-
 import java.util.List;
 import java.util.function.Predicate;
 

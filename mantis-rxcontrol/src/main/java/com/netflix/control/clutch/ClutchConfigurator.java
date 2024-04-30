@@ -16,6 +16,14 @@
 
 package com.netflix.control.clutch;
 
+import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
+import com.yahoo.sketches.quantiles.DoublesSketch;
+import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
+import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.collection.HashSet;
+import io.vavr.collection.Set;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -23,16 +31,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
-import com.yahoo.sketches.quantiles.DoublesSketch;
-import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.collection.HashSet;
-import io.vavr.collection.Set;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.schedulers.Schedulers;

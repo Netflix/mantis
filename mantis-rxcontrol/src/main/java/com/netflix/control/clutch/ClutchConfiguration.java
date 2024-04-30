@@ -16,9 +16,8 @@
 
 package com.netflix.control.clutch;
 
-import java.util.concurrent.TimeUnit;
-
 import io.vavr.Tuple2;
+import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;

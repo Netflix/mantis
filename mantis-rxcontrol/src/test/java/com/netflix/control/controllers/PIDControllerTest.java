@@ -16,10 +16,10 @@
 
 package com.netflix.control.controllers;
 
-import com.google.common.util.concurrent.AtomicDouble;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
+
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
+import org.junit.Test;
 
 public class PIDControllerTest {
     @Test

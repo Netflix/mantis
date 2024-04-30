@@ -20,13 +20,12 @@ import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
 import com.yahoo.sketches.quantiles.DoublesSketch;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
 import io.vavr.Function1;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import rx.Observable;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import rx.Observable;
 
 @Slf4j
 public class ExperimentalClutchConfigurator implements Observable.Transformer<Event, ClutchConfiguration>  {

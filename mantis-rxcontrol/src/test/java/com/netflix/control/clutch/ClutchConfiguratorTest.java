@@ -16,20 +16,18 @@
 
 package com.netflix.control.clutch;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.assertj.core.data.Offset;
 import org.junit.Test;
 import rx.Observable;
-import rx.observers.TestSubscriber;
-
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class ClutchConfiguratorTest {
 

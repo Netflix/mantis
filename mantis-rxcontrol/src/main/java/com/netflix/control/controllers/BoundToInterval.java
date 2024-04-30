@@ -31,7 +31,7 @@ public class BoundToInterval extends IController {
   @Override
   protected Double processStep(final Double input) {
     double x = input;
-    return x > this.max ? this.max : 
+    return x > this.max ? this.max :
       x < this.min ? this.min :
       x;
   }

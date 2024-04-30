@@ -57,6 +57,7 @@ include 'mantis-remote-observable'
 include 'mantis-runtime'
 include 'mantis-runtime-loader'
 include 'mantis-runtime-executor'
+include 'mantis-rxcontrol'
 
 include 'mantis-source-jobs:mantis-source-job-kafka'
 include 'mantis-source-jobs:mantis-source-job-publish'

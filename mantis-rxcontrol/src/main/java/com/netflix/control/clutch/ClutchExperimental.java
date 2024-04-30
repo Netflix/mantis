@@ -16,18 +16,17 @@
 
 package com.netflix.control.clutch;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import com.netflix.control.IActuator;
 import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 import io.vavr.Function1;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import rx.Observable;
-
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import rx.Observable;
 
 /**
  * Clutch experimental is taking a radically different approach to auto scaling, something akin to the first

@@ -16,9 +16,8 @@
 
 package com.netflix.control.controllers;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.netflix.control.IController;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class BoostComputer extends IController {
 

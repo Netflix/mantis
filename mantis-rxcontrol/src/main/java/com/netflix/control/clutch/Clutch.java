@@ -16,16 +16,13 @@
 
 package com.netflix.control.clutch;
 
-import com.google.common.util.concurrent.AtomicDouble;
-
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
-import rx.Observable;
-
 import com.netflix.control.IActuator;
 import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
 import com.netflix.control.controllers.ControlLoop;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import rx.Observable;
 
 /**
  * Clutch is our domain specific autoscaler which adopts many elements from control theory but allows us to fully

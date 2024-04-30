@@ -1,10 +1,5 @@
 # mantis-rxcontrol
 
-[![Build Status](https://img.shields.io/travis/com/Netflix/mantis-rxcontrol.svg)](https://travis-ci.com/Netflix/mantis-rxcontrol)
-[![Version](https://img.shields.io/bintray/v/netflixoss/maven/mantis-rxcontrol.svg)](https://bintray.com/netflixoss/maven/mantis-rxcontrol/_latestVersion)
-[![OSS Lifecycle](https://img.shields.io/osslifecycle/Netflix/mantis-rxcontrol.svg)](https://github.com/Netflix/mantis-rxcontrol)
-[![License](https://img.shields.io/github/license/Netflix/mantis-rxcontrol.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-
 ## Design
 
 ### PID
@@ -12,7 +7,7 @@
 ### Clutch
 Clutch is an autoscaling domain specific implementation for scaling
 stateless systems. Initially Clutch was designed to autoscale Mantis
-Kafka source jobs 
+Kafka source jobs
 
 #### Metric
 `Metric` is an enum contained within the `Clutch` class allowing various

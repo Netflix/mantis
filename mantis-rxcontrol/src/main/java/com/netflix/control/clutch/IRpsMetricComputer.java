@@ -17,7 +17,6 @@
 package com.netflix.control.clutch;
 
 import io.vavr.Function2;
-
 import java.util.Map;
 
 /**

@@ -16,19 +16,17 @@
 
 package com.netflix.control.clutch;
 
-import com.google.common.util.concurrent.AtomicDouble;
-import com.netflix.control.IActuator;
-import com.netflix.control.controllers.ControlLoop;
-import io.vavr.Tuple;
-import org.junit.Test;
-import rx.Observable;
-import rx.observers.TestSubscriber;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import com.netflix.control.IActuator;
+import com.netflix.control.controllers.ControlLoop;
+import io.vavr.Tuple;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import org.junit.Test;
+import rx.Observable;
+import rx.observers.TestSubscriber;
 
 
 public class ControlLoopTest {

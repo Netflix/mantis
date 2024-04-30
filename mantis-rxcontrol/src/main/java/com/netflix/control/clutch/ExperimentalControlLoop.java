@@ -16,15 +16,14 @@
 
 package com.netflix.control.clutch;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
-import com.google.common.util.concurrent.AtomicDouble;
 import com.netflix.control.IActuator;
 import com.netflix.control.controllers.ErrorComputer;
 import com.netflix.control.controllers.Integrator;
 import com.netflix.control.controllers.PIDController;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.Subscription;

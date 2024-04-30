@@ -27,7 +27,7 @@
             "locked": "0.4.19.1"
         },
         "com.squareup.okhttp3:okhttp": {
-            "locked": "5.0.0-alpha.12"
+            "locked": "5.0.0-alpha.14"
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
@@ -216,7 +216,7 @@
             "locked": "0.4.19.1"
         },
         "com.squareup.okhttp3:okhttp": {
-            "locked": "5.0.0-alpha.12"
+            "locked": "5.0.0-alpha.14"
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
@@ -397,7 +397,7 @@
             "locked": "0.3.1"
         },
         "com.squareup.okhttp3:okhttp": {
-            "locked": "5.0.0-alpha.12"
+            "locked": "5.0.0-alpha.14"
         },
         "commons-io:commons-io": {
             "firstLevelTransitive": [

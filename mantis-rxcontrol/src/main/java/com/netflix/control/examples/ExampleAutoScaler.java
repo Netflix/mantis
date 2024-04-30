@@ -17,11 +17,10 @@
 package com.netflix.control.examples;
 
 
-import com.google.common.util.concurrent.AtomicDouble;
 import com.netflix.control.actuators.MantisJobActuator;
-import com.netflix.control.controllers.PIDController;
 import com.netflix.control.controllers.ErrorComputer;
 import com.netflix.control.controllers.Integrator;
+import com.netflix.control.controllers.PIDController;
 import rx.Observable;
 
 /**
