@@ -101,7 +101,7 @@ interface ExecutorStateManager {
         e -> e.getValue().isAvailable();
 
     Predicate<Entry<TaskExecutorID, TaskExecutorState>> isDisabled =
-        e -> e.getValue().isDisabled();
+        e -> e.getValue().isDisabled() && e.getValue().isRegistered();
 
     Predicate<Entry<TaskExecutorID, TaskExecutorState>> isAssigned =
         e -> e.getValue().isAssigned();
