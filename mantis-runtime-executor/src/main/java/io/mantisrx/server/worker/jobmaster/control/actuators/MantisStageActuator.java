@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.worker.jobmaster.control.actuators;
 
-import com.netflix.control.IActuator;
+import io.mantisrx.control.IActuator;
 import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

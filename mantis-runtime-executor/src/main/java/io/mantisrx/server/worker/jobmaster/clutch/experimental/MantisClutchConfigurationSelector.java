@@ -16,9 +16,9 @@
 
 package io.mantisrx.server.worker.jobmaster.clutch.experimental;
 
-import com.netflix.control.clutch.Clutch;
-import com.netflix.control.clutch.ClutchConfiguration;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
+import io.mantisrx.control.clutch.Clutch;
+import io.mantisrx.control.clutch.ClutchConfiguration;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 import io.vavr.Function1;
@@ -111,7 +111,7 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
 
         // TODO: Do we want to reset sketches, we need at least one day's values
         //resetSketches(sketches);
-        return com.netflix.control.clutch.ClutchConfiguration.builder()
+        return ClutchConfiguration.builder()
                 .metric(Clutch.Metric.RPS)
                 .setPoint(setPoint)
                 .kp(kp)

@@ -1,0 +1,49 @@
+/*
+ * Copyright 2019 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+ext {
+    unirestVersion = '1.4.9'
+    sketchesVersion = '0.9.1'
+    rxJavaMathVersion = '0.20.6'
+    assertjVersion = '3.12.+'
+}
+
+dependencies {
+    api libraries.mantisShaded
+
+    implementation libraries.commonsMath3
+    implementation libraries.rxJava
+    implementation libraries.slf4jApi
+    implementation libraries.vavr
+    implementation libraries.vavrJackson
+
+    implementation "com.mashape.unirest:unirest-java:$unirestVersion"
+    implementation("com.netflix.rxjava:rxjava-math:$rxJavaMathVersion") {
+        exclude module: 'rxjava-core'
+    }
+    implementation "com.yahoo.datasketches:sketches-core:$sketchesVersion"
+
+    testImplementation libraries.junit4
+    testImplementation libraries.mockitoCore
+    testImplementation "org.assertj:assertj-core:$assertjVersion"
+}
+
+task runScaler(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'io.mantisrx.control.ExperimentRunner'
+}
+
+//apply from: file('gradle/check.gradle')

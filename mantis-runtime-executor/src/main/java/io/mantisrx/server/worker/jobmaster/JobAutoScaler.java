@@ -16,10 +16,10 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
-import com.netflix.control.clutch.Clutch;
-import com.netflix.control.clutch.ClutchExperimental;
 import io.mantisrx.common.MantisProperties;
 import io.mantisrx.common.SystemParameters;
+import io.mantisrx.control.clutch.Clutch;
+import io.mantisrx.control.clutch.ClutchExperimental;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
@@ -104,9 +104,9 @@ public class JobAutoScaler {
         return new SerializedObserver<>(subject);
     }
 
-    private com.netflix.control.clutch.Event mantisEventToClutchEvent(Event event) {
+    private io.mantisrx.control.clutch.Event mantisEventToClutchEvent(Event event) {
         logger.debug("Converting Mantis event to Clutch event: {}", event);
-        return new com.netflix.control.clutch.Event(metricMap.get(event.type), event.getEffectiveValue());
+        return new io.mantisrx.control.clutch.Event(metricMap.get(event.type), event.getEffectiveValue());
     }
 
     void start() {
@@ -186,7 +186,7 @@ public class JobAutoScaler {
                         StageScaler scaler = new StageScaler(stage, stageSchedulingInfo);
                         MantisStageActuator actuator = new MantisStageActuator(initialSize, scaler);
 
-                        Observable.Transformer<Event, com.netflix.control.clutch.Event> transformToClutchEvent =
+                        Observable.Transformer<Event, io.mantisrx.control.clutch.Event> transformToClutchEvent =
                                 obs -> obs.map(event -> this.mantisEventToClutchEvent(event))
                                         .filter(event -> event.metric != null);
                         Observable<Integer> workerCounts = context.getWorkerMapObservable()

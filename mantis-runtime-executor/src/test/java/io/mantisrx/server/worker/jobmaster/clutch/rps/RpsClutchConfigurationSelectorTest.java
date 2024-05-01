@@ -19,9 +19,9 @@ package io.mantisrx.server.worker.jobmaster.clutch.rps;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.netflix.control.clutch.Clutch;
-import com.netflix.control.clutch.ClutchConfiguration;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
+import io.mantisrx.control.clutch.Clutch;
+import io.mantisrx.control.clutch.ClutchConfiguration;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
