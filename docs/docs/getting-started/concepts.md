@@ -121,7 +121,7 @@ Mantis OSS comes with the following source jobs
 Reads data from one or more Kafka topics and makes it available for downstream consumers to query via MQL.
 
 2. [Publish Source Job](https://github.com/Netflix/mantis-source-jobs/tree/master/publish-source-job):
-Works the the mantis-publish library to fetch data on-demand from external applications and make it
+Works the mantis-publish library to fetch data on-demand from external applications and make it
 available to downstream consumers. See the [On-Demand Sample](samples/on-demand.md) to see
 this in action.
 
