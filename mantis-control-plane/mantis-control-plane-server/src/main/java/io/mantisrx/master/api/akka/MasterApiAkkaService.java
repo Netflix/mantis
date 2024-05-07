@@ -234,7 +234,7 @@ public class MasterApiAkkaService extends BaseService {
             .newServerAt("0.0.0.0", port);
 
         if(this.httpsConnectionContext != null) {
-            httpServerBuilder.enableHttps(this.httpsConnectionContext);
+            httpServerBuilder = httpServerBuilder.enableHttps(this.httpsConnectionContext);
         }
 
         final CompletionStage<ServerBinding> binding = httpServerBuilder
