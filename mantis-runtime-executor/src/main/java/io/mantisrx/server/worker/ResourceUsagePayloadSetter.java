@@ -60,7 +60,9 @@ public class ResourceUsagePayloadSetter implements Closeable {
     private final Gauge nwBytesUsagePeakGauge;
     private final Gauge jvmMemoryUsedGauge;
     private final Gauge jvmMemoryMaxGauge;
+    private final double cpuLimit;
     private final double nwBytesLimit;
+
     private double prev_cpus_system_time_secs = -1.0;
     private double prev_cpus_user_time_secs = -1.0;
     private double prev_bytes_read = -1.0;
@@ -75,6 +77,7 @@ public class ResourceUsagePayloadSetter implements Closeable {
 
     public ResourceUsagePayloadSetter(Heartbeat heartbeat, WorkerConfiguration config) {
         this.heartbeat = heartbeat;
+        this.cpuLimit = config.getCpuCores();
         this.nwBytesLimit = config.getNetworkBandwidthInMB() * 1024.0 * 1024.0 / 8.0; // convert from bits to bytes
         executor = new ScheduledThreadPoolExecutor(1);
         String defaultReportingSchedule = "5,5,10,10,20,30";
@@ -147,7 +150,7 @@ public class ResourceUsagePayloadSetter implements Closeable {
                 } catch (JsonProcessingException e) {
                     logger.warn("Error writing json for resourceUsage payload: " + e.getMessage());
                 }
-                cpuLimitGauge.set(Math.round(usage.getCpuLimit() * 100.0));
+                cpuLimitGauge.set(Math.round(cpuLimit * 100.0));
                 cpuUsageCurrGauge.set(Math.round(usage.getCpuUsageCurrent() * 100.0));
                 cpuUsagePeakGauge.set(Math.round(usage.getCpuUsagePeak() * 100.0));
                 memLimitGauge.set(Math.round(usage.getMemLimit()));
