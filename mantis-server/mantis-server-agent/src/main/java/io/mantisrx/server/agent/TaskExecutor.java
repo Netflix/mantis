@@ -21,6 +21,7 @@ import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.config.dynamic.LongDynamicProperty;
@@ -68,6 +69,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import mantis.io.reactivex.netty.RxNetty;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.runtime.rpc.RpcEndpoint;
 import org.apache.flink.runtime.rpc.RpcService;
@@ -212,6 +214,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         masterMonitor = highAvailabilityServices.getMasterClientApi();
         taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor);
+        RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         resourceClusterGatewaySupplier =
             highAvailabilityServices.connectWithResourceManager(clusterID);
         resourceClusterGatewaySupplier.register((oldGateway, newGateway) -> TaskExecutor.this.runAsync(() -> setNewResourceClusterGateway(newGateway)));

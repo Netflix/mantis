@@ -23,7 +23,6 @@ import com.mantisrx.common.utils.Closeables;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.runtime.Context;
@@ -83,7 +82,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import mantis.io.reactivex.netty.RxNetty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -343,7 +341,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                             SpectatorRegistryFactory.getRegistry().getClass().getCanonicalName());
                 }
             }
-            RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
             // create job context
             Parameters parameters = ParameterUtils
                     .createContextParameters(rw.getJob().getParameterDefinitions(),
