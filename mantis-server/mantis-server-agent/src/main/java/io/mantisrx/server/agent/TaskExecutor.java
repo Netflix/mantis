@@ -50,6 +50,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
@@ -214,7 +215,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         masterMonitor = highAvailabilityServices.getMasterClientApi();
         taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor);
-        RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
+
+        // setup netty client listeners for metrics.
+        MantisNettyEventsListenerFactory mantisNettyEventsListenerFactory = new MantisNettyEventsListenerFactory();
+        RxNetty.useMetricListenersFactory(mantisNettyEventsListenerFactory);
+        SseWorkerConnection.useMetricListenersFactory(mantisNettyEventsListenerFactory);
         resourceClusterGatewaySupplier =
             highAvailabilityServices.connectWithResourceManager(clusterID);
         resourceClusterGatewaySupplier.register((oldGateway, newGateway) -> TaskExecutor.this.runAsync(() -> setNewResourceClusterGateway(newGateway)));
