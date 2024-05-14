@@ -23,6 +23,7 @@ import com.mantisrx.common.utils.Closeables;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.runtime.Context;
@@ -52,6 +53,7 @@ import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
 import io.mantisrx.server.worker.jobmaster.JobMasterService;
@@ -82,6 +84,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import mantis.io.reactivex.netty.RxNetty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -341,6 +344,13 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                             SpectatorRegistryFactory.getRegistry().getClass().getCanonicalName());
                 }
             }
+
+            // Ensure netty clients' listeners are set. This is redundant to the settings in TaskExecutor to ensure
+            // the integration at runtime level.
+            MantisNettyEventsListenerFactory mantisNettyEventsListenerFactory = new MantisNettyEventsListenerFactory();
+            RxNetty.useMetricListenersFactory(mantisNettyEventsListenerFactory);
+            SseWorkerConnection.useMetricListenersFactory(mantisNettyEventsListenerFactory);
+
             // create job context
             Parameters parameters = ParameterUtils
                     .createContextParameters(rw.getJob().getParameterDefinitions(),
