@@ -36,6 +36,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import mantis.io.reactivex.netty.metrics.MetricEventsListenerFactory;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientBuilder;
@@ -55,6 +56,9 @@ public class SseWorkerConnection {
 
     private static final Logger logger = LoggerFactory.getLogger(SseWorkerConnection.class);
     private static final String metricNamePrefix = DROP_OPERATOR_INCOMING_METRIC_GROUP;
+
+    private static MetricEventsListenerFactory metricEventsListenerFactory;
+
     protected final PublishSubject<Boolean> shutdownSubject = PublishSubject.create();
     final AtomicLong lastDataReceived = new AtomicLong(System.currentTimeMillis());
     private final String connectionType;
@@ -169,6 +173,10 @@ public class SseWorkerConnection {
         return false;
     }
 
+    public static void useMetricListenersFactory(MetricEventsListenerFactory factory) {
+        metricEventsListenerFactory = factory;
+    }
+
     public String getName() {
         return "Sse" + connectionType + "Connection: " + hostname + ":" + port;
     }
@@ -184,7 +192,12 @@ public class SseWorkerConnection {
     }
 
     private <I, O> HttpClientBuilder<I, O> newHttpClientBuilder(String host, int port) {
-        return new MantisHttpClientBuilder<I, O>(host, port).withMaxConnections(1000).enableWireLogging(LogLevel.DEBUG);
+        HttpClientBuilder<I, O> builder =
+            new MantisHttpClientBuilder<I, O>(host, port).withMaxConnections(1000).enableWireLogging(LogLevel.DEBUG);
+        if (null != metricEventsListenerFactory) {
+            builder.withMetricEventsListenerFactory(metricEventsListenerFactory);
+        }
+        return builder;
     }
 
     public synchronized Observable<MantisServerSentEvent> call() {

@@ -21,6 +21,7 @@ import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.config.dynamic.LongDynamicProperty;
@@ -49,6 +50,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
@@ -68,6 +70,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import mantis.io.reactivex.netty.RxNetty;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.runtime.rpc.RpcEndpoint;
 import org.apache.flink.runtime.rpc.RpcService;
@@ -212,6 +215,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         masterMonitor = highAvailabilityServices.getMasterClientApi();
         taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor);
+
+        // setup netty client listeners for metrics.
+        MantisNettyEventsListenerFactory mantisNettyEventsListenerFactory = new MantisNettyEventsListenerFactory();
+        RxNetty.useMetricListenersFactory(mantisNettyEventsListenerFactory);
+        SseWorkerConnection.useMetricListenersFactory(mantisNettyEventsListenerFactory);
         resourceClusterGatewaySupplier =
             highAvailabilityServices.connectWithResourceManager(clusterID);
         resourceClusterGatewaySupplier.register((oldGateway, newGateway) -> TaskExecutor.this.runAsync(() -> setNewResourceClusterGateway(newGateway)));
