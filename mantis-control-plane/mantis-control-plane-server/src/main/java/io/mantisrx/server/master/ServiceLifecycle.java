@@ -33,14 +33,14 @@ public class ServiceLifecycle {
     private static final Logger logger = LoggerFactory.getLogger(ServiceLifecycle.class);
     private LinkedList<BaseService> servicesList = new LinkedList<BaseService>();
 
-    void addService(BaseService service) {
+    public void addService(BaseService service) {
         if (!servicesList.isEmpty()) {
             service.addPredecessor(servicesList.getLast());
         }
         servicesList.add(service);
     }
 
-    void start() {
+    public void start() {
         for (BaseService service : servicesList) {
             try {
                 logger.info("Starting service " + service.getMyServiceCount() + ": " + service);
@@ -53,13 +53,13 @@ public class ServiceLifecycle {
         }
     }
 
-    void becomeLeader() {
+    public void becomeLeader() {
         for (BaseService service : servicesList) {
             service.enterActiveMode();
         }
     }
 
-    void shutdown() {
+    public void shutdown() {
         if (!servicesList.isEmpty()) {
             Iterator<BaseService> iterator = servicesList.descendingIterator();
             while (iterator.hasNext()) {
