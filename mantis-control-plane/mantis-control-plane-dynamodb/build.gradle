@@ -51,6 +51,7 @@ dependencies {
     testImplementation testFixtures(project(":mantis-control-plane:mantis-control-plane-core"))
     testImplementation libraries.commonsIo
     testImplementation "com.amazonaws:DynamoDBLocal:1.25.0"
+    testImplementation 'org.awaitility:awaitility:4.2+'
 }
 def installDir = file("${buildDir}/install")
 def ci = System.getenv('GITHUB_ACTIONS')
