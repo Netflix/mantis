@@ -132,11 +132,11 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     }
 
     public void shutDown() {
-        logger.info("shutting down leader election");
+        logger.info("close the lock client");
         try {
             lockClient.close();
         } catch (IOException e) {
-            logger.error("error timeout waiting on leader election to terminate executor", e);
+            logger.error("error timeout waiting lock client to close", e);
         }
 
         try {
@@ -148,7 +148,7 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
         } catch (InterruptedException e) {
             logger.error("error timeout waiting on leader monitor to terminate executor", e);
         }
-        logger.info("leader election shutdown");
+        logger.info("leader monitor shutdown");
     }
 
     @SuppressWarnings("FutureReturnValueIgnored")

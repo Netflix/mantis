@@ -3,13 +3,13 @@ package io.mantisrx.extensions.dynamodb;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClient;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClientOptions;
+import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.MasterDescription;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Duration;
@@ -18,12 +18,10 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import rx.observers.TestSubscriber;
 
-public class DynamoDBMasterMonitorTest {
+public class DynamoDBLeaderElectorTest {
 
     private static final String TABLE_NAME = "Lock_" + DynamoDBMasterMonitor.class.getSimpleName();
-
     private static final MasterDescription OTHER_MASTER =
             new MasterDescription(
                     "not-me",
@@ -48,6 +46,52 @@ public class DynamoDBMasterMonitorTest {
     private final ObjectMapper jsonMapper = DefaultObjectMapper.getInstance();
     private AmazonDynamoDBLockClient lockClient;
 
+    class MockLeadershipManager implements ILeadershipManager{
+
+        private int becomeLeaderCount = 0;
+        private int stopBeingLeaderCount = 0;
+        private boolean isLeader = false;
+
+        public int getBecomeLeaderCount() {
+            return becomeLeaderCount;
+        }
+
+        public int getStopBeingLeaderCount() {
+            return stopBeingLeaderCount;
+        }
+
+        @Override
+        public void becomeLeader() {
+            this.becomeLeaderCount++;
+            this.isLeader = true;
+        }
+
+        @Override
+        public void stopBeingLeader() {
+            this.stopBeingLeaderCount++;
+            this.isLeader = false;
+        }
+
+        @Override
+        public boolean isLeader() {
+            return this.isLeader;
+        }
+
+        @Override
+        public boolean isReady() {
+            return false;
+        }
+
+        @Override
+        public void setLeaderReady() {
+
+        }
+
+        @Override
+        public MasterDescription getDescription() {
+            return THIS_MASTER;
+        }
+    }
     @Rule
     public DynamoDBLockSupportRule lockSupport =
             new DynamoDBLockSupportRule(TABLE_NAME, dynamoDb.getDynamoDbClient());
@@ -72,29 +116,18 @@ public class DynamoDBMasterMonitorTest {
     }
 
     @Test
-    public void getCurrentLeader() throws JsonProcessingException, InterruptedException {
-        final String lockKey = "getCurrentLeader";
-        final DynamoDBMasterMonitor m =
-                new DynamoDBMasterMonitor(
+    public void becomesCurrentLeader() {
+        final String lockKey = "becomesCurrentLeader";
+        final MockLeadershipManager leadershipManager = new MockLeadershipManager();
+        final DynamoDBLeaderElector led =
+                new DynamoDBLeaderElector(
+                        leadershipManager,
                         lockClient,
-                        lockKey,
-                        Duration.ofMillis(500),
-                        Duration.ofMillis(1000));
-        TestSubscriber<MasterDescription> testSubscriber = new TestSubscriber<>();
-        m.getMasterObservable().subscribe(testSubscriber);
-        m.start();
-        assertNull(m.getLatestMaster());
-        lockSupport.takeLock(lockKey, jsonMapper.writeValueAsBytes(OTHER_MASTER));
+                        lockKey);
+        led.start();
         await()
                 .atLeast(Duration.ofMillis(100L))
-                .atMost(Duration.ofMillis(1000L))
-                .untilAsserted(() -> assertEquals(m.getLatestMaster(), OTHER_MASTER));
-        lockSupport.releaseLock(lockKey);
-        lockSupport.takeLock(lockKey, jsonMapper.writeValueAsBytes(THIS_MASTER));
-        await()
-                .atLeast(Duration.ofMillis(100L))
-                .atMost(Duration.ofMillis(1000L))
-                .untilAsserted(() -> assertEquals(m.getLatestMaster(), THIS_MASTER));
-        testSubscriber.assertValues(OTHER_MASTER, THIS_MASTER);
+                .atMost(Duration.ofMillis(600L))
+                .untilAsserted(() -> assertEquals(leadershipManager.becomeLeaderCount, 1));
     }
 }
