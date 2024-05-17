@@ -17,13 +17,8 @@ package io.mantisrx.extensions.dynamodb;
 
 import static junit.framework.TestCase.assertEquals;
 
-import com.amazonaws.services.dynamodbv2.local.main.ServerRunner;
-import com.amazonaws.services.dynamodbv2.local.server.DynamoDBProxyServer;
-import io.mantisrx.server.master.store.KeyValueStore;
+import io.mantisrx.server.core.KeyValueStore;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,19 +26,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
-import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughput;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TimeToLiveSpecification;
 import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
@@ -55,95 +49,49 @@ public class DynamoDBStoreTest {
     public static final String V1 = "value1";
     public static final String V4 = "value4";
 
-    private static final AwsBasicCredentials credentials = AwsBasicCredentials.create("fakeAccessKeyId", "fakeSecretAccessKey");
+    @ClassRule public static DynamoDBLocalRule dynamoDb = new DynamoDBLocalRule();
 
-    private static DynamoDBProxyServer server;
-    private static DynamoDbClient client;
-
-	private static String getAvailablePort() {
-        try (final ServerSocket serverSocket = new ServerSocket(0)) {
-            return String.valueOf(serverSocket.getLocalPort());
-        } catch (IOException e) {
-            throw new RuntimeException("Available port was not found", e);
-        }
-    }
-
-    @BeforeClass
-    public static void setupDynamo() throws Exception {
-		try {
-			System.setProperty("sqlite4java.library.path", "build/libs");
-            String port = getAvailablePort();
-            String uri = "http://localhost:" + port;
-            // Create an in-memory and in-process instance of DynamoDB Local that runs over HTTP
-            final String[] localArgs = {"-inMemory", "-port", port};
-            System.out.println("Starting DynamoDB Local...");
-            server = ServerRunner.createServerFromCommandLineArgs(localArgs);
-            server.start();
-
-        client = DynamoDbClient.builder()
-			.region(Region.US_WEST_2)
-			.credentialsProvider(StaticCredentialsProvider.create(credentials))
-			.endpointOverride(URI.create("http://localhost:" + port))
-			.build();
-
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-
-        CreateTableRequest request = CreateTableRequest.builder()
-                .attributeDefinitions(
-                        AttributeDefinition.builder()
-                                .attributeName(DynamoDBStore.PK)
-                                .attributeType(ScalarAttributeType.S)
-                                .build(),
-                        AttributeDefinition.builder()
-                                .attributeName(DynamoDBStore.SK)
-                                .attributeType(ScalarAttributeType.S)
-                                .build()
-                )
-                .keySchema(
-                        KeySchemaElement.builder()
-                                .attributeName(DynamoDBStore.PK)
-                                .keyType(KeyType.HASH)
-                                .build(),
-                        KeySchemaElement.builder()
-                                .attributeName(DynamoDBStore.SK)
-                                .keyType(KeyType.RANGE)
-                                .build()
-                )
-                .provisionedThroughput(
-                        ProvisionedThroughput.builder()
-                                .readCapacityUnits(10L)
-                                .writeCapacityUnits(10L)
-                                .build())
-                .tableName(TABLE)
-                .build();
-
-        client.createTable(request);
-
-        final UpdateTimeToLiveRequest ttlRequest = UpdateTimeToLiveRequest.builder()
+    private static final DynamoDbClient client = dynamoDb.getDynamoDbClient();
+    private static final CreateTableRequest createTableRequest = CreateTableRequest.builder()
+            .attributeDefinitions(
+                    AttributeDefinition.builder()
+                            .attributeName(DynamoDBStore.PK)
+                            .attributeType(ScalarAttributeType.S)
+                            .build(),
+                    AttributeDefinition.builder()
+                            .attributeName(DynamoDBStore.SK)
+                            .attributeType(ScalarAttributeType.S)
+                            .build()
+            )
+            .keySchema(
+                    KeySchemaElement.builder()
+                            .attributeName(DynamoDBStore.PK)
+                            .keyType(KeyType.HASH)
+                            .build(),
+                    KeySchemaElement.builder()
+                            .attributeName(DynamoDBStore.SK)
+                            .keyType(KeyType.RANGE)
+                            .build()
+            )
+            .billingMode(BillingMode.PAY_PER_REQUEST)
+            .tableName(TABLE)
+            .build();
+        private final static UpdateTimeToLiveRequest ttlRequest = UpdateTimeToLiveRequest.builder()
                 .tableName(TABLE)
                 .timeToLiveSpecification(
-                        TimeToLiveSpecification.builder()
+            TimeToLiveSpecification.builder()
                                 .attributeName("expiresAt")
                                 .enabled(true)
-                                .build())
-                .build();
+                                .build()).build();
 
+    @Before
+    public void createDatabase() {
+        client.createTable(createTableRequest);
         client.updateTimeToLive(ttlRequest);
     }
-
-    @AfterClass
-    public static void TearDown() throws Exception {
-        DeleteTableRequest deleteTableRequest = DeleteTableRequest.builder()
-                .tableName(TABLE)
-                .build();
-
-        client.deleteTable(deleteTableRequest);
-        client.close();
-        server.stop();
+    @After
+    public void deleteDatabase() {
+       client.deleteTable(DeleteTableRequest.builder().tableName(TABLE).build());
     }
 
     @Test

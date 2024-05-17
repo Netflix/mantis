@@ -15,7 +15,7 @@
  */
 package io.mantisrx.extensions.dynamodb;
 
-import io.mantisrx.server.master.store.KeyValueStore;
+import io.mantisrx.server.core.KeyValueStore;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Duration;

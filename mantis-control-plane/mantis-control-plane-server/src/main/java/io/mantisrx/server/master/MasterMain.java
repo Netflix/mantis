@@ -52,6 +52,7 @@ import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvid
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.zk.LeaderElector;
 import io.mantisrx.server.core.BaseService;
+import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.json.DefaultObjectMapper;

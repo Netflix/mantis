@@ -47,6 +47,7 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TimeToLiveSpecification;
 import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
 
+@SuppressWarnings("deprecation")
 public class DynamoStoreTest {
     public static final String TABLE = "table";
     public static final String V5 = "value5";
@@ -77,7 +78,6 @@ public class DynamoStoreTest {
             final String[] localArgs = {"-inMemory", "-port", port};
             System.out.println("Starting DynamoDB Local...");
             server = ServerRunner.createServerFromCommandLineArgs(localArgs);
-            server.start();
 
         client = DynamoDbClient.builder()
 			.region(Region.US_WEST_2)
@@ -85,6 +85,7 @@ public class DynamoStoreTest {
 			.endpointOverride(URI.create("http://localhost:" + port))
 			.build();
 
+            server.start();
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();

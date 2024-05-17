@@ -32,14 +32,14 @@ ext {
 
 dependencies {
     implementation project(':mantis-control-plane:mantis-control-plane-core')
-    implementation project(':mantis-control-plane:mantis-control-plane-server')
 
     implementation platform('software.amazon.awssdk:bom:2.23.15')
     implementation 'software.amazon.awssdk:dynamodb'
     implementation 'software.amazon.awssdk:aws-core'
+    implementation 'com.amazonaws:dynamodb-lock-client:1.2.0' // Use the latest version available
+
 
     implementation libraries.vavr
-    implementation libraries.spotifyFutures
 
     // todo: separate worker entrypoint and move this to testImplementation instead.
     implementation libraries.spectatorApi

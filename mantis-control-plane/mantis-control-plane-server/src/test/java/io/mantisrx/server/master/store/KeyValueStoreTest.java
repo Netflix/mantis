@@ -18,7 +18,7 @@ package io.mantisrx.server.master.store;
 
 import static junit.framework.TestCase.assertEquals;
 
-import io.mantisrx.server.master.store.KeyValueStore.InMemoryStore;
+import io.mantisrx.server.core.KeyValueStore;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Duration;
 import org.junit.Test;
@@ -34,7 +34,7 @@ public class KeyValueStoreTest {
 
     @Test
     public void testUpsertOrdered() throws Exception {
-        KeyValueStore store = new InMemoryStore();
+        KeyValueStore store = new io.mantisrx.server.master.store.InMemoryStore();
         store.upsertOrdered(TABLE, PK_1, 1L, V1, Duration.ZERO);
         store.upsertOrdered(TABLE, PK_1, 2L, V2, Duration.ZERO);
         store.upsertOrdered(TABLE, PK_1, 5L, V5, Duration.ZERO);

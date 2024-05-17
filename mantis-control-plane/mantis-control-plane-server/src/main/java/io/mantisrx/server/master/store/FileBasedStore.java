@@ -39,13 +39,13 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Simple File based storage provider. Intended mainly as a sample implementation for
- * {@link KeyValueStore} interface. This implementation is complete in its functionality, but, isn't
+ * {@link io.mantisrx.server.core.KeyValueStore} interface. This implementation is complete in its functionality, but, isn't
  * expected to be scalable or performant for production loads.
  * <P>This implementation uses <code>/tmp/MantisSpool/</code> as the spool directory. The directory is created
  * if not present already. It will fail only if either a file with that name exists or if a directory with that
  * name exists but isn't writable.</P>
  */
-public class FileBasedStore implements KeyValueStore {
+public class FileBasedStore implements io.mantisrx.server.core.KeyValueStore {
 
     private static final Logger logger = LoggerFactory.getLogger(FileBasedStore.class);
     private final File rootDir;

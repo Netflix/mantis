@@ -26,7 +26,11 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
+/**
+ * See mantis-control-plane-dynamodb
+ */
 @Slf4j
+@Deprecated
 public class DynamoStore implements KeyValueStore {
 
     public static final String PK = "PK";
