@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.master;
 
-import io.mantisrx.server.core.master.MasterDescription;
 
 /**
  * See {@link io.mantisrx.server.core.ILeadershipManager}

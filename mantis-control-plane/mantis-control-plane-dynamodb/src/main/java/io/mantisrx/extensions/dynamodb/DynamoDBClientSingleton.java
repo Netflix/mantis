@@ -40,17 +40,11 @@ import software.amazon.awssdk.services.sts.model.Credentials;
 
 public class DynamoDBClientSingleton {
     private static final Logger logger = LoggerFactory.getLogger(SingleSelectionModel.class);
-
     private static AmazonDynamoDBLockClient instanceLockClient;
-
     private static DynamoDbClient instanceClient;
-
     private static String partitionKey;
-
     private static Duration pollInterval;
-
     private static Duration gracefulShutdownDuration;
-
     private static DynamoDBConfig conf;
     private static Duration leaseDuration;
     private static String leaderTable;
