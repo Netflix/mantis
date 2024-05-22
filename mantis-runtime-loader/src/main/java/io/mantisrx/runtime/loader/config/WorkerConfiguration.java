@@ -65,6 +65,10 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Default("5055")
     int getSinkPort();
 
+    @Config("mantis.taskexecutor.metrics.collector")
+    @Default("io.mantisrx.runtime.loader.cgroups.CgroupsMetricsCollector")
+    String getMetricsCollector();
+
     // ------------------------------------------------------------------------
     //  heartbeat connection related configurations
     // ------------------------------------------------------------------------

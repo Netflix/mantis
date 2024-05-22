@@ -19,7 +19,7 @@ import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
-import io.mantisrx.runtime.loader.cgroups.CgroupsMetricsCollector;
+import io.mantisrx.runtime.loader.config.MetricsCollector;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
 import io.mantisrx.runtime.loader.config.WorkerConfigurationWritable;
@@ -35,10 +35,13 @@ import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.UserCodeClassLoader;
 import rx.Observable;
@@ -99,9 +102,14 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
             this.wrappedExecuteStageRequest =
                 new WrappedExecuteStageRequest(PublishSubject.create(), executeStageRequest);
 
-            log.info("Picking Cgroups metrics collector.");
-            configWritable.setMetricsCollector(CgroupsMetricsCollector.valueOf(System.getProperties()));
-        } catch (IOException e) {
+            Class<?> metricsCollectorClass = Class.forName(this.config.getMetricsCollector());
+            log.info("Picking {} metrics collector", metricsCollectorClass.getName());
+            Method metricsCollectorFactory = metricsCollectorClass.getMethod("valueOf", Properties.class);
+            MetricsCollector metricsCollector =
+                (MetricsCollector) metricsCollectorFactory.invoke(null, System.getProperties());
+            configWritable.setMetricsCollector(metricsCollector);
+        } catch (IOException | InvocationTargetException | IllegalAccessException | ClassNotFoundException |
+                 NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
 
