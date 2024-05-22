@@ -53,6 +53,7 @@ dependencies {
     testImplementation libraries.commonsIo
     testImplementation "com.amazonaws:DynamoDBLocal:1.25.0"
     testImplementation 'org.awaitility:awaitility:4.2+'
+    testImplementation 'com.github.stefanbirkner:system-rules:1.+'
 }
 def installDir = file("${buildDir}/install")
 def ci = System.getenv('GITHUB_ACTIONS')

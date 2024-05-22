@@ -18,12 +18,15 @@ package io.mantisrx.extensions.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClient;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClientOptions;
+import io.mantisrx.server.core.utils.ConfigUtils;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import javax.swing.SingleSelectionModel;
+import org.skife.config.Config;
 import org.skife.config.ConfigurationObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,17 +42,13 @@ import software.amazon.awssdk.services.sts.model.AssumeRoleResponse;
 import software.amazon.awssdk.services.sts.model.Credentials;
 
 public class DynamoDBClientSingleton {
+    public static final String DYNAMO_DB_PROPERTIES_KEY = "mantis.ext.dynamodb.properties.file";
+
     private static final Logger logger = LoggerFactory.getLogger(SingleSelectionModel.class);
     private static AmazonDynamoDBLockClient instanceLockClient;
     private static DynamoDbClient instanceClient;
     private static String partitionKey;
-    private static Duration pollInterval;
-    private static Duration gracefulShutdownDuration;
     private static DynamoDBConfig conf;
-    private static Duration leaseDuration;
-    private static String leaderTable;
-    private static Boolean heartbeatInBackground;
-    private static String kvStoreTable;
 
     private DynamoDBClientSingleton() {
         // Private constructor to prevent instantiation
@@ -57,26 +56,16 @@ public class DynamoDBClientSingleton {
 
     public static synchronized AmazonDynamoDBLockClient getLockClient() {
         if (instanceLockClient == null) {
+            final DynamoDBConfig conf = getDynamoDBConf();
             instanceLockClient = new AmazonDynamoDBLockClient(
-                AmazonDynamoDBLockClientOptions.builder(getDynamoDBClient(), getLeaderTable())
-                    .withLeaseDuration(getLeaseDuration().toMillis())
-                    .withHeartbeatPeriod(getPollInterval().toMillis())
-                    .withCreateHeartbeatBackgroundThread(getHeartbeatInBackground())
+                AmazonDynamoDBLockClientOptions.builder(getDynamoDBClient(), conf.getDynamoDBLeaderTable())
+                    .withLeaseDuration(Duration.parse(conf.getDynamoDBLeaderLeaseDuration()).toMillis())
+                    .withHeartbeatPeriod(Duration.parse(conf.getDynamoDBLeaderHeartbeatDuration()).toMillis())
+                    .withCreateHeartbeatBackgroundThread(conf.getDynamoDBLeaderHeartbeatInBackground())
                     .withTimeUnit(TimeUnit.MILLISECONDS)
                     .build());
         }
         return instanceLockClient;
-    }
-
-    public static synchronized String getKeyValueStoreTable() {
-        if(kvStoreTable == null) {
-           final String table = getDynamoDBConf().getDynamoDBStoreTable();
-           if(table == null || table.isEmpty()) {
-               throw new IllegalArgumentException("mantis.ext.dynamodb.store.table is null or empty and must be set to use DynamoDB as the key value store");
-           }
-           kvStoreTable = table;
-        }
-        return kvStoreTable;
     }
 
     public static synchronized String getPartitionKey() {
@@ -89,39 +78,6 @@ public class DynamoDBClientSingleton {
         }
         return partitionKey;
     }
-
-    public static synchronized Duration getPollInterval() {
-        if(pollInterval == null) {
-            getDynamoDBConf();
-        }
-        return pollInterval;
-    }
-
-    public static synchronized Duration getGracefulShutdownDuration() {
-        if(gracefulShutdownDuration == null) {
-            getDynamoDBConf();
-        }
-        return gracefulShutdownDuration;
-    }
-
-    private static synchronized Boolean getHeartbeatInBackground() {
-        if(heartbeatInBackground == null) {
-            getDynamoDBConf();
-        }
-        return heartbeatInBackground;
-    }
-
-    private static synchronized  String getLeaderTable() {
-        if(leaderTable == null) {
-            final String tableName = getDynamoDBConf().getDynamoDBLeaderTable();
-            if (tableName == null || tableName.isEmpty()) {
-                throw new IllegalArgumentException("mantis.ext.dynamodb.leader.table is null or empty and must be set");
-            }
-            leaderTable = tableName;
-        }
-        return leaderTable;
-    }
-
     public static synchronized DynamoDbClient getDynamoDBClient() {
         if (instanceClient == null) {
             final DynamoDBConfig conf = getDynamoDBConf();
@@ -171,24 +127,30 @@ public class DynamoDBClientSingleton {
                 temporaryCredentials.sessionToken()));
     }
 
-    private static synchronized Duration getLeaseDuration() {
-        if(leaseDuration == null) {
-            getDynamoDBConf();
-        }
-        return leaseDuration;
-    }
-
-    private static synchronized DynamoDBConfig getDynamoDBConf() {
+    public static synchronized DynamoDBConfig getDynamoDBConf() {
         if (conf == null) {
-            final Properties props = DynamoDBConfig.getDynamoDBProperties();
-            final ConfigurationObjectFactory configurationObjectFactory = new ConfigurationObjectFactory(props);
-            conf =
-                configurationObjectFactory.build(DynamoDBConfig.class);
-
-            gracefulShutdownDuration = Duration.parse(conf.getDynamoDBMonitorGracefulShutdownDuration());
-            pollInterval = Duration.parse(conf.getDynamoDBLeaderHeartbeatDuration());
-            leaseDuration = Duration.parse(conf.getDynamoDBLeaderLeaseDuration());
-            heartbeatInBackground = conf.getDynamoDBLeaderHeartbeatInBackground();
+            final String propFile = System.getProperty(DYNAMO_DB_PROPERTIES_KEY, "dynamodb.properties");
+            // This checks for conventional env variable overrides
+            final Properties dynamodbProps = ConfigUtils.loadProperties(propFile);
+            // Make sure the provided class is an interface
+            if (!DynamoDBConfig.class.isInterface()) {
+                throw new IllegalArgumentException("The class must be an interface.");
+            }
+            // Iterate over the methods of the interface
+            for (Method method : DynamoDBConfig.class.getDeclaredMethods()) {
+                // Check if the method is annotated with @Config
+                if (method.isAnnotationPresent(Config.class)) {
+                    Config config = method.getAnnotation(Config.class);
+                    // Override any value that is in java system properties
+                    for (String key: config.value()) {
+                        final String value = System.getProperty(key);
+                        if (value != null && !value.isEmpty()) {
+                            dynamodbProps.setProperty(key, System.getProperty(key));
+                        }
+                    }
+                }
+            }
+            conf = new ConfigurationObjectFactory(dynamodbProps).build(DynamoDBConfig.class);
         }
         return conf;
     }

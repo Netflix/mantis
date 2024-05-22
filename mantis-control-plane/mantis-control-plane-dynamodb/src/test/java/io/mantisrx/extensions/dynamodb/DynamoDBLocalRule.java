@@ -17,11 +17,18 @@ package io.mantisrx.extensions.dynamodb;
 
 import org.junit.rules.ExternalResource;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.model.TimeToLiveSpecification;
+import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
 
 public class DynamoDBLocalRule extends ExternalResource {
     private final DynamoDBLocalServer server;
 
-    private static final String ENDPOINT_NAME = "mantis.ext.dynamodb.endpointOverride";
 
     public DynamoDBLocalRule() {
         this.server = new DynamoDBLocalServer();
@@ -29,17 +36,61 @@ public class DynamoDBLocalRule extends ExternalResource {
 
     @Override
     protected void before() {
-        System.setProperty(ENDPOINT_NAME, String.format("http://localhost:%d", server.getPort()));
         server.start();
     }
 
     @Override
     protected void after() {
-        System.clearProperty(ENDPOINT_NAME);
         server.stop();
     }
 
-    public DynamoDbClient getDynamoDbClient() {
+    public DynamoDbClient getDynamoDBClient() {
         return server.getDynamoDbClient();
+    }
+
+    public int getDynamoDBLocalPort() {
+        return server.getPort();
+    }
+
+    public void createKVTable(String tableName) {
+        server.getDynamoDbClient().createTable(createKVTableRequest(tableName));
+        server.getDynamoDbClient().updateTimeToLive(updateTimeToLiveRequest(tableName, "expiresAt"));
+    }
+
+    private CreateTableRequest createKVTableRequest(String tableName) {
+        return CreateTableRequest.builder()
+            .attributeDefinitions(
+                AttributeDefinition.builder()
+                    .attributeName(DynamoDBStore.PK)
+                    .attributeType(ScalarAttributeType.S)
+                    .build(),
+                AttributeDefinition.builder()
+                    .attributeName(DynamoDBStore.SK)
+                    .attributeType(ScalarAttributeType.S)
+                    .build()
+            )
+            .keySchema(
+                KeySchemaElement.builder()
+                    .attributeName(DynamoDBStore.PK)
+                    .keyType(KeyType.HASH)
+                    .build(),
+                KeySchemaElement.builder()
+                    .attributeName(DynamoDBStore.SK)
+                    .keyType(KeyType.RANGE)
+                    .build()
+            )
+            .billingMode(BillingMode.PAY_PER_REQUEST)
+            .tableName(tableName)
+            .build();
+    }
+
+    public UpdateTimeToLiveRequest updateTimeToLiveRequest(String tableName, String attributeName) {
+        return UpdateTimeToLiveRequest.builder()
+            .tableName(tableName)
+            .timeToLiveSpecification(
+                TimeToLiveSpecification.builder()
+                    .attributeName(attributeName)
+                    .enabled(true)
+                    .build()).build();
     }
 }

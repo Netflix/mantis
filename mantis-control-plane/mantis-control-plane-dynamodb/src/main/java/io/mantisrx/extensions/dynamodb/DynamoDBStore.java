@@ -51,8 +51,14 @@ public class DynamoDBStore implements KeyValueStore {
 
     private final String mantisTable;
     private final DynamoDbClient client;
+
     public DynamoDBStore() {
-        this(DynamoDBClientSingleton.getDynamoDBClient(), DynamoDBClientSingleton.getKeyValueStoreTable());
+        final DynamoDBConfig conf = DynamoDBClientSingleton.getDynamoDBConf();
+        mantisTable = conf.getDynamoDBStoreTable();
+        if(mantisTable == null || mantisTable.isEmpty()) {
+            throw new IllegalArgumentException("mantis.ext.dynamodb.leader.table is null or empty and must be set");
+        }
+        client = DynamoDBClientSingleton.getDynamoDBClient();
     }
 
     public DynamoDBStore(DynamoDbClient client, String tableName ) {

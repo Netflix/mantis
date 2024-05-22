@@ -23,10 +23,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClient;
-import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
@@ -46,70 +44,59 @@ public class DynamoDBMasterMonitorTest {
 
     private static final String TABLE_NAME = "mantis-dynamodb-leader-test";
 
-    private static final MasterDescription OTHER_MASTER =
-            new MasterDescription(
-                    "not-me",
-                    "192.168.1.1",
-                    23773,
-                    23774,
-                    23775,
-                    "http://star.xyz",
-                    23776,
-                    System.currentTimeMillis());
-    private static final MasterDescription THIS_MASTER =
-            new MasterDescription(
-                    "me",
-                    "10.10.1.1",
-                    23773,
-                    23774,
-                    23775,
-                    "http://star.xyz",
-                    23776,
-                    System.currentTimeMillis());
+    private static final Duration GRACEFUL = Duration.ofSeconds(1L);
 
-    private final ObjectMapper jsonMapper = DefaultObjectMapper.getInstance();
+    private MasterDescription otherMaster;
+    private MasterDescription thatMaster;
 
     @Mock
-    AmazonDynamoDBLockClient lockClient;
+    AmazonDynamoDBLockClient mockLockClient;
 
     @Rule
     public DynamoDBLockSupportRule lockSupport =
-            new DynamoDBLockSupportRule(TABLE_NAME, dynamoDb.getDynamoDbClient());
+            new DynamoDBLockSupportRule(TABLE_NAME, dynamoDb.getDynamoDBClient());
 
     @ClassRule
     public static DynamoDBLocalRule dynamoDb = new DynamoDBLocalRule();
 
     @Before
     public void testBefore() {
-        Mockito.reset(lockClient);
-        System.setProperty(DynamoDBConfig.DYNAMO_DB_PROPERTIES_KEY, "dynamodb-test.properties");
+        Mockito.reset(mockLockClient);
+        thatMaster = lockSupport.generateDescription();
+        otherMaster = lockSupport.generateDescription();
     }
 
     @After
     public void testAfter() throws IOException {
-        System.clearProperty(DynamoDBConfig.DYNAMO_DB_PROPERTIES_KEY);
     }
 
     @Test
     public void getCurrentLeader() throws JsonProcessingException, InterruptedException {
         final String lockKey = "mantis-leader";
-        final DynamoDBMasterMonitor m = new DynamoDBMasterMonitor();
+        final DynamoDBMasterMonitor m = new DynamoDBMasterMonitor(
+            lockSupport.getLockClient(),
+            lockKey,
+            DynamoDBLockSupportRule.heartbeatDuration,
+            GRACEFUL
+            );
         TestSubscriber<MasterDescription> testSubscriber = new TestSubscriber<>();
         m.getMasterObservable().subscribe(testSubscriber);
         m.start();
         assertNull(m.getLatestMaster());
-        lockSupport.takeLock(lockKey, jsonMapper.writeValueAsBytes(OTHER_MASTER));
+        lockSupport.takeLock(lockKey, otherMaster);
         await()
-                .atLeast(Duration.ofMillis(100L))
-                .atMost(Duration.ofMillis(1000L))
-                .untilAsserted(() -> assertEquals(OTHER_MASTER, m.getLatestMaster()));
+                .atLeast(DynamoDBLockSupportRule.heartbeatDuration)
+                .pollDelay(DynamoDBLockSupportRule.heartbeatDuration)
+                .atMost(Duration.ofMillis(DynamoDBLockSupportRule.heartbeatDuration.toMillis()*2))
+                .untilAsserted(() -> assertEquals(otherMaster, m.getLatestMaster()));
         lockSupport.releaseLock(lockKey);
-        lockSupport.takeLock(lockKey, jsonMapper.writeValueAsBytes(THIS_MASTER));
+        lockSupport.takeLock(lockKey, thatMaster);
         await()
-                .atLeast(Duration.ofMillis(100L))
-                .atMost(Duration.ofMillis(1000L))
-                .untilAsserted(() -> assertEquals(m.getLatestMaster(), THIS_MASTER));
-        testSubscriber.assertValues(OTHER_MASTER, THIS_MASTER);
+                .atLeast(DynamoDBLockSupportRule.heartbeatDuration)
+                .pollDelay(DynamoDBLockSupportRule.heartbeatDuration)
+                .atMost(Duration.ofMillis(DynamoDBLockSupportRule.heartbeatDuration.toMillis()*2))
+                .untilAsserted(() -> assertEquals(m.getLatestMaster(), thatMaster));
+        testSubscriber.assertValues(otherMaster, thatMaster);
         m.shutdown();
     }
 
@@ -117,13 +104,17 @@ public class DynamoDBMasterMonitorTest {
     public void runShutdown() throws IOException {
         final String key = "dne";
         final DynamoDBMasterMonitor m = new DynamoDBMasterMonitor(
-            lockClient, key, Duration.ofSeconds(1),Duration.ofSeconds(1));
-        when(lockClient.getLock(key, Optional.empty())).thenReturn(Optional.empty());
+            mockLockClient,
+            key,
+            DynamoDBLockSupportRule.heartbeatDuration,
+            GRACEFUL
+        );
+        when(mockLockClient.getLock(key, Optional.empty())).thenReturn(Optional.empty());
         m.start();
         await()
             .atLeast(Duration.ofSeconds(2));
         m.shutdown();
-        verify(lockClient, times(1)).close();
+        verify(mockLockClient, times(1)).close();
 
     }
 }

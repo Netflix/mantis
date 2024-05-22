@@ -37,14 +37,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 
 @Slf4j
 public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor {
 
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBMasterMonitor.class);
 
-    private static final String propertiesFile = "dynamodb.properties";
     private static final MasterDescription MASTER_NULL =
             new MasterDescription("NONE", "localhost", -1, -1, -1, "uri://", -1, -1L);
     private final ThreadFactory monitorThreadFactory = r -> {
@@ -72,18 +70,16 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
 
     private final ObjectMapper jsonMapper = DefaultObjectMapper.getInstance();
 
-    private static final AwsBasicCredentials credentials = AwsBasicCredentials.create("fakeAccessKeyId", "fakeSecretAccessKey");
-
     /**
      * Creates a MasterMonitor backed by DynamoDB. This should be used if you are using a {@link DynamoDBLeaderElector}
      */
     public DynamoDBMasterMonitor() {
-        this(
-            DynamoDBClientSingleton.getLockClient(),
-            DynamoDBClientSingleton.getPartitionKey(),
-            DynamoDBClientSingleton.getPollInterval(),
-            DynamoDBClientSingleton.getGracefulShutdownDuration()
-        );
+        masterSubject = BehaviorSubject.create();
+        final DynamoDBConfig conf = DynamoDBClientSingleton.getDynamoDBConf();
+        pollInterval = Duration.parse(conf.getDynamoDBLeaderHeartbeatDuration());
+        gracefulShutdown = Duration.parse(conf.getDynamoDBMonitorGracefulShutdownDuration());
+        lockClient = DynamoDBClientSingleton.getLockClient();
+        partitionKey = DynamoDBClientSingleton.getPartitionKey();
     }
 
     public DynamoDBMasterMonitor(

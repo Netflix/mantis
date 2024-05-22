@@ -19,25 +19,49 @@ import com.amazonaws.services.dynamodbv2.AcquireLockOptions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClient;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClientOptions;
 import com.amazonaws.services.dynamodbv2.LockItem;
+import io.mantisrx.server.core.json.DefaultObjectMapper;
+import io.mantisrx.server.core.master.MasterDescription;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import lombok.Getter;
 import org.junit.rules.ExternalResource;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 
 public class DynamoDBLockSupportRule extends ExternalResource {
+    public static final Duration leaseDuration = Duration.ofSeconds(3L);
+
+    public static final Duration heartbeatDuration = Duration.ofSeconds(1L);
+
+    @Getter
+    private final AmazonDynamoDBLockClient lockClient;
+
+    private int counter = 1;
+
+    private final ObjectMapper jsonMapper = DefaultObjectMapper.getInstance();
+
     private final String tableName;
     private final DynamoDbClient dbClient;
-
-    private final AmazonDynamoDBLockClient lockClient;
+    private final AmazonDynamoDBLockClient otherLockClient;
 
     public DynamoDBLockSupportRule(String tableName, DynamoDbClient dbClient) {
         this.tableName = tableName;
         this.dbClient = dbClient;
         this.lockClient =
+            new AmazonDynamoDBLockClient(
+                AmazonDynamoDBLockClientOptions.builder(this.dbClient, this.tableName)
+                    .withLeaseDuration(leaseDuration.getSeconds())
+                    .withHeartbeatPeriod(heartbeatDuration.getSeconds())
+                    .withCreateHeartbeatBackgroundThread(true)
+                    .withTimeUnit(TimeUnit.SECONDS)
+                    .build());
+        this.otherLockClient =
                 new AmazonDynamoDBLockClient(
                         AmazonDynamoDBLockClientOptions.builder(this.dbClient, this.tableName)
                                 .withLeaseDuration(6L)
@@ -62,6 +86,7 @@ public class DynamoDBLockSupportRule extends ExternalResource {
     @Override
     protected void after() {
         try {
+            this.otherLockClient.close();
             this.lockClient.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -69,8 +94,13 @@ public class DynamoDBLockSupportRule extends ExternalResource {
         this.dbClient.deleteTable(dtb -> dtb.tableName(this.tableName));
     }
 
-    public LockItem takeLock(String lockKey, byte[] data) throws InterruptedException {
-        return this.lockClient.acquireLock(
+    public LockItem takeLock(String lockKey) throws InterruptedException, JsonProcessingException {
+        return takeLock(lockKey, generateDescription());
+    }
+
+    public LockItem takeLock(String lockKey, MasterDescription md) throws InterruptedException, JsonProcessingException {
+        final byte[] data = jsonMapper.writeValueAsBytes(md);
+        return this.otherLockClient.acquireLock(
                 AcquireLockOptions.builder(lockKey)
                         .withReplaceData(true)
                         .withShouldSkipBlockingWait(true)
@@ -80,7 +110,19 @@ public class DynamoDBLockSupportRule extends ExternalResource {
     }
 
     public void releaseLock(String lockKey) {
-        final Optional<LockItem> lockItem = this.lockClient.getLock(lockKey, Optional.empty());
+        final Optional<LockItem> lockItem = this.otherLockClient.getLock(lockKey, Optional.empty());
         lockItem.ifPresent(LockItem::close);
+    }
+    public MasterDescription generateDescription() {
+        return
+            new MasterDescription(
+                String.format("leader-%d", counter++),
+                "192.168.1." + counter,
+                23773,
+                23774,
+                23775,
+                "http://star.xyz",
+                23776,
+                System.currentTimeMillis());
     }
 }
