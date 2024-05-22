@@ -75,31 +75,21 @@ public class DynamoDBClientSingletonTest {
         Mockito.reset(mockLeadershipManager);
     }
 
+    /**
+     * The use of global state here and the fact the helper rules all start and stop servers around
+     * the tests creates a unique race condition on the values in the java system variables. To
+     * reduce that race condition this will use a single test.
+     *
+     * @throws InterruptedException for thread stop and shutdown
+     * @throws IOException for store access issues
+     */
     @Test
-    public void localKVStore() throws IOException {
+    public void highAvailabilityServices() throws InterruptedException, IOException {
+        final String lockKey = "test-mantis-leader";
         final String table = "local-kv-test";
         final Map<String, String> map = new HashMap<String, String>() {{
-            put("mantis.ext.dynamodb.store.table", table);
-            put(DynamoDBClientSingleton.DYNAMO_DB_PROPERTIES_KEY, "dynamodb-test.properties");
-            put("mantis.ext.dynamodb.endpointOverride", String.format("http://localhost:%d",dynamoDb.getDynamoDBLocalPort()));
-        }};
-        setSystemProperties(map);
-        dynamoDb.createKVTable(table);
-        KeyValueStore store = new DynamoDBStore();
-        final String pk1 = UUID.randomUUID().toString();
-        store.upsertOrdered(table, pk1, 1L, V1, Duration.ZERO);
-        store.upsertOrdered(table, pk1, 2L, V2, Duration.ZERO);
-        store.upsertOrdered(table, pk1, 5L, V5, Duration.ZERO);
-        store.upsertOrdered(table, pk1, 4L, V4, Duration.ZERO);
-        assertEquals(ImmutableMap.<Long, String>of(5L, V5, 4L, V4, 2L, V2, 1L, V1), store.getAllOrdered(table, pk1, 5));
-        dynamoDb.getDynamoDBClient().deleteTable(DeleteTableRequest.builder().tableName(table).build());
-    }
-
-    @Test
-    public void leaderElectionServices() throws InterruptedException, JsonProcessingException {
-        final String lockKey = "test-mantis-leader";
-        final Map<String, String> map = new HashMap<String, String>() {{
             put("mantis.ext.dynamodb.leader.table", LEADER_TABLE_NAME);
+            put("mantis.ext.dynamodb.store.table", table);
             put(DynamoDBClientSingleton.DYNAMO_DB_PROPERTIES_KEY, "dynamodb-test.properties");
             put("mantis.ext.dynamodb.leader.key", lockKey);
             put("mantis.ext.dynamodb.endpointOverride", String.format("http://localhost:%d",dynamoDb.getDynamoDBLocalPort()));
@@ -139,6 +129,15 @@ public class DynamoDBClientSingletonTest {
         testSubscriber.assertValues(leaders);
         monitor.shutdown();
 
+        dynamoDb.createKVTable(table);
+        KeyValueStore store = new DynamoDBStore();
+        final String pk1 = UUID.randomUUID().toString();
+        store.upsertOrdered(table, pk1, 1L, V1, Duration.ZERO);
+        store.upsertOrdered(table, pk1, 2L, V2, Duration.ZERO);
+        store.upsertOrdered(table, pk1, 5L, V5, Duration.ZERO);
+        store.upsertOrdered(table, pk1, 4L, V4, Duration.ZERO);
+        assertEquals(ImmutableMap.<Long, String>of(5L, V5, 4L, V4, 2L, V2, 1L, V1), store.getAllOrdered(table, pk1, 5));
+        dynamoDb.getDynamoDBClient().deleteTable(DeleteTableRequest.builder().tableName(table).build());
     }
     private void setSystemProperties(Map<String, String> propMap) {
         propMap.forEach((k, v) -> {

@@ -50,7 +50,7 @@ public class DynamoDBLeaderElector extends BaseService {
     };
     private final ScheduledExecutorService leaderElector =
             Executors.newSingleThreadScheduledExecutor(leaderThreadFactory);
-    private final AtomicBoolean shouldLeaderElectorBeRunning = new AtomicBoolean(false);
+    private final AtomicBoolean shouldLeaderElectorBeRunning = new AtomicBoolean(true);
 
     private final AtomicBoolean isLeaderElectorRunning = new AtomicBoolean(false);
 
@@ -72,7 +72,6 @@ public class DynamoDBLeaderElector extends BaseService {
             ILeadershipManager leadershipManager,
             AmazonDynamoDBLockClient lockClient,
             String key) {
-        this.shouldLeaderElectorBeRunning.set(true);
         this.leadershipManager = leadershipManager;
         this.lockClient = lockClient;
         this.partitionKey = key;
@@ -81,7 +80,10 @@ public class DynamoDBLeaderElector extends BaseService {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public void start() {
-        leaderElector.submit(this::tryToBecomeLeader);
+       if(!isLeaderElectorRunning() && shouldLeaderElectorBeRunning.get()) {
+           logger.info("starting leader elector");
+           leaderElector.submit(this::tryToBecomeLeader);
+       }
     }
 
     @Override
@@ -139,10 +141,10 @@ public class DynamoDBLeaderElector extends BaseService {
         } catch (RuntimeException | InterruptedException | JsonProcessingException e) {
             logger.error("leader elector task has failed it will restart, if this error is frequent there is likely a problem with DynamoDB based leader election", e);
         } finally {
+            isLeaderElectorRunning.set(false);
             if (shouldLeaderElectorBeRunning.get()) {
                 this.leaderElector.schedule(this::tryToBecomeLeader, 1L, TimeUnit.SECONDS);
             }
-            isLeaderElectorRunning.set(false);
             logger.info("finished leadership request, will restart election: {}", shouldLeaderElectorBeRunning.get());
         }
     }
