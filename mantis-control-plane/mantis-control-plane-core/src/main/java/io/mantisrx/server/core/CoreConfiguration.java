@@ -50,6 +50,7 @@ public interface CoreConfiguration {
     @Config("mantis.zookeeper.root")
     String getZkRoot();
 
+    // TODO modify boolean to accept Enum to support DynamoDB HA modes
     @Config("mantis.localmode")
     @Default("true")
     boolean isLocalMode();

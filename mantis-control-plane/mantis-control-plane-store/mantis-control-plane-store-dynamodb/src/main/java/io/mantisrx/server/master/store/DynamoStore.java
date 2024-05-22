@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 /**
- * See mantis-control-plane-dynamodb
+ * See mantis-control-plane-dynamodb DynamoDBStore
  */
 @Slf4j
 @Deprecated

@@ -52,10 +52,7 @@ public class DynamoDBStore implements KeyValueStore {
     private final String mantisTable;
     private final DynamoDbClient client;
     public DynamoDBStore() {
-        this.client = DynamoDbClient.builder()
-                .build();
-        // TODO should we just create the table right here?
-        this.mantisTable = "mantis-key-value-store";
+        this(DynamoDBClientSingleton.getDynamoDBClient(), DynamoDBClientSingleton.getKeyValueStoreTable());
     }
 
     public DynamoDBStore(DynamoDbClient client, String tableName ) {

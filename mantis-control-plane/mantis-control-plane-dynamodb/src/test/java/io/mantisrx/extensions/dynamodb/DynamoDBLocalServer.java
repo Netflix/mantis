@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.local.server.DynamoDBProxyServer;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -20,7 +21,9 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 public class DynamoDBLocalServer {
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBLocalServer.class);
 
+
     private static final AwsBasicCredentials credentials = AwsBasicCredentials.create("fakeAccessKeyId", "fakeSecretAccessKey");
+    @Getter
     private final int port;
     private final DynamoDBProxyServer server;
     private final DynamoDbClient client;
@@ -97,5 +100,6 @@ public class DynamoDBLocalServer {
             throw new IllegalStateException(ioe);
         }
     }
+
 }
 

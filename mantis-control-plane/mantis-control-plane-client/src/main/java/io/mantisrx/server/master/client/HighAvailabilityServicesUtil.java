@@ -45,6 +45,7 @@ import rx.schedulers.Schedulers;
 public class HighAvailabilityServicesUtil {
   private final static AtomicReference<HighAvailabilityServices> HAServiceInstanceRef = new AtomicReference<>();
 
+  // TODO refactor to enable DynamoDB HA mode
   public static HighAvailabilityServices createHAServices(CoreConfiguration configuration) {
     if (configuration.isLocalMode()) {
       log.warn("HA service running in local mode. This is only valid in local test.");

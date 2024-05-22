@@ -37,6 +37,7 @@ dependencies {
     implementation 'software.amazon.awssdk:dynamodb'
     implementation 'software.amazon.awssdk:aws-core'
     implementation 'com.amazonaws:dynamodb-lock-client:1.2.0' // Use the latest version available
+    implementation 'software.amazon.awssdk:sts:2.+'
 
 
     implementation libraries.vavr

@@ -17,6 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,7 @@ public class DynamoDBLeaderElector extends BaseService {
 
     private final ThreadFactory leaderThreadFactory = r -> {
         Thread thread = new Thread(r);
-        thread.setName("master-thread-" + System.currentTimeMillis());
+        thread.setName("dynamodb-leader-" + System.currentTimeMillis());
         thread.setDaemon(true); // allow JVM to shutdown if monitor is still running
         thread.setPriority(Thread.NORM_PRIORITY);
         thread.setUncaughtExceptionHandler((t, e) -> logger.error("thread: {} failed with {}", t.getName(), e.getMessage(), e) );
@@ -35,11 +36,23 @@ public class DynamoDBLeaderElector extends BaseService {
     private final ScheduledExecutorService leaderElector =
             Executors.newSingleThreadScheduledExecutor(leaderThreadFactory);
     private final AtomicBoolean shouldLeaderElectorBeRunning = new AtomicBoolean(false);
+
+    private final AtomicBoolean isLeaderElectorRunning = new AtomicBoolean(false);
+
     private final ObjectMapper jsonMapper = DefaultObjectMapper.getInstance();
     private final ILeadershipManager leadershipManager;
     private final AmazonDynamoDBLockClient lockClient;
     private final String partitionKey;
 
+    @Nullable
+    private LockItem leaderLock = null;
+
+    public DynamoDBLeaderElector(ILeadershipManager leadershipManager) {
+        this(leadershipManager,
+            DynamoDBClientSingleton.getLockClient(),
+            DynamoDBClientSingleton.getPartitionKey());
+
+    }
     public DynamoDBLeaderElector(
             ILeadershipManager leadershipManager,
             AmazonDynamoDBLockClient lockClient,
@@ -56,21 +69,36 @@ public class DynamoDBLeaderElector extends BaseService {
         leaderElector.submit(this::tryToBecomeLeader);
     }
 
-    public void shutDown() {
+    @Override
+    public void shutdown() {
         logger.info("shutting down");
         shouldLeaderElectorBeRunning.set(false);
+        if (leaderLock != null) {
+            logger.info("releasing lock");
+            leaderLock.close();
+        }
         try {
-            lockClient.close(); // releases the lock, if currently held
-            leaderElector.shutdownNow();
+            logger.info("closing lock client");
+            lockClient.close();
         } catch (IOException e) {
             logger.error("error timeout waiting on leader election to terminate executor", e);
         }
+        if (isLeaderElectorRunning.get()) {
+            leaderElector.shutdownNow();
+        }
         if (leadershipManager.isLeader()) {
+            logger.info("calling stopBeingLeader this may call exit");
             // this may call exit and does no shutdown behavior so let's call it last
             leadershipManager.stopBeingLeader();
         }
         logger.info("shutdown complete");
     }
+
+    public boolean isLeaderElectorRunning() {
+        logger.info("leader running: {}", isLeaderElectorRunning.get());
+        return isLeaderElectorRunning.get();
+    }
+
 
     /**
      * This function will attempt to become the leader at the heartbeat interval of the lockClient. If
@@ -80,6 +108,7 @@ public class DynamoDBLeaderElector extends BaseService {
         final MasterDescription me = leadershipManager.getDescription();
         try {
             logger.info("requesting leadership from {}", me.getHostname());
+            isLeaderElectorRunning.set(true);
             final Optional<LockItem> optionalLock =
                     lockClient.tryAcquireLock(
                             AcquireLockOptions.builder(this.partitionKey)
@@ -88,6 +117,7 @@ public class DynamoDBLeaderElector extends BaseService {
                                     .withData(ByteBuffer.wrap(jsonMapper.writeValueAsBytes(me)))
                                     .build());
             if (optionalLock.isPresent()) {
+                leaderLock = optionalLock.get();
                 shouldLeaderElectorBeRunning.set(false);
                 leadershipManager.becomeLeader();
             }
@@ -97,7 +127,8 @@ public class DynamoDBLeaderElector extends BaseService {
             if (shouldLeaderElectorBeRunning.get()) {
                 this.leaderElector.schedule(this::tryToBecomeLeader, 1L, TimeUnit.SECONDS);
             }
-            logger.info("finished leadership request");
+            isLeaderElectorRunning.set(false);
+            logger.info("finished leadership request, will restart election: {}", shouldLeaderElectorBeRunning.get());
         }
     }
 }

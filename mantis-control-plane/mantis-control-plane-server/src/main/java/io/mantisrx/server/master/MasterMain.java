@@ -60,6 +60,7 @@ import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.metrics.MetricsPublisherService;
 import io.mantisrx.server.core.metrics.MetricsServerService;
+import io.mantisrx.server.core.utils.ConfigUtils;
 import io.mantisrx.server.core.zookeeper.CuratorService;
 import io.mantisrx.server.master.config.ConfigurationFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -210,6 +211,7 @@ public class MasterMain implements Service {
                        resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
                 leadershipManager.becomeLeader();
             } else {
+                // TODO refactor to enable DynamoDB Leader services
                 curatorService = new CuratorService(this.config);
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
@@ -225,53 +227,6 @@ public class MasterMain implements Service {
         }
     }
 
-    private static Properties loadProperties(String propFile) {
-        // config
-        Properties props = new Properties();
-        try (InputStream in = findResourceAsStream(propFile)) {
-            props.load(in);
-        } catch (IOException e) {
-            throw new RuntimeException(String.format("Can't load properties from the given property file %s: %s", propFile, e.getMessage()), e);
-        }
-
-        for (String key : props.stringPropertyNames()) {
-            String envVarKey = key.toUpperCase().replace('.', '_');
-            String envValue = System.getenv(envVarKey);
-            if (envValue != null) {
-                props.setProperty(key, envValue);
-                logger.info("Override config from env {}: {}.", key, envValue);
-            }
-
-        }
-
-        return props;
-    }
-
-
-    /**
-     * Finds the given resource and returns its input stream. This method seeks the file first from the current working directory,
-     * and then in the class path.
-     *
-     * @param resourceName the name of the resource. It can either be a file name, or a path.
-     *
-     * @return An {@link java.io.InputStream} instance that represents the found resource. Null otherwise.
-     *
-     * @throws FileNotFoundException
-     */
-    private static InputStream findResourceAsStream(String resourceName) throws FileNotFoundException {
-        File resource = new File(resourceName);
-        if (resource.exists()) {
-            return new FileInputStream(resource);
-        }
-
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
-        if (is == null) {
-            throw new FileNotFoundException(String.format("Can't find property file %s. Make sure the property file is either in your path or in your classpath ", resourceName));
-        }
-
-        return is;
-    }
-
     public static void main(String[] args) {
         try {
             Args.parse(MasterMain.class, args);
@@ -285,7 +240,7 @@ public class MasterMain implements Service {
             Properties props = new Properties();
             props.putAll(System.getenv());
             props.putAll(System.getProperties());
-            props.putAll(loadProperties(propFile));
+            props.putAll(ConfigUtils.loadProperties(propFile));
             StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
             final AuditEventSubscriber auditEventSubscriber = new AuditEventSubscriberLoggingImpl();
             final MantisPropertiesLoader propertiesLoader = new DefaultMantisPropertiesLoader(System.getProperties());

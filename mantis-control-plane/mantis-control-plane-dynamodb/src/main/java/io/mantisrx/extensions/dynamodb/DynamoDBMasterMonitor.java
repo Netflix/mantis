@@ -3,7 +3,6 @@ package io.mantisrx.extensions.dynamodb;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClient;
 import com.amazonaws.services.dynamodbv2.LockItem;
 import io.mantisrx.server.core.BaseService;
-import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
@@ -23,18 +22,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 
 @Slf4j
 public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor {
 
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBMasterMonitor.class);
 
-    private static final String propertiesFile = "dynamo.properties";
+    private static final String propertiesFile = "dynamodb.properties";
     private static final MasterDescription MASTER_NULL =
             new MasterDescription("NONE", "localhost", -1, -1, -1, "uri://", -1, -1L);
     private final ThreadFactory monitorThreadFactory = r -> {
         Thread thread = new Thread(r);
-        thread.setName("master-thread-" + System.currentTimeMillis());
+        thread.setName("dynamodb-monitor-" + System.currentTimeMillis());
         thread.setDaemon(true); // allow JVM to shutdown if monitor is still running
         thread.setPriority(Thread.NORM_PRIORITY);
         thread.setUncaughtExceptionHandler((t, e) -> logger.error("thread: {} failed with {}", t.getName(), e.getMessage(), e) );
@@ -57,69 +57,28 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
 
     private final ObjectMapper jsonMapper = DefaultObjectMapper.getInstance();
 
-    /**
-     * Creates a MasterMonitor only that can not become a leader.
-     *
-     * @param leadershipManager the leadershipManager to use
-     * @throws IOException the exception is most commonly related to prop file issues
-     */
-//    public DynamoDBMasterMonitor(ILeadershipManager leadershipManager) throws IOException {
-//        this(leadershipManager, false);
-//    }
+    private static final AwsBasicCredentials credentials = AwsBasicCredentials.create("fakeAccessKeyId", "fakeSecretAccessKey");
 
-//    public DynamoDBMasterMonitor(ILeadershipManager leadershipManager, boolean canBecomeLeader)
-//            throws IOException {
-//        this.shouldLeaderElectorBeRunning.set(canBecomeLeader);
-//        this.leadershipManager = leadershipManager;
-//        this.masterSubject = BehaviorSubject.create();
-//
-//        String env = StripeEnvironmentUtils.getEnvironment();
-//        if (env == null || env.isEmpty()) {
-//            throw new IllegalArgumentException("Unable to determine environment (qa/preprod/prod).");
-//        }
-//
-//        Properties props = new Properties();
-//        try {
-//            props.load(LeaderElectorDynamo.class.getClassLoader().getResourceAsStream(propertiesFile));
-//        } catch (IOException e) {
-//            logger.error(
-//                    SecureMessage.builder()
-//                            .message("error loading properties file")
-//                            .put("file", Taxonomized.CODE_INTERNALS.forStripe(propertiesFile))
-//                            .build(),
-//                    e);
-//            throw e;
-//        }
-//        ConfigurationObjectFactory configurationObjectFactory = new ConfigurationObjectFactory(props);
-//        DynamoStoreConfiguration conf =
-//                configurationObjectFactory.build(DynamoStoreConfiguration.class);
-//
-//        final DynamoDbClient client = DynamoDbClient.builder().region(Region.of(region)).build();
-//        final String lockTable = conf.getDynamoStoreTablePrefix() + "-" + env + "-" + region;
-//        this.partitionKey = conf.getDynamoLeaderPartitionKey();
-//
-//        this.pollInterval = Duration.parse(conf.getDynamoLeaderHeartbeatDuration());
-//        this.gracefulShutdown = Duration.parse(conf.getDynamoLeaderGracefulShutdownDuration());
-//        final Duration leaseDuration = Duration.parse(conf.getDynamoLeaderLeaseDuration());
-//
-//        lockClient =
-//                new AmazonDynamoDBLockClient(
-//                        AmazonDynamoDBLockClientOptions.builder(client, lockTable)
-//                                .withLeaseDuration(leaseDuration.toMillis())
-//                                .withHeartbeatPeriod(this.pollInterval.toMillis())
-//                                .withCreateHeartbeatBackgroundThread(conf.getDynamoLeaderHeartbeatInBackground())
-//                                .withTimeUnit(TimeUnit.MILLISECONDS)
-//                                .build());
-//    }
+    /**
+     * Creates a MasterMonitor backed by DynamoDB. This should be used if you are using a {@link DynamoDBLeaderElector}
+     */
+    public DynamoDBMasterMonitor() {
+        this(
+            DynamoDBClientSingleton.getLockClient(),
+            DynamoDBClientSingleton.getPartitionKey(),
+            DynamoDBClientSingleton.getPollInterval(),
+            DynamoDBClientSingleton.getGracefulShutdownDuration()
+        );
+    }
 
     public DynamoDBMasterMonitor(
             AmazonDynamoDBLockClient lockClient,
-            String key,
+            String partitionKey,
             Duration pollInterval,
             Duration gracefulShutdown) {
-        this.masterSubject = BehaviorSubject.create();
+        masterSubject = BehaviorSubject.create();
         this.lockClient = lockClient;
-        this.partitionKey = key;
+        this.partitionKey = partitionKey;
         this.pollInterval = pollInterval;
         this.gracefulShutdown = gracefulShutdown;
     }
@@ -128,15 +87,16 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     @SuppressWarnings("FutureReturnValueIgnored")
     public void start() {
         leaderMonitor.scheduleAtFixedRate(
-                this::getCurrentLeader, 0, this.pollInterval.toMillis(), TimeUnit.MILLISECONDS);
+                this::getCurrentLeader, 0, pollInterval.toMillis(), TimeUnit.MILLISECONDS);
     }
 
-    public void shutDown() {
+    @Override
+    public void shutdown() {
         logger.info("close the lock client");
         try {
             lockClient.close();
         } catch (IOException e) {
-            logger.error("error timeout waiting lock client to close", e);
+            logger.error("error closing the dynamodb lock client", e);
         }
 
         try {
@@ -154,7 +114,7 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     @SuppressWarnings("FutureReturnValueIgnored")
     private void getCurrentLeader() {
         logger.info("attempting leader lookup");
-        final Optional<LockItem> optionalLock = this.lockClient.getLock(partitionKey, Optional.empty());
+        final Optional<LockItem> optionalLock = lockClient.getLock(partitionKey, Optional.empty());
         final MasterDescription nextDescription;
         if (optionalLock.isPresent()) {
             final LockItem lock = optionalLock.get();
@@ -173,7 +133,7 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
                 (previousDescription == null) ? MASTER_NULL : previousDescription;
         if (!prev.equals(next)) {
             logger.info("leader changer information previous {} and next {}", prev.getHostname(), next.getHostname());
-            this.masterSubject.onNext(nextDescription);
+            masterSubject.onNext(nextDescription);
         }
     }
 
@@ -181,9 +141,9 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
         final byte[] bytes = new byte[data.remaining()];
         data.get(bytes);
         try {
-            return this.jsonMapper.readValue(bytes, MasterDescription.class);
+            return jsonMapper.readValue(bytes, MasterDescription.class);
         } catch (IOException e) {
-            logger.error("unable to parse master description bytes: {}", data.toString(), e);
+            logger.error("unable to parse master description bytes: {}", data, e);
         }
         return MASTER_NULL;
     }
@@ -194,7 +154,7 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     }
 
     /**
-     * Returns the latest master if there's one. If there has been no master in recently history, then
+     * Returns the latest master if there's one. If there has been no master in recent history, then
      * this return null.
      *
      * @return Latest description of the master

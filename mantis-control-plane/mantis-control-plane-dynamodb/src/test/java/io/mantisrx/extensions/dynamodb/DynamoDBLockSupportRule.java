@@ -4,9 +4,11 @@ import com.amazonaws.services.dynamodbv2.AcquireLockOptions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClient;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClientOptions;
 import com.amazonaws.services.dynamodbv2.LockItem;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import org.junit.rules.ExternalResource;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
@@ -24,10 +26,10 @@ public class DynamoDBLockSupportRule extends ExternalResource {
         this.lockClient =
                 new AmazonDynamoDBLockClient(
                         AmazonDynamoDBLockClientOptions.builder(this.dbClient, this.tableName)
-                                .withLeaseDuration(600L)
-                                .withHeartbeatPeriod(200L)
+                                .withLeaseDuration(6L)
+                                .withHeartbeatPeriod(2L)
                                 .withCreateHeartbeatBackgroundThread(true)
-                                .withTimeUnit(TimeUnit.MICROSECONDS)
+                                .withTimeUnit(TimeUnit.SECONDS)
                                 .build());
     }
 
@@ -45,21 +47,25 @@ public class DynamoDBLockSupportRule extends ExternalResource {
 
     @Override
     protected void after() {
+        try {
+            this.lockClient.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         this.dbClient.deleteTable(dtb -> dtb.tableName(this.tableName));
     }
 
-    public void takeLock(String lockKey, byte[] data) throws InterruptedException {
-        this.lockClient.acquireLock(
+    public LockItem takeLock(String lockKey, byte[] data) throws InterruptedException {
+        return this.lockClient.acquireLock(
                 AcquireLockOptions.builder(lockKey)
                         .withReplaceData(true)
-                        .withAcquireReleasedLocksConsistently(true)
                         .withShouldSkipBlockingWait(true)
                         .withAcquireReleasedLocksConsistently(true)
                         .withData(ByteBuffer.wrap(data))
                         .build());
     }
 
-    public void releaseLock(String lockKey) throws InterruptedException {
+    public void releaseLock(String lockKey) {
         final Optional<LockItem> lockItem = this.lockClient.getLock(lockKey, Optional.empty());
         lockItem.ifPresent(LockItem::close);
     }
