@@ -78,6 +78,7 @@ public class DynamoDBClientSingleton {
         }
         return partitionKey;
     }
+
     public static synchronized DynamoDbClient getDynamoDBClient() {
         if (instanceClient == null) {
             final DynamoDBConfig conf = getDynamoDBConf();
@@ -100,31 +101,6 @@ public class DynamoDBClientSingleton {
             instanceClient = builder.build();
         }
         return instanceClient;
-    }
-
-    private static Optional<AwsSessionCredentials> useAssumeRole(DynamoDBConfig config) {
-        final String roleARN = config.getDynamoDBAssumeRoleARN();
-        final String roleSessionName = config.getDynamoDBAssumeRoleSessionName();
-        if (roleARN == null && roleSessionName == null) {
-            return Optional.empty();
-        }
-        if (roleARN == null || roleARN.isEmpty() || roleSessionName == null || roleSessionName.isEmpty()) {
-            throw new IllegalArgumentException(String.format("received invalid assume role configuration ARN [%s] Session Name [%s]", roleARN, roleSessionName));
-        }
-        StsClient stsClient = StsClient.builder().region(Region.AWS_GLOBAL).build();
-        AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
-            .roleArn(roleARN)
-            .roleSessionName(roleSessionName)
-            .build();
-        AssumeRoleResponse assumeRoleResponse = stsClient.assumeRole(assumeRoleRequest);
-
-        Credentials temporaryCredentials = assumeRoleResponse.credentials();
-
-        return Optional.of(
-            AwsSessionCredentials.create(
-                temporaryCredentials.accessKeyId(),
-                temporaryCredentials.secretAccessKey(),
-                temporaryCredentials.sessionToken()));
     }
 
     public static synchronized DynamoDBConfig getDynamoDBConf() {
@@ -155,4 +131,28 @@ public class DynamoDBClientSingleton {
         return conf;
     }
 
+    private static Optional<AwsSessionCredentials> useAssumeRole(DynamoDBConfig config) {
+        final String roleARN = config.getDynamoDBAssumeRoleARN();
+        final String roleSessionName = config.getDynamoDBAssumeRoleSessionName();
+        if (roleARN == null && roleSessionName == null) {
+            return Optional.empty();
+        }
+        if (roleARN == null || roleARN.isEmpty() || roleSessionName == null || roleSessionName.isEmpty()) {
+            throw new IllegalArgumentException(String.format("received invalid assume role configuration ARN [%s] Session Name [%s]", roleARN, roleSessionName));
+        }
+        StsClient stsClient = StsClient.builder().region(Region.AWS_GLOBAL).build();
+        AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
+            .roleArn(roleARN)
+            .roleSessionName(roleSessionName)
+            .build();
+        AssumeRoleResponse assumeRoleResponse = stsClient.assumeRole(assumeRoleRequest);
+
+        Credentials temporaryCredentials = assumeRoleResponse.credentials();
+
+        return Optional.of(
+            AwsSessionCredentials.create(
+                temporaryCredentials.accessKeyId(),
+                temporaryCredentials.secretAccessKey(),
+                temporaryCredentials.sessionToken()));
+    }
 }
