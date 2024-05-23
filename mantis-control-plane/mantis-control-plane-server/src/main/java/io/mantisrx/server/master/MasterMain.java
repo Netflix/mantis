@@ -206,7 +206,7 @@ public class MasterMain implements Service {
                        resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
                 leadershipManager.becomeLeader();
             } else {
-                // TODO refactor to enable DynamoDB Leader services
+                // TODO refactor to enable DynamoDB Leader services via new configuration variable
                 curatorService = new CuratorService(this.config);
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
