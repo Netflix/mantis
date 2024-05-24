@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * if not present already. It will fail only if either a file with that name exists or if a directory with that
  * name exists but isn't writable.</P>
  */
-public class FileBasedStore implements io.mantisrx.server.core.KeyValueStore {
+public class FileBasedStore implements KeyValueStore {
 
     private static final Logger logger = LoggerFactory.getLogger(FileBasedStore.class);
     private final File rootDir;
