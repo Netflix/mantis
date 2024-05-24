@@ -19,7 +19,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 
-import io.mantisrx.server.core.KeyValueStore;
+import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ public class DynamoDBStoreTest {
 
     @Test
     public void testUpsertOrdered() throws Exception {
-        KeyValueStore store = new DynamoDBStore(client, table);
+        IKeyValueStore store = new DynamoDBStore(client, table);
         final String pk1 = UUID.randomUUID().toString();
         store.upsertOrdered(table, pk1, 1L, V1, Duration.ZERO);
         store.upsertOrdered(table, pk1, 2L, V2, Duration.ZERO);
@@ -69,7 +69,7 @@ public class DynamoDBStoreTest {
 
     @Test
     public void testUpsertMoreThan25andGetAllPk() throws Exception {
-        KeyValueStore store = new DynamoDBStore(client, table);
+        IKeyValueStore store = new DynamoDBStore(client, table);
         final List<String> pks = new ArrayList<>();
         for(int i = 0; i<3; i++) {
             pks.add(UUID.randomUUID().toString());
@@ -97,7 +97,7 @@ public class DynamoDBStoreTest {
 
     @Test
     public void testInsertAndDelete() throws Exception {
-        KeyValueStore store = new DynamoDBStore(client, table);
+        IKeyValueStore store = new DynamoDBStore(client, table);
         final String pk1 = UUID.randomUUID().toString();
         store.upsertOrdered(table, pk1, 1L, V1, Duration.ZERO);
         final String data = store.get(table, pk1, "1");
@@ -111,7 +111,7 @@ public class DynamoDBStoreTest {
 
     @Test
     public void testInsertAndDeleteMoreThan25() throws Exception {
-        KeyValueStore store = new DynamoDBStore(client, table);
+        IKeyValueStore store = new DynamoDBStore(client, table);
         final List<String> pks = makePKs(3);
         final Map<String, String> skData1 = new HashMap<>();
         for(int i=0; i<30; i++) {
@@ -137,7 +137,7 @@ public class DynamoDBStoreTest {
 
     @Test
     public void testInsertAndGetAllMoreThan25() throws Exception {
-        KeyValueStore store = new DynamoDBStore(client, table);
+        IKeyValueStore store = new DynamoDBStore(client, table);
         final List<String> pks = makePKs(3);
         final Map<String, String> skData1 = new HashMap<>();
         for(int i=0; i<30; i++) {

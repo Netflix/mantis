@@ -35,7 +35,7 @@ import org.apache.commons.lang3.StringUtils;
  * mantis-control-plane-server project are example implementations for file,
  * in-memory and no-op implementations.
  */
-public interface KeyValueStore {
+public interface IKeyValueStore {
 
         /**
          * Gets all rows from the table

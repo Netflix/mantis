@@ -15,7 +15,7 @@
  */
 package io.mantisrx.extensions.dynamodb;
 
-import io.mantisrx.server.core.KeyValueStore;
+import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Duration;
@@ -28,7 +28,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 @Slf4j
-public class DynamoDBStore implements KeyValueStore {
+public class DynamoDBStore implements IKeyValueStore {
 
     public static final String PK = "PK";
     public  static final String SK = "SK";

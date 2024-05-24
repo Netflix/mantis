@@ -23,8 +23,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.server.core.ILeadershipManager;
-import io.mantisrx.server.core.KeyValueStore;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -129,13 +129,13 @@ public class DynamoDBClientSingletonTest {
         monitor.shutdown();
 
         dynamoDb.createKVTable(table);
-        KeyValueStore store = new DynamoDBStore();
+        IKeyValueStore store = new DynamoDBStore();
         final String pk1 = UUID.randomUUID().toString();
         store.upsertOrdered(table, pk1, 1L, V1, Duration.ZERO);
         store.upsertOrdered(table, pk1, 2L, V2, Duration.ZERO);
         store.upsertOrdered(table, pk1, 5L, V5, Duration.ZERO);
         store.upsertOrdered(table, pk1, 4L, V4, Duration.ZERO);
-        assertEquals(ImmutableMap.<Long, String>of(5L, V5, 4L, V4, 2L, V2, 1L, V1), store.getAllOrdered(table, pk1, 5));
+        assertEquals(ImmutableMap.of(5L, V5, 4L, V4, 2L, V2, 1L, V1), store.getAllOrdered(table, pk1, 5));
         dynamoDb.getDynamoDBClient().deleteTable(DeleteTableRequest.builder().tableName(table).build());
     }
     private void setSystemProperties(Map<String, String> propMap) {

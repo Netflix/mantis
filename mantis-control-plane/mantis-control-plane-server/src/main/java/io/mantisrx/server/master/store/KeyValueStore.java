@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.master.store;
 
+import io.mantisrx.server.core.IKeyValueStore;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -30,29 +31,29 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * The interface has moved to see:
- * {@link io.mantisrx.server.core.KeyValueStore}
+ * {@link IKeyValueStore}
  * The move was to enable extensions to provide this implementation
  * with a clean dependency graph.
  * TODO(hmittal): Add an implementation using SQL, apache-cassandra
  */
 @Deprecated
-public interface KeyValueStore extends io.mantisrx.server.core.KeyValueStore {
+public interface KeyValueStore extends IKeyValueStore {
 
-    KeyValueStore NO_OP = new NoopStore();
+    IKeyValueStore NO_OP = new NoopStore();
 
-    static KeyValueStore noop() {
+    static IKeyValueStore noop() {
         return NO_OP;
     }
 
     @Deprecated
-    static io.mantisrx.server.core.KeyValueStore inMemory() { return new io.mantisrx.server.master.store.InMemoryStore();
+    static IKeyValueStore inMemory() { return new io.mantisrx.server.master.store.InMemoryStore();
     }
 
     /**
      * See {@link io.mantisrx.server.master.store.NoopStore}
      */
     @Deprecated
-    class NoopStore implements KeyValueStore {
+    class NoopStore implements IKeyValueStore {
 
         @Override
         public Map<String, Map<String, String>> getAllRows(String tableName) {
@@ -94,7 +95,7 @@ public interface KeyValueStore extends io.mantisrx.server.core.KeyValueStore {
      * See {@link io.mantisrx.server.master.store.InMemoryStore}
      */
     @Deprecated
-    class InMemoryStore implements KeyValueStore {
+    class InMemoryStore implements IKeyValueStore {
 
         // table -> partitionKey -> secondaryKey -> data
         private final Map<String, Map<String, SortedMap<String, String>>> store = new ConcurrentHashMap<>();

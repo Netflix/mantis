@@ -15,7 +15,7 @@
  */
 package io.mantisrx.server.master.store;
 
-import io.mantisrx.server.core.KeyValueStore;
+import io.mantisrx.server.core.IKeyValueStore;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -27,9 +27,9 @@ import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-public class InMemoryStore implements KeyValueStore {
+public class InMemoryStore implements IKeyValueStore {
 
-    public static KeyValueStore inMemory() {
+    public static IKeyValueStore inMemory() {
         return new InMemoryStore();
     }
 

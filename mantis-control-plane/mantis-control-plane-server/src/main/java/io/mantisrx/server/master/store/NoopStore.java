@@ -15,16 +15,16 @@
  */
 package io.mantisrx.server.master.store;
 
-import io.mantisrx.server.core.KeyValueStore;
+import io.mantisrx.server.core.IKeyValueStore;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-public class NoopStore implements KeyValueStore {
+public class NoopStore implements IKeyValueStore {
 
-    static KeyValueStore NO_OP = new NoopStore();
+    static IKeyValueStore NO_OP = new NoopStore();
 
-    public static KeyValueStore noop() {
+    public static IKeyValueStore noop() {
         return NO_OP;
     }
 

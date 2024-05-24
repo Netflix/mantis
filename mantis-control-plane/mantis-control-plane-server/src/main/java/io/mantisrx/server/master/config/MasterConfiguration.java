@@ -19,7 +19,7 @@ package io.mantisrx.server.master.config;
 import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.scheduler.FitnessCalculator;
 import io.mantisrx.server.core.CoreConfiguration;
-import io.mantisrx.server.master.store.KeyValueStore;
+import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Duration;
@@ -50,7 +50,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     String getApiStatusUri();
 
     @Config("mantis.master.storageProvider")
-    KeyValueStore getStorageProvider();
+    IKeyValueStore getStorageProvider();
 
     @Config("mantis.master.resourceClusterProvider")
     String getResourceClusterProvider();
