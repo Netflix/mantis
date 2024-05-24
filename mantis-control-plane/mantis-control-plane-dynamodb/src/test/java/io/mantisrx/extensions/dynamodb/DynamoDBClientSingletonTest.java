@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.KeyValueStore;
 import io.mantisrx.server.core.master.MasterDescription;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Duration;
