@@ -90,7 +90,7 @@ public class MasterMain implements Service {
 
     private static final Logger logger = LoggerFactory.getLogger(MasterMain.class);
     @Argument(alias = "p", description = "Specify a configuration file", required = false)
-    private static final String propFile = "master.properties";
+    private static String propFile = "master.properties";
     private final ServiceLifecycle mantisServices = new ServiceLifecycle();
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
     private KeyValueBasedPersistenceProvider storageProvider;
