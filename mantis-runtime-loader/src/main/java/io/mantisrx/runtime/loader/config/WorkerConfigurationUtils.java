@@ -17,7 +17,6 @@
 package io.mantisrx.runtime.loader.config;
 
 import io.mantisrx.common.JsonSerializer;
-import io.mantisrx.server.core.LeaderElectorFactoryCoercer;
 import io.mantisrx.server.core.LeaderMonitorFactoryCoercer;
 import io.mantisrx.server.core.MetricsCoercer;
 import io.mantisrx.server.master.client.config.PluginCoercible;
@@ -31,7 +30,6 @@ public class WorkerConfigurationUtils {
             properties);
         configurationObjectFactory.addCoercible(new MetricsCoercer(properties));
         configurationObjectFactory.addCoercible(new LeaderMonitorFactoryCoercer());
-        configurationObjectFactory.addCoercible(new LeaderElectorFactoryCoercer());
         configurationObjectFactory.addCoercible(new PluginCoercible<>(MetricsCollector.class, properties));
         return configurationObjectFactory.build(tClass);
     }
@@ -69,7 +67,6 @@ public class WorkerConfigurationUtils {
             .zkConnectionRetrySleepMs(configSource.getZkConnectionRetrySleepMs())
             .zkRoot(configSource.getZkRoot())
             .leaderMonitorFactory(configSource.getLeaderMonitorFactory())
-            .leaderElectorFactory(configSource.getLeaderElectorFactory())
             .build();
     }
 

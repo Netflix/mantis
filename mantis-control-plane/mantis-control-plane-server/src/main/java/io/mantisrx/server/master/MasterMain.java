@@ -50,6 +50,7 @@ import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
+import io.mantisrx.master.zk.ZookeeperLeaderElectorFactory;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
@@ -197,8 +198,12 @@ public class MasterMain implements Service {
                        resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
                 leadershipManager.becomeLeader();
             } else {
-                final BaseService leaderElector = config.getLeaderElectorFactory().createLeaderElector(config, leadershipManager);
-                final MasterMonitor monitor = config.getLeaderMonitorFactory().createLeaderMonitor(config);
+                final ZookeeperLeaderElectorFactory f = new ZookeeperLeaderElectorFactory();
+                final BaseService leaderElector = f.createLeaderElector(config, leadershipManager);
+                final MasterMonitor monitor = f.createLeaderMonitor(config);
+                monitor.start();
+//                final BaseService leaderElector = config.getLeaderElectorFactory().createLeaderElector(config, leadershipManager);
+//                final MasterMonitor monitor = config.getLeaderMonitorFactory().createLeaderMonitor(config);
                 mantisServices.addService(leaderElector);
                 mantisServices.addService(new MasterApiAkkaService(monitor, leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
                        resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));

@@ -127,7 +127,7 @@ public class ZookeeperMasterMonitor extends BaseService implements MasterMonitor
     @Override
     @Nullable
     public MasterDescription getLatestMaster() {
-        Preconditions.checkState(curator.getCurator().getState() != CuratorFrameworkState.STARTED, "ZookeeperMasterMonitor is currently not running but instead is at state %s", curator.getCurator().getState());
+        Preconditions.checkState(curator.getCurator().getState() == CuratorFrameworkState.STARTED, "ZookeeperMasterMonitor is currently not running but instead is at state %s", curator.getCurator().getState());
         return latestMaster.get();
     }
 

@@ -17,7 +17,6 @@
 package io.mantisrx.runtime.loader.config;
 
 import io.mantisrx.common.metrics.MetricsPublisher;
-import io.mantisrx.server.core.ILeaderElectorFactory;
 import io.mantisrx.server.core.ILeaderMonitorFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.File;
@@ -83,9 +82,6 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     MetricsCollector metricsCollector;
 
     @JsonIgnore
-    ILeaderElectorFactory leaderElectorFactory;
-
-    @JsonIgnore
     ILeaderMonitorFactory leaderMonitorFactory;
 
     @Override
@@ -132,9 +128,6 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     public int getMetricsPublisherFrequencyInSeconds() {
         return this.metricsPublisherFrequencyInSeconds;
     }
-
-    @Override
-    public ILeaderElectorFactory getLeaderElectorFactory() {return this.leaderElectorFactory;}
 
     @Override
     public ILeaderMonitorFactory getLeaderMonitorFactory() {return this.leaderMonitorFactory;}
