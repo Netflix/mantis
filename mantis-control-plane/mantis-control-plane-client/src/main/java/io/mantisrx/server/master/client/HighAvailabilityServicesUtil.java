@@ -22,7 +22,7 @@ import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.core.zookeeper.CuratorService;
+import io.mantisrx.server.core.master.ZookeeperLeaderMonitorFactory;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGatewayClient;
@@ -130,14 +130,13 @@ public class HighAvailabilityServicesUtil {
   private static class ZkHighAvailabilityServices extends AbstractIdleService implements
       HighAvailabilityServices {
 
-    private final CuratorService curatorService;
+    private final MasterMonitor masterMonitor;
     private final Counter resourceLeaderChangeCounter;
     private final Counter resourceLeaderAlreadyRegisteredCounter;
     private final AtomicInteger rmConnections = new AtomicInteger(0);
     private final CoreConfiguration configuration;
 
     public ZkHighAvailabilityServices(CoreConfiguration configuration) {
-      curatorService = new CuratorService(configuration);
       final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(new Metrics.Builder()
         .name("ZkHighAvailabilityServices")
         .addCounter("resourceLeaderChangeCounter")
@@ -146,34 +145,34 @@ public class HighAvailabilityServicesUtil {
       resourceLeaderChangeCounter = metrics.getCounter("resourceLeaderChangeCounter");
       resourceLeaderAlreadyRegisteredCounter = metrics.getCounter("resourceLeaderAlreadyRegisteredCounter");
       this.configuration = configuration;
+      masterMonitor = new ZookeeperLeaderMonitorFactory().createLeaderMonitor(configuration);
+
     }
 
     @Override
     protected void startUp() throws Exception {
-      curatorService.start();
+      masterMonitor.start();
     }
 
     @Override
     protected void shutDown() throws Exception {
-      curatorService.shutdown();
+      masterMonitor.shutdown();
     }
 
     @Override
     public MantisMasterGateway getMasterClientApi() {
-      return new MantisMasterClientApi(curatorService.getMasterMonitor());
+      return new MantisMasterClientApi(masterMonitor);
     }
 
     @Override
     public MasterMonitor getMasterMonitor() {
-      return curatorService.getMasterMonitor();
+      return masterMonitor;
     }
 
     @Override
     public ResourceLeaderConnection<ResourceClusterGateway> connectWithResourceManager(
         ClusterID clusterID) {
       return new ResourceLeaderConnection<ResourceClusterGateway>() {
-        final MasterMonitor masterMonitor = curatorService.getMasterMonitor();
-
         ResourceClusterGateway currentResourceClusterGateway =
             new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster(), configuration);
 

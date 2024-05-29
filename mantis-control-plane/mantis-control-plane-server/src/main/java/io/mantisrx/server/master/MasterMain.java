@@ -50,18 +50,15 @@ import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
-import io.mantisrx.master.zk.LeaderElector;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
-import io.mantisrx.server.core.master.MasterDescription;
+import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.metrics.MetricsPublisherService;
 import io.mantisrx.server.core.metrics.MetricsServerService;
 import io.mantisrx.server.core.utils.ConfigUtils;
-import io.mantisrx.server.core.zookeeper.CuratorService;
 import io.mantisrx.server.master.config.ConfigurationFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
@@ -73,8 +70,6 @@ import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactoryImpl;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
@@ -89,28 +84,24 @@ import org.apache.flink.runtime.rpc.RpcSystem;
 import org.apache.flink.runtime.rpc.RpcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
 
 
 public class MasterMain implements Service {
 
     private static final Logger logger = LoggerFactory.getLogger(MasterMain.class);
     @Argument(alias = "p", description = "Specify a configuration file", required = false)
-    private static String propFile = "master.properties";
+    private static final String propFile = "master.properties";
     private final ServiceLifecycle mantisServices = new ServiceLifecycle();
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
     private KeyValueBasedPersistenceProvider storageProvider;
-    private CountDownLatch blockUntilShutdown = new CountDownLatch(1);
-    private volatile CuratorService curatorService = null;
+    private final CountDownLatch blockUntilShutdown = new CountDownLatch(1);
     private MasterConfiguration config;
     private ILeadershipManager leadershipManager;
-    private final MantisPropertiesLoader dynamicPropertiesLoader;
 
     public MasterMain(
         ConfigurationFactory configFactory,
         MantisPropertiesLoader dynamicPropertiesLoader,
         AuditEventSubscriber auditEventSubscriber) {
-        this.dynamicPropertiesLoader = dynamicPropertiesLoader;
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
 
         Metrics metrics = new Metrics.Builder()
@@ -124,7 +115,7 @@ public class MasterMain implements Service {
             this.config = ConfigurationProvider.getConfig();
             leadershipManager = new LeadershipManagerZkImpl(config, mantisServices);
 
-            Thread t = new Thread(() -> shutdown());
+            Thread t = new Thread(this::shutdown);
             t.setDaemon(true);
             // shutdown hook
             Runtime.getRuntime().addShutdownHook(t);
@@ -182,7 +173,7 @@ public class MasterMain implements Service {
                     jobMessageRouter,
                     resourceClustersHostActor,
                     storageProvider,
-                    this.dynamicPropertiesLoader);
+                    dynamicPropertiesLoader);
 
             // end of new stuff
             final MantisSchedulerFactory mantisSchedulerFactory =
@@ -206,11 +197,10 @@ public class MasterMain implements Service {
                        resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
                 leadershipManager.becomeLeader();
             } else {
-                // TODO refactor to enable DynamoDB Leader services via new configuration variable
-                curatorService = new CuratorService(this.config);
-                curatorService.start();
-                mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
-                mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
+                final BaseService leaderElector = config.getLeaderElectorFactory().createLeaderElector(config, leadershipManager);
+                final MasterMonitor monitor = config.getLeaderMonitorFactory().createLeaderMonitor(config);
+                mantisServices.addService(leaderElector);
+                mantisServices.addService(new MasterApiAkkaService(monitor, leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
                        resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
             }
             m.getCounter("masterInitSuccess").increment();
@@ -248,16 +238,6 @@ public class MasterMain implements Service {
         }
     }
 
-    private LeaderElector createLeaderElector(CuratorService curatorService,
-                                              ILeadershipManager leadershipManager) {
-        return LeaderElector.builder(leadershipManager)
-                .withCurator(curatorService.getCurator())
-                .withJsonMapper(DefaultObjectMapper.getInstance())
-                .withElectionPath(ZKPaths.makePath(config.getZkRoot(), config.getLeaderElectionPath()))
-                .withAnnouncementPath(ZKPaths.makePath(config.getZkRoot(), config.getLeaderAnnouncementPath()))
-                .build();
-    }
-
     @Override
     public void start() {
         logger.info("Starting Mantis Master");
@@ -280,13 +260,6 @@ public class MasterMain implements Service {
             logger.info("Shutting down Mantis Master");
             mantisServices.shutdown();
             logger.info("mantis services shutdown complete");
-            boolean shutdownCuratorEnabled = ConfigurationProvider.getConfig().getShutdownCuratorServiceEnabled();
-            if (curatorService != null && shutdownCuratorEnabled) {
-                logger.info("Shutting down Curator Service");
-                curatorService.shutdown();
-            } else {
-                logger.info("not shutting down curator service {} shutdownEnabled? {}", curatorService, shutdownCuratorEnabled);
-            }
             blockUntilShutdown.countDown();
             logger.info("Mantis Master shutdown done");
         } else
@@ -295,20 +268,6 @@ public class MasterMain implements Service {
 
     public MasterConfiguration getConfig() {
         return config;
-    }
-
-    public String getDescriptionJson() {
-        try {
-            return DefaultObjectMapper.getInstance().writeValueAsString(leadershipManager.getDescription());
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException(String.format("Failed to convert the description %s to JSON: %s", leadershipManager.getDescription(), e.getMessage()), e);
-        }
-    }
-
-    public Observable<MasterDescription> getMasterObservable() {
-        return curatorService == null ?
-                Observable.empty() :
-                curatorService.getMasterMonitor().getMasterObservable();
     }
 
     public boolean isLeader() {

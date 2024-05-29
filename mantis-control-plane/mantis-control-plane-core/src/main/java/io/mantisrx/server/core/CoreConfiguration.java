@@ -77,4 +77,12 @@ public interface CoreConfiguration {
     @Config("mantis.asyncHttpClient.readTimeoutMs")
     @Default("10000")
     int getAsyncHttpClientReadTimeoutMs();
+
+    @Config("mantis.leader.elector.factory")
+    @Default("io.mantisrx.server.core.master.LocalLeaderFactory")
+    ILeaderElectorFactory getLeaderElectorFactory();
+
+    @Config("mantis.leader.monitor.factory")
+    @Default("io.mantisrx.server.core.master.LocalLeaderFactory")
+    ILeaderMonitorFactory getLeaderMonitorFactory();
 }

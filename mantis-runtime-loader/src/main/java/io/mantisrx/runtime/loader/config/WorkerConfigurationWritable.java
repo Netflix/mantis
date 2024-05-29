@@ -17,6 +17,8 @@
 package io.mantisrx.runtime.loader.config;
 
 import io.mantisrx.common.metrics.MetricsPublisher;
+import io.mantisrx.server.core.ILeaderElectorFactory;
+import io.mantisrx.server.core.ILeaderMonitorFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.File;
 import java.net.URI;
@@ -80,6 +82,12 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     @JsonIgnore
     MetricsCollector metricsCollector;
 
+    @JsonIgnore
+    ILeaderElectorFactory leaderElectorFactory;
+
+    @JsonIgnore
+    ILeaderMonitorFactory leaderMonitorFactory;
+
     @Override
     public int getZkConnectionTimeoutMs() {
         return this.zkConnectionTimeoutMs;
@@ -124,6 +132,12 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     public int getMetricsPublisherFrequencyInSeconds() {
         return this.metricsPublisherFrequencyInSeconds;
     }
+
+    @Override
+    public ILeaderElectorFactory getLeaderElectorFactory() {return this.leaderElectorFactory;}
+
+    @Override
+    public ILeaderMonitorFactory getLeaderMonitorFactory() {return this.leaderMonitorFactory;}
 
     @Override
     public String getTaskExecutorId() {

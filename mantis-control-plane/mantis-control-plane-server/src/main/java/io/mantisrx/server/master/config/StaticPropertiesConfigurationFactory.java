@@ -16,6 +16,8 @@
 
 package io.mantisrx.server.master.config;
 
+import io.mantisrx.server.core.LeaderElectorFactoryCoercer;
+import io.mantisrx.server.core.LeaderMonitorFactoryCoercer;
 import io.mantisrx.server.core.MetricsCoercer;
 import java.util.Properties;
 import org.skife.config.ConfigurationObjectFactory;
@@ -31,6 +33,8 @@ public class StaticPropertiesConfigurationFactory implements ConfigurationFactor
         this.properties = props;
         delegate = new ConfigurationObjectFactory(props);
         delegate.addCoercible(new MetricsCoercer(props));
+        delegate.addCoercible(new LeaderElectorFactoryCoercer());
+        delegate.addCoercible(new LeaderMonitorFactoryCoercer());
         delegate.addCoercible(clazz -> {
             return className -> {
                 try {

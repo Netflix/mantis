@@ -16,11 +16,12 @@
 
 package io.mantisrx.server.core.master;
 
+import io.mantisrx.server.core.Service;
 import javax.annotation.Nullable;
 import rx.Observable;
 
 
-public interface MasterMonitor {
+public interface MasterMonitor extends Service {
 
     Observable<MasterDescription> getMasterObservable();
 
