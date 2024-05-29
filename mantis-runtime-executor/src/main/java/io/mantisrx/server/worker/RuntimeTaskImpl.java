@@ -102,12 +102,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
             this.wrappedExecuteStageRequest =
                 new WrappedExecuteStageRequest(PublishSubject.create(), executeStageRequest);
 
-            Class<?> metricsCollectorClass = Class.forName(this.config.getMetricsCollector());
-            log.info("Picking {} metrics collector", metricsCollectorClass.getName());
-            Method metricsCollectorFactory = metricsCollectorClass.getMethod("valueOf", Properties.class);
-            MetricsCollector metricsCollector =
-                (MetricsCollector) metricsCollectorFactory.invoke(null, System.getProperties());
-            configWritable.setMetricsCollector(metricsCollector);
+            configWritable.setMetricsCollector(createMetricsCollector(this.config.getMetricsCollectorClass()));
         } catch (IOException | InvocationTargetException | IllegalAccessException | ClassNotFoundException |
                  NoSuchMethodException e) {
             throw new RuntimeException(e);
@@ -126,6 +121,14 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         this.taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor);
         this.getStatus().observeOn(Schedulers.io())
             .subscribe(status -> this.taskStatusUpdateHandler.onStatusUpdate(status));
+    }
+
+    private static MetricsCollector createMetricsCollector(String name)
+        throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException {
+        Class<?> metricsCollectorClass = Class.forName(name);
+        log.info("Picking {} metrics collector", metricsCollectorClass.getName());
+        Method metricsCollectorFactory = metricsCollectorClass.getMethod("valueOf", Properties.class);
+        return (MetricsCollector) metricsCollectorFactory.invoke(null, System.getProperties());
     }
 
     /**
