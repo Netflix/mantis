@@ -93,6 +93,7 @@ public class ZookeeperLeaderElector extends BaseService {
         }
         final boolean shutdownCuratorEnabled = ConfigurationProvider.getConfig().getShutdownCuratorServiceEnabled();
         if(shutdownCuratorEnabled) {
+            logger.info("Shutting down Curator Service");
             curatorService.shutdown();
         } else {
             logger.info("not shutting down curator service {} shutdownEnabled? {}", curatorService, shutdownCuratorEnabled);
