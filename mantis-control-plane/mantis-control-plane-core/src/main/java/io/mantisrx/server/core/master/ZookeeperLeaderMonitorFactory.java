@@ -29,7 +29,7 @@ public class ZookeeperLeaderMonitorFactory implements ILeaderMonitorFactory {
             ZKPaths.makePath(config.getZkRoot(), config.getLeaderAnnouncementPath()));
     }
 
-    protected synchronized CuratorService getCuratorService(final CoreConfiguration config) {
+    public synchronized CuratorService getCuratorService(final CoreConfiguration config) {
         if(curatorService == null) {
             curatorService = new CuratorService(config);
         }

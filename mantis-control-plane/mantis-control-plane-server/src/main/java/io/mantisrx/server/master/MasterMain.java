@@ -50,12 +50,13 @@ import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
-import io.mantisrx.master.zk.ZookeeperLeaderElectorFactory;
+import io.mantisrx.master.zk.ZookeeperLeadershipFactory;
 import io.mantisrx.server.core.BaseService;
+import io.mantisrx.server.core.ILeaderElectorFactory;
 import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.master.LocalMasterMonitor;
+import io.mantisrx.server.core.master.LocalLeaderFactory;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.metrics.MetricsPublisherService;
 import io.mantisrx.server.core.metrics.MetricsServerService;
@@ -193,21 +194,31 @@ public class MasterMain implements Service {
             // services
             mantisServices.addService(jobClustersManagerService);
 
-            if (this.config.isLocalMode()) {
-                mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
-                leadershipManager.becomeLeader();
+            // set up leader election
+            final ILeaderElectorFactory leaderFactory;
+            final MasterMonitor monitor;
+            if(!config.isLocalMode() && config.getLeaderElectorFactory() instanceof LocalLeaderFactory) {
+                logger.warn("local mode is [ {} ] and leader factory is {} this configuration is unsafe", config.isLocalMode(), config.getLeaderElectorFactory().getClass().getSimpleName());
+                final ZookeeperLeadershipFactory zkLeadership = new ZookeeperLeadershipFactory();
+                leaderFactory = zkLeadership;
+                monitor = zkLeadership.createLeaderMonitor(config);
+                logger.warn("using default non-local Zookeeper leader services you should set: "+
+                    "mantis.leader.elector.factory=io.mantisrx.master.zk.ZookeeperLeadershipFactory");
             } else {
-                final ZookeeperLeaderElectorFactory f = new ZookeeperLeaderElectorFactory();
-                final BaseService leaderElector = f.createLeaderElector(config, leadershipManager);
-                final MasterMonitor monitor = f.createLeaderMonitor(config);
-                monitor.start();
-//                final BaseService leaderElector = config.getLeaderElectorFactory().createLeaderElector(config, leadershipManager);
-//                final MasterMonitor monitor = config.getLeaderMonitorFactory().createLeaderMonitor(config);
-                mantisServices.addService(leaderElector);
-                mantisServices.addService(new MasterApiAkkaService(monitor, leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
+                leaderFactory = config.getLeaderElectorFactory();
+                monitor = config.getLeaderMonitorFactory().createLeaderMonitor(config);
+                logger.warn("using leader factory {}", config.isLocalMode());
             }
+            monitor.start();
+            mantisServices.addService(leaderFactory.createLeaderElector(config, leadershipManager));
+            mantisServices.addService(new MasterApiAkkaService(monitor, leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
+                resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
+
+            if (leaderFactory instanceof LocalLeaderFactory && !config.isLocalMode()) {
+                logger.error("local mode is [ {} ] and leader factory is {} this configuration is unsafe", config.isLocalMode(), leaderFactory.getClass().getSimpleName());
+                throw new RuntimeException("leader election is local but local mode is not enabled");
+            }
+
             m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {
             logger.error("caught exception on Mantis Master initialization", e);

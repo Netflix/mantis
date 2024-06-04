@@ -22,6 +22,10 @@ import io.mantisrx.server.core.ILeaderElectorFactory;
 import io.mantisrx.server.core.ILeaderMonitorFactory;
 import io.mantisrx.server.core.ILeadershipManager;
 
+/**
+ * Local leader manager factory. This design is intended for non-production use only. The
+ * local leader is the single node operating as the leader.
+ */
 public class LocalLeaderFactory implements ILeaderMonitorFactory, ILeaderElectorFactory {
     @Override
     public BaseService createLeaderElector(CoreConfiguration config, ILeadershipManager manager) {

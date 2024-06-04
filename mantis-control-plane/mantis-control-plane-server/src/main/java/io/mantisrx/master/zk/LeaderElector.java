@@ -32,7 +32,10 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+/**
+ * see {@link ZookeeperLeadershipFactory} and {@link ZookeeperLeaderElector}
+ */
+@Deprecated
 public class LeaderElector extends BaseService {
     private static final Logger logger = LoggerFactory.getLogger(LeaderElector.class);
 

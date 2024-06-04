@@ -27,7 +27,7 @@ import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
 
-public class ZookeeperLeaderElectorFactory extends ZookeeperLeaderMonitorFactory implements ILeaderElectorFactory {
+public class ZookeeperLeadershipFactory extends ZookeeperLeaderMonitorFactory implements ILeaderElectorFactory {
     @Override
     public BaseService createLeaderElector(final CoreConfiguration config, final ILeadershipManager leadershipManager) {
         final MasterConfiguration mConfig = ConfigurationProvider.getConfig();

@@ -25,6 +25,7 @@ import io.mantisrx.server.core.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
+import io.mantisrx.shaded.org.apache.curator.framework.imps.CuratorFrameworkState;
 import io.mantisrx.shaded.org.apache.curator.framework.imps.GzipCompressionProvider;
 import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionState;
 import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionStateListener;
@@ -82,9 +83,11 @@ public class CuratorService extends BaseService {
     @Override
     public void start() {
         try {
-            isConnectedGauge.set(0L);
-            setupCuratorListener();
-            curator.start();
+            if(curator.getState() != CuratorFrameworkState.STARTED) {
+                isConnectedGauge.set(0L);
+                setupCuratorListener();
+                curator.start();
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
