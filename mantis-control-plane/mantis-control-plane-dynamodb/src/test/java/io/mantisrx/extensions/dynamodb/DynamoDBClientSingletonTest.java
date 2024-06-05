@@ -23,9 +23,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.master.MasterDescription;
+import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Duration;
@@ -95,8 +97,9 @@ public class DynamoDBClientSingletonTest {
         }};
        setSystemProperties(map);
 
-       final DynamoDBLeaderElector leaderElector = new DynamoDBLeaderElector(mockLeadershipManager);
-       final DynamoDBMasterMonitor monitor = new DynamoDBMasterMonitor();
+       final DynamoDBLeadershipFactory factory = new DynamoDBLeadershipFactory();
+       final BaseService leaderElector= factory.createLeaderElector(null, mockLeadershipManager);
+       final MasterMonitor monitor = factory.createLeaderMonitor(null);
        final MasterDescription[] leaders = {
             lockSupport.generateDescription(),
             lockSupport.generateDescription(),
