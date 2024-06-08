@@ -146,7 +146,7 @@ public class JobAutoScalerTest {
                     new HashMap<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy>() {
                         {
                             put(StageScalingPolicy.ScalingReason.Memory, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)));
-                            put(StageScalingPolicy.ScalingReason.FailoverAware, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.FailoverAware, 0.0, 0.0, new StageScalingPolicy.RollingCount(1, 2)));
+                            put(StageScalingPolicy.ScalingReason.AutoscalerManager, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.AutoscalerManager, 0.0, 0.0, new StageScalingPolicy.RollingCount(1, 2)));
                         }
                     }, false))
                 .scalable(true)

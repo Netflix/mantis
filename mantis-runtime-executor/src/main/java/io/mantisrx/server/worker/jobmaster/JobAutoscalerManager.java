@@ -39,6 +39,10 @@ public interface JobAutoscalerManager {
         return true;
     }
 
+    default double getCurrentValue() {
+        return -1.0;
+    }
+
     /**
      * Noop implementation of {@link JobAutoscalerManager} that always returns true
      * for isScaleUpEnabled, isScaleDownEnabled
