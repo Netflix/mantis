@@ -326,7 +326,7 @@ public class JobAutoScaler {
         inProgressScalingSubscription.compareAndSet(null, subscription);
       }
 
-      public int getDesiredWorkersForScaleUp(final int increment, final int numCurrentWorkers) {
+      public int getDesiredWorkersForScaleUp(final int increment, final int numCurrentWorkers, ScalingReason reason) {
         final int desiredWorkers;
         if (!stageSchedulingInfo.getScalingPolicy().isEnabled()) {
           logger.warn("Job {} stage {} is not scalable, can't increment #workers by {}", jobId, stage, increment);
@@ -341,7 +341,12 @@ public class JobAutoScaler {
           return numCurrentWorkers;
         } else {
           final int maxWorkersForStage = stageSchedulingInfo.getScalingPolicy().getMax();
-          desiredWorkers = Math.min(numCurrentWorkers + increment, maxWorkersForStage);
+          if (reason == ScalingReason.AutoscalerManager) {
+            logger.info("FailoverAware scaling up stage {} of job {} to maxWorkersForStage {}", stage, jobId, maxWorkersForStage);
+            desiredWorkers = maxWorkersForStage;
+          } else {
+            desiredWorkers = Math.min(numCurrentWorkers + increment, maxWorkersForStage);
+          }
           return desiredWorkers;
         }
       }
@@ -363,7 +368,7 @@ public class JobAutoScaler {
         setOutstandingScalingRequest(subscription);
       }
 
-      public int getDesiredWorkersForScaleDown(final int decrement, final int numCurrentWorkers) {
+      public int getDesiredWorkersForScaleDown(final int decrement, final int numCurrentWorkers, ScalingReason reason) {
         final int desiredWorkers;
         final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
         if (!scalingPolicy.isEnabled()) {
@@ -465,7 +470,7 @@ public class JobAutoScaler {
                         String.format(PercentNumberFormat, strategy.getScaleUpAbovePct()) + " " +
                         stats.getCurrentHighCount() + "  times");
                     final int numCurrWorkers = event.getNumWorkers();
-                    final int desiredWorkers = scaler.getDesiredWorkersForScaleUp(scalingPolicy.getIncrement(), numCurrWorkers);
+                    final int desiredWorkers = scaler.getDesiredWorkersForScaleUp(scalingPolicy.getIncrement(), numCurrWorkers, strategy.getReason());
                     if (desiredWorkers > numCurrWorkers) {
                       scaler.scaleUpStage(numCurrWorkers, desiredWorkers, event.getType() + " with value " +
                           String.format(PercentNumberFormat, effectiveValue) +
@@ -481,7 +486,7 @@ public class JobAutoScaler {
                         " is below scaleDownThreshold of " + strategy.getScaleDownBelowPct() +
                         " " + stats.getCurrentLowCount() + " times");
                     final int numCurrentWorkers = event.getNumWorkers();
-                    final int desiredWorkers = scaler.getDesiredWorkersForScaleDown(scalingPolicy.getDecrement(), numCurrentWorkers);
+                    final int desiredWorkers = scaler.getDesiredWorkersForScaleDown(scalingPolicy.getDecrement(), numCurrentWorkers, strategy.getReason());
                     if (desiredWorkers < numCurrentWorkers) {
                       scaler.scaleDownStage(numCurrentWorkers, desiredWorkers, event.getType() + " with value " +
                           String.format(PercentNumberFormat, effectiveValue) +
