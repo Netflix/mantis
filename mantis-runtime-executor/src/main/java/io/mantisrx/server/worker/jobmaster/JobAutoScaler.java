@@ -461,14 +461,13 @@ public class JobAutoScaler {
                 }
                 stats.add(effectiveValue);
                 if (lastScaledAt < (System.currentTimeMillis() - coolDownSecs * 1000)) {
-                  logger.info(jobId + ", stage " + stage + ": eff=" +
-                      String.format(PercentNumberFormat, effectiveValue) + ", thresh=" + strategy.getScaleUpAbovePct());
+                  logger.info("{}, stage {}, eventType {}: eff={}, thresh={}", jobId, stage, event.getType(),
+                      String.format(PercentNumberFormat, effectiveValue), strategy.getScaleUpAbovePct());
                   if (stats.getHighThreshTriggered()) {
-                    logger.info("Attempting to scale up stage " + stage + " of job " + jobId + " by " +
-                        scalingPolicy.getIncrement() + " workers, because " +
-                        event.type + " exceeded scaleUpThreshold of " +
-                        String.format(PercentNumberFormat, strategy.getScaleUpAbovePct()) + " " +
-                        stats.getCurrentHighCount() + "  times");
+                    logger.info("Attempting to scale up stage {} of job {} by {} workers, because {} exceeded scaleUpThreshold of {} {} times",
+                        stage, jobId, scalingPolicy.getIncrement(), event.getType(),
+                        String.format(PercentNumberFormat, strategy.getScaleUpAbovePct()),
+                        stats.getCurrentHighCount());
                     final int numCurrWorkers = event.getNumWorkers();
                     final int desiredWorkers = scaler.getDesiredWorkersForScaleUp(scalingPolicy.getIncrement(), numCurrWorkers, strategy.getReason());
                     if (desiredWorkers > numCurrWorkers) {
@@ -481,10 +480,9 @@ public class JobAutoScaler {
                       logger.debug("scale up NOOP: desiredWorkers same as current workers");
                     }
                   } else if (stats.getLowThreshTriggered()) {
-                    logger.info("Attempting to scale down stage " + stage + " of job " + jobId + " by " +
-                        scalingPolicy.getDecrement() + " workers because " + event.getType() +
-                        " is below scaleDownThreshold of " + strategy.getScaleDownBelowPct() +
-                        " " + stats.getCurrentLowCount() + " times");
+                    logger.info("Attempting to scale down stage {} of job {} by {} workers, because {} exceeded scaleUpThreshold of {} {} times",
+                        stage, jobId, scalingPolicy.getDecrement(), event.getType(),
+                        strategy.getScaleDownBelowPct(), stats.getCurrentLowCount());
                     final int numCurrentWorkers = event.getNumWorkers();
                     final int desiredWorkers = scaler.getDesiredWorkersForScaleDown(scalingPolicy.getDecrement(), numCurrentWorkers, strategy.getReason());
                     if (desiredWorkers < numCurrentWorkers) {
