@@ -28,13 +28,13 @@ import org.junit.Test;
 
 public class DisableTaskExecutorsRequestTest {
     private static final DisableTaskExecutorsRequest R1 =
-        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster1"), Instant.now(), Optional.empty());
+        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster1"), Instant.now(), Optional.empty(), false);
     private static final DisableTaskExecutorsRequest R2 =
-        new DisableTaskExecutorsRequest(ImmutableMap.of("attr2", "attr2"), ClusterID.of("cluster1"), Instant.now(), Optional.empty());
+        new DisableTaskExecutorsRequest(ImmutableMap.of("attr2", "attr2"), ClusterID.of("cluster1"), Instant.now(), Optional.empty(), false);
     private static final DisableTaskExecutorsRequest R3 =
-        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster2"), Instant.now(), Optional.empty());
+        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster2"), Instant.now(), Optional.empty(), false);
     private static final DisableTaskExecutorsRequest R4 =
-        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster1"), Instant.now().plus(Duration.ofDays(1)), Optional.empty());
+        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster1"), Instant.now().plus(Duration.ofDays(1)), Optional.empty(), true);
 
     @Test
     public void checkIfDifferentRequestsHaveDifferentHashes() {

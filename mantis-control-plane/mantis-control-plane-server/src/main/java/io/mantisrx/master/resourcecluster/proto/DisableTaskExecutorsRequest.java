@@ -32,4 +32,6 @@ public class DisableTaskExecutorsRequest {
     Long expirationDurationInHours;
 
     Optional<TaskExecutorID> taskExecutorID;
+
+    Boolean overwriteExisting = false;
 }

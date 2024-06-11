@@ -187,7 +187,8 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             ArgumentMatchers.argThat(expiry ->
                 expiry.isAfter(Instant.now().plus(Duration.ofHours(17))) &&
                     expiry.isBefore(Instant.now().plus(Duration.ofHours(20)))),
-            ArgumentMatchers.eq(Optional.empty())))
+            ArgumentMatchers.eq(Optional.empty()),
+            ArgumentMatchers.anyBoolean()))
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         when(resourceClusters.getClusterFor(ClusterID.of("myCluster"))).thenReturn(resourceCluster);
 
@@ -199,6 +200,36 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                     HttpEntities.create(
                         ContentTypes.APPLICATION_JSON,
                         ResourceClustersPayloads.RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_PAYLOAD));
+
+        // make the request and verify the response
+        testRouteWithNoopAdapter
+            .run(request)
+            .assertStatusCode(200)
+            .assertEntityAs(Jackson.unmarshaller(Ack.class), Ack.getInstance());
+    }
+
+    @Test
+    public void testDisableTaskExecutorsOverwritingExistingRequests() {
+        // set up the mocks
+        ResourceCluster resourceCluster = mock(ResourceCluster.class);
+        when(resourceCluster.disableTaskExecutorsFor(
+            ArgumentMatchers.eq(RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_ATTRS),
+            ArgumentMatchers.argThat(expiry ->
+                expiry.isAfter(Instant.now().plus(Duration.ofHours(17))) &&
+                    expiry.isBefore(Instant.now().plus(Duration.ofHours(20)))),
+            ArgumentMatchers.eq(Optional.empty()),
+            ArgumentMatchers.eq(true)))
+            .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        when(resourceClusters.getClusterFor(ClusterID.of("myCluster"))).thenReturn(resourceCluster);
+
+        // set up the HTTP request that needs to be issued
+        HttpRequest request =
+            HttpRequest
+                .POST("/api/v1/resourceClusters/myCluster/disableTaskExecutors")
+                .withEntity(
+                    HttpEntities.create(
+                        ContentTypes.APPLICATION_JSON,
+                        ResourceClustersPayloads.RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_PAYLOAD_WITH_OVERWRITE));
 
         // make the request and verify the response
         testRouteWithNoopAdapter

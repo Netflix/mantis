@@ -51,6 +51,15 @@ public class ResourceClustersPayloads {
         "  }\n" +
         "}";
 
+    public static final String RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_PAYLOAD_WITH_OVERWRITE = "" +
+        "{\n" +
+        "  \"expirationDurationInHours\": 19,\n" +
+        "  \"attributes\": {\n" +
+        "    \"attr1\": \"attr1\"\n" +
+        "  },\n" +
+        "  \"overwriteExisting\": true\n" +
+        "}";
+
     public static final Map<String, String> RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_ATTRS =
         ImmutableMap.of("attr1", "attr1");
 }

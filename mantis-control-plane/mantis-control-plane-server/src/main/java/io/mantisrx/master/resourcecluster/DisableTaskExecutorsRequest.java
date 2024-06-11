@@ -40,6 +40,8 @@ public class DisableTaskExecutorsRequest {
 
     Optional<TaskExecutorID> taskExecutorID;
 
+    Boolean overwriteExisting;
+
     boolean isRequestByAttributes() {
         return attributes != null && attributes.size() > 0;
     }

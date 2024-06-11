@@ -414,14 +414,14 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         if (newRequest.isRequestByAttributes()) {
             log.info("Req with attributes {}", newRequest);
             for (DisableTaskExecutorsRequest existing: activeDisableTaskExecutorsByAttributesRequests) {
-                if (existing.targetsSameTaskExecutorsAs(newRequest)) {
+                if (existing.targetsSameTaskExecutorsAs(newRequest) && !newRequest.getOverwriteExisting()) {
                     return false;
                 }
             }
 
             Preconditions.checkState(activeDisableTaskExecutorsByAttributesRequests.add(newRequest), "activeDisableTaskExecutorRequests cannot contain %s", newRequest);
             return true;
-        } else if (newRequest.getTaskExecutorID().isPresent() && !disabledTaskExecutors.contains(newRequest.getTaskExecutorID().get())) {
+        } else if (newRequest.getTaskExecutorID().isPresent() && (!disabledTaskExecutors.contains(newRequest.getTaskExecutorID().get()) || newRequest.getOverwriteExisting())) {
             log.info("Req with id {}", newRequest);
             disabledTaskExecutors.add(newRequest.getTaskExecutorID().get());
             return true;
@@ -499,8 +499,16 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private void onDisableTaskExecutorsRequestExpiry(ExpireDisableTaskExecutorsRequest request) {
         try {
             log.info("Expiring Disable Task Executors Request {}", request.getRequest());
-            getTimers().cancel(getExpiryKeyFor(request.getRequest()));
-            if (activeDisableTaskExecutorsByAttributesRequests.remove(request.getRequest()) || (request.getRequest().getTaskExecutorID().isPresent() && disabledTaskExecutors.remove(request.getRequest().getTaskExecutorID().get()))) {
+            if (request.getRequest().isRequestByAttributes()) {
+                List<DisableTaskExecutorsRequest> requestsToRemove = activeDisableTaskExecutorsByAttributesRequests.stream()
+                    .filter(req -> req.targetsSameTaskExecutorsAs(request.getRequest()))
+                    .collect(Collectors.toList());
+                for (DisableTaskExecutorsRequest disableTaskExecutorsRequest : requestsToRemove) {
+                    activeDisableTaskExecutorsByAttributesRequests.remove(disableTaskExecutorsRequest);
+                    mantisJobStore.deleteExpiredDisableTaskExecutorsRequest(disableTaskExecutorsRequest);
+                    getTimers().cancel(getExpiryKeyFor(disableTaskExecutorsRequest));
+                }
+            } else if (request.getRequest().getTaskExecutorID().isPresent() && disabledTaskExecutors.remove(request.getRequest().getTaskExecutorID().get())) {
                 mantisJobStore.deleteExpiredDisableTaskExecutorsRequest(request.getRequest());
             }
         } catch (Exception e) {

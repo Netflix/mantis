@@ -148,9 +148,15 @@ public interface ResourceCluster extends ResourceClusterGateway {
      * @param expiry     instant at which the request can be marked as complete. this is important
      *                   because we cannot be constantly checking if new task executors match the
      *                   disabled criteria or not.
+     * @param overwriteExisting allows resetting the stored state for a set of executors that match the attributes. If set to false, the request will be ignored if there is already a request for the same set of attributes.
+     *                                  See the {@link io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest} class for more details. By default, this is set to false.
      * @return a future that completes when the underlying operation is registered by the system
      */
-    CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry, Optional<TaskExecutorID> taskExecutorID);
+    CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry, Optional<TaskExecutorID> taskExecutorID, Boolean overwriteExisting);
+
+    default CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry, Optional<TaskExecutorID> taskExecutorID) {
+        return disableTaskExecutorsFor(attributes, expiry, taskExecutorID, false);
+    }
 
     /**
      * Enables/Disables scaler for a given skuID of a given clusterID

@@ -256,7 +256,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 Collections.emptyMap(),
                 this.clusterId,
                 Instant.now().plus(Duration.ofMinutes(60)),
-                Optional.of(id)),
+                Optional.of(id), true),
                 self()
         ));
     }

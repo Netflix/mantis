@@ -565,6 +565,31 @@ public class ResourceClusterActorTest {
     }
 
     @Test
+    public void testIfDisableTaskExecutorRequestsAreOverwritten() throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_2).get());
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES2, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
+        assertEquals(
+            new ResourceOverview(2, 0, 0, 0, 1),
+            resourceCluster.resourceOverview().get());
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES2, Instant.now().plus(Duration.ofDays(0)), Optional.empty(), true).get();
+        // This has the ATTRIBUTES2. Without the previous call, this would have been disabled as well.
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_3).get());
+        assertEquals(
+            Ack.getInstance(),
+            resourceCluster.heartBeatFromTaskExecutor(
+                new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+        // This is ignored and stays as unavailable / disabled.
+        assertEquals(
+            Ack.getInstance(),
+            resourceCluster.heartBeatFromTaskExecutor(
+                new TaskExecutorHeartbeat(TASK_EXECUTOR_ID_2, CLUSTER_ID, TaskExecutorReport.available())).get());
+        assertEquals(
+            new ResourceOverview(3, 1, 0, 0, 1),
+            resourceCluster.resourceOverview().get());
+    }
+
+    @Test
     public void testIfDisabledTaskExecutorRequestsAreInitializedCorrectlyWhenTheControlPlaneStarts() throws Exception {
         when(mantisJobStore.loadAllDisableTaskExecutorsRequests(Matchers.eq(CLUSTER_ID)))
             .thenReturn(ImmutableList.of(
@@ -572,7 +597,8 @@ public class ResourceClusterActorTest {
                     ATTRIBUTES,
                     CLUSTER_ID,
                     Instant.now().plus(Duration.ofDays(1)),
-                    Optional.empty())));
+                    Optional.empty(),
+                    false)));
 
         actorSystem.stop(resourceClusterActor);
         setupActor();
