@@ -91,7 +91,6 @@ import org.apache.flink.runtime.rpc.RpcService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -186,7 +185,6 @@ public class RuntimeTaskImplExecutorTest {
         this.localApiServer.stop(0);
     }
 
-    @Ignore
     @Test
     public void testTaskExecutorEndToEndWithASingleStageJobByLoadingFromClassLoader()
         throws Exception {
@@ -257,82 +255,6 @@ public class RuntimeTaskImplExecutorTest {
         CompletableFuture<Ack> cancelFuture =
             taskExecutor.callInMainThread(() -> taskExecutor.cancelTask(workerId), Time.seconds(1));
         cancelFuture.get();
-
-        Thread.sleep(5000);
-        verify(resourceManagerGateway, times(1)).notifyTaskExecutorStatusChange(
-            new TaskExecutorStatusChange(taskExecutor.getTaskExecutorID(), taskExecutor.getClusterID(),
-                TaskExecutorReport.available()));
-        assertTrue(listener.isStartingCalled());
-        assertTrue(listener.isCancellingCalled());
-        assertTrue(listener.isCancelledCalled());
-        assertFalse(listener.isFailedCalled());
-    }
-
-    @Test
-    public void testTaskExecutorEndToEndTaskCancelled() throws Exception {
-        start();
-
-        List<Integer> ports = ImmutableList.of(100);
-        double threshold = 5000.0;
-        WorkerHost host = new WorkerHost("host0", 0, ports, MantisJobState.Started, 1, 8080, 8081);
-        Map<Integer, WorkerAssignments> stageAssignmentMap =
-            ImmutableMap.<Integer, WorkerAssignments>builder()
-                .put(1, new WorkerAssignments(1, 1,
-                    ImmutableMap.<Integer, WorkerHost>builder().put(0, host).build()))
-                .build();
-        when(masterClientApi.schedulingChanges("jobId-0")).thenReturn(
-            Observable.just(new JobSchedulingInfo("jobId-0", stageAssignmentMap)));
-
-        WorkerId workerId = new WorkerId("jobId-0", 0, 1);
-        CompletableFuture<Ack> wait = taskExecutor.callInMainThread(() -> taskExecutor.submitTask(
-            new ExecuteStageRequest("jobName", "jobId-0", 0, 1,
-                new URL("https://www.google.com/"),
-                1, 1,
-                ports, 100L, 1, ImmutableList.of(),
-                new SchedulingInfo.Builder().numberOfStages(1)
-                    .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
-                        Lists.newArrayList(), Lists.newArrayList()).build(),
-                MantisJobDurationType.Transient,
-                0,
-                1000L,
-                1L,
-                new WorkerPorts(2, 3, 4, 5, 6),
-                Optional.of(SineFunctionJobProvider.class.getName()),
-                "user")), Time.seconds(1));
-        wait.get();
-        Assert.assertTrue(startedSignal.await(5, TimeUnit.SECONDS));
-        Subscription subscription = HttpSources.source(HttpClientFactories.sseClientFactory(),
-                HttpRequestFactories.createGetFactory("/"))
-            .withServerProvider(new HttpServerProvider() {
-                @Override
-                public Observable<ServerInfo> getServersToAdd() {
-                    return Observable.just(new ServerInfo("localhost", ports.get(0)));
-                }
-
-                @Override
-                public Observable<ServerInfo> getServersToRemove() {
-                    return Observable.empty();
-                }
-            })
-            .build()
-            .call(null, null)
-            .flatMap(obs -> obs)
-            .flatMap(sse -> {
-                try {
-                    return Observable.just(objectMapper.readValue(sse.contentAsString(), Point.class));
-                } catch (Exception e) {
-                    log.error("failed to deserialize", e);
-                    return Observable.error(e);
-                }
-            })
-            .takeUntil(point -> point.getX() > threshold)
-            .subscribe(point -> log.info("point={}", point), error -> log.error("failed", error),
-                () -> doneSignal.countDown());
-        Assert.assertTrue(doneSignal.await(10, TimeUnit.SECONDS));
-        subscription.unsubscribe();
-        verify(resourceManagerGateway, times(1)).notifyTaskExecutorStatusChange(
-            new TaskExecutorStatusChange(taskExecutor.getTaskExecutorID(), taskExecutor.getClusterID(),
-                TaskExecutorReport.occupied(workerId)));
 
         Thread.sleep(5000);
         verify(resourceManagerGateway, times(1)).notifyTaskExecutorStatusChange(
