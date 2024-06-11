@@ -21,7 +21,6 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.stats.MetricStringConstants;
-import io.mantisrx.server.master.FailoverStatusClient;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
@@ -72,19 +71,19 @@ import rx.subjects.PublishSubject;
             return -1;
         }
     };
-    private final FailoverStatusClient failoverStatusClient;
+    private final JobAutoscalerManager jobAutoscalerManager;
 
     public WorkerMetricHandler(final String jobId,
                                final Observer<JobAutoScaler.Event> jobAutoScaleObserver,
                                final MantisMasterGateway masterClientApi,
                                final AutoScaleMetricsConfig autoScaleMetricsConfig,
-                               final FailoverStatusClient failoverStatusClient) {
+                               final JobAutoscalerManager jobAutoscalerManager) {
         this.jobId = jobId;
         this.jobAutoScaleObserver = jobAutoScaleObserver;
         this.masterClientApi = masterClientApi;
         this.autoScaleMetricsConfig = autoScaleMetricsConfig;
         this.metricAggregator = new MetricAggregator(autoScaleMetricsConfig);
-        this.failoverStatusClient = failoverStatusClient;
+        this.jobAutoscalerManager = jobAutoscalerManager;
     }
 
     public Observer<MetricData> initAndGetMetricDataObserver() {
@@ -280,7 +279,6 @@ import rx.subjects.PublishSubject;
                             // get the aggregate metric values by metric group for all workers in stage
                             Map<String, GaugeData> allWorkerAggregates = getAggregates(listofAggregates);
                             logger.info("Job stage {} avgResUsage from {} workers: {}", stage, workersMap.size(), allWorkerAggregates.toString());
-                            // TODO(hmitnflx): Add a failover mode based event into jobAutoScaleObserver
 
                             for (Map.Entry<String, Set<String>> userDefinedMetric : autoScaleMetricsConfig.getUserDefinedMetrics().entrySet()) {
                                 final String metricGrp = userDefinedMetric.getKey();

@@ -153,7 +153,7 @@ public class SchedulingInfoTest {
                 2,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,
-                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, true)
+                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, false)
             )
             .multiWorkerScalableStageWithConstraints(
                 3,
@@ -204,7 +204,7 @@ public class SchedulingInfoTest {
             "                        }" +
             "                    }" +
             "                }," +
-            "                \"allowScaleDownDuringEvacuated\": true," +
+            "                \"allowAutoScaleManager\": false," +
             "                \"enabled\": true" +
             "            }," +
             "            \"scalable\": true" +
@@ -246,7 +246,7 @@ public class SchedulingInfoTest {
             "                        }" +
             "                    }" +
             "                }," +
-            "                \"allowScaleDownDuringEvacuated\": true," +
+            "                \"allowAutoScaleManager\": true," +
             "                \"enabled\": true" +
             "            }," +
             "            \"scalable\": true" +
@@ -266,14 +266,14 @@ public class SchedulingInfoTest {
                 2,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,
-                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, true),
+                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, false),
                 ImmutableMap.of("containerSkuID", "sku1")
             )
             .multiWorkerScalableStageWithConstraints(
                 3,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,
-                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, true),
+                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, false),
                 ImmutableMap.of("containerSkuID", "sku2")
             );
 
@@ -319,7 +319,7 @@ public class SchedulingInfoTest {
             "                        }" +
             "                    }" +
             "                }," +
-            "                \"allowScaleDownDuringEvacuated\": true," +
+            "                \"allowAutoScaleManager\": false," +
             "                \"enabled\": true" +
             "            }," +
             "            \"scalable\": true," +
@@ -362,7 +362,7 @@ public class SchedulingInfoTest {
             "                        }" +
             "                    }" +
             "                }," +
-            "                \"allowScaleDownDuringEvacuated\": true," +
+            "                \"allowAutoScaleManager\": false," +
             "                \"enabled\": true" +
             "            }," +
             "            \"scalable\": true," +

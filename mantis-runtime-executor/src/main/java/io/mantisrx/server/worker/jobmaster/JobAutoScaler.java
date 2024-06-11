@@ -26,7 +26,6 @@ import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.stats.UsageDataStats;
-import io.mantisrx.server.master.FailoverStatusClient;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.jobmaster.clutch.ClutchAutoScaler;
 import io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration;
@@ -91,16 +90,16 @@ public class JobAutoScaler {
     private final SchedulingInfo schedulingInfo;
     private final PublishSubject<Event> subject;
     private final Context context;
-    private final FailoverStatusClient failoverStatusClient;
+    private final JobAutoscalerManager jobAutoscalerManager;
 
     JobAutoScaler(String jobId, SchedulingInfo schedulingInfo, MantisMasterGateway masterClientApi,
-                  Context context, FailoverStatusClient failoverStatusClient) {
+                  Context context, JobAutoscalerManager jobAutoscalerManager) {
         this.jobId = jobId;
         this.masterClientApi = masterClientApi;
         this.schedulingInfo = schedulingInfo;
-        subject = PublishSubject.create();
+        this.subject = PublishSubject.create();
         this.context = context;
-        this.failoverStatusClient = failoverStatusClient;
+        this.jobAutoscalerManager = jobAutoscalerManager;
     }
 
     Observer<Event> getObserver() {
@@ -198,9 +197,6 @@ public class JobAutoScaler {
                                 .distinctUntilChanged()
                                 .throttleLast(5, TimeUnit.SECONDS);
 
-                        //TODO(hmitnflx): Add a failoveraware transformer here that consumes all other events as well
-                        // to make scale up decisions
-                        // Create the scaler.
                         if (useClutchRps) {
                             logger.info("Using clutch rps scaler, job: {}, stage: {} ", jobId, stage);
                             ClutchRpsPIDConfig rpsConfig = Option.of(config).flatMap(ClutchConfiguration::getRpsConfig).getOrNull();
@@ -336,8 +332,12 @@ public class JobAutoScaler {
           logger.warn("Job {} stage {} is not scalable, can't increment #workers by {}", jobId, stage, increment);
           return numCurrentWorkers;
         }
+
         if (numCurrentWorkers < 0 || increment < 1) {
           logger.error("current number of workers({}) not known or increment({}) < 1, will not scale up", numCurrentWorkers, increment);
+          return numCurrentWorkers;
+        } else if (stageSchedulingInfo.getScalingPolicy().isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleUpEnabled()) {
+          logger.warn("Scaleup is disabled for all autoscaling strategy, not scaling up stage {} of job {}", stage, jobId);
           return numCurrentWorkers;
         } else {
           final int maxWorkersForStage = stageSchedulingInfo.getScalingPolicy().getMax();
@@ -349,6 +349,10 @@ public class JobAutoScaler {
       public void scaleUpStage(final int numCurrentWorkers, final int desiredWorkers, final String reason) {
         logger.info("scaleUpStage incrementing number of workers from {} to {}", numCurrentWorkers, desiredWorkers);
         cancelOutstandingScalingRequest();
+        StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
+        if (scalingPolicy != null && scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleUpEnabled()) {
+          logger.warn("Scaleup is disabled for all autoscaling strategy, not scaling up stage {} of job {}", stage, jobId);
+        }
         final Subscription subscription = masterClientApi.scaleJobStage(jobId, stage, desiredWorkers, reason)
           .retryWhen(retryLogic)
           .onErrorResumeNext(throwable -> {
@@ -369,8 +373,8 @@ public class JobAutoScaler {
         if (numCurrentWorkers < 0 || decrement < 1) {
           logger.error("current number of workers({}) not known or decrement({}) < 1, will not scale down", numCurrentWorkers, decrement);
           return numCurrentWorkers;
-        } else if (!scalingPolicy.isAllowScaleDownDuringEvacuated() && failoverStatusClient.getFailoverStatus() == FailoverStatusClient.FailoverStatus.REGION_EVACUEE) {
-          logger.warn("Region is evacuated, not scaling down stage {} of job {}", stage, jobId);
+        } else if (scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleDownEnabled()) {
+          logger.warn("Scaledown is disabled for all autoscaling strategy, not scaling down stage {} of job {}", stage, jobId);
           return numCurrentWorkers;
         } else {
           int min = scalingPolicy.getMin();
@@ -383,8 +387,8 @@ public class JobAutoScaler {
         logger.info("scaleDownStage decrementing number of workers from {} to {}", numCurrentWorkers, desiredWorkers);
         cancelOutstandingScalingRequest();
         final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
-        if (scalingPolicy != null && !scalingPolicy.isAllowScaleDownDuringEvacuated() && failoverStatusClient.getFailoverStatus() == FailoverStatusClient.FailoverStatus.REGION_EVACUEE) {
-            logger.warn("Region is evacuated, not scaling down stage {} of job {}", stage, jobId);
+        if (scalingPolicy != null && scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleDownEnabled()) {
+            logger.warn("Scaledown is disabled for all autoscaling strategy. For stage {} of job {}", stage, jobId);
             return;
         }
         final Subscription subscription = masterClientApi.scaleJobStage(jobId, stage, desiredWorkers, reason)
