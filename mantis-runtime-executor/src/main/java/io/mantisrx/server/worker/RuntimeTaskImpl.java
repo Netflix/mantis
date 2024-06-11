@@ -28,7 +28,6 @@ import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.metrics.MetricsFactory;
-import io.mantisrx.server.master.FailoverStatusClient;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
@@ -75,15 +74,9 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     private Optional<Job> mantisJob = Optional.empty();
 
     private ExecuteStageRequest executeStageRequest;
-    private FailoverStatusClient failoverStatusClient;
 
     public RuntimeTaskImpl() {
-        this(FailoverStatusClient.DEFAULT);
-    }
-
-    public RuntimeTaskImpl(FailoverStatusClient failoverStatusClient) {
         this.tasksStatusSubject = PublishSubject.create();
-        this.failoverStatusClient = failoverStatusClient;
     }
 
     public RuntimeTaskImpl(PublishSubject<Observable<Status>> tasksStatusSubject) {
@@ -199,7 +192,6 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
                 masterMonitor,
                 config,
                 workerMetricsClient,
-                failoverStatusClient,
                 sinkSubscriptionStateHandlerFactory,
                 userCodeClassLoader.asClassLoader()),
             getJobProviderClass(),

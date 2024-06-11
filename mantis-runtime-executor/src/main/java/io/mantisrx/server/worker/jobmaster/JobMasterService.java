@@ -25,7 +25,6 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.SourceJobParameters;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.stats.MetricStringConstants;
-import io.mantisrx.server.master.FailoverStatusClient;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
@@ -66,17 +65,17 @@ public class JobMasterService implements Service {
                             final WorkerMetricsClient workerMetricsClient,
                             final AutoScaleMetricsConfig autoScaleMetricsConfig,
                             final MantisMasterGateway masterClientApi,
-                            final FailoverStatusClient failoverStatusClient,
                             final Context context,
                             final Action0 observableOnCompleteCallback,
                             final Action1<Throwable> observableOnErrorCallback,
-                            final Action0 observableOnTerminateCallback) {
+                            final Action0 observableOnTerminateCallback,
+                            final JobAutoscalerManager jobAutoscalerManager) {
         this.jobId = jobId;
         this.workerMetricsClient = workerMetricsClient;
         this.autoScaleMetricsConfig = autoScaleMetricsConfig;
         this.masterClientApi = masterClientApi;
-        this.jobAutoScaler = new JobAutoScaler(jobId, schedInfo, masterClientApi, context, failoverStatusClient);
-        this.metricObserver = new WorkerMetricHandler(jobId, jobAutoScaler.getObserver(), masterClientApi, autoScaleMetricsConfig, failoverStatusClient).initAndGetMetricDataObserver();
+        this.jobAutoScaler = new JobAutoScaler(jobId, schedInfo, masterClientApi, context, jobAutoscalerManager);
+        this.metricObserver = new WorkerMetricHandler(jobId, jobAutoScaler.getObserver(), masterClientApi, autoScaleMetricsConfig, jobAutoscalerManager).initAndGetMetricDataObserver();
         this.observableOnCompleteCallback = observableOnCompleteCallback;
         this.observableOnErrorCallback = observableOnErrorCallback;
         this.observableOnTerminateCallback = observableOnTerminateCallback;

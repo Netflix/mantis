@@ -29,6 +29,8 @@ import lombok.ToString;
 
 
 @Getter
+@ToString
+@EqualsAndHashCode
 public class StageScalingPolicy implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -41,9 +43,9 @@ public class StageScalingPolicy implements Serializable {
     private final long coolDownSecs;
     private final Map<ScalingReason, Strategy> strategies;
     /**
-     * Controls whether scale down operations are allowed when the region is evacuated.
+     * Controls whether AutoScaleManager is enabled or disabled
      */
-    private final boolean allowScaleDownDuringEvacuated;
+    private final boolean allowAutoScaleManager;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -52,7 +54,7 @@ public class StageScalingPolicy implements Serializable {
                               @JsonProperty("increment") int increment, @JsonProperty("decrement") int decrement,
                               @JsonProperty("coolDownSecs") long coolDownSecs,
                               @JsonProperty("strategies") Map<ScalingReason, Strategy> strategies,
-                              @JsonProperty(value = "allowScaleDownDuringEvacuated", defaultValue = "true") Boolean allowScaleDownDuringEvacuated) {
+                              @JsonProperty(value = "allowAutoScaleManager", defaultValue = "false") Boolean allowAutoScaleManager) {
         this.stage = stage;
         this.min = min;
         this.max = Math.max(max, min);
@@ -62,72 +64,11 @@ public class StageScalingPolicy implements Serializable {
         this.coolDownSecs = coolDownSecs;
         this.strategies = strategies == null ? new HashMap<ScalingReason, Strategy>() : new HashMap<>(strategies);
         // `defaultValue` is for documentation purpose only, use `Boolean` to determine if the field is missing on `null`
-        this.allowScaleDownDuringEvacuated = allowScaleDownDuringEvacuated == null || allowScaleDownDuringEvacuated;
+        this.allowAutoScaleManager = allowAutoScaleManager == Boolean.TRUE;
     }
 
     public Map<ScalingReason, Strategy> getStrategies() {
         return Collections.unmodifiableMap(strategies);
-    }
-
-    @Override
-    public String toString() {
-        return "StageScalingPolicy{" +
-                "stage=" + stage +
-                ", min=" + min +
-                ", max=" + max +
-                ", enabled=" + enabled +
-                ", increment=" + increment +
-                ", decrement=" + decrement +
-                ", coolDownSecs=" + coolDownSecs +
-                ", strategies=" + strategies +
-                ", allowScaleDownDuringEvacuated=" + allowScaleDownDuringEvacuated +
-                '}';
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (int) (coolDownSecs ^ (coolDownSecs >>> 32));
-        result = prime * result + decrement;
-        result = prime * result + (enabled ? 1231 : 1237);
-        result = prime * result + increment;
-        result = prime * result + max;
-        result = prime * result + min;
-        result = prime * result + stage;
-        result = prime * result + ((strategies == null) ? 0 : strategies.hashCode());
-        result = prime * result + (allowScaleDownDuringEvacuated ? 1231 : 1237);
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        StageScalingPolicy other = (StageScalingPolicy) obj;
-        if (coolDownSecs != other.coolDownSecs)
-            return false;
-        if (decrement != other.decrement)
-            return false;
-        if (enabled != other.enabled)
-            return false;
-        if (increment != other.increment)
-            return false;
-        if (max != other.max)
-            return false;
-        if (min != other.min)
-            return false;
-        if (stage != other.stage)
-            return false;
-        if (strategies == null) {
-            return other.strategies == null;
-        } else if (!strategies.equals(other.strategies)) {
-            return false;
-        } else return allowScaleDownDuringEvacuated == other.allowScaleDownDuringEvacuated;
     }
 
     public enum ScalingReason {
@@ -145,7 +86,7 @@ public class StageScalingPolicy implements Serializable {
         RPS,
         JVMMemory,
         SourceJobDrop,
-        FailoverAware
+        AutoscalerManagerEvent
     }
 
     @Getter
