@@ -17,7 +17,6 @@
 package io.mantisrx.runtime.loader.config;
 
 import io.mantisrx.common.JsonSerializer;
-import io.mantisrx.server.core.LeaderMonitorFactoryCoercer;
 import io.mantisrx.server.core.MetricsCoercer;
 import io.mantisrx.server.master.client.config.PluginCoercible;
 import java.io.IOException;
@@ -29,7 +28,6 @@ public class WorkerConfigurationUtils {
         ConfigurationObjectFactory configurationObjectFactory = new ConfigurationObjectFactory(
             properties);
         configurationObjectFactory.addCoercible(new MetricsCoercer(properties));
-        configurationObjectFactory.addCoercible(new LeaderMonitorFactoryCoercer());
         configurationObjectFactory.addCoercible(new PluginCoercible<>(MetricsCollector.class, properties));
         return configurationObjectFactory.build(tClass);
     }

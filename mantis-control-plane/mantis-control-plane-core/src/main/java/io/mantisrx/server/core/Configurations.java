@@ -24,8 +24,6 @@ public class Configurations {
     ConfigurationObjectFactory configurationObjectFactory = new ConfigurationObjectFactory(
         properties);
     configurationObjectFactory.addCoercible(new MetricsCoercer(properties));
-    configurationObjectFactory.addCoercible(new LeaderMonitorFactoryCoercer());
-    configurationObjectFactory.addCoercible(new LeaderElectorFactoryCoercer());
     return configurationObjectFactory.build(tClass);
   }
 }

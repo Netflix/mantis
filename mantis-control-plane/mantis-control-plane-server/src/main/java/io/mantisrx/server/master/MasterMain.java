@@ -53,6 +53,7 @@ import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.zk.ZookeeperLeadershipFactory;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ILeaderElectorFactory;
+import io.mantisrx.server.core.ILeaderMonitorFactory;
 import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
@@ -197,16 +198,17 @@ public class MasterMain implements Service {
             // set up leader election
             final ILeaderElectorFactory leaderFactory;
             final MasterMonitor monitor;
-            if(!config.isLocalMode() && config.getLeaderElectorFactory() instanceof LocalLeaderFactory) {
-                logger.warn("local mode is [ {} ] and leader factory is {} this configuration is unsafe", config.isLocalMode(), config.getLeaderElectorFactory().getClass().getSimpleName());
+            final String fqcnLeaderFactory = config.getLeaderElectorFactory();
+            if(!config.isLocalMode() && ConfigUtils.createInstance(fqcnLeaderFactory, ILeaderElectorFactory.class) instanceof LocalLeaderFactory) {
+                logger.warn("local mode is {} and leader factory is {} this configuration is unsafe", config.isLocalMode(), config.getLeaderElectorFactory().getClass().getSimpleName());
                 final ZookeeperLeadershipFactory zkLeadership = new ZookeeperLeadershipFactory();
                 leaderFactory = zkLeadership;
                 monitor = zkLeadership.createLeaderMonitor(config);
                 logger.warn("using default non-local Zookeeper leader services you should set: "+
                     "mantis.leader.elector.factory=io.mantisrx.master.zk.ZookeeperLeadershipFactory");
             } else {
-                leaderFactory = config.getLeaderElectorFactory();
-                monitor = config.getLeaderMonitorFactory().createLeaderMonitor(config);
+                leaderFactory = ConfigUtils.createInstance(fqcnLeaderFactory, ILeaderElectorFactory.class);
+                monitor = ConfigUtils.createInstance(config.getLeaderMonitorFactory(), ILeaderMonitorFactory.class).createLeaderMonitor(config);
                 logger.warn("using leader factory {}", config.isLocalMode());
             }
             monitor.start();

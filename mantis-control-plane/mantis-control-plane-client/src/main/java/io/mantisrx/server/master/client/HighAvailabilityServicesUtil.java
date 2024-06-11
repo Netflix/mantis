@@ -19,12 +19,14 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.CoreConfiguration;
+import io.mantisrx.server.core.ILeaderMonitorFactory;
 import io.mantisrx.server.core.master.LocalLeaderFactory;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.master.ZookeeperLeaderMonitorFactory;
 import io.mantisrx.server.core.master.ZookeeperMasterMonitor;
+import io.mantisrx.server.core.utils.ConfigUtils;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGatewayClient;
@@ -134,12 +136,13 @@ public class HighAvailabilityServicesUtil {
 
         public HighAvailabilityServicesImpl(CoreConfiguration configuration) {
             this.configuration = configuration;
-            if(configuration.getLeaderMonitorFactory() instanceof LocalLeaderFactory) {
+            final ILeaderMonitorFactory factory = ConfigUtils.createInstance(configuration.getLeaderMonitorFactory(), ILeaderMonitorFactory.class);
+            if(factory instanceof LocalLeaderFactory) {
                 log.warn("using default non-local Zookeeper leader monitoring you should set: "+
                     "mantis.leader.monitor.factory=io.mantisrx.server.core.master.ZookeeperLeaderMonitorFactory");
                 masterMonitor = new ZookeeperLeaderMonitorFactory().createLeaderMonitor(configuration);
             } else {
-                masterMonitor = configuration.getLeaderMonitorFactory().createLeaderMonitor(configuration);
+                masterMonitor = factory.createLeaderMonitor(configuration);
             }
             // this for backward compatibility, but should be modified to "HighAvailabilityServices" in the future
             final String metricsGroup = masterMonitor instanceof ZookeeperMasterMonitor ? "ZkHighAvailabilityServices" :

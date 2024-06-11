@@ -80,5 +80,5 @@ public interface CoreConfiguration {
 
     @Config("mantis.leader.monitor.factory")
     @Default("io.mantisrx.server.core.master.LocalLeaderFactory")
-    ILeaderMonitorFactory getLeaderMonitorFactory();
+    String getLeaderMonitorFactory();
 }

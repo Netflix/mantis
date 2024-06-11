@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Properties;
 import org.skife.config.Config;
@@ -56,6 +57,27 @@ public class ConfigUtils {
         MantisPropertiesLoader loader) {
         String propertyKey = retrievePropertyKey(method);
         return new LongDynamicProperty(loader, propertyKey, defaultValue);
+    }
+
+    public static <T> T createInstance(String fullyQualifiedClassName, Class<T> interfaceType) {
+        try {
+            // Load the class by its name
+            Class<?> clazz = Class.forName(fullyQualifiedClassName);
+            // Check if the class actually implements the desired interface
+            if (!interfaceType.isAssignableFrom(clazz)) {
+                throw new IllegalArgumentException(fullyQualifiedClassName + " does not implement " + interfaceType.getName());
+            }
+            // Find the no-args constructor of the class
+            Constructor<?> constructor = clazz.getDeclaredConstructor();
+            // Create a new instance using the no-args constructor
+            Object instance = constructor.newInstance();
+            return interfaceType.cast(instance);
+        } catch (Exception e) {
+            // Handle any exceptions (ClassNotFoundException, NoSuchMethodException, etc.)
+            final String msg = "failed to create instance of " + fullyQualifiedClassName;
+            logger.error(msg, e);
+            throw new RuntimeException(msg, e);
+        }
     }
 
     public static LongDynamicProperty getDynamicPropertyLong(
