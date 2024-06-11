@@ -22,6 +22,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.Pending;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.Running;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorTaskCancelledException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
@@ -58,11 +59,17 @@ class TaskExecutorState {
     @Nullable
     private AvailabilityState availabilityState;
     private boolean disabled;
+
     // last interaction initiated by the task executor
     private Instant lastActivity;
     private final Clock clock;
     private final RpcService rpcService;
     private final JobMessageRouter jobMessageRouter;
+
+    // isTaskCancelled: this state is to mark the current assigned worker has been cancelled and this executor need to
+    // stop the task and re-register.
+    @Nullable
+    private WorkerId cancelledWorkerOnTask;
 
     static TaskExecutorState of(Clock clock, RpcService rpcService, JobMessageRouter jobMessageRouter) {
         return new TaskExecutorState(
@@ -73,7 +80,8 @@ class TaskExecutorState {
             clock.instant(),
             clock,
             rpcService,
-            jobMessageRouter);
+            jobMessageRouter,
+            null);
     }
 
     boolean isRegistered() {
@@ -86,6 +94,15 @@ class TaskExecutorState {
 
     boolean isDisabled() {
         return disabled;
+    }
+
+    @Nullable
+    WorkerId getCancelledWorkerId() {
+        return this.cancelledWorkerOnTask;
+    }
+
+    void setCancelledWorkerOnTask(WorkerId cancelledWorkerOnTask) {
+        this.cancelledWorkerOnTask = cancelledWorkerOnTask;
     }
 
     boolean onRegistration(TaskExecutorRegistration registration) {
@@ -153,12 +170,29 @@ class TaskExecutorState {
         }
     }
 
-    boolean onHeartbeat(TaskExecutorHeartbeat heartbeat) throws IllegalStateException {
+    boolean onHeartbeat(TaskExecutorHeartbeat heartbeat)
+        throws IllegalStateException, TaskExecutorTaskCancelledException {
         if (!isRegistered()) {
             throwNotRegistered(String.format("heartbeat %s", heartbeat));
         }
 
-        boolean result = handleStatusChange(heartbeat.getTaskExecutorReport());
+        TaskExecutorReport report = heartbeat.getTaskExecutorReport();
+        if (this.cancelledWorkerOnTask != null) {
+            if (report instanceof Occupied && ((Occupied) report).getWorkerId().equals(this.cancelledWorkerOnTask)) {
+                log.warn("{} cancelled, request cancel on heartbeat.", this.cancelledWorkerOnTask);
+                throw new TaskExecutorTaskCancelledException(
+                    String.format(
+                        "heartbeat from %s has cancelled task %s",
+                        heartbeat.getTaskExecutorID(),
+                        this.cancelledWorkerOnTask),
+                    this.cancelledWorkerOnTask);
+            } else {
+                log.info("{} cancelled but executor is no longer occupied by it.", this.cancelledWorkerOnTask);
+                this.cancelledWorkerOnTask = null;
+            }
+        }
+
+        boolean result = handleStatusChange(report);
         updateTicker();
         return result;
     }

@@ -31,7 +31,9 @@ import io.mantisrx.server.agent.utils.ExponentialBackoffAbstractScheduledService
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorTaskCancelledException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -39,6 +41,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.util.ExceptionUtils;
 
 @Slf4j
 @ToString(of = "gateway")
@@ -218,19 +221,30 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
             throw e;
         } catch (Exception e) {
             heartbeatFailureCounter.increment();
-            handleHeartbeatFailure(e);
+            handleHeartbeatFailure(
+                ExceptionUtils.stripCompletionException(
+                    ExceptionUtils.stripExecutionException(e)));
             throw e;
         }
     }
 
-    private void handleHeartbeatFailure(Exception e) throws Exception {
-        log.error("Failed to send heartbeat to gateway {}", gateway, e);
-       // if there are no more retries then clear the registered flag
-        if (getRetryCount() >= tolerableConsecutiveHeartbeatFailures) {
-            registered = false;
+    private void handleHeartbeatFailure(Throwable ex)
+        throws ExecutionException, InterruptedException, TimeoutException {
+        log.error("Failed to send heartbeat to gateway", ex);
+
+        if (ex instanceof TaskExecutorTaskCancelledException) {
+            log.error("[Fatal][LeakedTask] TaskExecutorTaskCancelledException received, killing current task: ", ex);
+            CompletableFuture<Ack> cancelFuture =
+                this.taskExecutor.cancelTask(((TaskExecutorTaskCancelledException) ex).getWorkerId());
+            cancelFuture.get(5, TimeUnit.SECONDS);
         } else {
-            log.info("Ignoring heartbeat failure to gateway {} due to failed heartbeats {} <= {}",
+            // if there are no more retries then clear the registered flag
+            if (getRetryCount() >= tolerableConsecutiveHeartbeatFailures) {
+                registered = false;
+            } else {
+                log.info("Ignoring heartbeat failure to gateway {} due to failed heartbeats {} <= {}",
                     gateway, getRetryCount(), tolerableConsecutiveHeartbeatFailures);
+            }
         }
     }
 

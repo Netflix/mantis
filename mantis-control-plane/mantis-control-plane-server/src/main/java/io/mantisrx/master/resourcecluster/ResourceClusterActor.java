@@ -228,6 +228,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     metrics.withTracking(req ->
                             sender().tell(onGetClusterIdleInstancesRequest(req), self())))
                 .match(GetAssignedTaskExecutorRequest.class, this::onAssignedTaskExecutorRequest)
+                .match(MarkExecutorTaskCancelledRequest.class, this::onMarkExecutorTaskCancelledRequest)
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
                 .match(TaskExecutorAssignmentTimeout.class, this::onTaskExecutorAssignmentTimeout)
@@ -380,6 +381,20 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         } else {
             sender().tell(new Status.Failure(new TaskNotFoundException(request.getWorkerId())),
                 self());
+        }
+    }
+
+    private void onMarkExecutorTaskCancelledRequest(MarkExecutorTaskCancelledRequest request) {
+        Optional<Entry<TaskExecutorID, TaskExecutorState>> matchedTaskExecutor =
+            this.executorStateManager.findFirst(e -> e.getValue().isRunningOrAssigned(request.getWorkerId()));
+
+        if (matchedTaskExecutor.isPresent()) {
+            log.info("Setting executor {} to cancelled workerID: {}", matchedTaskExecutor.get().getKey(), request);
+            matchedTaskExecutor.get().getValue().setCancelledWorkerOnTask(request.getWorkerId());
+            sender().tell(Ack.getInstance(), self());
+        } else {
+            log.info("Cannot find executor to mark worker {} as cancelled", request);
+            sender().tell(new Status.Failure(new TaskNotFoundException(request.getWorkerId())), self());
         }
     }
 
@@ -750,7 +765,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     state.isAssigned(),
                     state.isDisabled(),
                     state.getWorkerId(),
-                    state.getLastActivity().toEpochMilli()),
+                    state.getLastActivity().toEpochMilli(),
+                    state.getCancelledWorkerId()),
                 self());
         }
     }
@@ -1064,6 +1080,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     static class AddNewJobArtifactsToCacheRequest {
         ClusterID clusterID;
         List<ArtifactID> artifacts;
+    }
+
+    @Value
+    @Builder
+    static class MarkExecutorTaskCancelledRequest {
+        ClusterID clusterID;
+        WorkerId workerId;
     }
 
     @Value

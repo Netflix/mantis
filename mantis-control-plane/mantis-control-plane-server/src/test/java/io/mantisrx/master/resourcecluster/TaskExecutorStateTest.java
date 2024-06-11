@@ -29,6 +29,7 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorTaskCancelledException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
@@ -74,7 +75,7 @@ public class TaskExecutorStateTest {
     }
 
     @Test
-    public void testRegularLifecycle() {
+    public void testRegularLifecycle() throws TaskExecutorTaskCancelledException {
         Instant currentTime;
         // Registration
         assertTrue(state.onRegistration(
@@ -131,7 +132,7 @@ public class TaskExecutorStateTest {
     }
 
     @Test
-    public void testInitializationLifecycle() {
+    public void testInitializationLifecycle() throws TaskExecutorTaskCancelledException {
         Instant currentTime;
         // Registration
         assertTrue(state.onRegistration(TaskExecutorRegistration.builder()
