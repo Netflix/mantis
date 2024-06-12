@@ -162,7 +162,7 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     }
 
     @Override
-    public String getMetricsCollectorClass() {
+    public String getMetricsCollectorClassName() {
         return this.metricsCollectorClass;
     }
 

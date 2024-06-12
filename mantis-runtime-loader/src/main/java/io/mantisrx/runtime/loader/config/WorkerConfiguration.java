@@ -67,7 +67,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
 
     @Config("mantis.taskexecutor.metrics.collector")
     @Default("io.mantisrx.runtime.loader.cgroups.CgroupsMetricsCollector")
-    String getMetricsCollectorClass();
+    String getMetricsCollectorClassName();
 
     // ------------------------------------------------------------------------
     //  heartbeat connection related configurations

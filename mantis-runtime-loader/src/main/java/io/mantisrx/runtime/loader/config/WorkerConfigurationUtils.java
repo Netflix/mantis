@@ -49,7 +49,7 @@ public class WorkerConfigurationUtils {
             .leaderAnnouncementPath(configSource.getLeaderAnnouncementPath())
             .localStorageDir(configSource.getLocalStorageDir())
             .metricsCollector(configSource.getUsageSupplier())
-            .metricsCollectorClass(configSource.getMetricsCollectorClass())
+            .metricsCollectorClass(configSource.getMetricsCollectorClassName())
             .metricsPort(configSource.getMetricsPort())
             .metricsPublisher(configSource.getMetricsPublisher())
             .metricsPublisherFrequencyInSeconds(configSource.getMetricsPublisherFrequencyInSeconds())

@@ -102,7 +102,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
             this.wrappedExecuteStageRequest =
                 new WrappedExecuteStageRequest(PublishSubject.create(), executeStageRequest);
 
-            configWritable.setMetricsCollector(createMetricsCollector(this.config.getMetricsCollectorClass()));
+            configWritable.setMetricsCollector(createMetricsCollector(this.config.getMetricsCollectorClassName()));
         } catch (IOException | InvocationTargetException | IllegalAccessException | ClassNotFoundException |
                  NoSuchMethodException e) {
             throw new RuntimeException(e);
