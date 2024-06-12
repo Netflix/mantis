@@ -26,6 +26,8 @@ import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.reactivx.mantis.operators.DropOperator;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,7 +77,7 @@ public class PushHttpSource implements Source<String> {
 
         LOGGER.info("PushHttpSource server starting at Port " + serverPort);
 
-        server = new NettySourceHttpServer(context, threadCount);
+        server = new NettySourceHttpServer(context, threadCount, new SimpleMeterRegistry());
         try {
             server.init(queryRegistry, eventSubject, serverPort);
         } catch (InterruptedException e) {

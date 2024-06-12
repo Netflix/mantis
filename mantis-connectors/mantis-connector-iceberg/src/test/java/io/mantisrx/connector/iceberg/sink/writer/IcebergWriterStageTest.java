@@ -41,6 +41,8 @@ import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.TestWorkerInfo;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -78,6 +80,7 @@ class IcebergWriterStageTest {
     private Observable<MantisDataFile> flow;
 
     private MantisRecord record;
+    private MeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
@@ -87,11 +90,12 @@ class IcebergWriterStageTest {
         record = new MantisRecord(icebergRecord, null);
         this.scheduler = new TestScheduler();
         this.subscriber = new TestSubscriber<>();
+        this.meterRegistry = new SimpleMeterRegistry();
 
         // Writer
         Parameters parameters = StageOverrideParameters.newParameters();
         WriterConfig config = new WriterConfig(parameters, mock(Configuration.class));
-        WriterMetrics metrics = new WriterMetrics();
+        WriterMetrics metrics = new WriterMetrics(meterRegistry);
         IcebergWriterFactory factory = FakeIcebergWriter::new;
 
         this.writerPool = spy(new FixedIcebergWriterPool(
