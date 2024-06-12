@@ -44,6 +44,7 @@ import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorNotFoundException;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorTaskCancelledException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.FilterProvider;
@@ -336,6 +337,11 @@ abstract class BaseRoute extends AllDirectives {
                         MasterApiMetrics.getInstance().incrementResp4xx();
                         MasterApiMetrics.getInstance().incrementThrottledRequestCount();
                         return complete(StatusCodes.TOO_MANY_REQUESTS);
+                    }
+
+                    if (throwable instanceof TaskExecutorTaskCancelledException) {
+                        MasterApiMetrics.getInstance().incrementResp4xx();
+                        return complete(StatusCodes.NOT_ACCEPTABLE, throwable, Jackson.marshaller() );
                     }
 
                     if (throwable instanceof AskTimeoutException) {

@@ -136,7 +136,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                 .build();
 
         TaskExecutorStatus status =
-            new TaskExecutorStatus(registration, true, true, true, false, null, Instant.now().toEpochMilli());
+            new TaskExecutorStatus(registration, true, true, true, false, null, Instant.now().toEpochMilli(), null);
         ResourceCluster resourceCluster = mock(ResourceCluster.class);
         when(resourceCluster.getTaskExecutorState(TaskExecutorID.of("myExecutor")))
             .thenReturn(CompletableFuture.completedFuture(status));
