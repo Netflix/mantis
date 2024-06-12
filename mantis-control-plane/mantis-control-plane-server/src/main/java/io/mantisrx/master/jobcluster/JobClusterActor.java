@@ -3210,9 +3210,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             try {
                 if (triggerId != null) {
                     logger.info("Destroying cron " + triggerId);
-                    triggerId = null;
                     isCronActive = false;
                     triggerOperator.deleteTrigger(triggerGroup, triggerId);
+                    triggerId = null;
                 }
             } catch (TriggerNotFoundException | SchedulerException e) {
                 logger.warn("Couldn't delete trigger group " + triggerGroup + ", id " + triggerId);
