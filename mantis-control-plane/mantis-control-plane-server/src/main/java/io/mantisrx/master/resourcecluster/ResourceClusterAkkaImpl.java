@@ -161,7 +161,7 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     }
 
     @Override
-    public CompletableFuture<Ack> markExecutorTaskCancelled(WorkerId workerId) {
+    public CompletableFuture<Ack> markTaskExecutorWorkerCancelled(WorkerId workerId) {
         return Patterns
             .ask(
                 resourceClusterManagerActor,

@@ -228,7 +228,7 @@ public class ResourceClusterActorTest {
     @Test
     public void testMarkTaskCancelled() throws Exception {
         try {
-            CompletableFuture<Ack> future = resourceCluster.markExecutorTaskCancelled(WORKER_ID);
+            CompletableFuture<Ack> future = resourceCluster.markTaskExecutorWorkerCancelled(WORKER_ID);
             future.get();
         } catch (Exception e) {
             assertEquals(ExecutionException.class, e.getClass());
@@ -252,7 +252,7 @@ public class ResourceClusterActorTest {
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getBusyTaskExecutors().get());
 
         try {
-            Ack ack = resourceCluster.markExecutorTaskCancelled(WORKER_ID).get();
+            Ack ack = resourceCluster.markTaskExecutorWorkerCancelled(WORKER_ID).get();
             assertNotNull(ack);
         } catch (Exception e) {
             log.error("ex:", e);

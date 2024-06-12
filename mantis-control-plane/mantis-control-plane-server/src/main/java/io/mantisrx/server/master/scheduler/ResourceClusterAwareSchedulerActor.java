@@ -365,7 +365,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     private void onRetryCancelRequestEvent(RetryCancelRequestEvent event) {
         // mark target as cancelled in resource cluster actor
         CompletableFuture<Ack> markCancelledFuture =
-            this.resourceCluster.markExecutorTaskCancelled(event.getWorkerId());
+            this.resourceCluster.markTaskExecutorWorkerCancelled(event.getWorkerId());
         pipe(markCancelledFuture, context().dispatcher()).to(self());
 
         if (event.getActualEvent().getAttempt() < maxCancelRetries) {
