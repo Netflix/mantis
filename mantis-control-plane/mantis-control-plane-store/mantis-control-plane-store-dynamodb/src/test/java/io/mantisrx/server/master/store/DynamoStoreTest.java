@@ -19,6 +19,7 @@ import static junit.framework.TestCase.assertEquals;
 
 import com.amazonaws.services.dynamodbv2.local.main.ServerRunner;
 import com.amazonaws.services.dynamodbv2.local.server.DynamoDBProxyServer;
+import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -47,6 +48,7 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TimeToLiveSpecification;
 import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
 
+@SuppressWarnings("deprecation")
 public class DynamoStoreTest {
     public static final String TABLE = "table";
     public static final String V5 = "value5";
@@ -147,7 +149,7 @@ public class DynamoStoreTest {
 
     @Test
     public void testUpsertOrdered() throws Exception {
-        KeyValueStore store = new DynamoStore(client, TABLE);
+        IKeyValueStore store = new DynamoStore(client, TABLE);
         final String pk1 = UUID.randomUUID().toString();
         store.upsertOrdered(TABLE, pk1, 1L, V1, Duration.ZERO);
         store.upsertOrdered(TABLE, pk1, 2L, V2, Duration.ZERO);
@@ -158,7 +160,7 @@ public class DynamoStoreTest {
 
     @Test
     public void testUpsertMoreThan25andGetAllPk() throws Exception {
-        KeyValueStore store = new DynamoStore(client, TABLE);
+        IKeyValueStore store = new DynamoStore(client, TABLE);
         final List<String> pks = new ArrayList<>();
         for(int i = 0; i<3; i++) {
             pks.add(UUID.randomUUID().toString());
@@ -186,7 +188,7 @@ public class DynamoStoreTest {
 
     @Test
     public void testInsertAndDelete() throws Exception {
-        KeyValueStore store = new DynamoStore(client, TABLE);
+        IKeyValueStore store = new DynamoStore(client, TABLE);
         final String pk1 = UUID.randomUUID().toString();
         store.upsertOrdered(TABLE, pk1, 1L, V1, Duration.ZERO);
         final String data = store.get(TABLE, pk1, "1");
@@ -200,7 +202,7 @@ public class DynamoStoreTest {
 
     @Test
     public void testInsertAndDeleteMoreThan25() throws Exception {
-        KeyValueStore store = new DynamoStore(client, TABLE);
+        IKeyValueStore store = new DynamoStore(client, TABLE);
         final List<String> pks = makePKs(3);
         final Map<String, String> skData1 = new HashMap<>();
         for(int i=0; i<30; i++) {
@@ -226,7 +228,7 @@ public class DynamoStoreTest {
 
     @Test
     public void testInsertAndGetAllMoreThan25() throws Exception {
-        KeyValueStore store = new DynamoStore(client, TABLE);
+        IKeyValueStore store = new DynamoStore(client, TABLE);
         final List<String> pks = makePKs(3);
         final Map<String, String> skData1 = new HashMap<>();
         for(int i=0; i<30; i++) {

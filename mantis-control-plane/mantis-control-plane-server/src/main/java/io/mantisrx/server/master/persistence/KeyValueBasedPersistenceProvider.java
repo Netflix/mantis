@@ -30,6 +30,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
@@ -38,7 +39,6 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
-import io.mantisrx.server.master.store.KeyValueStore;
 import io.mantisrx.server.master.store.MantisJobMetadataWritable;
 import io.mantisrx.server.master.store.MantisStageMetadata;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
@@ -129,14 +129,14 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
             .registerModule(new JavaTimeModule());
     }
 
-    private final KeyValueStore kvStore;
+    private final IKeyValueStore kvStore;
     private final LifecycleEventPublisher eventPublisher;
     private final Counter noWorkersFoundCounter;
     private final Counter staleWorkersFoundCounter;
     private final Counter workersFoundCounter;
     private final Counter failedToLoadJobCounter;
 
-    public KeyValueBasedPersistenceProvider(KeyValueStore kvStore, LifecycleEventPublisher eventPublisher) {
+    public KeyValueBasedPersistenceProvider(IKeyValueStore kvStore, LifecycleEventPublisher eventPublisher) {
         this.kvStore = kvStore;
         this.eventPublisher = eventPublisher;
         Metrics m = new Metrics.Builder()

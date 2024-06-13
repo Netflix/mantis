@@ -158,6 +158,7 @@ public class TestContainerHelloWorld {
                 .withNetwork(network)
                 .withNetworkAliases(CONTROL_PLANE_ALIAS)
                 .withExposedPorts(CONTROL_PLANE_API_PORT, DEBUGGER_PORT)
+                .withLogConsumer(out -> log.info("[Control Plane] {}", out.getUtf8String()))
             :
                 new GenericContainer<>("netflixoss/mantiscontrolplaneserver:latest")
                     .withEnv(LoggingMetricsPublisher.LOGGING_ENABLED_METRICS_GROUP_ID_LIST_KEY,

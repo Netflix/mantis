@@ -21,7 +21,7 @@ import com.sampullara.cli.Argument;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.core.zookeeper.CuratorService;
+import io.mantisrx.server.core.master.ZookeeperLeaderMonitorFactory;
 import io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -56,8 +56,7 @@ public class TestGetMasterMonitor {
         final CountDownLatch latch = new CountDownLatch(5);
         StaticPropertiesConfigurationFactory configurationFactory = new StaticPropertiesConfigurationFactory(properties);
         CoreConfiguration config = configurationFactory.getConfig();
-        final CuratorService curatorService = new CuratorService(config);
-        MasterMonitor masterMonitor = curatorService.getMasterMonitor();
+        MasterMonitor masterMonitor = new ZookeeperLeaderMonitorFactory().createLeaderMonitor(config);
         masterMonitor.getMasterObservable()
                 .filter(new Func1<MasterDescription, Boolean>() {
                     @Override
@@ -73,7 +72,7 @@ public class TestGetMasterMonitor {
                     }
                 })
                 .subscribe();
-        curatorService.start();
+        masterMonitor.start();
         try {
             latch.await();
         } catch (InterruptedException e) {

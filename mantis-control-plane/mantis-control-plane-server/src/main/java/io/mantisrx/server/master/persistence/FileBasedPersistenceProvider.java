@@ -20,8 +20,9 @@ import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
+import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.server.master.store.FileBasedStore;
-import io.mantisrx.server.master.store.KeyValueStore;
+import io.mantisrx.server.master.store.NoopStore;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
@@ -52,11 +53,11 @@ public class FileBasedPersistenceProvider extends KeyValueBasedPersistenceProvid
     };
 
     public FileBasedPersistenceProvider(boolean actualStorageProvider) {
-        this((actualStorageProvider) ? new FileBasedStore() : KeyValueStore.NO_OP,
+        this((actualStorageProvider) ? new FileBasedStore() : NoopStore.noop(),
             noopEventPublisher);
     }
 
-    public FileBasedPersistenceProvider(KeyValueStore sprovider, LifecycleEventPublisher publisher) {
+    public FileBasedPersistenceProvider(IKeyValueStore sprovider, LifecycleEventPublisher publisher) {
         super(sprovider, publisher);
     }
 

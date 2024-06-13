@@ -17,11 +17,11 @@
 package io.mantisrx.server.master.persistence;
 
 import io.mantisrx.master.events.LifecycleEventPublisher;
-import io.mantisrx.server.master.store.KeyValueStore;
+import io.mantisrx.server.master.store.InMemoryStore;
 
 public class InMemoryPersistenceProvider extends KeyValueBasedPersistenceProvider {
 
     public InMemoryPersistenceProvider() {
-        super(KeyValueStore.inMemory(), LifecycleEventPublisher.noop());
+        super(InMemoryStore.inMemory(), LifecycleEventPublisher.noop());
     }
 }

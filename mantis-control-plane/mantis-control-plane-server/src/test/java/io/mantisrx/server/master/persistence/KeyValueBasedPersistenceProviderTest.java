@@ -23,8 +23,8 @@ import static org.mockito.Mockito.when;
 
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
+import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
-import io.mantisrx.server.master.store.KeyValueStore;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.List;
@@ -35,7 +35,7 @@ public class KeyValueBasedPersistenceProviderTest {
 
     @Test
     public void testLoadJobWithDupeWorker() throws IOException, InvalidJobException {
-        KeyValueStore kvStore = Mockito.mock(KeyValueStore.class);
+        IKeyValueStore kvStore = Mockito.mock(IKeyValueStore.class);
         when(kvStore.getAllRows("MantisWorkers"))
             .thenReturn(ImmutableMap.of(
                 "testjob-1-1000", ImmutableMap.of(

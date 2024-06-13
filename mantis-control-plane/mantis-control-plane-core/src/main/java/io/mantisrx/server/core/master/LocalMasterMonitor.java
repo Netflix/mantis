@@ -41,4 +41,19 @@ public class LocalMasterMonitor implements MasterMonitor {
     public MasterDescription getLatestMaster() {
         return master;
     }
+
+    @Override
+    public void start() {
+
+    }
+
+    @Override
+    public void shutdown() {
+
+    }
+
+    @Override
+    public void enterActiveMode() {
+
+    }
 }

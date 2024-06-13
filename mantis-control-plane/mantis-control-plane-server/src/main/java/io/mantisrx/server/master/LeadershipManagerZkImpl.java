@@ -21,6 +21,7 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import java.net.InetAddress;

@@ -119,7 +119,7 @@ public interface IMantisPersistenceProvider {
     /**
      * Initialize and return all existing NamedJobs from persistence.
      *
-     * @return List of {@link NamedJob} objects.
+     * @return List of {@link io.mantisrx.server.master.store.NamedJob} objects.
      * @throws IOException Upon error connecting to or reading from persistence.
      */
     List<IJobClusterMetadata> loadAllJobClusters() throws IOException;

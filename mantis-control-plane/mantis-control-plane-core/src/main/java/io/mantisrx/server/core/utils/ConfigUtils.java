@@ -20,10 +20,21 @@ import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.config.dynamic.StringDynamicProperty;
 import io.mantisrx.server.core.CoreConfiguration;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Properties;
 import org.skife.config.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConfigUtils {
+    private static final Logger logger = LoggerFactory.getLogger(ConfigUtils.class);
+
     private static StringDynamicProperty getDynamicPropertyString(
         Method method,
         String defaultValue,
@@ -48,6 +59,27 @@ public class ConfigUtils {
         return new LongDynamicProperty(loader, propertyKey, defaultValue);
     }
 
+    public static <T> T createInstance(String fullyQualifiedClassName, Class<T> interfaceType) {
+        try {
+            // Load the class by its name
+            Class<?> clazz = Class.forName(fullyQualifiedClassName);
+            // Check if the class actually implements the desired interface
+            if (!interfaceType.isAssignableFrom(clazz)) {
+                throw new IllegalArgumentException(fullyQualifiedClassName + " does not implement " + interfaceType.getName());
+            }
+            // Find the no-args constructor of the class
+            Constructor<?> constructor = clazz.getDeclaredConstructor();
+            // Create a new instance using the no-args constructor
+            Object instance = constructor.newInstance();
+            return interfaceType.cast(instance);
+        } catch (Exception e) {
+            // Handle any exceptions (ClassNotFoundException, NoSuchMethodException, etc.)
+            final String msg = "failed to create instance of " + fullyQualifiedClassName;
+            logger.error(msg, e);
+            throw new RuntimeException(msg, e);
+        }
+    }
+
     public static LongDynamicProperty getDynamicPropertyLong(
         String name,
         Class<? extends CoreConfiguration> clazz,
@@ -64,6 +96,35 @@ public class ConfigUtils {
         }
     }
 
+    /**
+     * This function tries to find a properties file and throws a runtime exception if it cannot.
+     * If found any environment variables matching the property key converted to environment variable
+     * standard form of capital letters and underscores will take precedence.
+     *
+     * @param propFile a property file to find
+     * @return Properties with overrides from the environment variables
+     * @throws RuntimeException if the file can't be found
+     */
+    public static Properties loadProperties(String propFile) {
+        Properties props = new Properties();
+        try (InputStream in = findResourceAsStream(propFile)) {
+            props.load(in);
+        } catch (IOException e) {
+            throw new RuntimeException(String.format("Can't load properties from the given property file %s: %s", propFile, e.getMessage()), e);
+        }
+
+        for (String key : props.stringPropertyNames()) {
+            String envVarKey = key.toUpperCase().replace('.', '_');
+            String envValue = System.getenv(envVarKey);
+            if (envValue != null) {
+                props.setProperty(key, envValue);
+                logger.info("Override config from env {}: {}.", key, envValue);
+            }
+
+        }
+        return props;
+    }
+
     private static String retrievePropertyKey(Method method) {
         Config configAnnotation = method.getAnnotation(Config.class);
         String[] values = configAnnotation.value();
@@ -72,5 +133,31 @@ public class ConfigUtils {
         }
         String propertyKey = values[0];
         return propertyKey;
+    }
+
+
+
+    /**
+     * Finds the given resource and returns its input stream. This method seeks the file first from the current working directory,
+     * and then in the class path.
+     *
+     * @param resourceName the name of the resource. It can either be a file name, or a path.
+     *
+     * @return An {@link java.io.InputStream} instance that represents the found resource. Null otherwise.
+     *
+     * @throws FileNotFoundException
+     */
+    private static InputStream findResourceAsStream(String resourceName) throws FileNotFoundException {
+        File resource = new File(resourceName);
+        if (resource.exists()) {
+            return new FileInputStream(resource);
+        }
+
+        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
+        if (is == null) {
+            throw new FileNotFoundException(String.format("Can't find property file %s. Make sure the property file is either in your path or in your classpath ", resourceName));
+        }
+
+        return is;
     }
 }

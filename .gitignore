@@ -206,3 +206,5 @@ bin/
 build
 site
 
+# ignore asdf files for jdk manager
+.tool-versions
