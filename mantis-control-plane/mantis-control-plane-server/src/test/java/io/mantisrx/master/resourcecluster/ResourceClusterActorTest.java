@@ -17,6 +17,7 @@
 package io.mantisrx.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -78,9 +79,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.ExceptionUtils;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -88,6 +92,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Matchers;
 
+@Slf4j
 public class ResourceClusterActorTest {
     private static final TaskExecutorID TASK_EXECUTOR_ID = TaskExecutorID.of("taskExecutorId");
     private static final TaskExecutorID TASK_EXECUTOR_ID_2 = TaskExecutorID.of("taskExecutorId2");
@@ -218,6 +223,62 @@ public class ResourceClusterActorTest {
     public void testRegistration() throws Exception {
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getRegisteredTaskExecutors().get());
+    }
+
+    @Test
+    public void testMarkTaskCancelled() throws Exception {
+        try {
+            CompletableFuture<Ack> future = resourceCluster.markTaskExecutorWorkerCancelled(WORKER_ID);
+            future.get();
+        } catch (Exception e) {
+            assertEquals(ExecutionException.class, e.getClass());
+            assertEquals(
+                String.format("io.mantisrx.server.worker.TaskExecutorGateway$TaskNotFoundException: Task %s not found",
+                    WORKER_ID),
+                e.getMessage());
+        }
+
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getRegisteredTaskExecutors().get());
+
+        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
+            .thenReturn(ImmutableList.of());
+        when(mantisJobStore.getJobArtifactsToCache(ArgumentMatchers.eq(CLUSTER_ID))).thenReturn(ImmutableList.of());
+        when(mantisJobStore.getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID))).thenReturn(TASK_EXECUTOR_REGISTRATION);
+
+        assertEquals(
+            Ack.getInstance(),
+            resourceCluster.initializeTaskExecutor(TASK_EXECUTOR_ID, WORKER_ID).get());
+        assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getBusyTaskExecutors().get());
+
+        try {
+            Ack ack = resourceCluster.markTaskExecutorWorkerCancelled(WORKER_ID).get();
+            assertNotNull(ack);
+        } catch (Exception e) {
+            log.error("ex:", e);
+            Assert.fail();
+        }
+
+        TaskExecutorStatus tEStatus = resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get();
+        assertEquals(WORKER_ID, tEStatus.getCancelledWorkerId());
+
+        // re-registration doesn't reset the cancel worker state.
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getRegisteredTaskExecutors().get());
+        tEStatus = resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get();
+        assertEquals(WORKER_ID, tEStatus.getCancelledWorkerId());
+
+        // new heartbeat with available state reset the cancelled worker state.
+        assertEquals(Ack.getInstance(),
+            resourceCluster
+                .heartBeatFromTaskExecutor(
+                    new TaskExecutorHeartbeat(
+                        TASK_EXECUTOR_ID,
+                        CLUSTER_ID,
+                        TaskExecutorReport.available())).get());
+
+        tEStatus = resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get();
+        assertEquals(null, tEStatus.getCancelledWorkerId());
     }
 
     @Test

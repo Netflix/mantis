@@ -76,6 +76,8 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     int asyncHttpClientRequestTimeoutMs;
     int asyncHttpClientReadTimeoutMs;
     String leaderMonitorFactory;
+    String metricsCollectorClass;
+
 
     @JsonIgnore
     MetricsPublisher metricsPublisher;
@@ -168,6 +170,11 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     @Override
     public int getSinkPort() {
         return this.sinkPort;
+    }
+
+    @Override
+    public String getMetricsCollectorClassName() {
+        return this.metricsCollectorClass;
     }
 
     @Override

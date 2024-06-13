@@ -139,6 +139,11 @@ public class RuntimeTaskImplExecutorTest {
         props.setProperty("mantis.localmode", "true");
         props.setProperty("mantis.zookeeper.connectString", "localhost:8100");
 
+        props.setProperty("mantis.taskexecutor.hardware.cpu-cores", "1.0");
+        props.setProperty("mantis.taskexecutor.hardware.memory-in-mb", "4096.0");
+        props.setProperty("mantis.taskexecutor.hardware.disk-in-mb", "10000.0");
+        props.setProperty("mantis.taskexecutor.hardware.network-bandwidth-in-mb", "1000.0");
+
         startedSignal = new CountDownLatch(1);
         doneSignal = new CountDownLatch(1);
         terminatedSignal = new CountDownLatch(1);
@@ -181,7 +186,7 @@ public class RuntimeTaskImplExecutorTest {
         this.localApiServer.stop(0);
     }
 
-    @Ignore
+    @Ignore // todo: this test is failing on CI.
     @Test
     public void testTaskExecutorEndToEndWithASingleStageJobByLoadingFromClassLoader()
         throws Exception {
