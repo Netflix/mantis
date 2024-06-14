@@ -507,7 +507,8 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         if (taskExecutors.isPresent() && taskExecutors.get().size() == allocationRequests.size()) {
             return taskExecutors;
         } else {
-            log.warn("Not enough available TEs found for scheduling constraints {}, request: {}", schedulingConstraints, request);
+            log.warn("Not enough available TEs (got: {}, desired: {}) found for scheduling constraints {}, request: {}",
+                taskExecutors.map(Map::size).orElse(0), allocationRequests.size(), schedulingConstraints, request);
 
             // If there are not enough workers with the given spec then add the request the pending ones
             if (!isJobIdAlreadyPending && request.getAllocationRequests().size() > 2) {
