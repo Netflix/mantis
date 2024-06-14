@@ -17,13 +17,15 @@
 package io.reactivex.mantis.network.push;
 
 import io.mantisrx.common.MantisGroup;
-import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,21 +44,21 @@ public final class ObservableTrigger {
     private static final Logger logger = LoggerFactory.getLogger(ObservableTrigger.class);
 
     private static Scheduler timeoutScheduler = Schedulers.from(Executors.newFixedThreadPool(5));
+    private final MeterRegistry meterRegistry;
 
-    private ObservableTrigger() {}
+    private ObservableTrigger(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
 
 
     private static <T> PushTrigger<T> trigger(final String name, final Observable<T> o, final Action0 doOnComplete,
-                                              final Action1<Throwable> doOnError) {
+                                              final Action1<Throwable> doOnError, MeterRegistry meterRegistry) {
         final AtomicReference<Subscription> subRef = new AtomicReference<>();
         final Gauge subscriptionActive;
+        final AtomicLong subscriptionActiveValue = new AtomicLong(0);
 
-        Metrics metrics = new Metrics.Builder()
-                .name("ObservableTrigger_" + name)
-                .addGauge("subscriptionActive")
-                .build();
-
-        subscriptionActive = metrics.getGauge("subscriptionActive");
+        subscriptionActive = Gauge.builder("ObservableTrigger_" + name + "subscriptionActive", subscriptionActiveValue::get)
+                .register(meterRegistry);
 
         // Share the Observable so we don't create a new Observable on every subscription.
         final Observable<T> sharedO = o.share();
@@ -66,11 +68,11 @@ public final class ObservableTrigger {
                     .filter((T t1) -> t1 != null)
                     .doOnSubscribe(() -> {
                         logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
-                        subscriptionActive.increment();
+                        subscriptionActiveValue.incrementAndGet();
                     })
                     .doOnUnsubscribe(() -> {
                         logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
-                        subscriptionActive.decrement();
+                        subscriptionActiveValue.decrementAndGet();
                     })
                     .subscribe(
                         (T data) -> queue.write(data),
@@ -106,27 +108,24 @@ public final class ObservableTrigger {
     }
 
     private static <T> PushTrigger<T> ssetrigger(final String name, final Observable<T> o, final Action0 doOnComplete,
-                                                 final Action1<Throwable> doOnError) {
+                                                 final Action1<Throwable> doOnError, MeterRegistry meterRegistry) {
         final AtomicReference<Subscription> subRef = new AtomicReference<>();
         final Gauge subscriptionActive;
+        final AtomicLong subscriptionActiveValue = new AtomicLong(0);
 
-        Metrics metrics = new Metrics.Builder()
-                .name("ObservableTrigger_" + name)
-                .addGauge("subscriptionActive")
-                .build();
-
-        subscriptionActive = metrics.getGauge("subscriptionActive");
+        subscriptionActive = Gauge.builder("ObservableTrigger_" + name + "subscriptionActive", subscriptionActiveValue::get)
+                .register(meterRegistry);
 
         Action1<MonitoredQueue<T>> doOnStart = queue -> subRef.set(
                 o
                         .filter((T t1) -> t1 != null)
                         .doOnSubscribe(() -> {
                             logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
-                            subscriptionActive.increment();
+                            subscriptionActiveValue.incrementAndGet();
                         })
                         .doOnUnsubscribe(() -> {
                             logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
-                            subscriptionActive.decrement();
+                            subscriptionActiveValue.decrementAndGet();
                         })
                         .subscribe(
                             (T data) -> queue.write(data),
@@ -157,16 +156,13 @@ public final class ObservableTrigger {
 
 
     private static <K, V> PushTrigger<KeyValuePair<K, V>> groupTrigger(final String name, final Observable<GroupedObservable<K, V>> o, final Action0 doOnComplete,
-                                                                       final Action1<Throwable> doOnError, final long groupExpirySeconds, final Func1<K, byte[]> keyEncoder, final HashFunction hashFunction) {
+                                                                       final Action1<Throwable> doOnError, final long groupExpirySeconds, final Func1<K, byte[]> keyEncoder, final HashFunction hashFunction, MeterRegistry meterRegistry) {
         final AtomicReference<Subscription> subRef = new AtomicReference<>();
         final Gauge subscriptionActive;
+        final AtomicLong subscriptionActiveValue = new AtomicLong(0);
 
-        Metrics metrics = new Metrics.Builder()
-                .name("ObservableTrigger_" + name)
-                .addGauge("subscriptionActive")
-                .build();
-
-        subscriptionActive = metrics.getGauge("subscriptionActive");
+        subscriptionActive = Gauge.builder("ObservableTrigger_" + name + "subscriptionActive", subscriptionActiveValue::get)
+                .register(meterRegistry);
 
         // Share the Observable so we don't create a new Observable on every subscription.
         final Observable<GroupedObservable<K, V>> sharedO = o.share();
@@ -175,11 +171,11 @@ public final class ObservableTrigger {
                 sharedO
                     .doOnSubscribe(() -> {
                         logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
-                        subscriptionActive.increment();
+                        subscriptionActiveValue.incrementAndGet();
                     })
                     .doOnUnsubscribe(() -> {
                         logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
-                        subscriptionActive.decrement();
+                        subscriptionActiveValue.decrementAndGet();
                     })
                     .flatMap((final GroupedObservable<K, V> group) -> {
                             final byte[] keyBytes = keyEncoder.call(group.getKey());
@@ -240,16 +236,12 @@ public final class ObservableTrigger {
 
 
     private static <K, V> PushTrigger<KeyValuePair<K, V>> mantisGroupTrigger(final String name, final Observable<MantisGroup<K, V>> o, final Action0 doOnComplete,
-                                                                             final Action1<Throwable> doOnError, final long groupExpirySeconds, final Func1<K, byte[]> keyEncoder, final HashFunction hashFunction) {
+                                                                             final Action1<Throwable> doOnError, final long groupExpirySeconds, final Func1<K, byte[]> keyEncoder, final HashFunction hashFunction, final MeterRegistry meterRegistry) {
         final AtomicReference<Subscription> subRef = new AtomicReference<>();
         final Gauge subscriptionActive;
-
-        Metrics metrics = new Metrics.Builder()
-                .name("ObservableTrigger_" + name)
-                .addGauge("subscriptionActive")
-                .build();
-
-        subscriptionActive = metrics.getGauge("subscriptionActive");
+        final AtomicLong subscriptionActiveValue = new AtomicLong(0);
+        subscriptionActive = Gauge.builder("ObservableTrigger_" + name + "subscriptionActive", subscriptionActiveValue::get)
+                .register(meterRegistry);
 
         // Share the Observable so we don't create a new Observable on every subscription.
         final Observable<MantisGroup<K, V>> sharedO = o.share();
@@ -258,11 +250,11 @@ public final class ObservableTrigger {
                 sharedO
                     .doOnSubscribe(() -> {
                         logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
-                        subscriptionActive.increment();
+                        subscriptionActiveValue.incrementAndGet();
                     })
                     .doOnUnsubscribe(() -> {
                         logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
-                        subscriptionActive.decrement();
+                        subscriptionActiveValue.decrementAndGet();
                     })
                     .map((MantisGroup<K, V> data) -> {
                         final byte[] keyBytes = keyEncoder.call(data.getKeyValue());
@@ -306,14 +298,16 @@ public final class ObservableTrigger {
 
     public static <T> PushTrigger<T> o(String name, final Observable<T> o,
                                        Action0 doOnComplete,
-                                       Action1<Throwable> doOnError) {
-        return ssetrigger(name, o, doOnComplete, doOnError);
+                                       Action1<Throwable> doOnError,
+                                       MeterRegistry meterRegistry) {
+        return ssetrigger(name, o, doOnComplete, doOnError, meterRegistry);
     }
 
     public static <T> PushTrigger<T> oo(String name, final Observable<Observable<T>> oo,
                                         Action0 doOnComplete,
-                                        Action1<Throwable> doOnError) {
-        return trigger(name, Observable.merge(oo), doOnComplete, doOnError);
+                                        Action1<Throwable> doOnError,
+                                        MeterRegistry meterRegistry) {
+        return trigger(name, Observable.merge(oo), doOnComplete, doOnError, meterRegistry);
     }
 
     public static <K, V> PushTrigger<KeyValuePair<K, V>> oogo(String name, final Observable<Observable<GroupedObservable<K, V>>> oo,
@@ -321,8 +315,8 @@ public final class ObservableTrigger {
                                                               Action1<Throwable> doOnError,
                                                               long groupExpirySeconds,
                                                               final Func1<K, byte[]> keyEncoder,
-                                                              HashFunction hashFunction) {
-        return groupTrigger(name, Observable.merge(oo), doOnComplete, doOnError, groupExpirySeconds, keyEncoder, hashFunction);
+                                                              HashFunction hashFunction, MeterRegistry meterRegistry) {
+        return groupTrigger(name, Observable.merge(oo), doOnComplete, doOnError, groupExpirySeconds, keyEncoder, hashFunction, meterRegistry);
     }
 
     // NJ
@@ -331,7 +325,7 @@ public final class ObservableTrigger {
                                                                Action1<Throwable> doOnError,
                                                                long groupExpirySeconds,
                                                                final Func1<K, byte[]> keyEncoder,
-                                                               HashFunction hashFunction) {
-        return mantisGroupTrigger(name, Observable.merge(oo), doOnComplete, doOnError, groupExpirySeconds, keyEncoder, hashFunction);
+                                                               HashFunction hashFunction, MeterRegistry meterRegistry) {
+        return mantisGroupTrigger(name, Observable.merge(oo), doOnComplete, doOnError, groupExpirySeconds, keyEncoder, hashFunction, meterRegistry);
     }
 }

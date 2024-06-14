@@ -16,8 +16,11 @@
 
 package io.reactivex.mantis.network.push;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import rx.functions.Func1;
@@ -28,22 +31,21 @@ public abstract class Router<T> {
     protected Func1<T, byte[]> encoder;
     protected Counter numEventsRouted;
     protected Counter numEventsProcessed;
-    private Metrics metrics;
+    private MeterRegistry meterRegistry;
 
-    public Router(String name, Func1<T, byte[]> encoder) {
+    public Router(String name, Func1<T, byte[]> encoder, MeterRegistry meterRegistry) {
         this.encoder = encoder;
-        metrics = new Metrics.Builder()
-                .name("Router_" + name)
-                .addCounter("numEventsRouted")
-                .addCounter("numEventsProcessed")
-                .build();
-        numEventsRouted = metrics.getCounter("numEventsRouted");
-        numEventsProcessed = metrics.getCounter("numEventsProcessed");
+        this.meterRegistry = meterRegistry;
+        numEventsRouted = meterRegistry.counter("Router_" + name +"_numEventsRouted");
+        numEventsProcessed = meterRegistry.counter("Router_" + name +"_numEventsProcessed");
     }
 
     public abstract void route(Set<AsyncConnection<T>> connections, List<T> chunks);
 
-    public Metrics getMetrics() {
-        return metrics;
+    public List<Meter> getMetrics() {
+        List<Meter> routerMeters = new LinkedList<>();
+        routerMeters.add(numEventsRouted);
+        routerMeters.add(numEventsProcessed);
+        return routerMeters;
     }
 }

@@ -16,6 +16,7 @@
 
 package io.reactivex.mantis.network.push;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import rx.functions.Func1;
@@ -28,7 +29,8 @@ public class Routers {
 
     public static <K, V> Router<KeyValuePair<K, V>> consistentHashingLegacyTcpProtocol(String name,
                                                                                        final Func1<K, byte[]> keyEncoder,
-                                                                                       final Func1<V, byte[]> valueEncoder) {
+                                                                                       final Func1<V, byte[]> valueEncoder,
+                                                                                       MeterRegistry meterRegistry) {
         return new ConsistentHashingRouter<K, V>(name, new Func1<KeyValuePair<K, V>, byte[]>() {
             @Override
             public byte[] call(KeyValuePair<K, V> kvp) {
@@ -45,7 +47,7 @@ public class Routers {
                                 .put(valueBytes) // value bytes
                                 .array();
             }
-        }, HashFunctions.ketama());
+        }, HashFunctions.ketama(), meterRegistry);
     }
 
     private static byte[] dataPayload(byte[] data) {

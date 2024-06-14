@@ -17,14 +17,16 @@
 package io.reactivex.mantis.network.push;
 
 import com.mantisrx.common.utils.MantisMetricStringConstants;
-import com.netflix.spectator.api.BasicTag;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.spectator.GaugeCallback;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -38,40 +40,31 @@ public class ConnectionGroup<T> {
     private static final Logger logger = LoggerFactory.getLogger(ConnectionGroup.class);
     private String groupId;
     private Map<String, AsyncConnection<T>> connections;
-    private Metrics metrics;
-    private MetricGroupId metricsGroup;
     private Counter successfulWrites;
     private Counter numSlotSwaps;
     private Counter failedWrites;
+    private final Gauge activeConnections;
+    private MeterRegistry meterRegistry;
 
-    public ConnectionGroup(String groupId) {
+    public ConnectionGroup(String groupId, MeterRegistry meterRegistry) {
         this.groupId = groupId;
         this.connections = new HashMap<>();
+        this.meterRegistry = meterRegistry;
 
         final String grpId = Optional.ofNullable(groupId).orElse("none");
-        final BasicTag groupIdTag = new BasicTag(MantisMetricStringConstants.GROUP_ID_TAG, grpId);
-        this.metricsGroup = new MetricGroupId("ConnectionGroup", groupIdTag);
+        final Tags tags = Tags.of(MantisMetricStringConstants.GROUP_ID_TAG, grpId);
 
-        Gauge activeConnections
-                = new GaugeCallback(metricsGroup, "activeConnections", new Func0<Double>() {
-            @Override
-            public Double call() {
+        activeConnections = Gauge.builder("ConnectionGroup_activeConnections", () -> {
                 synchronized (this) {
-                    return (double) connections.size();
+                    return connections.size();
                 }
-            }
-        });
-        this.metrics = new Metrics.Builder()
-                .id(metricsGroup)
-                .addCounter("numSlotSwaps")
-                .addCounter("numSuccessfulWrites")
-                .addCounter("numFailedWrites")
-                .addGauge(activeConnections)
-                .build();
+            })
+            .tags(tags)
+            .register(meterRegistry);
 
-        this.successfulWrites = metrics.getCounter("numSuccessfulWrites");
-        this.failedWrites = metrics.getCounter("numFailedWrites");
-        this.numSlotSwaps = metrics.getCounter("numSlotSwaps");
+        this.successfulWrites = meterRegistry.counter("ConnectionGroup_numSuccessfulWrites", tags);
+        this.failedWrites = meterRegistry.counter("ConnectionGroup_numFailedWrites", tags);
+        this.numSlotSwaps = meterRegistry.counter("ConnectionGroup_numSlotSwaps", tags);
     }
 
     public synchronized void incrementSuccessfulWrites(int count) {
@@ -119,12 +112,13 @@ public class ConnectionGroup<T> {
         return copy;
     }
 
-    public Metrics getMetrics() {
-        return metrics;
-    }
-
-    public MetricGroupId getMetricsGroup() {
-        return metricsGroup;
+    public List<Meter> getMetrics() {
+        List<Meter> meters = new ArrayList<>();
+        meters.add(successfulWrites);
+        meters.add(failedWrites);
+        meters.add(numSlotSwaps);
+        meters.add(activeConnections);
+        return meters;
     }
 
     @Override

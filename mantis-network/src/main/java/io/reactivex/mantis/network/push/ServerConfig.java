@@ -16,7 +16,7 @@
 
 package io.reactivex.mantis.network.push;
 
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Map;
 import rx.functions.Func1;
@@ -33,7 +33,7 @@ public class ServerConfig<T> {
     private int maxChunkTimeMSec = 100; // max time to read from queue, for a single chunk
     private int maxNotWritableTimeSec = -1; // max time the channel can stay not writable, <= 0 means unlimited
     private ChunkProcessor<T> chunkProcessor; // logic to process chunk
-    private MetricsRegistry metricsRegistry; // registry used to store metrics
+    private MeterRegistry meterRegistry; // registry used to store metrics
     private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
     private boolean useSpscQueue = false;
 
@@ -45,7 +45,7 @@ public class ServerConfig<T> {
         this.maxChunkSize = builder.maxChunkSize;
         this.maxChunkTimeMSec = builder.maxChunkTimeMSec;
         this.chunkProcessor = builder.chunkProcessor;
-        this.metricsRegistry = builder.metricsRegistry;
+        this.meterRegistry = builder.meterRegistry;
         this.numQueueConsumers = builder.numQueueConsumers;
         this.predicate = builder.predicate;
         this.useSpscQueue = builder.useSpscQueue;
@@ -92,8 +92,8 @@ public class ServerConfig<T> {
         return chunkProcessor;
     }
 
-    public MetricsRegistry getMetricsRegistry() {
-        return metricsRegistry;
+    public MeterRegistry getMeterRegistry() {
+        return meterRegistry;
     }
 
     public boolean useSpscQueue() {
@@ -111,7 +111,7 @@ public class ServerConfig<T> {
         private int maxChunkTimeMSec = 100; // max time to read from queue, for a single chunk
         private int maxNotWritableTimeSec = -1; // max time the channel can stay not writable, <= 0 means unlimited
         private ChunkProcessor<T> chunkProcessor; // logic to process chunk
-        private MetricsRegistry metricsRegistry; // registry used to store metrics
+        private MeterRegistry meterRegistry; // registry used to store metrics
         private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
         private boolean useSpscQueue = false;
 
@@ -175,8 +175,8 @@ public class ServerConfig<T> {
             return this;
         }
 
-        public Builder<T> metricsRegistry(MetricsRegistry metricsRegistry) {
-            this.metricsRegistry = metricsRegistry;
+        public Builder<T> meterRegistry(MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
             return this;
         }
 

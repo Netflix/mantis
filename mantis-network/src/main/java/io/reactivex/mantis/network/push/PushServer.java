@@ -19,15 +19,15 @@ package io.reactivex.mantis.network.push;
 import static com.mantisrx.common.utils.MantisMetricStringConstants.GROUP_ID_TAG;
 import static io.reactivex.mantis.network.push.PushServerSse.CLIENT_ID_TAG_NAME;
 
-import com.netflix.spectator.api.BasicTag;
+//import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.compression.CompressionUtils;
 import io.mantisrx.common.messages.MantisMetaDroppedMessage;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.netty.channel.Channel;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
@@ -71,12 +71,14 @@ public abstract class PushServer<T, R> {
     private Counter successfulWrites;
     private Counter failedWrites;
     private Gauge batchWriteSize;
+    private Gauge activeConnections;
+    private AtomicLong batchWriteSizeValue = new AtomicLong(0);
     private Set<Future<Void>> consumerThreadFutures = new HashSet<>();
     private Observable<String> serverSignals;
     private String serverName;
     private final int maxNotWritableTimeSec;
     private final ScheduledExecutorService scheduledExecutorService;
-    private final MetricsRegistry metricsRegistry;
+    private final MeterRegistry meterRegistry;
 
     public PushServer(final PushTrigger<T> trigger, ServerConfig<T> config,
                       Observable<String> serverSignals) {
@@ -84,7 +86,7 @@ public abstract class PushServer<T, R> {
         this.serverSignals = serverSignals;
         serverName = config.getName();
         maxNotWritableTimeSec = config.getMaxNotWritableTimeSec();
-        metricsRegistry = config.getMetricsRegistry();
+        meterRegistry = config.getMeterRegistry();
 
         outboundBuffer = new MonitoredQueue<T>(serverName, config.getBufferCapacity(), config.useSpscQueue());
         trigger.setBuffer(outboundBuffer);
@@ -104,17 +106,16 @@ public abstract class PushServer<T, R> {
         };
 
         final String serverNameValue = Optional.ofNullable(serverName).orElse("none");
-        final BasicTag idTag = new BasicTag(GROUP_ID_TAG, serverNameValue);
-        final MetricGroupId metricsGroup = new MetricGroupId("PushServer", idTag);
+        final Tags idTags = Tags.of(GROUP_ID_TAG, serverNameValue);
         // manager will auto add metrics for connection groups
-        connectionManager = new ConnectionManager<T>(metricsRegistry, doOnFirstConnection,
+        connectionManager = new ConnectionManager<T>(meterRegistry, doOnFirstConnection,
             doOnZeroConnections);
 
 
         int numQueueProcessingThreads = config.getNumQueueConsumers();
         MonitoredThreadPool consumerThreads = new MonitoredThreadPool("QueueConsumerPool",
             new ThreadPoolExecutor(numQueueProcessingThreads, numQueueProcessingThreads, 5, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<Runnable>(numQueueProcessingThreads), new NamedThreadFactory("QueueConsumerPool")));
+                new ArrayBlockingQueue<Runnable>(numQueueProcessingThreads), new NamedThreadFactory("QueueConsumerPool")), meterRegistry);
 
         logger.info("PushServer create consumer threads, use spsc: {}, num threads: {}, buffer capacity: {}, " +
                 "chunk size: {}, chunk time ms: {}", config.useSpscQueue(), numQueueProcessingThreads,
@@ -135,25 +136,22 @@ public abstract class PushServer<T, R> {
                     config.getMaxChunkSize(),
                     config.getMaxChunkTimeMSec(),
                     config.getChunkProcessor(),
-                    connectionManager
+                    connectionManager,
+                    meterRegistry
                 )));
             }
         }
 
-        Metrics serverMetrics = new Metrics.Builder()
-            .id(metricsGroup)
-            .addCounter("numProcessedWrites")
-            .addCounter("numSuccessfulWrites")
-            .addCounter("numFailedWrites")
-            .addGauge(connectionManager.getActiveConnections(metricsGroup))
-            .addGauge("batchWriteSize")
-            .build();
-        successfulWrites = serverMetrics.getCounter("numSuccessfulWrites");
-        failedWrites = serverMetrics.getCounter("numFailedWrites");
-        batchWriteSize = serverMetrics.getGauge("batchWriteSize");
-        processedWrites = serverMetrics.getCounter("numProcessedWrites");
 
-        registerMetrics(metricsRegistry, serverMetrics, consumerThreads.getMetrics(),
+        successfulWrites = meterRegistry.counter("PushServer_numSuccessfulWrites", idTags);
+        failedWrites = meterRegistry.counter("PushServer_numFailedWrites", idTags);
+        processedWrites = meterRegistry.counter("PushServer_numProcessedWrites", idTags);
+        activeConnections = connectionManager.getActiveConnections();
+        batchWriteSize = Gauge.builder("PushServer_batchWriteSize", batchWriteSizeValue::get)
+            .tags(idTags)
+            .register(meterRegistry);
+
+        registerMetrics(meterRegistry, consumerThreads.getMetrics(),
             outboundBuffer.getMetrics(), trigger.getMetrics(),
             config.getChunkProcessor().router.getMetrics());
 
@@ -163,17 +161,26 @@ public abstract class PushServer<T, R> {
             new ThreadFactoryBuilder().setNameFormat("netty-channel-checker-%d").build());
     }
 
-    private void registerMetrics(MetricsRegistry registry, Metrics serverMetrics,
-                                 Metrics consumerPoolMetrics, Metrics queueMetrics,
-                                 Metrics pushTriggerMetrics,
-                                 Metrics routerMetrics) {
+    private void registerMetrics(MeterRegistry meterRegistry,
+                                 List<Meter> consumerPoolMetrics, List<Meter> queueMetrics,
+                                 List<Meter> pushTriggerMetrics,
+                                 List<Meter> routerMetrics) {
+        addMeter(consumerPoolMetrics);
+        addMeter(queueMetrics);
+        addMeter(pushTriggerMetrics);
+        addMeter(routerMetrics);
+        }
 
-        registry.registerAndGet(serverMetrics);
-        registry.registerAndGet(consumerPoolMetrics);
-        registry.registerAndGet(queueMetrics);
-        registry.registerAndGet(pushTriggerMetrics);
-        registry.registerAndGet(routerMetrics);
+    private void addMeter(List<Meter> meters) {
+        for (Meter meter : meters) {
+            if (meter instanceof Counter) {
+                meterRegistry.counter(meter.getId().getName(), meter.getId().getTags());
+            } else if (meter instanceof Gauge) {
+                meterRegistry.gauge(meter.getId().getName(), meter.getId().getTags(), ((Gauge) meter).value());
+            }
+        }
     }
+
 
     protected Observable<Void> manageConnection(final DefaultChannelWriter<R> writer, String host, int port,
                                                 String groupId, String slotId, String id, final AtomicLong lastWriteTime, final boolean applicationHeartbeats,
@@ -245,11 +252,11 @@ public abstract class PushServer<T, R> {
             groupId = id;
         }
 
-        final BasicTag slotIdTag = new BasicTag("slotId", slotId);
+        final Tags slotIdTag = Tags.of("slotId", slotId);
 
         SerializedSubject<List<byte[]>, List<byte[]>> subject
             = new SerializedSubject<>(PublishSubject.<List<byte[]>>create());
-        Observable<List<byte[]>> observable = subject.lift(new DropOperator<>("batch_writes", slotIdTag));
+        Observable<List<byte[]>> observable = subject.lift(new DropOperator<>(meterRegistry,"batch_writes", slotIdTag));
 
         if (applySampling) {
             observable =
@@ -266,17 +273,11 @@ public abstract class PushServer<T, R> {
                     );
         }
 
-        final BasicTag clientIdTag = new BasicTag(CLIENT_ID_TAG_NAME, Optional.ofNullable(groupId).orElse("none"));
-        Metrics writableMetrics = new Metrics.Builder()
-            .id("PushServer", clientIdTag)
-            .addCounter("channelWritable")
-            .addCounter("channelNotWritable")
-            .addCounter("channelNotWritableTimeout")
-            .build();
-        metricsRegistry.registerAndGet(writableMetrics);
-        Counter channelWritableCounter = writableMetrics.getCounter("channelWritable");
-        Counter channelNotWritableCounter = writableMetrics.getCounter("channelNotWritable");
-        Counter channelNotWritableTimeoutCounter = writableMetrics.getCounter("channelNotWritableTimeout");
+        final Tags clientIdTag = Tags.of(CLIENT_ID_TAG_NAME, Optional.ofNullable(groupId).orElse("none"));
+        Counter channelWritableCounter = meterRegistry.counter("channelWritable", clientIdTag);
+        Counter channelNotWritableCounter = meterRegistry.counter("channelNotWritable", clientIdTag);
+        Counter channelNotWritableTimeoutCounter = meterRegistry.counter("channelNotWritableTimeout", clientIdTag);
+
 
         final Future<?> writableCheck;
         AtomicLong lastWritableTS = new AtomicLong(System.currentTimeMillis());
@@ -407,7 +408,7 @@ public abstract class PushServer<T, R> {
                                                 connectionManager.successfulWrites(connection, batchSize);
                                             }
                                         )
-                                        .doOnTerminate(() -> batchWriteSize.set(batchSize));
+                                        .doOnTerminate(() -> batchWriteSizeValue.set(batchSize));
                             } else {
                                 // connection is not active or writable
                                 failedToWriteBatch(connection, batchSize, legacyDroppedWrites, metaMsgSubject);
