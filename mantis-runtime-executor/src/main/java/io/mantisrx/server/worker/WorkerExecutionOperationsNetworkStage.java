@@ -56,6 +56,7 @@ import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
+import io.mantisrx.server.worker.jobmaster.JobAutoscalerManager;
 import io.mantisrx.server.worker.jobmaster.JobMasterService;
 import io.mantisrx.server.worker.jobmaster.JobMasterStageConfig;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
@@ -65,6 +66,8 @@ import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -75,6 +78,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -412,8 +416,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     logger.info("param {} is null or empty", JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM);
                 }
 
+                JobAutoscalerManager jobAutoscalerManager = getJobAutoscalerManagerInstance(config);
                 JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
-                        workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback());
+                        workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback(), jobAutoscalerManager);
                 jobMasterService.start();
                 closeables.add(jobMasterService::shutdown);
 
@@ -474,6 +479,18 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             logger.warn("Error during executing stage; shutting down.", t);
             rw.signalFailed(t);
             shutdownStage();
+        }
+    }
+
+    private JobAutoscalerManager getJobAutoscalerManagerInstance(WorkerConfiguration config) {
+        try {
+            Class<?> jobAutoscalerManagerClass = Class.forName(config.getJobAutoscalerManagerClassName());
+            logger.info("Picking {} jobAutoscalerManager", jobAutoscalerManagerClass.getName());
+            Method managerClassFactory = jobAutoscalerManagerClass.getMethod("valueOf", Properties.class);
+            return (JobAutoscalerManager) managerClassFactory.invoke(null, System.getProperties());
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            logger.warn("Couldnt instantiate jobAutoscalerManager from class {} because ", config.getJobAutoscalerManagerClassName(), e);
+            return JobAutoscalerManager.DEFAULT;
         }
     }
 
