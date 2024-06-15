@@ -282,7 +282,7 @@ public class StageExecutors {
         final Context context,
         final boolean applyTimeoutToInners,
         final long timeout,
-        int concurrency) {
+        final int concurrency) {
         logger.info("initializing {}", computation.getClass().getCanonicalName());
         computation.init(context);
 
@@ -290,19 +290,19 @@ public class StageExecutors {
         final Func2<Context, Observable<T>, Observable<R>> c
                 = (Func2<Context, Observable<T>, Observable<R>>) computation;
 
-        if (concurrency == StageConfig.DEFAULT_STAGE_CONCURRENCY) {
-            concurrency = Runtime.getRuntime().availableProcessors();
-        }
-        final MantisRxSingleThreadScheduler[] mantisRxSingleThreadSchedulers = new MantisRxSingleThreadScheduler[concurrency];
+        final int parallelism =
+            concurrency == StageConfig.DEFAULT_STAGE_CONCURRENCY ? Runtime.getRuntime()
+                .availableProcessors() : concurrency;
+        final MantisRxSingleThreadScheduler[] mantisRxSingleThreadSchedulers = new MantisRxSingleThreadScheduler[parallelism];
         RxThreadFactory rxThreadFactory = new RxThreadFactory("MantisRxSingleThreadScheduler-");
-        logger.info("creating {} Mantis threads", concurrency);
-        for (int i = 0; i < concurrency; i++) {
+        logger.info("creating {} Mantis threads", parallelism);
+        for (int i = 0; i < parallelism; i++) {
             mantisRxSingleThreadSchedulers[i] = new MantisRxSingleThreadScheduler(rxThreadFactory);
         }
         return oo
             .lift(new MonitorOperator<>("worker_stage_outer"))
             .map(observable -> observable
-                .groupBy(e -> System.nanoTime() % concurrency)
+                .groupBy(e -> System.nanoTime() % parallelism)
                 .flatMap(go ->
                     c
                         .call(context, go
