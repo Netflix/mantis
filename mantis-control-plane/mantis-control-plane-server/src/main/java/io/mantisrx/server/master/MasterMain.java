@@ -58,6 +58,7 @@ import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.master.LocalLeaderFactory;
+import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.metrics.MetricsPublisherService;
 import io.mantisrx.server.core.metrics.MetricsServerService;
@@ -87,6 +88,7 @@ import org.apache.flink.runtime.rpc.RpcSystem;
 import org.apache.flink.runtime.rpc.RpcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
 
 
 public class MasterMain implements Service {
@@ -100,6 +102,7 @@ public class MasterMain implements Service {
     private final CountDownLatch blockUntilShutdown = new CountDownLatch(1);
     private MasterConfiguration config;
     private ILeadershipManager leadershipManager;
+    private MasterMonitor monitor;
 
     public MasterMain(
         ConfigurationFactory configFactory,
@@ -197,7 +200,6 @@ public class MasterMain implements Service {
 
             // set up leader election
             final ILeaderElectorFactory leaderFactory;
-            final MasterMonitor monitor;
             final String fqcnLeaderFactory = config.getLeaderElectorFactory();
             if(!config.isLocalMode() && ConfigUtils.createInstance(fqcnLeaderFactory, ILeaderElectorFactory.class) instanceof LocalLeaderFactory) {
                 logger.warn("local mode is {} and leader factory is {} this configuration is unsafe", config.isLocalMode(), config.getLeaderElectorFactory().getClass().getSimpleName());
@@ -286,6 +288,12 @@ public class MasterMain implements Service {
 
     public MasterConfiguration getConfig() {
         return config;
+    }
+
+    public Observable<MasterDescription> getMasterObservable() {
+        return monitor == null ?
+            Observable.empty() :
+            monitor.getMasterObservable();
     }
 
     public boolean isLeader() {
