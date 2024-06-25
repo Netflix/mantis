@@ -131,7 +131,7 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     }
 
     @Override
-    public String getLeaderMonitorFactory() {return this.leaderMonitorFactory;}
+    public String getLeaderMonitorFactoryName() {return this.leaderMonitorFactory;}
 
     public ILeaderMonitorFactory getLeaderMonitorFactoryImpl() {
         return ConfigUtils.createInstance(this.leaderMonitorFactory, ILeaderMonitorFactory.class);

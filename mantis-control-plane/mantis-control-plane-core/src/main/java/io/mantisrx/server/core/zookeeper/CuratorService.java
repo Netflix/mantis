@@ -83,10 +83,13 @@ public class CuratorService extends BaseService {
     @Override
     public void start() {
         try {
-            if(curator.getState() != CuratorFrameworkState.STARTED) {
-                isConnectedGauge.set(0L);
-                setupCuratorListener();
-                curator.start();
+            synchronized (this) {
+                if (curator.getState() != CuratorFrameworkState.STARTED) {
+                    LOG.info("Curator starting");
+                    isConnectedGauge.set(0L);
+                    setupCuratorListener();
+                    curator.start();
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

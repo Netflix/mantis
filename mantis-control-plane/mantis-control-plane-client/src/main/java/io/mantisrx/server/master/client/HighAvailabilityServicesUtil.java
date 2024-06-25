@@ -136,7 +136,7 @@ public class HighAvailabilityServicesUtil {
 
         public HighAvailabilityServicesImpl(CoreConfiguration configuration) {
             this.configuration = configuration;
-            final ILeaderMonitorFactory factory = ConfigUtils.createInstance(configuration.getLeaderMonitorFactory(), ILeaderMonitorFactory.class);
+            final ILeaderMonitorFactory factory = ConfigUtils.createInstance(configuration.getLeaderMonitorFactoryName(), ILeaderMonitorFactory.class);
             if(factory instanceof LocalLeaderFactory) {
                 log.warn("using default non-local Zookeeper leader monitoring you should set: "+
                     "mantis.leader.monitor.factory=io.mantisrx.server.core.master.ZookeeperLeaderMonitorFactory");

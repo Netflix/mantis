@@ -210,7 +210,7 @@ public class MasterMain implements Service {
                     "mantis.leader.elector.factory=io.mantisrx.master.zk.ZookeeperLeadershipFactory");
             } else {
                 leaderFactory = ConfigUtils.createInstance(fqcnLeaderFactory, ILeaderElectorFactory.class);
-                monitor = ConfigUtils.createInstance(config.getLeaderMonitorFactory(), ILeaderMonitorFactory.class).createLeaderMonitor(config);
+                monitor = ConfigUtils.createInstance(config.getLeaderMonitorFactoryName(), ILeaderMonitorFactory.class).createLeaderMonitor(config);
                 logger.warn("using leader factory {}", config.isLocalMode());
             }
             monitor.start();

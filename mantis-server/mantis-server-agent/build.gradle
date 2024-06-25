@@ -21,6 +21,7 @@ apply plugin: 'com.palantir.git-version'
 dependencies {
     api project(":mantis-runtime-loader")
     api project(":mantis-server:mantis-server-worker-client")
+    api project(':mantis-control-plane:mantis-control-plane-dynamodb')
 
     implementation libraries.vavr
     implementation libraries.zip4j

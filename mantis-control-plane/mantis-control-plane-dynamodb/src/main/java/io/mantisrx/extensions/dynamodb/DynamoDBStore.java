@@ -115,7 +115,7 @@ public class DynamoDBStore implements IKeyValueStore {
         expressionAttributesNames.put(SK_E, SK);
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(PK_V, AttributeValue.builder().s(tableName).build());
-        expressionAttributeValues.put(SK_V, AttributeValue.builder().s(partitionKey).build());
+        expressionAttributeValues.put(SK_V, AttributeValue.builder().s(String.format("%s#", partitionKey)).build());
 
         final QueryRequest request = QueryRequest.builder()
                 .tableName(this.mantisTable)
@@ -163,7 +163,7 @@ public class DynamoDBStore implements IKeyValueStore {
     public boolean delete(String tableName, String partitionKey, String secondaryKey) throws IOException {
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(PK, AttributeValue.builder().s(tableName).build());
-        expressionAttributeValues.put(SK, AttributeValue.builder().s(partitionKey + "#" + secondaryKey).build());
+        expressionAttributeValues.put(SK, AttributeValue.builder().s(String.format("%s#%s", partitionKey, secondaryKey)).build());
         final DeleteItemRequest request = DeleteItemRequest.builder()
                 .tableName(tableName)
                 .key(expressionAttributeValues)
@@ -189,7 +189,7 @@ public class DynamoDBStore implements IKeyValueStore {
         expressionAttributesNames.put(SK_E, SK);
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(PK_V, AttributeValue.builder().s(tableName).build());
-        expressionAttributeValues.put(SK_V, AttributeValue.builder().s(partitionKey).build());
+        expressionAttributeValues.put(SK_V, AttributeValue.builder().s(String.format("%s#", partitionKey)).build());
 
         final QueryRequest request = QueryRequest.builder()
                 .tableName(this.mantisTable)
