@@ -118,7 +118,7 @@ public class JobScaleUpDownTests {
 						new MachineDefinition(1.0,1.0,1.0,3),
 						Lists.newArrayList(),
 						Lists.newArrayList(),
-						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap))
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
 				.build();
 		String clusterName = "testJobScaleUp";
 		MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -161,7 +161,7 @@ public class JobScaleUpDownTests {
 						new MachineDefinition(1.0,1.0,1.0,3),
 						Lists.newArrayList(),
 						Lists.newArrayList(),
-						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap))
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
 				.build();
 		String clusterName = "testJobScaleUp";
 		MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -219,7 +219,7 @@ public class JobScaleUpDownTests {
                         new MachineDefinition(1.0,1.0,1.0,3),
                         Lists.newArrayList(),
                         Lists.newArrayList(),
-                        new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap))
+                        new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
                 .build();
         String clusterName = "testSchedulingInfo";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -500,7 +500,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 						new MachineDefinition(1.0,1.0,1.0,3),
 						Lists.newArrayList(),
 						Lists.newArrayList(),
-						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap))
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
 				.build();
 		String clusterName = "testJobScaleUpFailsIfNoScaleStrategy";
 		MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -543,7 +543,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 						new MachineDefinition(1.0,1.0,1.0,3),
 						Lists.newArrayList(),
 						Lists.newArrayList(),
-						new StageScalingPolicy(1, 1, 1, 1, 1, 0, smap))
+						new StageScalingPolicy(1, 1, 1, 1, 1, 0, smap, true))
 				.build();
 		String clusterName = "testJobScaleUpFailsIfNoScaleStrategy";
 		MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -583,7 +583,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		long cooldownsecs = 300;
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
 		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
-		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap);
+		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap, true);
 
 		assertTrue(ssp.isEnabled());
 	}
@@ -598,7 +598,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		long cooldownsecs = 300;
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
 
-		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap);
+		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap, true);
 
 		assertFalse(ssp.isEnabled());
 	}
@@ -613,7 +613,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		long cooldownsecs = 300;
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
 		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
-		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap);
+		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap, true);
 
 		assertFalse(ssp.isEnabled());
 	}
@@ -628,7 +628,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		long cooldownsecs = 300;
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
 		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
-		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap);
+		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap, true);
 
 		assertTrue(ssp.isEnabled());
 		// max will be set equal to min

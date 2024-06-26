@@ -177,7 +177,7 @@ public class WorkerRegistryV2Test {
                         new MachineDefinition(1.0,1.0,1.0,3),
                         Lists.newArrayList(),
                         Lists.newArrayList(),
-                        new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap))
+                        new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
                 .build();
         String clusterName = "testJobScaleUp";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -229,7 +229,7 @@ public class WorkerRegistryV2Test {
                         new MachineDefinition(1.0,1.0,1.0,3),
                         Lists.newArrayList(),
                         Lists.newArrayList(),
-                        new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap))
+                        new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
                 .build();
         String clusterName = "testJobScaleDown";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -285,7 +285,7 @@ public class WorkerRegistryV2Test {
                         new MachineDefinition(1.0,1.0,1.0,3),
                         Lists.newArrayList(),
                         Lists.newArrayList(),
-                        new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap))
+                        new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
                 .build();
         String clusterName = "testJobShutdown";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);

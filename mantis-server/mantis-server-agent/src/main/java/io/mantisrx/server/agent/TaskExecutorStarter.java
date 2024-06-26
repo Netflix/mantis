@@ -110,6 +110,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
 
         private final List<Tuple2<TaskExecutor.Listener, Executor>> listeners = new ArrayList<>();
 
+
         private TaskExecutorStarterBuilder(WorkerConfiguration workerConfiguration) {
             this.workerConfiguration = workerConfiguration;
             this.configuration = new Configuration();
@@ -194,7 +195,8 @@ public class TaskExecutorStarter extends AbstractIdleService {
                     Preconditions.checkNotNull(propertiesLoader, "propertiesLoader for TaskExecutor is null"),
                     highAvailabilityServices,
                     getClassLoaderHandle(),
-                    this.taskFactory);
+                    this.taskFactory
+                );
 
             for (Tuple2<TaskExecutor.Listener, Executor> listener : listeners) {
                 taskExecutor.addListener(listener._1(), listener._2());

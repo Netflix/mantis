@@ -132,7 +132,7 @@ public class SchedulingInfo implements Serializable {
                                                                List<JobConstraints> hardConstraints, List<JobConstraints> softConstraints,
                                                                StageScalingPolicy scalingPolicy) {
             StageScalingPolicy ssp = new StageScalingPolicy(currentStage, scalingPolicy.getMin(), scalingPolicy.getMax(),
-                    scalingPolicy.getIncrement(), scalingPolicy.getDecrement(), scalingPolicy.getCoolDownSecs(), scalingPolicy.getStrategies());
+                    scalingPolicy.getIncrement(), scalingPolicy.getDecrement(), scalingPolicy.getCoolDownSecs(), scalingPolicy.getStrategies(), scalingPolicy.isAllowAutoScaleManager());
             return this.addStage(
                     StageSchedulingInfo.builder()
                             .numberOfInstances(numberOfWorkers)
@@ -148,7 +148,7 @@ public class SchedulingInfo implements Serializable {
             List<JobConstraints> hardConstraints, List<JobConstraints> softConstraints,
             StageScalingPolicy scalingPolicy, Map<String, String> containerAttributes) {
             StageScalingPolicy ssp = new StageScalingPolicy(currentStage, scalingPolicy.getMin(), scalingPolicy.getMax(),
-                scalingPolicy.getIncrement(), scalingPolicy.getDecrement(), scalingPolicy.getCoolDownSecs(), scalingPolicy.getStrategies());
+                scalingPolicy.getIncrement(), scalingPolicy.getDecrement(), scalingPolicy.getCoolDownSecs(), scalingPolicy.getStrategies(), scalingPolicy.isAllowAutoScaleManager());
             return this.addStage(
                 StageSchedulingInfo.builder()
                     .numberOfInstances(numberOfWorkers)

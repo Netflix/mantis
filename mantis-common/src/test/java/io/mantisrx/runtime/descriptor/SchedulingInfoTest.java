@@ -153,13 +153,13 @@ public class SchedulingInfoTest {
                 2,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,
-                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap)
+                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, false)
             )
             .multiWorkerScalableStageWithConstraints(
                 3,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,
-                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap)
+                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, true)
             );
 
         JsonSerializer serializer = new JsonSerializer();
@@ -204,6 +204,7 @@ public class SchedulingInfoTest {
             "                        }" +
             "                    }" +
             "                }," +
+            "                \"allowAutoScaleManager\": false," +
             "                \"enabled\": true" +
             "            }," +
             "            \"scalable\": true" +
@@ -245,6 +246,7 @@ public class SchedulingInfoTest {
             "                        }" +
             "                    }" +
             "                }," +
+            "                \"allowAutoScaleManager\": true," +
             "                \"enabled\": true" +
             "            }," +
             "            \"scalable\": true" +
@@ -264,14 +266,14 @@ public class SchedulingInfoTest {
                 2,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,
-                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap),
+                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, false),
                 ImmutableMap.of("containerSkuID", "sku1")
             )
             .multiWorkerScalableStageWithConstraints(
                 3,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,
-                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap),
+                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, false),
                 ImmutableMap.of("containerSkuID", "sku2")
             );
 
@@ -317,6 +319,7 @@ public class SchedulingInfoTest {
             "                        }" +
             "                    }" +
             "                }," +
+            "                \"allowAutoScaleManager\": false," +
             "                \"enabled\": true" +
             "            }," +
             "            \"scalable\": true," +
@@ -359,6 +362,7 @@ public class SchedulingInfoTest {
             "                        }" +
             "                    }" +
             "                }," +
+            "                \"allowAutoScaleManager\": false," +
             "                \"enabled\": true" +
             "            }," +
             "            \"scalable\": true," +

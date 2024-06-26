@@ -132,7 +132,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             new DefaultMantisPropertiesLoader(System.getProperties()),
             highAvailabilityServices,
             classLoaderHandle,
-            null);
+            null
+        );
     }
 
     public TaskExecutor(

@@ -100,7 +100,7 @@ public class WorkerMetricHandlerTest {
                 assertEquals(expected, event);
                 latch.countDown();
             }
-        }, mockMasterClientApi, aggregationConfig);
+        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
 
@@ -174,7 +174,7 @@ public class WorkerMetricHandlerTest {
                     latch.countDown();
                 }
             }
-        }, mockMasterClientApi, aggregationConfig);
+        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
 
@@ -266,7 +266,7 @@ public class WorkerMetricHandlerTest {
                 assertEquals(expected, event);
                 autoScaleLatch.countDown();
             }
-        }, mockMasterClientApi, aggregationConfig);
+        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
 
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
@@ -322,7 +322,7 @@ public class WorkerMetricHandlerTest {
                     latch.countDown();
                 }
             }
-        }, mockMasterClientApi, aggregationConfig);
+        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
 

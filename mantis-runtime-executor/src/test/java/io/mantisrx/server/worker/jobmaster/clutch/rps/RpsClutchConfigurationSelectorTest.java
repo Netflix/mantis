@@ -70,7 +70,7 @@ public class RpsClutchConfigurationSelectorTest {
         rpsSketch.update(100);
         Map<Clutch.Metric, UpdateDoublesSketch> sketches = ImmutableMap.of(Clutch.Metric.RPS, rpsSketch);
 
-        StageScalingPolicy scalingPolicy = new StageScalingPolicy(1, 2, 9, 0, 0, 400L, null);
+        StageScalingPolicy scalingPolicy = new StageScalingPolicy(1, 2, 9, 0, 0, 400L, null, true);
 
         StageSchedulingInfo schedulingInfo = StageSchedulingInfo.builder()
                 .numberOfInstances(3)
@@ -99,7 +99,7 @@ public class RpsClutchConfigurationSelectorTest {
         }
         Map<Clutch.Metric, UpdateDoublesSketch> sketches = ImmutableMap.of(Clutch.Metric.RPS, rpsSketch);
 
-        StageScalingPolicy scalingPolicy = new StageScalingPolicy(1, 2, 9, 0, 0, 400L, null);
+        StageScalingPolicy scalingPolicy = new StageScalingPolicy(1, 2, 9, 0, 0, 400L, null, true);
 
         StageSchedulingInfo schedulingInfo = StageSchedulingInfo.builder()
                 .numberOfInstances(3)
@@ -123,7 +123,7 @@ public class RpsClutchConfigurationSelectorTest {
         }
         Map<Clutch.Metric, UpdateDoublesSketch> sketches = ImmutableMap.of(Clutch.Metric.RPS, rpsSketch);
 
-        StageScalingPolicy scalingPolicy = new StageScalingPolicy(1, 2, 9, 0, 0, 400L, null);
+        StageScalingPolicy scalingPolicy = new StageScalingPolicy(1, 2, 9, 0, 0, 400L, null, true);
 
         StageSchedulingInfo schedulingInfo = StageSchedulingInfo.builder()
                 .numberOfInstances(3)
@@ -162,7 +162,7 @@ public class RpsClutchConfigurationSelectorTest {
         }
         Map<Clutch.Metric, UpdateDoublesSketch> sketches = ImmutableMap.of(Clutch.Metric.RPS, rpsSketch);
 
-        StageScalingPolicy scalingPolicy = new StageScalingPolicy(1, 2, 9, 0, 0, 400L, null);
+        StageScalingPolicy scalingPolicy = new StageScalingPolicy(1, 2, 9, 0, 0, 400L, null, true);
 
         StageSchedulingInfo schedulingInfo = StageSchedulingInfo.builder()
                 .numberOfInstances(3)
