@@ -68,12 +68,13 @@ public class JobMasterService implements Service {
                             final Context context,
                             final Action0 observableOnCompleteCallback,
                             final Action1<Throwable> observableOnErrorCallback,
-                            final Action0 observableOnTerminateCallback) {
+                            final Action0 observableOnTerminateCallback,
+                            final JobAutoscalerManager jobAutoscalerManager) {
         this.jobId = jobId;
         this.workerMetricsClient = workerMetricsClient;
         this.autoScaleMetricsConfig = autoScaleMetricsConfig;
         this.masterClientApi = masterClientApi;
-        this.jobAutoScaler = new JobAutoScaler(jobId, schedInfo, masterClientApi, context);
+        this.jobAutoScaler = new JobAutoScaler(jobId, schedInfo, masterClientApi, context, jobAutoscalerManager);
         this.metricObserver = new WorkerMetricHandler(jobId, jobAutoScaler.getObserver(), masterClientApi, autoScaleMetricsConfig).initAndGetMetricDataObserver();
         this.observableOnCompleteCallback = observableOnCompleteCallback;
         this.observableOnErrorCallback = observableOnErrorCallback;
