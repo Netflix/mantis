@@ -21,10 +21,10 @@ import static org.junit.Assert.assertNotEquals;
 
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
+import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import org.junit.Test;
@@ -43,7 +43,7 @@ public class LeaderRedirectionFilterTest extends AllDirectives {
             8100 + 6,
             System.currentTimeMillis());
         MasterMonitor masterMonitor = new LocalMasterMonitor(fakeMasterDesc);
-        ILeadershipManager leadershipManager = new LeadershipManagerLocalImpl(fakeMasterDesc);
+        io.mantisrx.server.core.ILeadershipManager leadershipManager = new LeadershipManagerLocalImpl(fakeMasterDesc);
         leadershipManager.becomeLeader();
         LeaderRedirectionFilter filter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);
         Route testRoute = route(path("test", () -> complete("done")));

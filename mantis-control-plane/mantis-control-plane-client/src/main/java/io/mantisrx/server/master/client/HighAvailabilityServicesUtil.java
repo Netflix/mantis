@@ -19,10 +19,14 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.CoreConfiguration;
+import io.mantisrx.server.core.ILeaderMonitorFactory;
+import io.mantisrx.server.core.master.LocalLeaderFactory;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.core.zookeeper.CuratorService;
+import io.mantisrx.server.core.master.ZookeeperLeaderMonitorFactory;
+import io.mantisrx.server.core.master.ZookeeperMasterMonitor;
+import io.mantisrx.server.core.utils.ConfigUtils;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGatewayClient;
@@ -71,7 +75,7 @@ public class HighAvailabilityServicesUtil {
     }
     else {
       if (HAServiceInstanceRef.get() == null) {
-          HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityServices(configuration));
+          HAServiceInstanceRef.compareAndSet(null, new HighAvailabilityServicesImpl(configuration));
       }
     }
 
@@ -121,99 +125,104 @@ public class HighAvailabilityServicesUtil {
     protected void shutDown() throws Exception {
     }
   }
+    private static class HighAvailabilityServicesImpl extends AbstractIdleService implements
+        HighAvailabilityServices {
 
-  /**
-   * Zookeeper based implementation of HighAvailabilityServices that finds the various leader instances
-   * through metadata stored on zookeeper.
-   */
-  private static class ZkHighAvailabilityServices extends AbstractIdleService implements
-      HighAvailabilityServices {
+        private final MasterMonitor masterMonitor;
+        private final Counter resourceLeaderChangeCounter;
+        private final Counter resourceLeaderAlreadyRegisteredCounter;
+        private final AtomicInteger rmConnections = new AtomicInteger(0);
+        private final CoreConfiguration configuration;
 
-    private final CuratorService curatorService;
-    private final Counter resourceLeaderChangeCounter;
-    private final Counter resourceLeaderAlreadyRegisteredCounter;
-    private final AtomicInteger rmConnections = new AtomicInteger(0);
-    private final CoreConfiguration configuration;
+        public HighAvailabilityServicesImpl(CoreConfiguration configuration) {
+            this.configuration = configuration;
+            final ILeaderMonitorFactory factory = ConfigUtils.createInstance(configuration.getLeaderMonitorFactoryName(), ILeaderMonitorFactory.class);
+            if(factory instanceof LocalLeaderFactory) {
+                log.warn("using default non-local Zookeeper leader monitoring you should set: "+
+                    "mantis.leader.monitor.factory=io.mantisrx.server.core.master.ZookeeperLeaderMonitorFactory");
+                masterMonitor = new ZookeeperLeaderMonitorFactory().createLeaderMonitor(configuration);
+            } else {
+                masterMonitor = factory.createLeaderMonitor(configuration);
+            }
+            // this for backward compatibility, but should be modified to "HighAvailabilityServices" in the future
+            final String metricsGroup = masterMonitor instanceof ZookeeperMasterMonitor ? "ZkHighAvailabilityServices" :
+                "HighAvailabilityServices";
 
-    public ZkHighAvailabilityServices(CoreConfiguration configuration) {
-      curatorService = new CuratorService(configuration);
-      final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(new Metrics.Builder()
-        .name("ZkHighAvailabilityServices")
-        .addCounter("resourceLeaderChangeCounter")
-        .addCounter("resourceLeaderAlreadyRegisteredCounter")
-        .build());
-      resourceLeaderChangeCounter = metrics.getCounter("resourceLeaderChangeCounter");
-      resourceLeaderAlreadyRegisteredCounter = metrics.getCounter("resourceLeaderAlreadyRegisteredCounter");
-      this.configuration = configuration;
-    }
+            final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(new Metrics.Builder()
+                .name(metricsGroup)
+                .addCounter("resourceLeaderChangeCounter")
+                .addCounter("resourceLeaderAlreadyRegisteredCounter")
+                .build());
+            resourceLeaderChangeCounter = metrics.getCounter("resourceLeaderChangeCounter");
+            resourceLeaderAlreadyRegisteredCounter = metrics.getCounter("resourceLeaderAlreadyRegisteredCounter");
 
-    @Override
-    protected void startUp() throws Exception {
-      curatorService.start();
-    }
-
-    @Override
-    protected void shutDown() throws Exception {
-      curatorService.shutdown();
-    }
-
-    @Override
-    public MantisMasterGateway getMasterClientApi() {
-      return new MantisMasterClientApi(curatorService.getMasterMonitor());
-    }
-
-    @Override
-    public MasterMonitor getMasterMonitor() {
-      return curatorService.getMasterMonitor();
-    }
-
-    @Override
-    public ResourceLeaderConnection<ResourceClusterGateway> connectWithResourceManager(
-        ClusterID clusterID) {
-      return new ResourceLeaderConnection<ResourceClusterGateway>() {
-        final MasterMonitor masterMonitor = curatorService.getMasterMonitor();
-
-        ResourceClusterGateway currentResourceClusterGateway =
-            new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster(), configuration);
-
-        final String nameFormat =
-            "ResourceClusterGatewayCxn (" + rmConnections.getAndIncrement() + ")-%d";
-        final Scheduler scheduler =
-            Schedulers
-                .from(
-                    Executors
-                        .newSingleThreadExecutor(
-                            new ThreadFactoryBuilder().setNameFormat(nameFormat).build()));
-
-        final List<Subscription> subscriptions = new ArrayList<>();
-
-        @Override
-        public ResourceClusterGateway getCurrent() {
-          return currentResourceClusterGateway;
         }
 
         @Override
-        public void register(ResourceLeaderChangeListener<ResourceClusterGateway> changeListener) {
-          Subscription subscription = masterMonitor
-              .getMasterObservable()
-              .observeOn(scheduler)
-              .subscribe(nextDescription -> {
-                log.info("nextDescription={}", nextDescription);
+        protected void startUp() throws Exception {
+            masterMonitor.start();
+        }
 
-                if (nextDescription.equals(((ResourceClusterGatewayClient)currentResourceClusterGateway).getMasterDescription())) {
-                    resourceLeaderAlreadyRegisteredCounter.increment();
-                    return;
+        @Override
+        protected void shutDown() throws Exception {
+            masterMonitor.shutdown();
+        }
+
+        @Override
+        public MantisMasterGateway getMasterClientApi() {
+            return new MantisMasterClientApi(masterMonitor);
+        }
+
+        @Override
+        public MasterMonitor getMasterMonitor() {
+            return masterMonitor;
+        }
+
+        @Override
+        public ResourceLeaderConnection<ResourceClusterGateway> connectWithResourceManager(
+            ClusterID clusterID) {
+            return new ResourceLeaderConnection<ResourceClusterGateway>() {
+                ResourceClusterGateway currentResourceClusterGateway =
+                    new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster(), configuration);
+
+                final String nameFormat =
+                    "ResourceClusterGatewayCxn (" + rmConnections.getAndIncrement() + ")-%d";
+                final Scheduler scheduler =
+                    Schedulers
+                        .from(
+                            Executors
+                                .newSingleThreadExecutor(
+                                    new ThreadFactoryBuilder().setNameFormat(nameFormat).build()));
+
+                final List<Subscription> subscriptions = new ArrayList<>();
+
+                @Override
+                public ResourceClusterGateway getCurrent() {
+                    return currentResourceClusterGateway;
                 }
-                ResourceClusterGateway previous = currentResourceClusterGateway;
-                currentResourceClusterGateway = new ResourceClusterGatewayClient(clusterID, nextDescription, configuration);
 
-                resourceLeaderChangeCounter.increment();
-                changeListener.onResourceLeaderChanged(previous, currentResourceClusterGateway);
-              });
+                @Override
+                public void register(ResourceLeaderChangeListener<ResourceClusterGateway> changeListener) {
+                    Subscription subscription = masterMonitor
+                        .getMasterObservable()
+                        .observeOn(scheduler)
+                        .subscribe(nextDescription -> {
+                            log.info("nextDescription={}", nextDescription);
 
-          subscriptions.add(subscription);
+                            if (nextDescription.equals(((ResourceClusterGatewayClient)currentResourceClusterGateway).getMasterDescription())) {
+                                resourceLeaderAlreadyRegisteredCounter.increment();
+                                return;
+                            }
+                            ResourceClusterGateway previous = currentResourceClusterGateway;
+                            currentResourceClusterGateway = new ResourceClusterGatewayClient(clusterID, nextDescription, configuration);
+
+                            resourceLeaderChangeCounter.increment();
+                            changeListener.onResourceLeaderChanged(previous, currentResourceClusterGateway);
+                        });
+
+                    subscriptions.add(subscription);
+                }
+            };
         }
-      };
     }
-  }
 }

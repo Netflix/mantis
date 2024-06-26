@@ -50,16 +50,19 @@ import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
-import io.mantisrx.master.zk.LeaderElector;
+import io.mantisrx.master.zk.ZookeeperLeadershipFactory;
 import io.mantisrx.server.core.BaseService;
+import io.mantisrx.server.core.ILeaderElectorFactory;
+import io.mantisrx.server.core.ILeaderMonitorFactory;
+import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.json.DefaultObjectMapper;
-import io.mantisrx.server.core.master.LocalMasterMonitor;
+import io.mantisrx.server.core.master.LocalLeaderFactory;
 import io.mantisrx.server.core.master.MasterDescription;
+import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.metrics.MetricsPublisherService;
 import io.mantisrx.server.core.metrics.MetricsServerService;
-import io.mantisrx.server.core.zookeeper.CuratorService;
+import io.mantisrx.server.core.utils.ConfigUtils;
 import io.mantisrx.server.master.config.ConfigurationFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
@@ -71,13 +74,6 @@ import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactoryImpl;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
@@ -103,17 +99,15 @@ public class MasterMain implements Service {
     private final ServiceLifecycle mantisServices = new ServiceLifecycle();
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
     private KeyValueBasedPersistenceProvider storageProvider;
-    private CountDownLatch blockUntilShutdown = new CountDownLatch(1);
-    private volatile CuratorService curatorService = null;
+    private final CountDownLatch blockUntilShutdown = new CountDownLatch(1);
     private MasterConfiguration config;
     private ILeadershipManager leadershipManager;
-    private final MantisPropertiesLoader dynamicPropertiesLoader;
+    private MasterMonitor monitor;
 
     public MasterMain(
         ConfigurationFactory configFactory,
         MantisPropertiesLoader dynamicPropertiesLoader,
         AuditEventSubscriber auditEventSubscriber) {
-        this.dynamicPropertiesLoader = dynamicPropertiesLoader;
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
 
         Metrics metrics = new Metrics.Builder()
@@ -127,7 +121,7 @@ public class MasterMain implements Service {
             this.config = ConfigurationProvider.getConfig();
             leadershipManager = new LeadershipManagerZkImpl(config, mantisServices);
 
-            Thread t = new Thread(() -> shutdown());
+            Thread t = new Thread(this::shutdown);
             t.setDaemon(true);
             // shutdown hook
             Runtime.getRuntime().addShutdownHook(t);
@@ -185,7 +179,7 @@ public class MasterMain implements Service {
                     jobMessageRouter,
                     resourceClustersHostActor,
                     storageProvider,
-                    this.dynamicPropertiesLoader);
+                    dynamicPropertiesLoader);
 
             // end of new stuff
             final MantisSchedulerFactory mantisSchedulerFactory =
@@ -204,17 +198,31 @@ public class MasterMain implements Service {
             // services
             mantisServices.addService(jobClustersManagerService);
 
-            if (this.config.isLocalMode()) {
-                mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
-                leadershipManager.becomeLeader();
+            // set up leader election
+            final ILeaderElectorFactory leaderFactory;
+            final String fqcnLeaderFactory = config.getLeaderElectorFactory();
+            if(!config.isLocalMode() && ConfigUtils.createInstance(fqcnLeaderFactory, ILeaderElectorFactory.class) instanceof LocalLeaderFactory) {
+                logger.warn("local mode is {} and leader factory is {} this configuration is unsafe", config.isLocalMode(), config.getLeaderElectorFactory().getClass().getSimpleName());
+                final ZookeeperLeadershipFactory zkLeadership = new ZookeeperLeadershipFactory();
+                leaderFactory = zkLeadership;
+                monitor = zkLeadership.createLeaderMonitor(config);
+                logger.warn("using default non-local Zookeeper leader services you should set: "+
+                    "mantis.leader.elector.factory=io.mantisrx.master.zk.ZookeeperLeadershipFactory");
             } else {
-                curatorService = new CuratorService(this.config);
-                curatorService.start();
-                mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
-                mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
+                leaderFactory = ConfigUtils.createInstance(fqcnLeaderFactory, ILeaderElectorFactory.class);
+                monitor = ConfigUtils.createInstance(config.getLeaderMonitorFactoryName(), ILeaderMonitorFactory.class).createLeaderMonitor(config);
+                logger.warn("using leader factory {}", config.isLocalMode());
             }
+            monitor.start();
+            mantisServices.addService(leaderFactory.createLeaderElector(config, leadershipManager));
+            mantisServices.addService(new MasterApiAkkaService(monitor, leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
+                resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
+
+            if (leaderFactory instanceof LocalLeaderFactory && !config.isLocalMode()) {
+                logger.error("local mode is [ {} ] and leader factory is {} this configuration is unsafe", config.isLocalMode(), leaderFactory.getClass().getSimpleName());
+                throw new RuntimeException("leader election is local but local mode is not enabled");
+            }
+
             m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {
             logger.error("caught exception on Mantis Master initialization", e);
@@ -222,53 +230,6 @@ public class MasterMain implements Service {
             shutdown();
             System.exit(1);
         }
-    }
-
-    private static Properties loadProperties(String propFile) {
-        // config
-        Properties props = new Properties();
-        try (InputStream in = findResourceAsStream(propFile)) {
-            props.load(in);
-        } catch (IOException e) {
-            throw new RuntimeException(String.format("Can't load properties from the given property file %s: %s", propFile, e.getMessage()), e);
-        }
-
-        for (String key : props.stringPropertyNames()) {
-            String envVarKey = key.toUpperCase().replace('.', '_');
-            String envValue = System.getenv(envVarKey);
-            if (envValue != null) {
-                props.setProperty(key, envValue);
-                logger.info("Override config from env {}: {}.", key, envValue);
-            }
-
-        }
-
-        return props;
-    }
-
-
-    /**
-     * Finds the given resource and returns its input stream. This method seeks the file first from the current working directory,
-     * and then in the class path.
-     *
-     * @param resourceName the name of the resource. It can either be a file name, or a path.
-     *
-     * @return An {@link java.io.InputStream} instance that represents the found resource. Null otherwise.
-     *
-     * @throws FileNotFoundException
-     */
-    private static InputStream findResourceAsStream(String resourceName) throws FileNotFoundException {
-        File resource = new File(resourceName);
-        if (resource.exists()) {
-            return new FileInputStream(resource);
-        }
-
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
-        if (is == null) {
-            throw new FileNotFoundException(String.format("Can't find property file %s. Make sure the property file is either in your path or in your classpath ", resourceName));
-        }
-
-        return is;
     }
 
     public static void main(String[] args) {
@@ -284,7 +245,7 @@ public class MasterMain implements Service {
             Properties props = new Properties();
             props.putAll(System.getenv());
             props.putAll(System.getProperties());
-            props.putAll(loadProperties(propFile));
+            props.putAll(ConfigUtils.loadProperties(propFile));
             StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
             final AuditEventSubscriber auditEventSubscriber = new AuditEventSubscriberLoggingImpl();
             final MantisPropertiesLoader propertiesLoader = new DefaultMantisPropertiesLoader(System.getProperties());
@@ -295,16 +256,6 @@ public class MasterMain implements Service {
             logger.error("Unexpected error: " + e.getMessage(), e);
             System.exit(2);
         }
-    }
-
-    private LeaderElector createLeaderElector(CuratorService curatorService,
-                                              ILeadershipManager leadershipManager) {
-        return LeaderElector.builder(leadershipManager)
-                .withCurator(curatorService.getCurator())
-                .withJsonMapper(DefaultObjectMapper.getInstance())
-                .withElectionPath(ZKPaths.makePath(config.getZkRoot(), config.getLeaderElectionPath()))
-                .withAnnouncementPath(ZKPaths.makePath(config.getZkRoot(), config.getLeaderAnnouncementPath()))
-                .build();
     }
 
     @Override
@@ -329,13 +280,6 @@ public class MasterMain implements Service {
             logger.info("Shutting down Mantis Master");
             mantisServices.shutdown();
             logger.info("mantis services shutdown complete");
-            boolean shutdownCuratorEnabled = ConfigurationProvider.getConfig().getShutdownCuratorServiceEnabled();
-            if (curatorService != null && shutdownCuratorEnabled) {
-                logger.info("Shutting down Curator Service");
-                curatorService.shutdown();
-            } else {
-                logger.info("not shutting down curator service {} shutdownEnabled? {}", curatorService, shutdownCuratorEnabled);
-            }
             blockUntilShutdown.countDown();
             logger.info("Mantis Master shutdown done");
         } else
@@ -346,18 +290,10 @@ public class MasterMain implements Service {
         return config;
     }
 
-    public String getDescriptionJson() {
-        try {
-            return DefaultObjectMapper.getInstance().writeValueAsString(leadershipManager.getDescription());
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException(String.format("Failed to convert the description %s to JSON: %s", leadershipManager.getDescription(), e.getMessage()), e);
-        }
-    }
-
     public Observable<MasterDescription> getMasterObservable() {
-        return curatorService == null ?
-                Observable.empty() :
-                curatorService.getMasterMonitor().getMasterObservable();
+        return monitor == null ?
+            Observable.empty() :
+            monitor.getMasterObservable();
     }
 
     public boolean isLeader() {

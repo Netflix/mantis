@@ -22,16 +22,14 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.core.master.ZookeeperMasterMonitor;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
+import io.mantisrx.shaded.org.apache.curator.framework.imps.CuratorFrameworkState;
 import io.mantisrx.shaded.org.apache.curator.framework.imps.GzipCompressionProvider;
 import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionState;
 import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionStateListener;
 import io.mantisrx.shaded.org.apache.curator.retry.ExponentialBackoffRetry;
-import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +44,6 @@ public class CuratorService extends BaseService {
     private static final String isConnectedGaugeName = "isConnected";
 
     private final CuratorFramework curator;
-    private final ZookeeperMasterMonitor masterMonitor;
     private final Gauge isConnectedGauge;
 
     public CuratorService(CoreConfiguration configs) {
@@ -64,10 +61,6 @@ public class CuratorService extends BaseService {
                 .retryPolicy(new ExponentialBackoffRetry(configs.getZkConnectionRetrySleepMs(), configs.getZkConnectionMaxRetries()))
                 .connectString(configs.getZkConnectionString())
                 .build();
-
-        masterMonitor = new ZookeeperMasterMonitor(
-                curator,
-                ZKPaths.makePath(configs.getZkRoot(), configs.getLeaderAnnouncementPath()));
     }
 
     private void setupCuratorListener() {
@@ -90,10 +83,14 @@ public class CuratorService extends BaseService {
     @Override
     public void start() {
         try {
-            isConnectedGauge.set(0L);
-            setupCuratorListener();
-            curator.start();
-            masterMonitor.startAsync().awaitRunning();
+            synchronized (this) {
+                if (curator.getState() != CuratorFrameworkState.STARTED) {
+                    LOG.info("Curator starting");
+                    isConnectedGauge.set(0L);
+                    setupCuratorListener();
+                    curator.start();
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -102,7 +99,6 @@ public class CuratorService extends BaseService {
     @Override
     public void shutdown() {
         try {
-            masterMonitor.stopAsync().awaitTerminated();
             curator.close();
         } catch (Exception e) {
             // A shutdown failure should not affect the subsequent shutdowns, so
@@ -113,9 +109,5 @@ public class CuratorService extends BaseService {
 
     public CuratorFramework getCurator() {
         return curator;
-    }
-
-    public MasterMonitor getMasterMonitor() {
-        return masterMonitor;
     }
 }
