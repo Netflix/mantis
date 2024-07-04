@@ -46,6 +46,8 @@ public class MasterClientWrapperTest {
         zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
         zkProps.put("mantis.zookeeper.root", "/mantis/master");
         zkProps.put("mantis.localmode", "false");
+        zkProps.put("mantis.leader.monitor.factory","io.mantisrx.server.core.master.ZookeeperLeaderMonitorFactory");
+        zkProps.put("mantis.leader.elector.factory", "io.mantisrx.master.zk.ZookeeperLeadershipFactory");
     }
 
     MasterClientWrapper clientWrapper = null;

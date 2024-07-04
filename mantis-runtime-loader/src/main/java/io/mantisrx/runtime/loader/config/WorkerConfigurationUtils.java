@@ -66,6 +66,7 @@ public class WorkerConfigurationUtils {
             .zkConnectionString(configSource.getZkConnectionString())
             .zkConnectionRetrySleepMs(configSource.getZkConnectionRetrySleepMs())
             .zkRoot(configSource.getZkRoot())
+            .leaderMonitorFactory(configSource.getLeaderMonitorFactoryName())
             .build();
     }
 

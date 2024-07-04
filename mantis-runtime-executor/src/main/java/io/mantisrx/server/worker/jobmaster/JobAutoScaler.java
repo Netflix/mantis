@@ -341,8 +341,8 @@ public class JobAutoScaler {
           return numCurrentWorkers;
         } else {
           final int maxWorkersForStage = stageSchedulingInfo.getScalingPolicy().getMax();
-          if (reason == ScalingReason.AutoscalerManager) {
-            logger.info("FailoverAware scaling up stage {} of job {} to maxWorkersForStage {}", stage, jobId, maxWorkersForStage);
+          if (reason == ScalingReason.AutoscalerManagerEvent) {
+            logger.info("AutoscalerManagerEvent scaling up stage {} of job {} to maxWorkersForStage {}", stage, jobId, maxWorkersForStage);
             desiredWorkers = maxWorkersForStage;
           } else {
             desiredWorkers = Math.min(numCurrentWorkers + increment, maxWorkersForStage);
@@ -357,6 +357,7 @@ public class JobAutoScaler {
         StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
         if (scalingPolicy != null && scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleUpEnabled()) {
           logger.warn("Scaleup is disabled for all autoscaling strategy, not scaling up stage {} of job {}", stage, jobId);
+          return;
         }
         final Subscription subscription = masterClientApi.scaleJobStage(jobId, stage, desiredWorkers, reason)
           .retryWhen(retryLogic)

@@ -17,6 +17,8 @@
 package io.mantisrx.runtime.loader.config;
 
 import io.mantisrx.common.metrics.MetricsPublisher;
+import io.mantisrx.server.core.ILeaderMonitorFactory;
+import io.mantisrx.server.core.utils.ConfigUtils;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.File;
 import java.net.URI;
@@ -73,6 +75,7 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     int asyncHttpClientConnectionTimeoutMs;
     int asyncHttpClientRequestTimeoutMs;
     int asyncHttpClientReadTimeoutMs;
+    String leaderMonitorFactory;
     String metricsCollectorClass;
     String jobAutoscalerManagerClassName;
 
@@ -125,6 +128,13 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     @Override
     public int getMetricsPublisherFrequencyInSeconds() {
         return this.metricsPublisherFrequencyInSeconds;
+    }
+
+    @Override
+    public String getLeaderMonitorFactoryName() {return this.leaderMonitorFactory;}
+
+    public ILeaderMonitorFactory getLeaderMonitorFactoryImpl() {
+        return ConfigUtils.createInstance(this.leaderMonitorFactory, ILeaderMonitorFactory.class);
     }
 
     @Override

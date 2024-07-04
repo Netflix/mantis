@@ -16,26 +16,10 @@
 
 package io.mantisrx.server.master;
 
-import io.mantisrx.server.core.master.MasterDescription;
 
-
-public interface ILeadershipManager {
-
-    // execute all actions when becoming a leader
-    void becomeLeader();
-
-    // actions to execute when losing leadership
-    void stopBeingLeader();
-
-    // am I the current leader?
-    boolean isLeader();
-
-    // check if leader is bootstrapped and ready after becoming leader
-    boolean isReady();
-
-    // set Leader is bootstrapped and ready
-    void setLeaderReady();
-
-    // return MasterDescription of node executing this function
-    MasterDescription getDescription();
+/**
+ * See {@link io.mantisrx.server.core.ILeadershipManager}
+ */
+@Deprecated
+public interface ILeadershipManager extends io.mantisrx.server.core.ILeadershipManager {
 }

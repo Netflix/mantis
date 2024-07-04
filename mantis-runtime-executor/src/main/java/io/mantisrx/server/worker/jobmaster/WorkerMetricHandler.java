@@ -281,7 +281,7 @@ import rx.subjects.PublishSubject;
                             logger.info("Job stage {} avgResUsage from {} workers: {}", stage, workersMap.size(), allWorkerAggregates.toString());
                             jobAutoScaleObserver.onNext(
                                 new JobAutoScaler.Event(
-                                    StageScalingPolicy.ScalingReason.AutoscalerManager, stage,
+                                    StageScalingPolicy.ScalingReason.AutoscalerManagerEvent, stage,
                                     jobAutoscalerManager.getCurrentValue(),
                                     jobAutoscalerManager.getCurrentValue(),
                                     numWorkers)

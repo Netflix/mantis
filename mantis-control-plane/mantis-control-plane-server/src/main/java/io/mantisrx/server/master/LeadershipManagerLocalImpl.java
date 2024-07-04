@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.master;
 
+import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.master.MasterDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

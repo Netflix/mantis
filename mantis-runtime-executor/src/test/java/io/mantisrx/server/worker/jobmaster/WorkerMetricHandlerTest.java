@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
-import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.AutoscalerManager;
+import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.AutoscalerManagerEvent;
 import static io.mantisrx.server.core.stats.MetricStringConstants.DATA_DROP_METRIC_GROUP;
 import static io.mantisrx.server.core.stats.MetricStringConstants.KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP;
 import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_METRIC_NAME;
@@ -102,7 +102,7 @@ public class WorkerMetricHandlerTest {
                 logger.info("got auto scale event {}", event);
                 long count = latch.getCount();
                 if (count == 2) {
-                    JobAutoScaler.Event expected = new JobAutoScaler.Event(AutoscalerManager, 1, -1.0, -1.0, 1);
+                    JobAutoScaler.Event expected = new JobAutoScaler.Event(AutoscalerManagerEvent, 1, -1.0, -1.0, 1);
                     assertEquals(expected, event);
                 }
                 if (count == 1) {
@@ -176,7 +176,7 @@ public class WorkerMetricHandlerTest {
                 logger.info("got auto scale event {}", event);
                 final long count = latch.getCount();
                 if (count == 3) {
-                    JobAutoScaler.Event expected = new JobAutoScaler.Event(AutoscalerManager, 1, -1.0, -1.0, numWorkers);
+                    JobAutoScaler.Event expected = new JobAutoScaler.Event(AutoscalerManagerEvent, 1, -1.0, -1.0, numWorkers);
                     assertEquals(expected, event);
                 }
                 if (count == 2) {
@@ -279,7 +279,7 @@ public class WorkerMetricHandlerTest {
                 logger.info("got auto scale event {}", event);
                 long count = autoScaleLatch.getCount();
                 if (count == 2) {
-                    JobAutoScaler.Event expected = new JobAutoScaler.Event(AutoscalerManager, 1, -1.0, -1.0, numWorkers);
+                    JobAutoScaler.Event expected = new JobAutoScaler.Event(AutoscalerManagerEvent, 1, -1.0, -1.0, numWorkers);
                     assertEquals(expected, event);
                 }
                 if (count == 1) {

@@ -15,6 +15,7 @@
  */
 package io.mantisrx.server.master.store;
 
+import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Duration;
@@ -26,8 +27,12 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
+/**
+ * See mantis-control-plane-dynamodb DynamoDBStore
+ */
 @Slf4j
-public class DynamoStore implements KeyValueStore {
+@Deprecated
+public class DynamoStore implements IKeyValueStore {
 
     public static final String PK = "PK";
     public  static final String SK = "SK";

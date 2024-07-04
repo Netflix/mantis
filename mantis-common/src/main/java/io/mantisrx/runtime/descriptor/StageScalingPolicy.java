@@ -86,7 +86,7 @@ public class StageScalingPolicy implements Serializable {
         RPS,
         JVMMemory,
         SourceJobDrop,
-        AutoscalerManager
+        AutoscalerManagerEvent
     }
 
     @Getter
