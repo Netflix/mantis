@@ -90,14 +90,16 @@ public class JobAutoScaler {
     private final SchedulingInfo schedulingInfo;
     private final PublishSubject<Event> subject;
     private final Context context;
+    private final JobAutoscalerManager jobAutoscalerManager;
 
     JobAutoScaler(String jobId, SchedulingInfo schedulingInfo, MantisMasterGateway masterClientApi,
-                  Context context) {
+                  Context context, JobAutoscalerManager jobAutoscalerManager) {
         this.jobId = jobId;
         this.masterClientApi = masterClientApi;
         this.schedulingInfo = schedulingInfo;
-        subject = PublishSubject.create();
+        this.subject = PublishSubject.create();
         this.context = context;
+        this.jobAutoscalerManager = jobAutoscalerManager;
     }
 
     Observer<Event> getObserver() {
