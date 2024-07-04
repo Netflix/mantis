@@ -89,7 +89,7 @@ public class JobAutoScalerTest {
         Context context = mock(Context.class);
         when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, JobAutoscalerManager.DEFAULT);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -168,7 +168,7 @@ public class JobAutoScalerTest {
         Context context = mock(Context.class);
         when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, JobAutoscalerManager.DEFAULT);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -212,7 +212,7 @@ public class JobAutoScalerTest {
         Context context = mock(Context.class);
         when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, JobAutoscalerManager.DEFAULT);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -266,7 +266,7 @@ public class JobAutoScalerTest {
         Context context = mock(Context.class);
         when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, JobAutoscalerManager.DEFAULT);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -312,7 +312,7 @@ public class JobAutoScalerTest {
             Context context = mock(Context.class);
             when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-            final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, JobAutoscalerManager.DEFAULT);
+            final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
             jobAutoScaler.start();
             final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -357,7 +357,7 @@ public class JobAutoScalerTest {
                 "    \"scaleUpMultiplier\": 1.5" +
                 "  }" +
                 "}";
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler("jobId", null, null, null, JobAutoscalerManager.DEFAULT);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler("jobId", null, null, null);
         ClutchConfiguration config = jobAutoScaler.getClutchConfiguration(json).get(1);
 
         ClutchRpsPIDConfig expected = new ClutchRpsPIDConfig(0.0, Tuple.of(30.0, 0.0), 0.0, 0.0, Option.of(75.0), Option.of(30.0), Option.of(0.0), Option.of(1.5), Option.of(1.0));

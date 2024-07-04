@@ -50,7 +50,6 @@ public class WorkerConfigurationUtils {
             .localStorageDir(configSource.getLocalStorageDir())
             .metricsCollector(configSource.getUsageSupplier())
             .metricsCollectorClass(configSource.getMetricsCollectorClassName())
-            .jobAutoscalerManagerClassName(configSource.getJobAutoscalerManagerClassName())
             .metricsPort(configSource.getMetricsPort())
             .metricsPublisher(configSource.getMetricsPublisher())
             .metricsPublisherFrequencyInSeconds(configSource.getMetricsPublisherFrequencyInSeconds())

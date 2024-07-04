@@ -77,7 +77,6 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     int asyncHttpClientReadTimeoutMs;
     String leaderMonitorFactory;
     String metricsCollectorClass;
-    String jobAutoscalerManagerClassName;
 
 
     @JsonIgnore
