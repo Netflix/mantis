@@ -35,7 +35,7 @@ public class StageScalingPolicyTest {
         Map<ScalingReason, Strategy> smap = new HashMap<>();
         smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
         smap.put(ScalingReason.DataDrop, new Strategy(ScalingReason.DataDrop, 0.0, 2.0, null));
-        StageScalingPolicy policy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap);
+        StageScalingPolicy policy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
 
         final String expected = "{\n" +
             "    \"stage\": 1,\n" +
@@ -80,21 +80,35 @@ public class StageScalingPolicyTest {
     public void testDeserialization() throws Exception {
         String json1 = "{\"stage\":1,\"min\":1,\"max\":2,\"increment\":1,\"decrement\":1,\"strategies\":{},\"enabled\":false}";
         StageScalingPolicy actual = serializer.fromJSON(json1, StageScalingPolicy.class);
-        StageScalingPolicy expected = new StageScalingPolicy(1, 1, 2, 1, 1, 0, null);
+        StageScalingPolicy expected = new StageScalingPolicy(1, 1, 2, 1, 1, 0, null, false);
         assertEquals(expected, actual);
 
         String json2 = "{\"stage\":1,\"min\":1,\"max\":5,\"increment\":1,\"decrement\":1,\"coolDownSecs\":600,\"strategies\":{\"CPU\":{\"reason\":\"CPU\",\"scaleDownBelowPct\":50,\"scaleUpAbovePct\":75}},\"enabled\":true}";
         actual = serializer.fromJSON(json2, StageScalingPolicy.class);
         Map<ScalingReason, Strategy> smap = new HashMap<>();
         smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 50, 75.0, new RollingCount(1, 1)));
-        expected = new StageScalingPolicy(1, 1, 5, 1, 1, 600, smap);
+        expected = new StageScalingPolicy(1, 1, 5, 1, 1, 600, smap, false);
         assertEquals(expected, actual);
 
         String json3 = "{\"stage\":1,\"min\":1,\"max\":3,\"increment\":1,\"decrement\":1,\"coolDownSecs\":0,\"strategies\":{\"Memory\":{\"reason\":\"Memory\",\"scaleDownBelowPct\":65,\"scaleUpAbovePct\":80,\"rollingCount\":{\"count\":6,\"of\":10}}},\"enabled\":true}";
         actual = serializer.fromJSON(json3, StageScalingPolicy.class);
         smap = new HashMap<>();
         smap.put(ScalingReason.Memory, new Strategy(ScalingReason.Memory, 65, 80.0, new RollingCount(6, 10)));
-        expected = new StageScalingPolicy(1, 1, 3, 1, 1, 0, smap);
+        expected = new StageScalingPolicy(1, 1, 3, 1, 1, 0, smap, false);
+        assertEquals(expected, actual);
+
+        String json4 = "{\"stage\":1,\"min\":1,\"max\":3,\"increment\":1,\"decrement\":1,\"coolDownSecs\":0,\"strategies\":{\"Memory\":{\"reason\":\"Memory\",\"scaleDownBelowPct\":65,\"scaleUpAbovePct\":80,\"rollingCount\":{\"count\":6,\"of\":10}}},\"allowAutoScaleManager\":false,\"enabled\":true}";
+        actual = serializer.fromJSON(json4, StageScalingPolicy.class);
+        smap = new HashMap<>();
+        smap.put(ScalingReason.Memory, new Strategy(ScalingReason.Memory, 65, 80.0, new RollingCount(6, 10)));
+        expected = new StageScalingPolicy(1, 1, 3, 1, 1, 0, smap, false);
+        assertEquals(expected, actual);
+
+        String json5 = "{\"stage\":1,\"min\":1,\"max\":3,\"increment\":1,\"decrement\":1,\"coolDownSecs\":0,\"strategies\":{\"Memory\":{\"reason\":\"Memory\",\"scaleDownBelowPct\":65,\"scaleUpAbovePct\":80,\"rollingCount\":{\"count\":6,\"of\":10}}},\"allowAutoScaleManager\":true,\"enabled\":true}";
+        actual = serializer.fromJSON(json5, StageScalingPolicy.class);
+        smap = new HashMap<>();
+        smap.put(ScalingReason.Memory, new Strategy(ScalingReason.Memory, 65, 80.0, new RollingCount(6, 10)));
+        expected = new StageScalingPolicy(1, 1, 3, 1, 1, 0, smap, true);
         assertEquals(expected, actual);
     }
 }

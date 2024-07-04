@@ -117,7 +117,7 @@ public class JobAutoScaler {
                     logger.info("onOverflow triggered, dropping old events");
                 }, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
                 .doOnRequest(x -> logger.info("Scaler requested {} metrics.", x))
-                .groupBy(event -> event.getStage())
+                .groupBy(Event::getStage)
                 .flatMap(go -> {
                     Integer stage = Optional.ofNullable(go.getKey()).orElse(-1);
 
@@ -142,12 +142,13 @@ public class JobAutoScaler {
                         boolean useClutchRps = false;
                         boolean useClutchExperimental = false;
 
+                        final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
                         // Determine which type of scaler to use.
-                        if (stageSchedulingInfo.getScalingPolicy() != null) {
-                            minSize = stageSchedulingInfo.getScalingPolicy().getMin();
-                            maxSize = stageSchedulingInfo.getScalingPolicy().getMax();
-                            if (stageSchedulingInfo.getScalingPolicy().getStrategies() != null) {
-                                Set<StageScalingPolicy.ScalingReason> reasons = stageSchedulingInfo.getScalingPolicy().getStrategies()
+                        if (scalingPolicy != null) {
+                            minSize = scalingPolicy.getMin();
+                            maxSize = scalingPolicy.getMax();
+                            if (scalingPolicy.getStrategies() != null) {
+                                Set<StageScalingPolicy.ScalingReason> reasons = scalingPolicy.getStrategies()
                                         .values()
                                         .stream()
                                         .map(StageScalingPolicy.Strategy::getReason)
@@ -189,14 +190,13 @@ public class JobAutoScaler {
                         MantisStageActuator actuator = new MantisStageActuator(initialSize, scaler);
 
                         Observable.Transformer<Event, io.mantisrx.control.clutch.Event> transformToClutchEvent =
-                                obs -> obs.map(event -> this.mantisEventToClutchEvent(event))
+                                obs -> obs.map(this::mantisEventToClutchEvent)
                                         .filter(event -> event.metric != null);
                         Observable<Integer> workerCounts = context.getWorkerMapObservable()
                                 .map(x -> x.getWorkersForStage(go.getKey()).size())
                                 .distinctUntilChanged()
                                 .throttleLast(5, TimeUnit.SECONDS);
 
-                        // Create the scaler.
                         if (useClutchRps) {
                             logger.info("Using clutch rps scaler, job: {}, stage: {} ", jobId, stage);
                             ClutchRpsPIDConfig rpsConfig = Option.of(config).flatMap(ClutchConfiguration::getRpsConfig).getOrNull();
@@ -248,13 +248,11 @@ public class JobAutoScaler {
                     }
                 })
                 .doOnCompleted(() -> logger.info("onComplete on JobAutoScaler subject"))
-                  .doOnError(t -> logger.error("got onError in JobAutoScaler", t))
-                  .doOnSubscribe(() -> logger.info("onSubscribe JobAutoScaler"))
-                  .doOnUnsubscribe(() -> {
-                    logger.info("Unsubscribing for JobAutoScaler of job " + jobId);
-                  })
+                .doOnError(t -> logger.error("got onError in JobAutoScaler", t))
+                .doOnSubscribe(() -> logger.info("onSubscribe JobAutoScaler"))
+                .doOnUnsubscribe(() -> logger.info("Unsubscribing for JobAutoScaler of job {}", jobId))
                 .retry()
-                  .subscribe();
+                .subscribe();
     }
 
     /**
@@ -331,11 +329,15 @@ public class JobAutoScaler {
       public int getDesiredWorkersForScaleUp(final int increment, final int numCurrentWorkers) {
         final int desiredWorkers;
         if (!stageSchedulingInfo.getScalingPolicy().isEnabled()) {
-          logger.warn("Job " + jobId + " stage " + stage + " is not scalable, can't increment #workers by " + increment);
+          logger.warn("Job {} stage {} is not scalable, can't increment #workers by {}", jobId, stage, increment);
           return numCurrentWorkers;
         }
+
         if (numCurrentWorkers < 0 || increment < 1) {
           logger.error("current number of workers({}) not known or increment({}) < 1, will not scale up", numCurrentWorkers, increment);
+          return numCurrentWorkers;
+        } else if (stageSchedulingInfo.getScalingPolicy().isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleUpEnabled()) {
+          logger.warn("Scaleup is disabled for all autoscaling strategy, not scaling up stage {} of job {}", stage, jobId);
           return numCurrentWorkers;
         } else {
           final int maxWorkersForStage = stageSchedulingInfo.getScalingPolicy().getMax();
@@ -347,6 +349,11 @@ public class JobAutoScaler {
       public void scaleUpStage(final int numCurrentWorkers, final int desiredWorkers, final String reason) {
         logger.info("scaleUpStage incrementing number of workers from {} to {}", numCurrentWorkers, desiredWorkers);
         cancelOutstandingScalingRequest();
+        StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
+        if (scalingPolicy != null && scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleUpEnabled()) {
+          logger.warn("Scaleup is disabled for all autoscaling strategy, not scaling up stage {} of job {}", stage, jobId);
+          return;
+        }
         final Subscription subscription = masterClientApi.scaleJobStage(jobId, stage, desiredWorkers, reason)
           .retryWhen(retryLogic)
           .onErrorResumeNext(throwable -> {
@@ -359,15 +366,19 @@ public class JobAutoScaler {
 
       public int getDesiredWorkersForScaleDown(final int decrement, final int numCurrentWorkers) {
         final int desiredWorkers;
-        if (!stageSchedulingInfo.getScalingPolicy().isEnabled()) {
-          logger.warn("Job " + jobId + " stage " + stage + " is not scalable, can't decrement #workers by " + decrement);
+        final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
+        if (!scalingPolicy.isEnabled()) {
+          logger.warn("Job {} stage {} is not scalable, can't decrement #workers by {}", jobId, stage, decrement);
           return numCurrentWorkers;
         }
         if (numCurrentWorkers < 0 || decrement < 1) {
           logger.error("current number of workers({}) not known or decrement({}) < 1, will not scale down", numCurrentWorkers, decrement);
           return numCurrentWorkers;
+        } else if (scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleDownEnabled()) {
+          logger.warn("Scaledown is disabled for all autoscaling strategy, not scaling down stage {} of job {}", stage, jobId);
+          return numCurrentWorkers;
         } else {
-          int min = stageSchedulingInfo.getScalingPolicy().getMin();
+          int min = scalingPolicy.getMin();
           desiredWorkers = Math.max(numCurrentWorkers - decrement, min);
         }
         return desiredWorkers;
@@ -376,6 +387,11 @@ public class JobAutoScaler {
       public void scaleDownStage(final int numCurrentWorkers, final int desiredWorkers, final String reason) {
         logger.info("scaleDownStage decrementing number of workers from {} to {}", numCurrentWorkers, desiredWorkers);
         cancelOutstandingScalingRequest();
+        final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
+        if (scalingPolicy != null && scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleDownEnabled()) {
+            logger.warn("Scaledown is disabled for all autoscaling strategy. For stage {} of job {}", stage, jobId);
+            return;
+        }
         final Subscription subscription = masterClientApi.scaleJobStage(jobId, stage, desiredWorkers, reason)
           .retryWhen(retryLogic)
           .onErrorResumeNext(throwable -> {
@@ -428,8 +444,8 @@ public class JobAutoScaler {
             final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
             long coolDownSecs = scalingPolicy == null ? Long.MAX_VALUE : scalingPolicy.getCoolDownSecs();
             boolean scalable = stageSchedulingInfo.getScalable() && scalingPolicy != null && scalingPolicy.isEnabled();
-            logger.debug("Will check for autoscaling job " + jobId + " stage " + stage + " due to event: " + event);
-            if (scalable && scalingPolicy != null) {
+            logger.debug("Will check for autoscaling job {} stage {} due to event: {}", jobId, stage, event);
+            if (scalable) {
               final StageScalingPolicy.Strategy strategy = scalingPolicy.getStrategies().get(event.getType());
               if (strategy != null) {
                 double effectiveValue = event.getEffectiveValue();

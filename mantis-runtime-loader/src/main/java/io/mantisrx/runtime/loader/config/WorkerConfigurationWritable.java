@@ -79,7 +79,6 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     String metricsCollectorClass;
     String jobAutoscalerManagerClassName;
 
-
     @JsonIgnore
     MetricsPublisher metricsPublisher;
 
