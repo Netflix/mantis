@@ -182,13 +182,12 @@ public class WorkerMetricHandlerTest {
                 if (count == 2) {
                     JobAutoScaler.Event expected1 = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.UserDefined, stage, metricValue * 3 / 4, metricValue * 3 / 4, numWorkers);
                     assertEquals(expected1, event);
-                    latch.countDown();
                 }
                 if (count == 1) {
                     JobAutoScaler.Event expected2 = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.KafkaLag, stage, kafkaLag, kafkaLag, numWorkers);
                     assertEquals(expected2, event);
-                    latch.countDown();
                 }
+                latch.countDown();
             }
         }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
 
