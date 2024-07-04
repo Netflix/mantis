@@ -16,12 +16,17 @@
 
 package io.mantisrx.server.core.master;
 
+import io.mantisrx.server.core.Service;
 import javax.annotation.Nullable;
 import rx.Observable;
 
 
-public interface MasterMonitor {
+public interface MasterMonitor extends Service {
 
+    /**
+     * An Observable to track the current Mantis Master node.
+     * @return {@link Observable} of {@link MasterDescription} to track changes
+     */
     Observable<MasterDescription> getMasterObservable();
 
     /**

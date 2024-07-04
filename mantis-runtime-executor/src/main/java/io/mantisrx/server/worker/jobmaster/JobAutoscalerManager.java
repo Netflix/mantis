@@ -19,21 +19,24 @@ package io.mantisrx.server.worker.jobmaster;
 import java.util.Properties;
 
 /**
- * Failover status client interface to get the failover status of current region
+ * A manager to control autoscaling of a job. This allows a runtime control to autoscaling behavior
+ * without necessitating a job redeployment.
+ * An example use is disabling scale up or scale down during a maintenance window.
+ * Yet another example is during region failovers when a failed over region shouldn't scale down
  */
 public interface JobAutoscalerManager {
 
     JobAutoscalerManager DEFAULT = new NoopJobAutoscalerManager();
 
     /**
-     * Knobs to toggle autoscaling scale ups
+     * Knobs to toggle autoscaler scale ups
      */
     default boolean isScaleUpEnabled() {
         return true;
     }
 
     /**
-     * Knobs to toggle autoscaling scale downs
+     * Knobs to toggle autoscaler scale downs
      */
     default boolean isScaleDownEnabled() {
         return true;

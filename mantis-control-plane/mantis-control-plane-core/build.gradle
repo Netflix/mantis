@@ -33,6 +33,7 @@ dependencies {
     api libraries.flinkRpcApi
     api libraries.flinkCore
     implementation libraries.commonsIo
+    implementation libraries.vavr
     compileOnly libraries.jsr305
     compileOnly libraries.flinkRpcImpl // Provided by copyLibs task
 
