@@ -56,7 +56,7 @@ scaling action, the cooldown will prevent subsequent strategies from scaling for
 ### AutoscalerManagerEvent Strategy
 This is a custom strategy to set a target worker size at runtime.
 The strategy uses `getCurrentValue` from `JobAutoScalerManager` to determine the target worker size.
-For a non-negative value `[0.0, 1.0]`, the autoscaler will scale the stage from min to max.
+For a non-negative value `[0.0, 100.0]`, the autoscaler will scale the stage from min to max.
 All other values are ignored. Default implementation returns a -1.0 for `currentValue` meaning a no-op for event based scaling.
 
 Example #1: Use-case during region failover in a multi-region setup

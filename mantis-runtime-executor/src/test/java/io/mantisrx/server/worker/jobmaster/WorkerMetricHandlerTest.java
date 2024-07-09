@@ -37,7 +37,6 @@ import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

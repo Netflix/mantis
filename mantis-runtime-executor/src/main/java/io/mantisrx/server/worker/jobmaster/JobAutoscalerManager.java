@@ -44,7 +44,7 @@ public interface JobAutoscalerManager {
 
     /**
      * Get the current fractional value to set size for stage numWorkers.
-     * Valid values are [0.0, 1.0] which set numWorkers from [min, max].
+     * Valid values are [0.0, 100.0] which set numWorkers from [min, max].
      * All other values are ignored for scaling decisions.
      */
     default double getCurrentValue() {
