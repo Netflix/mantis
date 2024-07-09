@@ -27,6 +27,7 @@ public class JobMetadata {
 
     private final String jobId;
     private final URL jobJarUrl;
+    private final String jobVersion;
     private final int totalStages;
     private final String user;
     private final SchedulingInfo schedulingInfo;
@@ -37,6 +38,7 @@ public class JobMetadata {
 
     public JobMetadata(final String jobId,
                        final URL jobJarUrl,
+                       final String jobVersion,
                        final int totalStages,
                        final String user,
                        final SchedulingInfo schedulingInfo,
@@ -46,6 +48,7 @@ public class JobMetadata {
                        final long minRuntimeSecs) {
         this.jobId = jobId;
         this.jobJarUrl = jobJarUrl;
+        this.jobVersion = jobVersion;
         this.totalStages = totalStages;
         this.user = user;
         this.schedulingInfo = schedulingInfo;

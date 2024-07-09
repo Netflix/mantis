@@ -1630,6 +1630,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 JobMetadata jobMetadata = new JobMetadata(
                     mantisJobMetaData.getJobId().getId(),
                     mantisJobMetaData.getJobJarUrl(),
+                    mantisJobMetaData.getJobDefinition().getVersion(),
                     mantisJobMetaData.getTotalStages(),
                     mantisJobMetaData.getUser(),
                     mantisJobMetaData.getSchedulingInfo(),
