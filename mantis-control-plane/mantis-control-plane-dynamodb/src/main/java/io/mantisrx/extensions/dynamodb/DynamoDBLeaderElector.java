@@ -118,8 +118,9 @@ public class DynamoDBLeaderElector extends BaseService {
     /**
      * This function will attempt to become the leader at the heartbeat interval of the lockClient. If
      * it becomes the leader it will update the leader data and the thread will stop running.
+     * Returns true if leader election succeeded, false otherwise.
      */
-    private void tryToBecomeLeader() {
+    protected boolean tryToBecomeLeader() {
         final MasterDescription me = leadershipManager.getDescription();
         try {
             log.info("requesting leadership from {}", me.getHostname());
@@ -135,9 +136,12 @@ public class DynamoDBLeaderElector extends BaseService {
                 leaderLock = optionalLock.get();
                 shouldLeaderElectorBeRunning.set(false);
                 leadershipManager.becomeLeader();
+                return true;
             }
+            return false;
         } catch (RuntimeException | InterruptedException | JsonProcessingException e) {
             log.error("leader elector task has failed it will restart, if this error is frequent there is likely a problem with DynamoDB based leader election", e);
+            return false;
         } finally {
             isLeaderElectorRunning.set(false);
             if (shouldLeaderElectorBeRunning.get()) {
