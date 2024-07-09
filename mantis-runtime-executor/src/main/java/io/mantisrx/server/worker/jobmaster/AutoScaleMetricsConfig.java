@@ -142,8 +142,7 @@ public class AutoScaleMetricsConfig {
         final Map<String, Set<String>> metrics = new HashMap<>();
 
         for (Map.Entry<String, Map<String, AggregationAlgo>> entry : userDefinedAutoScaleMetrics.entrySet()) {
-            metrics.put(entry.getKey(),
-                    entry.getValue().keySet());
+            metrics.put(entry.getKey(), entry.getValue().keySet());
         }
 
         return metrics;

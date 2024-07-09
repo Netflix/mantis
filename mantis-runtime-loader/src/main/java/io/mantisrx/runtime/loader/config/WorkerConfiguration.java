@@ -69,6 +69,10 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Default("io.mantisrx.runtime.loader.cgroups.CgroupsMetricsCollector")
     String getMetricsCollectorClassName();
 
+    @Config("mantis.taskexecutor.runtime.jobautoscalermanager")
+    @Default("io.mantisrx.server.worker.jobmaster.NoopJobAutoscalerManager")
+    String getJobAutoscalerManagerClassName();
+
     // ------------------------------------------------------------------------
     //  heartbeat connection related configurations
     // ------------------------------------------------------------------------
