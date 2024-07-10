@@ -276,8 +276,13 @@ public class StageExecutors {
      * @return untyped to support multiple callers return types
      */
     @SuppressWarnings("unchecked")
-    private static <T, R> Observable<Observable<R>> executeInnersInParallel(Observable<Observable<T>> oo, Computation computation,
-                                                                            final Context context, final boolean applyTimeoutToInners, final long timeout, final int concurrency) {
+    private static <T, R> Observable<Observable<R>> executeInnersInParallel(
+        Observable<Observable<T>> oo,
+        Computation computation,
+        final Context context,
+        final boolean applyTimeoutToInners,
+        final long timeout,
+        final int concurrency) {
         logger.info("initializing {}", computation.getClass().getCanonicalName());
         computation.init(context);
 
@@ -285,32 +290,25 @@ public class StageExecutors {
         final Func2<Context, Observable<T>, Observable<R>> c
                 = (Func2<Context, Observable<T>, Observable<R>>) computation;
 
-        if (concurrency == StageConfig.DEFAULT_STAGE_CONCURRENCY) {
-            return oo
-                    .lift(new MonitorOperator<>("worker_stage_outer"))
-                    .map(observable -> c
-                            .call(context, observable
-                                    .observeOn(Schedulers.computation())
-                                    .lift(new MonitorOperator<T>("worker_stage_inner_input")))
-                            .lift(new MonitorOperator<R>("worker_stage_inner_output")));
-        } else {
-            final MantisRxSingleThreadScheduler[] mantisRxSingleThreadSchedulers = new MantisRxSingleThreadScheduler[concurrency];
-            RxThreadFactory rxThreadFactory = new RxThreadFactory("MantisRxSingleThreadScheduler-");
-            logger.info("creating {} Mantis threads", concurrency);
-            for (int i = 0; i < concurrency; i++) {
-                mantisRxSingleThreadSchedulers[i] = new MantisRxSingleThreadScheduler(rxThreadFactory);
-            }
-            return oo
-                    .lift(new MonitorOperator<>("worker_stage_outer"))
-                    .map(observable -> observable
-                            .groupBy(e -> System.nanoTime() % concurrency)
-                            .flatMap(go ->
-                                    c
-                                    .call(context, go
-                                            .observeOn(mantisRxSingleThreadSchedulers[go.getKey().intValue()])
-                                            .lift(new MonitorOperator<>("worker_stage_inner_input")))
-                                    .lift(new MonitorOperator<>("worker_stage_inner_output"))));
+        final int parallelism =
+            concurrency == StageConfig.DEFAULT_STAGE_CONCURRENCY ? Runtime.getRuntime()
+                .availableProcessors() : concurrency;
+        final MantisRxSingleThreadScheduler[] mantisRxSingleThreadSchedulers = new MantisRxSingleThreadScheduler[parallelism];
+        RxThreadFactory rxThreadFactory = new RxThreadFactory("MantisRxSingleThreadScheduler-");
+        logger.info("creating {} Mantis threads", parallelism);
+        for (int i = 0; i < parallelism; i++) {
+            mantisRxSingleThreadSchedulers[i] = new MantisRxSingleThreadScheduler(rxThreadFactory);
         }
+        return oo
+            .lift(new MonitorOperator<>("worker_stage_outer"))
+            .map(observable -> observable
+                .groupBy(e -> System.nanoTime() % parallelism)
+                .flatMap(go ->
+                    c
+                        .call(context, go
+                            .observeOn(mantisRxSingleThreadSchedulers[go.getKey().intValue()])
+                            .lift(new MonitorOperator<>("worker_stage_inner_input")))
+                        .lift(new MonitorOperator<>("worker_stage_inner_output"))));
     }
 
     /**
