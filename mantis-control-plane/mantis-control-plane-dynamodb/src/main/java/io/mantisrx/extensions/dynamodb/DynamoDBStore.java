@@ -165,7 +165,7 @@ public class DynamoDBStore implements IKeyValueStore {
         expressionAttributeValues.put(PK, AttributeValue.builder().s(tableName).build());
         expressionAttributeValues.put(SK, AttributeValue.builder().s(String.format("%s#%s", partitionKey, secondaryKey)).build());
         final DeleteItemRequest request = DeleteItemRequest.builder()
-                .tableName(tableName)
+                .tableName(this.mantisTable)
                 .key(expressionAttributeValues)
                 .build();
         final DeleteItemResponse response = this.client.deleteItem(request);
