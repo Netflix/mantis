@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#rule-based-strategy" class="md-skip">
+        <a href="#rule-based-strategies" class="md-skip">
           Skip to content
         </a>
       
@@ -1084,18 +1084,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#rule-based-strategy" class="md-nav__link">
+  <a href="#rule-based-strategies" class="md-nav__link">
     <span class="md-ellipsis">
-      Rule Based Strategy
+      Rule Based Strategies
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pid-control-based-strategy" class="md-nav__link">
+  <a href="#pid-control-based-strategies" class="md-nav__link">
     <span class="md-ellipsis">
-      PID Control Based Strategy
+      PID Control Based Strategies
     </span>
   </a>
   
@@ -1855,18 +1855,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#rule-based-strategy" class="md-nav__link">
+  <a href="#rule-based-strategies" class="md-nav__link">
     <span class="md-ellipsis">
-      Rule Based Strategy
+      Rule Based Strategies
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pid-control-based-strategy" class="md-nav__link">
+  <a href="#pid-control-based-strategies" class="md-nav__link">
     <span class="md-ellipsis">
-      PID Control Based Strategy
+      PID Control Based Strategies
     </span>
   </a>
   
@@ -1896,7 +1896,61 @@
 many workers to scale up/down a stage. They fall into 2 main categories. Rule based strategies monitor a specific resource
 and scale up/down when a certain threshold is reached. PID control based strategies pick a resource utilization level
 and scale up/down dynamically to maintain that level.</p>
-<h2 id="rule-based-strategy">Rule Based Strategy<a class="headerlink" href="#rule-based-strategy" title="Permanent link">&para;</a></h2>
+<p>A stage's autoscaling policy is composed of following configurations -</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stage</code></td>
+<td><code>int</code></td>
+<td>Index of the stage (<code>1</code>-based since <code>0</code> is reserved for job master).</td>
+</tr>
+<tr>
+<td><code>min</code></td>
+<td><code>int</code></td>
+<td>Minimum number of workers in the stage.</td>
+</tr>
+<tr>
+<td><code>max</code></td>
+<td><code>int</code></td>
+<td>Maximum number of workers in the stage.</td>
+</tr>
+<tr>
+<td><code>increment</code>[1]</td>
+<td><code>int</code></td>
+<td>Number of workers to add when scaling up.</td>
+</tr>
+<tr>
+<td><code>decrement</code>[1]</td>
+<td><code>int</code></td>
+<td>Number of workers to remove when scaling down.</td>
+</tr>
+<tr>
+<td><code>coolDownSecs</code></td>
+<td><code>int</code></td>
+<td>Number of seconds to wait after a scaling operation has been completed before beginning another scaling operation.</td>
+</tr>
+<tr>
+<td><code>strategies</code></td>
+<td><code>Map&lt;Reason, Strategy&gt;</code></td>
+<td>List of strategies to use for autoscaling and their configurations.</td>
+</tr>
+<tr>
+<td><code>allowAutoScaleManager</code></td>
+<td><code>boolean</code></td>
+<td>Toggles an autoscaler manager that (dis)allow scale up and scale downs when certain criteria is met. Default is <code>false</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Note:
+[1] increment/decrement are not used for Clutch strategies. Clutch strategies use PID controller to determine the number of workers to scale up/down.</p>
+<h2 id="rule-based-strategies">Rule Based Strategies<a class="headerlink" href="#rule-based-strategies" title="Permanent link">&para;</a></h2>
 <p>Rule based strategy can be defined for the following resources:</p>
 <table>
 <thead>
@@ -1938,6 +1992,10 @@ and scale up/down dynamically to maintain that level.</p>
 <td><code>UserDefined</code></td>
 <td>Metric is defined by user with job parameter <code>mantis.jobmaster.autoscale.metric</code> in this format <code>{group}::{name}::{aggregation}</code>.</td>
 </tr>
+<tr>
+<td><code>AutoscalerManagerEvent</code></td>
+<td>Custom event defined by an implementation of <code>JobAutoScalerManager</code>. This allows event-based runtime control over stage workers</td>
+</tr>
 </tbody>
 </table>
 <p>Each strategy has the following parameters:</p>
@@ -1973,7 +2031,31 @@ effectively means the data drop percentage never trigger a scale down. For this 
 best to use the data drop strategy in conjunction with another strategy that provides the
 scale-down trigger.</p>
 </div>
-<h2 id="pid-control-based-strategy">PID Control Based Strategy<a class="headerlink" href="#pid-control-based-strategy" title="Permanent link">&para;</a></h2>
+<h3 id="autoscalermanagerevent-strategy">AutoscalerManagerEvent Strategy<a class="headerlink" href="#autoscalermanagerevent-strategy" title="Permanent link">&para;</a></h3>
+<p>This is a custom strategy to set a target worker size at runtime.
+The strategy uses <code>getCurrentValue</code> from <code>JobAutoScalerManager</code> to determine the target worker size.
+For a non-negative value <code>[0.0, 100.0]</code>, the autoscaler will scale the stage from min to max.
+All other values are ignored. Default implementation returns a -1.0 for <code>currentValue</code> meaning a no-op for event based scaling.</p>
+<p>Example #1: Use-case during region failover in a multi-region setup
+During a failover event in a multi-region setup, all incoming traffic is moved away from the failed over
+region—<code>evacuee</code>—to other region(s)—<code>savior(s)</code> to mitigate the issue faster.</p>
+<p>For some autoscaling mantis jobs, it's necessary to be failover aware to:</p>
+<ol>
+<li>Prevent scale down in evacuee regions — Use <code>allowAutoScaleManager</code>.
+    After an extended period of evacuated state for the region, the jobs in that region would have been
+      scaled down to lowest values because of no incoming traffic and low resource utilization.
+      When the traffic is restored in that region, the job will see a big surge in incoming requests overwhelming
+      the job in that region.
+    Mitigation: Use <code>allowAutoScaleManager</code> to enable <code>JobAutoScalerManager</code> for stage. Provide a custom implementation of
+      <code>JobAutoScalerManager</code> to return <code>false</code> for <code>isScaleDownEnabled</code> in evacuee region.</li>
+<li>Scale up in savior regions — Use <code>AutoscalerManagerEvent</code> in strategies.
+    When the traffic is moved to savior regions, the jobs in those regions should be scaled up to handle the
+      additional load. Currently, failover aware strategy will scale up the configured stages to max #workers in
+      configured in <code>StageScalingPolicy</code>. It also doesn't work with PID Control Based Strategy(ies).
+    Usage: Provide a custom JobAutoScalerManager implementation to return <code>1.0</code> in the savior region to scale stage
+      numWorkers to max.</li>
+</ol>
+<h2 id="pid-control-based-strategies">PID Control Based Strategies<a class="headerlink" href="#pid-control-based-strategies" title="Permanent link">&para;</a></h2>
 <p>PID control system uses a continuous feedback loop to maintain a signal at a target level (set point). Mantis offers variations of
 this strategy that operates on different signals. Additionally, they try to learn the appropriate target over time
 without the need for user input. The PID controller computes the magnitude of scale up/down based on the drift between
