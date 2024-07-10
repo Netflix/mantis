@@ -66,8 +66,6 @@ import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
 import java.io.Closeable;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -78,7 +76,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -416,7 +413,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     logger.info("param {} is null or empty", JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM);
                 }
 
-                JobAutoscalerManager jobAutoscalerManager = getJobAutoscalerManagerInstance(config);
+                JobAutoscalerManager jobAutoscalerManager = getJobAutoscalerManagerInstance(serviceLocator);
                 JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
                         workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback(), jobAutoscalerManager);
                 jobMasterService.start();
@@ -482,16 +479,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
     }
 
-    private JobAutoscalerManager getJobAutoscalerManagerInstance(WorkerConfiguration config) {
-        try {
-            Class<?> jobAutoscalerManagerClass = Class.forName(config.getJobAutoscalerManagerClassName());
-            logger.info("Picking {} jobAutoscalerManager", jobAutoscalerManagerClass.getName());
-            Method managerClassFactory = jobAutoscalerManagerClass.getMethod("valueOf", Properties.class);
-            return (JobAutoscalerManager) managerClassFactory.invoke(null, System.getProperties());
-        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            logger.warn("Couldnt instantiate jobAutoscalerManager from class {} because ", config.getJobAutoscalerManagerClassName(), e);
-            return JobAutoscalerManager.DEFAULT;
-        }
+    private JobAutoscalerManager getJobAutoscalerManagerInstance(ServiceLocator serviceLocator) {
+        final JobAutoscalerManager autoscalerManager = serviceLocator.service(JobAutoscalerManager.class);
+        return Optional.ofNullable(autoscalerManager).orElse(JobAutoscalerManager.DEFAULT);
     }
 
     private void setupSubscriptionStateHandler(ExecuteStageRequest executeStageRequest) {

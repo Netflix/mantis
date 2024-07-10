@@ -419,6 +419,8 @@ import rx.subjects.PublishSubject;
 
         private void maybeEmitAutoscalerManagerEvent(int numWorkers) {
             final double currentValue = jobAutoscalerManager.getCurrentValue();
+            // The effective value is a pct value and hence ranges from [0, 100].
+            // Ignore all other values to disable autoscaling for custom events.
             if (currentValue >= 0.0 && currentValue <= 100.0) {
                 jobAutoScaleObserver.onNext(
                     new JobAutoScaler.Event(
