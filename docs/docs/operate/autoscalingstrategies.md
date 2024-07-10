@@ -23,17 +23,17 @@ Note:
 
 Rule based strategy can be defined for the following resources:
 
-| Resource         | Metric                                                                                                                                              |
-|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `CPU`            | group: `ResourceUsage` name: `cpuPctUsageCurr` aggregation: `AVG`                                                                                   |
-| `Memory`         | group: `ResourceUsage` name: `totMemUsageCurr` aggregation: `AVG`                                                                                   |
-| `Network`        | group: `ResourceUsage` name: `nwBytesUsageCurr` aggregation: `AVG`                                                                                  |
-| `JVMMemory`      | group: `ResourceUsage` name: `jvmMemoryUsedBytes` aggregation: `AVG`                                                                                |
-| `DataDrop`       | group: `DataDrop` name: `dropCount` aggregation: `AVG`                                                                                              |
-| `KafkaLag`       | group: `consumer-fetch-manager-metrics` name: `records-lag-max` aggregation: `MAX`                                                                  |
-| `KafkaProcessed` | group: `consumer-fetch-manager-metrics` name: `records-consumed-rate` aggregation: `AVG`                                                            |
-| `UserDefined`    | Metric is defined by user with job parameter `mantis.jobmaster.autoscale.metric` in this format `{group}::{name}::{aggregation}`.                   |
-| `FailoverAware`  | Metric is defined by an implementation of `FailoverStatusClient`. This is used to control autoscaling during failover events. (See #failover-aware) |
+| Resource                   | Metric                                                                                                                           |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `CPU`                      | group: `ResourceUsage` name: `cpuPctUsageCurr` aggregation: `AVG`                                                                |
+| `Memory`                   | group: `ResourceUsage` name: `totMemUsageCurr` aggregation: `AVG`                                                                |
+| `Network`                  | group: `ResourceUsage` name: `nwBytesUsageCurr` aggregation: `AVG`                                                               |
+| `JVMMemory`                | group: `ResourceUsage` name: `jvmMemoryUsedBytes` aggregation: `AVG`                                                             |
+| `DataDrop`                 | group: `DataDrop` name: `dropCount` aggregation: `AVG`                                                                           |
+| `KafkaLag`                 | group: `consumer-fetch-manager-metrics` name: `records-lag-max` aggregation: `MAX`                                               |
+| `KafkaProcessed`           | group: `consumer-fetch-manager-metrics` name: `records-consumed-rate` aggregation: `AVG`                                         |
+| `UserDefined`              | Metric is defined by user with job parameter `mantis.jobmaster.autoscale.metric` in this format `{group}::{name}::{aggregation}`.|
+| `AutoscalerManagerEvent`   | Custom event defined by an implementation of `JobAutoScalerManager`. This allows event-based runtime control over stage workers  |
 
 Each strategy has the following parameters:
 
@@ -53,21 +53,31 @@ scaling action, the cooldown will prevent subsequent strategies from scaling for
     best to use the data drop strategy in conjunction with another strategy that provides the
     scale-down trigger.
 
-### Failover-Aware Strategy
+### AutoscalerManagerEvent Strategy
+This is a custom strategy to set a target worker size at runtime.
+The strategy uses `getCurrentValue` from `JobAutoScalerManager` to determine the target worker size.
+For a non-negative value `[0.0, 100.0]`, the autoscaler will scale the stage from min to max.
+All other values are ignored. Default implementation returns a -1.0 for `currentValue` meaning a no-op for event based scaling.
+
+Example #1: Use-case during region failover in a multi-region setup
 During a failover event in a multi-region setup, all incoming traffic is moved away from the failed over
 region—`evacuee`—to other region(s)—`savior(s)` to mitigate the issue faster.
 
-For autoscaling mantis jobs, it's sometimes necessary to be failover aware because:
+For some autoscaling mantis jobs, it's necessary to be failover aware to:
 
-1. Scale down in evacuee regions — `allowScaleDownDuringEvacuated`.
+1. Prevent scale down in evacuee regions — Use `allowAutoScaleManager`.
     After an extended period of evacuated state for the region, the jobs in that region would have been
       scaled down to lowest values because of no incoming traffic and low resource utilization.
       When the traffic is restored in that region, the job will see a big surge in incoming requests overwhelming
       the job in that region.
-2. Scale up in savior regions — Use `FailoverAware` in strategies.
+    Mitigation: Use `allowAutoScaleManager` to enable `JobAutoScalerManager` for stage. Provide a custom implementation of
+      `JobAutoScalerManager` to return `false` for `isScaleDownEnabled` in evacuee region.
+2. Scale up in savior regions — Use `AutoscalerManagerEvent` in strategies.
     When the traffic is moved to savior regions, the jobs in those regions should be scaled up to handle the
       additional load. Currently, failover aware strategy will scale up the configured stages to max #workers in
       configured in `StageScalingPolicy`. It also doesn't work with PID Control Based Strategy(ies).
+    Usage: Provide a custom JobAutoScalerManager implementation to return `1.0` in the savior region to scale stage
+      numWorkers to max.
 
 ## PID Control Based Strategies
 

@@ -43,6 +43,15 @@ public interface JobAutoscalerManager {
     }
 
     /**
+     * Get the current fractional value to set size for stage numWorkers.
+     * Valid values are [0.0, 100.0] which set numWorkers from [min, max].
+     * All other values are ignored for scaling decisions.
+     */
+    default double getCurrentValue() {
+        return -1.0;
+    }
+
+    /**
      * Noop implementation of {@link JobAutoscalerManager} that always returns true
      * for isScaleUpEnabled, isScaleDownEnabled
      */

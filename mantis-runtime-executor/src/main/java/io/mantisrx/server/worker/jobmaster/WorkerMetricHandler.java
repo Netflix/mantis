@@ -279,6 +279,7 @@ import rx.subjects.PublishSubject;
                             // get the aggregate metric values by metric group for all workers in stage
                             Map<String, GaugeData> allWorkerAggregates = getAggregates(listofAggregates);
                             logger.info("Job stage {} avgResUsage from {} workers: {}", stage, workersMap.size(), allWorkerAggregates.toString());
+                            maybeEmitAutoscalerManagerEvent(numWorkers);
 
                             for (Map.Entry<String, Set<String>> userDefinedMetric : autoScaleMetricsConfig.getUserDefinedMetrics().entrySet()) {
                                 final String metricGrp = userDefinedMetric.getKey();
@@ -414,6 +415,21 @@ import rx.subjects.PublishSubject;
                     }
                 }
             };
+        }
+
+        private void maybeEmitAutoscalerManagerEvent(int numWorkers) {
+            final double currentValue = jobAutoscalerManager.getCurrentValue();
+            // The effective value is a pct value and hence ranges from [0, 100].
+            // Ignore all other values to disable autoscaling for custom events.
+            if (currentValue >= 0.0 && currentValue <= 100.0) {
+                jobAutoScaleObserver.onNext(
+                    new JobAutoScaler.Event(
+                        StageScalingPolicy.ScalingReason.AutoscalerManagerEvent, stage,
+                        currentValue,
+                        currentValue,
+                        numWorkers)
+                );
+            }
         }
 
         private void addScalerEventForSourceJobDrops(int numWorkers) {
