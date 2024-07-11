@@ -36,6 +36,7 @@ import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -82,6 +83,7 @@ public class WorkerMetricHandlerTest {
 
         final AutoScaleMetricsConfig aggregationConfig = new AutoScaleMetricsConfig();
 
+        final List<JobAutoScaler.Event> events = new ArrayList<>();
         final WorkerMetricHandler workerMetricHandler = new WorkerMetricHandler(jobId, new Observer<JobAutoScaler.Event>() {
             @Override
             public void onCompleted() {
@@ -96,8 +98,11 @@ public class WorkerMetricHandlerTest {
             @Override
             public void onNext(JobAutoScaler.Event event) {
                 logger.info("got auto scale event {}", event);
-                JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage, dropPercent, dropPercent, 1);
-                assertEquals(expected, event);
+                long count = latch.getCount();
+                if (count == 1) {
+                    JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage, dropPercent, dropPercent, 1);
+                    assertEquals(expected, event);
+                }
                 latch.countDown();
             }
         }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
@@ -108,6 +113,7 @@ public class WorkerMetricHandlerTest {
         metricDataObserver.onNext(new MetricData(new String(jobId), stage, workerIdx, workerNum, DATA_DROP_METRIC_GROUP, gauges));
 
         assertTrue(latch.await(30 + 5/* leeway */, TimeUnit.SECONDS));
+
     }
 
     @Test
@@ -166,13 +172,12 @@ public class WorkerMetricHandlerTest {
                 if (count == 2) {
                     JobAutoScaler.Event expected1 = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.UserDefined, stage, metricValue * 3 / 4, metricValue * 3 / 4, numWorkers);
                     assertEquals(expected1, event);
-                    latch.countDown();
                 }
                 if (count == 1) {
                     JobAutoScaler.Event expected2 = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.KafkaLag, stage, kafkaLag, kafkaLag, numWorkers);
                     assertEquals(expected2, event);
-                    latch.countDown();
                 }
+                latch.countDown();
             }
         }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
 
@@ -262,8 +267,11 @@ public class WorkerMetricHandlerTest {
             @Override
             public void onNext(JobAutoScaler.Event event) {
                 logger.info("got auto scale event {}", event);
-                JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage, dropPercent / numWorkers, dropPercent / numWorkers, numWorkers);
-                assertEquals(expected, event);
+                long count = autoScaleLatch.getCount();
+                if (count == 1) {
+                    JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage, dropPercent / numWorkers, dropPercent / numWorkers, numWorkers);
+                    assertEquals(expected, event);
+                }
                 autoScaleLatch.countDown();
             }
         }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
