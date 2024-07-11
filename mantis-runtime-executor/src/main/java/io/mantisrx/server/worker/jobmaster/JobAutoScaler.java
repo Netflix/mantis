@@ -490,7 +490,7 @@ public class JobAutoScaler {
                       logger.debug("scale up NOOP: desiredWorkers same as current workers");
                     }
                   } else if (stats.getLowThreshTriggered()) {
-                    logger.info("Attempting to scale down stage {} of job {} by {} workers, because {} exceeded scaleUpThreshold of {} {} times",
+                    logger.info("Attempting to scale down stage {} of job {} by {} workers, because {} is below scaleDownThreshold of {} {} times",
                         stage, jobId, scalingPolicy.getDecrement(), event.getType(),
                         strategy.getScaleDownBelowPct(), stats.getCurrentLowCount());
                     final int numCurrentWorkers = event.getNumWorkers();
