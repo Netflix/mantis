@@ -144,7 +144,7 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
                 (previousDescription == null) ? MASTER_NULL : previousDescription;
         if (!prev.equals(next)) {
             logger.info("leader changer information previous {} and next {}", prev.getHostname(), next.getHostname());
-            masterSubject.onNext(nextDescription);
+            masterSubject.onNext(next);
         }
     }
 
