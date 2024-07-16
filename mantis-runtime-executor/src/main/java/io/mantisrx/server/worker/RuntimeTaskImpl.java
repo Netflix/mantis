@@ -240,11 +240,4 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         return executeStageRequest.getWorkerId().getId();
     }
 
-    public String getJobVersion() {
-        return executeStageRequest.getJobVersion();
-    }
-
-    public String getJobJarURL() {
-        return executeStageRequest.getJobJarUrl().toString();
-    }
 }

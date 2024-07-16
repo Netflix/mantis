@@ -34,8 +34,4 @@ public interface RuntimeTask extends Service {
 
     String getWorkerId();
 
-    String getJobVersion();
-
-    String getJobJarURL();
-
 }
