@@ -3,25 +3,42 @@ many workers to scale up/down a stage. They fall into 2 main categories. Rule ba
 and scale up/down when a certain threshold is reached. PID control based strategies pick a resource utilization level
 and scale up/down dynamically to maintain that level.
 
-## Rule Based Strategy
+A stage's autoscaling policy is composed of following configurations -
+
+| Name                    | Type                    | Description                                                                                                              |
+|-------------------------|-------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `stage`                 | `int`                   | Index of the stage (`1`-based since `0` is reserved for job master).                                                     |
+| `min`                   | `int`                   | Minimum number of workers in the stage.                                                                                  |
+| `max`                   | `int`                   | Maximum number of workers in the stage.                                                                                  |
+| `increment`[1]          | `int`                   | Number of workers to add when scaling up.                                                                                |
+| `decrement`[1]          | `int`                   | Number of workers to remove when scaling down.                                                                           |
+| `coolDownSecs`          | `int`                   | Number of seconds to wait after a scaling operation has been completed before beginning another scaling operation.       |
+| `strategies`            | `Map<Reason, Strategy>` | List of strategies to use for autoscaling and their configurations.                                                      |
+| `allowAutoScaleManager` | `boolean`               | Toggles an autoscaler manager that (dis)allow scale up and scale downs when certain criteria is met. Default is `false`. |
+
+Note:
+[1] increment/decrement are not used for Clutch strategies. Clutch strategies use PID controller to determine the number of workers to scale up/down.
+
+## Rule Based Strategies
 
 Rule based strategy can be defined for the following resources:
 
-| Resource        | Metric  |
-| --------------- | ------- |
-| `CPU`           | group: `ResourceUsage` name: `cpuPctUsageCurr` aggregation: `AVG`    |
-| `Memory`        | group: `ResourceUsage` name: `totMemUsageCurr` aggregation: `AVG`    |
-| `Network`       | group: `ResourceUsage` name: `nwBytesUsageCurr` aggregation: `AVG`   |
-| `JVMMemory`     | group: `ResourceUsage` name: `jvmMemoryUsedBytes` aggregation: `AVG` |
-| `DataDrop`      | group: `DataDrop` name: `dropCount` aggregation: `AVG` |
-| `KafkaLag`      | group: `consumer-fetch-manager-metrics` name: `records-lag-max` aggregation: `MAX` |
-| `KafkaProcessed` | group: `consumer-fetch-manager-metrics` name: `records-consumed-rate` aggregation: `AVG` |
-| `UserDefined`   | Metric is defined by user with job parameter `mantis.jobmaster.autoscale.metric` in this format `{group}::{name}::{aggregation}`. |
+| Resource                   | Metric                                                                                                                           |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `CPU`                      | group: `ResourceUsage` name: `cpuPctUsageCurr` aggregation: `AVG`                                                                |
+| `Memory`                   | group: `ResourceUsage` name: `totMemUsageCurr` aggregation: `AVG`                                                                |
+| `Network`                  | group: `ResourceUsage` name: `nwBytesUsageCurr` aggregation: `AVG`                                                               |
+| `JVMMemory`                | group: `ResourceUsage` name: `jvmMemoryUsedBytes` aggregation: `AVG`                                                             |
+| `DataDrop`                 | group: `DataDrop` name: `dropCount` aggregation: `AVG`                                                                           |
+| `KafkaLag`                 | group: `consumer-fetch-manager-metrics` name: `records-lag-max` aggregation: `MAX`                                               |
+| `KafkaProcessed`           | group: `consumer-fetch-manager-metrics` name: `records-consumed-rate` aggregation: `AVG`                                         |
+| `UserDefined`              | Metric is defined by user with job parameter `mantis.jobmaster.autoscale.metric` in this format `{group}::{name}::{aggregation}`.|
+| `AutoscalerManagerEvent`   | Custom event defined by an implementation of `JobAutoScalerManager`. This allows event-based runtime control over stage workers  |
 
 Each strategy has the following parameters:
 
-| Name            | Description  |
-| --------------- | ------------ |
+| Name                          | Description  |
+|-------------------------------| ------------ |
 | `Scale down below percentage` | When the aggregated value for all workers falls below this value, the stage will scale down. It will scale down by the decrement value specified in the policy. For data drop, this is calculated as the number of data items dropped divided by the total number of data items, dropped+processed. For CPU, Memory, etc., it is calculated as a percentage of allocated resource when you defined the worker. |
 | `Scale up above percentage`   | When the aggregated value for all workers rises above this value, the stage will scale up. |
 | `Rolling count`               | This value helps to keep jitter out of the autoscaling process. Instead of scaling immediately the first time values fall outside of the scale-down and scale-up percentage thresholds you define, Mantis will wait until the thresholds are exceeded a certain number of times within a certain window. For example, a rolling count of “6 of 10” means that only if in ten consecutive observations six or more of the observations fall below the scale-down threshold will the stage be scaled down. |
@@ -36,7 +53,33 @@ scaling action, the cooldown will prevent subsequent strategies from scaling for
     best to use the data drop strategy in conjunction with another strategy that provides the
     scale-down trigger.
 
-## PID Control Based Strategy
+### AutoscalerManagerEvent Strategy
+This is a custom strategy to set a target worker size at runtime.
+The strategy uses `getCurrentValue` from `JobAutoScalerManager` to determine the target worker size.
+For a non-negative value `[0.0, 100.0]`, the autoscaler will scale the stage from min to max.
+All other values are ignored. Default implementation returns a -1.0 for `currentValue` meaning a no-op for event based scaling.
+
+Example #1: Use-case during region failover in a multi-region setup
+During a failover event in a multi-region setup, all incoming traffic is moved away from the failed over
+region—`evacuee`—to other region(s)—`savior(s)` to mitigate the issue faster.
+
+For some autoscaling mantis jobs, it's necessary to be failover aware to:
+
+1. Prevent scale down in evacuee regions — Use `allowAutoScaleManager`.
+    After an extended period of evacuated state for the region, the jobs in that region would have been
+      scaled down to lowest values because of no incoming traffic and low resource utilization.
+      When the traffic is restored in that region, the job will see a big surge in incoming requests overwhelming
+      the job in that region.
+    Mitigation: Use `allowAutoScaleManager` to enable `JobAutoScalerManager` for stage. Provide a custom implementation of
+      `JobAutoScalerManager` to return `false` for `isScaleDownEnabled` in evacuee region.
+2. Scale up in savior regions — Use `AutoscalerManagerEvent` in strategies.
+    When the traffic is moved to savior regions, the jobs in those regions should be scaled up to handle the
+      additional load. Currently, failover aware strategy will scale up the configured stages to max #workers in
+      configured in `StageScalingPolicy`. It also doesn't work with PID Control Based Strategy(ies).
+    Usage: Provide a custom JobAutoScalerManager implementation to return `1.0` in the savior region to scale stage
+      numWorkers to max.
+
+## PID Control Based Strategies
 
 PID control system uses a continuous feedback loop to maintain a signal at a target level (set point). Mantis offers variations of
 this strategy that operates on different signals. Additionally, they try to learn the appropriate target over time
@@ -84,18 +127,18 @@ JSON in the job parameter `mantis.jobmaster.clutch.config`. Example:
 }
 ```
 
-| Field           | Description  |
-| --------------- | ------------ |
-| `minSize`       | Minimum number of workers in the stage. It will not scale down below this number. |
-| `maxSize`       | Maximum number of workers in the stage. It will not scale up above this number. |
-| `cooldownSeconds` | This indicates how many seconds to wait after a scaling operation has been completed before beginning another scaling operation. |
-| `maxAdjustment` | Optional. The maximum number of workers to scale up/down in a single operation. |
-| `rps`           | Expected RPS per worker. Must be > 0. |
-| `cpu`, `memory`, `network` | Configure PID controller for each resource. |
-| `setPoint`      | Target set point for the resource. This is expressed as a percentage of allocated resource to the worker. For example, `60.0` on `network` means network bytes should be 60% of the network limit on machine definition. |
-| `rope`          | Lower and upper buffer around the set point. Metric values within this buffer are assumed to be at set point, and thus contributes an error of 0 to the PID controller. |
-| `kp`            | Multiplier for the proportional term of the PID controller. This will affect the size of scaling actions. |
-| `kd`            | Multiplier for the derivative term of the PID controller. This will affect the size of scaling actions. |
+| Field                      | Description                                                                                                                                                                                                              |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `minSize`                  | Minimum number of workers in the stage. It will not scale down below this number.                                                                                                                                        |
+| `maxSize`                  | Maximum number of workers in the stage. It will not scale up above this number.                                                                                                                                          |
+| `cooldownSeconds`          | This indicates how many seconds to wait after a scaling operation has been completed before beginning another scaling operation.                                                                                         |
+| `maxAdjustment`            | Optional. The maximum number of workers to scale up/down in a single operation.                                                                                                                                          |
+| `rps`                      | Expected RPS per worker. Must be > 0.                                                                                                                                                                                    |
+| `cpu`, `memory`, `network` | Configure PID controller for each resource.                                                                                                                                                                              |
+| `setPoint`                 | Target set point for the resource. This is expressed as a percentage of allocated resource to the worker. For example, `60.0` on `network` means network bytes should be 60% of the network limit on machine definition. |
+| `rope`                     | Lower and upper buffer around the set point. Metric values within this buffer are assumed to be at set point, and thus contributes an error of 0 to the PID controller.                                                  |
+| `kp`                       | Multiplier for the proportional term of the PID controller. This will affect the size of scaling actions.                                                                                                                |
+| `kd`                       | Multiplier for the derivative term of the PID controller. This will affect the size of scaling actions.                                                                                                                  |
 
 ### Clutch RPS
 

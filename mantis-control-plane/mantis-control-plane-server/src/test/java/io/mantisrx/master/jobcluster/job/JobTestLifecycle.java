@@ -479,13 +479,13 @@ public class JobTestLifecycle {
                             2,
                             new MachineDefinition(1, 1.24, 0.0, 1, 1),
                             null, null,
-                            new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap)
+                            new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, true)
                     )
                     .multiWorkerScalableStageWithConstraints(
                             3,
                             new MachineDefinition(1, 1.24, 0.0, 1, 1),
                             null, null,
-                            new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap)
+                            new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap, true)
                     );
 
             SchedulingInfo sInfo = builder.build();

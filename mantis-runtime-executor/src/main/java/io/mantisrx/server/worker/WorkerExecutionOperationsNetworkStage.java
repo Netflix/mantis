@@ -56,6 +56,7 @@ import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
+import io.mantisrx.server.worker.jobmaster.JobAutoscalerManager;
 import io.mantisrx.server.worker.jobmaster.JobMasterService;
 import io.mantisrx.server.worker.jobmaster.JobMasterStageConfig;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
@@ -412,8 +413,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     logger.info("param {} is null or empty", JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM);
                 }
 
+                JobAutoscalerManager jobAutoscalerManager = getJobAutoscalerManagerInstance(serviceLocator);
                 JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
-                        workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback());
+                        workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback(), jobAutoscalerManager);
                 jobMasterService.start();
                 closeables.add(jobMasterService::shutdown);
 
@@ -475,6 +477,11 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             rw.signalFailed(t);
             shutdownStage();
         }
+    }
+
+    private JobAutoscalerManager getJobAutoscalerManagerInstance(ServiceLocator serviceLocator) {
+        final JobAutoscalerManager autoscalerManager = serviceLocator.service(JobAutoscalerManager.class);
+        return Optional.ofNullable(autoscalerManager).orElse(JobAutoscalerManager.DEFAULT);
     }
 
     private void setupSubscriptionStateHandler(ExecuteStageRequest executeStageRequest) {

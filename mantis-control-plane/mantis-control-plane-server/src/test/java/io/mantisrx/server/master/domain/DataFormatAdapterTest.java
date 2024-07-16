@@ -779,7 +779,7 @@ public class DataFormatAdapterTest {
         int increment = 1;
         int decrement = 1;
         int coolDownSecs = 300;
-        StageScalingPolicy stageScalingPolicy = new StageScalingPolicy(stageNo, min, max, increment, decrement, coolDownSecs, smap);
+        StageScalingPolicy stageScalingPolicy = new StageScalingPolicy(stageNo, min, max, increment, decrement, coolDownSecs, smap, true);
         List<JobConstraints> softConstraintsList = new ArrayList<>();
         softConstraintsList.add(JobConstraints.ExclusiveHost);
         List<JobConstraints> hardConstraintsList = new ArrayList<>();

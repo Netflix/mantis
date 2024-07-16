@@ -145,6 +145,11 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     }
 
     private MasterDescription bytesToMaster(ByteBuffer data) {
+        // It is possible that the underlying buffer is read more than once,
+        // so if the offset of the buffer is at the end, rewind, so we can read it.
+        if (!data.hasRemaining()) {
+            data.rewind();
+        }
         final byte[] bytes = new byte[data.remaining()];
         data.get(bytes);
         try {
