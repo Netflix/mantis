@@ -16,8 +16,7 @@
 package io.mantisrx.extensions.dynamodb;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,15 +27,12 @@ import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import rx.Observable;
 import rx.observers.TestSubscriber;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -82,7 +78,7 @@ public class DynamoDBMasterMonitorTest {
         TestSubscriber<MasterDescription> testSubscriber = new TestSubscriber<>();
         m.getMasterObservable().subscribe(testSubscriber);
         m.start();
-        assertNull(m.getLatestMaster());
+        assertEquals(m.getLatestMaster(), DynamoDBMasterMonitor.MASTER_NULL);
         lockSupport.takeLock(lockKey, otherMaster);
         await()
                 .atLeast(DynamoDBLockSupportRule.heartbeatDuration)
@@ -116,5 +112,36 @@ public class DynamoDBMasterMonitorTest {
         m.shutdown();
         verify(mockLockClient, times(1)).close();
 
+    }
+
+    @Test
+    public void monitorDoesNotReturnNull() throws IOException, InterruptedException {
+        final String lockKey = "mantis-leader";
+        final DynamoDBMasterMonitor m = new DynamoDBMasterMonitor(
+            lockSupport.getLockClient(),
+            lockKey,
+            DynamoDBLockSupportRule.heartbeatDuration,
+            GRACEFUL
+        );
+        TestSubscriber<MasterDescription> testSubscriber = new TestSubscriber<>();
+        m.getMasterObservable().subscribe(testSubscriber);
+        m.start();
+
+        // Write Null
+        lockSupport.takeLock(lockKey, null);
+        await()
+            .atLeast(DynamoDBLockSupportRule.heartbeatDuration)
+            .pollDelay(DynamoDBLockSupportRule.heartbeatDuration)
+            .atMost(Duration.ofMillis(DynamoDBLockSupportRule.heartbeatDuration.toMillis()*2))
+            .untilAsserted(() -> assertEquals(DynamoDBMasterMonitor.MASTER_NULL, m.getLatestMaster()));
+        lockSupport.releaseLock(lockKey);
+
+        m.shutdown();
+
+        testSubscriber.assertNoTerminalEvent();
+        testSubscriber.assertNotCompleted();
+        testSubscriber.assertNoErrors();
+        Observable.from(testSubscriber.getOnNextEvents())
+            .forEach(Assert::assertNotNull);
     }
 }
