@@ -30,7 +30,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -43,7 +42,7 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
 
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBMasterMonitor.class);
 
-    private static final MasterDescription MASTER_NULL =
+    public static final MasterDescription MASTER_NULL =
             new MasterDescription("NONE", "localhost", -1, -1, -1, "uri://", -1, -1L);
     private final ThreadFactory monitorThreadFactory = r -> {
         Thread thread = new Thread(r);
@@ -66,7 +65,6 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     private final Duration gracefulShutdown;
 
     private final BehaviorSubject<MasterDescription> masterSubject;
-    private final AtomicReference<MasterDescription> latestMaster = new AtomicReference<>();
 
     private final ObjectMapper jsonMapper = DefaultObjectMapper.getInstance();
 
@@ -74,7 +72,7 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
      * Creates a MasterMonitor backed by DynamoDB. This should be used if you are using a {@link DynamoDBLeaderElector}
      */
     public DynamoDBMasterMonitor() {
-        masterSubject = BehaviorSubject.create();
+        masterSubject = BehaviorSubject.create(MASTER_NULL);
         final DynamoDBConfig conf = DynamoDBClientSingleton.getDynamoDBConf();
         pollInterval = Duration.parse(conf.getDynamoDBLeaderHeartbeatDuration());
         gracefulShutdown = Duration.parse(conf.getDynamoDBMonitorGracefulShutdownDuration());
@@ -138,13 +136,11 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     }
 
     private void updateLeader(@Nullable MasterDescription nextDescription) {
-        final MasterDescription previousDescription = latestMaster.getAndSet(nextDescription);
+        final MasterDescription prev = Optional.ofNullable(masterSubject.getValue()).orElse(MASTER_NULL);
         final MasterDescription next = (nextDescription == null) ? MASTER_NULL : nextDescription;
-        final MasterDescription prev =
-                (previousDescription == null) ? MASTER_NULL : previousDescription;
         if (!prev.equals(next)) {
             logger.info("leader changer information previous {} and next {}", prev.getHostname(), next.getHostname());
-            masterSubject.onNext(nextDescription);
+            masterSubject.onNext(next);
         }
     }
 
@@ -178,6 +174,6 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     @Override
     @Nullable
     public MasterDescription getLatestMaster() {
-        return latestMaster.get();
+        return Optional.ofNullable(masterSubject.getValue()).orElse(MASTER_NULL);
     }
 }

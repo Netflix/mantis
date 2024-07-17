@@ -34,6 +34,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -128,7 +129,17 @@ public class DynamoDBClientSingletonTest {
             .atMost(Duration.ofSeconds(3L))
             .pollDelay(Duration.ofSeconds(1L))
             .untilAsserted(() -> assertEquals(leaders[2], monitor.getLatestMaster()));
-        testSubscriber.assertValues(leaders);
+
+        // We can, depending on timing, sometimes get a MASTER_NULL value which is safe to ignore.
+        MasterDescription[] actualLeaders = testSubscriber.getOnNextEvents().stream()
+            .filter(md -> md != DynamoDBMasterMonitor.MASTER_NULL)
+            .collect(Collectors.toList())
+            .toArray(new MasterDescription[]{});
+
+        assertEquals(leaders.length, actualLeaders.length);
+        assertEquals(leaders[0], actualLeaders[0]);
+        assertEquals(leaders[1], actualLeaders[1]);
+        assertEquals(leaders[2], actualLeaders[2]);
         monitor.shutdown();
 
         dynamoDb.createKVTable(table);
