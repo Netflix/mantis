@@ -71,7 +71,6 @@ dependencies {
 }
 
 shadowJar {
-    classifier = null
     configurations = [project.configurations.shaded]
 
     exclude 'META-INF/LICENSE'

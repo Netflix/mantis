@@ -27,3 +27,10 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+tasks.named('compileJava') {
+    dependsOn project(':mantis-control-plane:mantis-control-plane-core').tasks.named('jar')
+}
+tasks.named('delombok') {
+    dependsOn project(':mantis-control-plane:mantis-control-plane-core').tasks.named('jar')
+}

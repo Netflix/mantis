@@ -26,3 +26,10 @@ dependencies {
     testImplementation libraries.spectatorApi
     testImplementation(testFixtures(project(":mantis-common")))
 }
+
+tasks.named('compileJava') {
+    dependsOn project(':mantis-control-plane:mantis-control-plane-core').tasks.named('jar')
+}
+tasks.named('delombok') {
+    dependsOn project(':mantis-control-plane:mantis-control-plane-core').tasks.named('jar')
+}
