@@ -16,10 +16,12 @@ jobs:
         java: [ 8 ]
     name: CI with Java ${{ matrix.java }}
     steps:
+      - name: Setup Git
+        run: |
+          git config --global user.name "Mantis OSS Maintainers"
+          git config --global user.email "mantis-oss-dev@googlegroups.com"
+      - name: Setup jdk
       - uses: actions/checkout@v1
-      - run: |
-        git config --global user.name "Mantis OSS Maintainers"
-        git config --global user.email "mantis-oss-dev@googlegroups.com"
       - name: Setup jdk
         uses: actions/setup-java@v1
         with:

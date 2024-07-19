@@ -15,11 +15,12 @@ jobs:
     environment:
       name: Integrate Pull Request # Our protected environment variable
     steps:
-      - name: Checkout PR
-        uses: actions/checkout@v3
+      - name: Setup Git
         run: |
           git config --global user.name "Mantis OSS Maintainers"
           git config --global user.email "mantis-oss-dev@googlegroups.com"
+      - name: Checkout PR
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Setup jdk
