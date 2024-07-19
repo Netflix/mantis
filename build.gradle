@@ -22,16 +22,17 @@ buildscript {
             url "https://plugins.gradle.org/m2/"
         }
         maven { url 'https://artifacts-oss.netflix.net/maven-oss-releases' }
-        maven { url 'https://artifacts-oss.netflix.net/maven-oss-candidates' }
+        // maven { url 'https://artifacts-oss.netflix.net/maven-oss-candidates' }
     }
     dependencies {
         classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:11.5.0'
         classpath 'com.netflix.nebula:nebula-dependency-recommender:11.+'
-        classpath 'io.mantisrx:mantis-gradle-plugin:1.2.7-rc.4'
+        classpath 'io.mantisrx:mantis-gradle-plugin:1.2.7'
         classpath "io.freefair.gradle:lombok-plugin:6.+"
         classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
         classpath("com.github.johnrengelman:shadow:8.1.1")
         classpath 'gradle.plugin.org.inferred:gradle-processors:3.3.0'
+        // todo: baseline is disabled due to no working version on java 8
         // classpath 'com.palantir.baseline:gradle-baseline-java:4.+'
         classpath 'com.bmuschko:gradle-docker-plugin:6.7.0'
         classpath "com.palantir.gradle.gitversion:gradle-git-version:3.0.0"
