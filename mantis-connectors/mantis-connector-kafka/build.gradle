@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-apply plugin: 'mantis'
-
 ext {
     archaiusVersion = '2.3.+'
     spectatorVersion = '0.82.+'

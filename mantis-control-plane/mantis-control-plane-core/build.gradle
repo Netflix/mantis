@@ -59,3 +59,4 @@ task copyLibs(type: Copy) {
 }
 
 jar.dependsOn copyLibs
+compileTestFixturesJava.dependsOn copyLibs

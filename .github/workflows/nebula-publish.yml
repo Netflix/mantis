@@ -12,6 +12,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup Git
+        run: |
+          git config --global user.name "Mantis OSS Maintainers"
+          git config --global user.email "mantis-oss-dev@googlegroups.com"
       - uses: actions/checkout@v2
       - name: Setup jdk
         uses: actions/setup-java@v2
