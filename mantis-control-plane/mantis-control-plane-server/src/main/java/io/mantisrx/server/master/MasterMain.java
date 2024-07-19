@@ -119,7 +119,7 @@ public class MasterMain implements Service {
         try {
             ConfigurationProvider.initialize(configFactory);
             this.config = ConfigurationProvider.getConfig();
-            leadershipManager = new LeadershipManagerZkImpl(config, mantisServices);
+            leadershipManager = new LeadershipManagerImpl(config, mantisServices);
 
             Thread t = new Thread(this::shutdown);
             t.setDaemon(true);
