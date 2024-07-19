@@ -27,7 +27,7 @@ buildscript {
     dependencies {
         classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:11.5.0'
         classpath 'com.netflix.nebula:nebula-dependency-recommender:11.+'
-        classpath 'io.mantisrx:mantis-gradle-plugin:1.2.7-rc.1'
+        classpath 'io.mantisrx:mantis-gradle-plugin:1.2.7-rc.3'
         classpath "io.freefair.gradle:lombok-plugin:6.+"
         classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
         classpath("com.github.johnrengelman:shadow:8.1.1")
