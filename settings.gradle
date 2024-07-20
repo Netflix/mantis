@@ -25,7 +25,7 @@ include 'mantis-common'
 include 'mantis-common-serde'
 
 include 'mantis-connectors:mantis-connector-iceberg'
-include 'mantis-connectors:mantis-connector-job'
+include 'mantis-connectors:mantis-connector-job-source'
 include 'mantis-connectors:mantis-connector-kafka'
 include 'mantis-connectors:mantis-connector-publish'
 
