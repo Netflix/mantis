@@ -17,6 +17,9 @@ package io.mantisrx.extensions.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClient;
 import com.amazonaws.services.dynamodbv2.LockItem;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.MasterDescription;
@@ -68,16 +71,20 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
 
     private final ObjectMapper jsonMapper = DefaultObjectMapper.getInstance();
 
+    private final Metrics metrics;
+
+    private final Counter noLockPresentCounter;
+    private final Counter lockDecodeFailedCounter;
+    private final Counter nullNextLeaderCounter;
+
     /**
      * Creates a MasterMonitor backed by DynamoDB. This should be used if you are using a {@link DynamoDBLeaderElector}
      */
     public DynamoDBMasterMonitor() {
-        masterSubject = BehaviorSubject.create(MASTER_NULL);
-        final DynamoDBConfig conf = DynamoDBClientSingleton.getDynamoDBConf();
-        pollInterval = Duration.parse(conf.getDynamoDBLeaderHeartbeatDuration());
-        gracefulShutdown = Duration.parse(conf.getDynamoDBMonitorGracefulShutdownDuration());
-        lockClient = DynamoDBClientSingleton.getLockClient();
-        partitionKey = DynamoDBClientSingleton.getPartitionKey();
+        this(DynamoDBClientSingleton.getLockClient(),
+            DynamoDBClientSingleton.getPartitionKey(),
+            Duration.parse(DynamoDBClientSingleton.getDynamoDBConf().getDynamoDBLeaderHeartbeatDuration()),
+            Duration.parse(DynamoDBClientSingleton.getDynamoDBConf().getDynamoDBMonitorGracefulShutdownDuration()));
     }
 
     public DynamoDBMasterMonitor(
@@ -85,11 +92,23 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
             String partitionKey,
             Duration pollInterval,
             Duration gracefulShutdown) {
-        masterSubject = BehaviorSubject.create();
+        masterSubject = BehaviorSubject.create(MASTER_NULL);
         this.lockClient = lockClient;
         this.partitionKey = partitionKey;
         this.pollInterval = pollInterval;
         this.gracefulShutdown = gracefulShutdown;
+
+        Metrics m = new Metrics.Builder()
+            .id("DynamoDBMasterMonitor")
+            .addCounter("no_lock_present")
+            .addCounter("lock_decode_failed")
+            .addCounter("null_next_leader")
+            .build();
+        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
+
+        this.noLockPresentCounter = metrics.getCounter("no_lock_present");
+        this.lockDecodeFailedCounter = metrics.getCounter("lock_decode_failed");
+        this.nullNextLeaderCounter = metrics.getCounter("null_next_leader");
     }
 
     @Override
@@ -128,11 +147,19 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
         if (optionalLock.isPresent()) {
             final LockItem lock = optionalLock.get();
             nextDescription = lock.getData().map(this::bytesToMaster).orElse(null);
+            logger.warn("failed to decode leader bytes");
+            this.lockDecodeFailedCounter.increment();
         } else {
             nextDescription = null;
             logger.warn("no leader found");
+            this.noLockPresentCounter.increment();
         }
-        updateLeader(nextDescription);
+
+        if (nextDescription != null) {
+            updateLeader(nextDescription);
+        } else {
+            this.nullNextLeaderCounter.increment();
+        }
     }
 
     private void updateLeader(@Nullable MasterDescription nextDescription) {
