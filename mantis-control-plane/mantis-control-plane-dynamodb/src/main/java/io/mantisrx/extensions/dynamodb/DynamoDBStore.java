@@ -120,15 +120,16 @@ public class DynamoDBStore implements IKeyValueStore {
         final List<String> results = new ArrayList<>();
         Map<String, AttributeValue> lastEvaluatedKey = null;
 
-        do {
+        while(true) {
             DynamoPaginationResult<List<String>> result = this._getAllPartitionKeys(tableName, lastEvaluatedKey);
+            results.addAll(result.result);
             if (!result.lastEvaluatedKey.isEmpty()) {
                 log.info("partial result for all partition keys query, left off at partitionKey={} of table={}", result.lastEvaluatedKey.get("SK").s(), tableName);
+                lastEvaluatedKey = result.lastEvaluatedKey;
+            } else {
+                break;
             }
-            lastEvaluatedKey = result.lastEvaluatedKey;
-            results.addAll(result.result);
-        } while (!lastEvaluatedKey.isEmpty());
-
+        }
         log.info("found {} items when querying for all partition keys in table={}", results.size(), tableName);
         return results;
     }
@@ -167,14 +168,16 @@ public class DynamoDBStore implements IKeyValueStore {
     public Map<String, String> getAll(String tableName, String partitionKey) throws IOException {
         final Map<String, String> items = new HashMap<>();
         Map<String, AttributeValue> lastEvaluatedKey = null;
-        do {
+        while(true) {
             DynamoPaginationResult<List<Map<String, AttributeValue>>> result = this._getAll(tableName, partitionKey, lastEvaluatedKey);
+            result.result.forEach(v -> items.put(v.get(SECONDARY_KEY).s(), v.get(DATA_KEY).s()));
             if (!result.lastEvaluatedKey.isEmpty()) {
                 log.info("partial result for get all query, left off at SK={} of table={}", result.lastEvaluatedKey.get("SK").s(), tableName);
+                lastEvaluatedKey = result.lastEvaluatedKey;
+            } else {
+                break;
             }
-            lastEvaluatedKey = result.lastEvaluatedKey;
-            result.result.forEach(v -> items.put(v.get(SECONDARY_KEY).s(), v.get(DATA_KEY).s()));
-        } while (!lastEvaluatedKey.isEmpty());
+        }
 
         log.info("found {} items when querying for all items in partition {} in table {}", items.size(), partitionKey, tableName);
         return items;
