@@ -249,27 +249,34 @@ public class MantisMasterClientApiTest {
             final HttpServer<String, String> httpServer = createHttpServer(
                 apiPort,
                 (req, resp) -> {
-                    resp.setStatus(HttpResponseStatus.NOT_FOUND);
+                    if (req.getPath().contains("/assignmentresults/test-job-id1")) {
+                        resp.setStatus(HttpResponseStatus.NOT_FOUND);
+                    } else if (req.getPath().contains("/assignmentresults/test-job-id2")) {
+                        resp.setStatus(HttpResponseStatus.BAD_REQUEST);
+                    }
                     return Observable.empty();
                 });
             startedServers.add(httpServer);
             httpServer.start();
         });
 
-        final String jobId = "test-job-id1";
+        final String[] jobIds = {"test-job-id1", "test-job-id2"};
         mdSubject.onNext(new MasterDescription("localhost", "127.0.0.1", apiPort, apiPort, apiPort, "status", apiPort, System.currentTimeMillis()));
-        final Observable<JobSchedulingInfo> resultObs = mantisMasterClientApi.schedulingChanges(jobId);
-        final CountDownLatch completedLatch = new CountDownLatch(1);
 
-        resultObs
-            .doOnError(throwable -> {
-                logger.info("Got expected error: ", throwable);
-                completedLatch.countDown();
-            })
-            .doOnCompleted(() -> {
-                fail("Obs should fail to doOnError");
-            }).subscribe();
+        for (String jobId : jobIds) {
+            final Observable<JobSchedulingInfo> resultObs = mantisMasterClientApi.schedulingChanges(jobId);
+            final CountDownLatch completedLatch = new CountDownLatch(1);
 
-        assertTrue(completedLatch.await(3, TimeUnit.SECONDS));
+            resultObs
+                .doOnError(throwable -> {
+                    logger.info("Got expected error: ", throwable);
+                    completedLatch.countDown();
+                })
+                .doOnCompleted(() -> {
+                    fail("Obs should fail to doOnError");
+                }).subscribe();
+
+            assertTrue(completedLatch.await(3, TimeUnit.SECONDS));
+        }
     }
 }

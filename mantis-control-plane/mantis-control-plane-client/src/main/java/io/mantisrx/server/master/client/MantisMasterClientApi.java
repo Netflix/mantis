@@ -715,6 +715,12 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                                 JobIdNotFoundException notFoundException = new JobIdNotFoundException(jobId);
                                 retryObject.setErrorRef(notFoundException);
                                 return Observable.error(notFoundException);
+                            } else if (HttpResponseStatus.BAD_REQUEST.equals(response.getStatus())) {
+                                logger.error("GET assignmentresults bad request: {}", response.getStatus());
+                                BadRequestException badRequestException =
+                                    new BadRequestException(String.format("Error calling assignmentresults for jobId=%s", jobId));
+                                retryObject.setErrorRef(badRequestException);
+                                return Observable.error(badRequestException);
                             } else if (!HttpResponseStatus.OK.equals(response.getStatus())) {
                                 logger.error("GET assignmentresults failed: {}", response.getStatus());
                                 return Observable.error(new Exception(response.getStatus().reasonPhrase()));
