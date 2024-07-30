@@ -27,8 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-
-
 @Slf4j
 public class DynamoDBStore implements IKeyValueStore {
     // Helper class to track pagination with DynamoDB queries
