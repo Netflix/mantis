@@ -27,8 +27,21 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
+
+
 @Slf4j
 public class DynamoDBStore implements IKeyValueStore {
+    // Helper class to track pagination with DynamoDB queries
+    // lastEventuatedKey is used as a pagination cursor
+    private class DynamoPaginationResult<T> {
+        public T result;
+        public Map<String, AttributeValue> lastEvaluatedKey;
+
+        DynamoPaginationResult(T result, Map<String, AttributeValue> lastEvaluatedKey) {
+            this.result = result;
+            this.lastEvaluatedKey = lastEvaluatedKey;
+        }
+    }
 
     public static final String PK = "PK";
     public  static final String SK = "SK";
@@ -48,6 +61,7 @@ public class DynamoDBStore implements IKeyValueStore {
     private static final String MPK_E = "#MPK";
 
     private static final int MAX_ITEMS = 25;
+    public static final int QUERY_LIMIT = 100;
 
     private final String mantisTable;
     private final DynamoDbClient client;
@@ -65,6 +79,32 @@ public class DynamoDBStore implements IKeyValueStore {
         this.client = client;
         this.mantisTable = tableName;
     }
+
+    private DynamoPaginationResult<List<String>> _getAllPartitionKeys(String tableName, Map<String, AttributeValue> lastEvaluatedKey) {
+        Map<String, String> expressionAttributesNames = new HashMap<>();
+        expressionAttributesNames.put(PK_E, PK);
+        expressionAttributesNames.put(MPK_E, PARTITION_KEY);
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(PK_V, AttributeValue.builder().s(tableName).build());
+
+        QueryRequest.Builder builder = QueryRequest.builder()
+            .tableName(this.mantisTable)
+            .keyConditionExpression(String.format("%s = %s", PK_E, PK_V))
+            .expressionAttributeNames(expressionAttributesNames)
+            .expressionAttributeValues(expressionAttributeValues)
+            .projectionExpression(MPK_E).limit(QUERY_LIMIT);
+
+        if(lastEvaluatedKey != null) {
+            builder = builder.exclusiveStartKey(lastEvaluatedKey);
+        }
+        final QueryRequest request = builder.build();
+
+        final QueryResponse response = this.client.query(request);
+        final Map<String, String> pks = new HashMap<>();
+        response.items().forEach(v -> pks.put(v.get(PARTITION_KEY).s(), ""));
+        return new DynamoPaginationResult<>(new ArrayList<>(pks.keySet()), response.lastEvaluatedKey());
+    }
+
     /**
      * Gets all partition keys from the table.
      * This could be beneficial to call instead of getAllRows
@@ -78,26 +118,44 @@ public class DynamoDBStore implements IKeyValueStore {
      * @return list of all partition keys
      */
     @Override
-    public List<String> getAllPartitionKeys(String tableName) throws IOException {
+    public List<String> getAllPartitionKeys(String tableName) {
+        final List<String> results = new ArrayList<>();
+        Map<String, AttributeValue> lastEvaluatedKey = null;
+
+        do {
+            DynamoPaginationResult<List<String>> result = this._getAllPartitionKeys(tableName, lastEvaluatedKey);
+            if (!result.lastEvaluatedKey.isEmpty()) {
+                log.info("partial result for all partition keys query, left off at partitionKey={} of table={}", result.lastEvaluatedKey.get("SK").s(), tableName);
+            }
+            lastEvaluatedKey = result.lastEvaluatedKey;
+            results.addAll(result.result);
+        } while (!lastEvaluatedKey.isEmpty());
+
+        log.info("found {} items when querying for all partition keys in table={}", results.size(), tableName);
+        return results;
+    }
+
+    private DynamoPaginationResult<List<Map<String, AttributeValue>>> _getAll(String tableName, String partitionKey, Map<String, AttributeValue> lastEvaluatedKey) {
         Map<String, String> expressionAttributesNames = new HashMap<>();
         expressionAttributesNames.put(PK_E, PK);
-        expressionAttributesNames.put(MPK_E, PARTITION_KEY);
+        expressionAttributesNames.put(SK_E, SK);
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(PK_V, AttributeValue.builder().s(tableName).build());
+        expressionAttributeValues.put(SK_V, AttributeValue.builder().s(String.format("%s#", partitionKey)).build());
 
-        final QueryRequest request = QueryRequest.builder()
-                .tableName(this.mantisTable)
-                .keyConditionExpression(String.format("%s = %s", PK_E, PK_V))
-                .expressionAttributeNames(expressionAttributesNames)
-                .expressionAttributeValues(expressionAttributeValues)
-                .projectionExpression(MPK_E)
-                .build();
+        QueryRequest.Builder builder = QueryRequest.builder()
+            .tableName(this.mantisTable)
+            .keyConditionExpression(String.format("%s = %s and begins_with(%s, %s)", PK_E, PK_V, SK_E, SK_V))
+            .expressionAttributeNames(expressionAttributesNames)
+            .expressionAttributeValues(expressionAttributeValues).limit(QUERY_LIMIT);
 
-        log.info("querying for all partition keys in table {}", tableName);
+        if(lastEvaluatedKey != null) {
+            builder = builder.exclusiveStartKey(lastEvaluatedKey);
+        }
+        final QueryRequest request = builder.build();
+
         final QueryResponse response = this.client.query(request);
-        final Map<String, String> pks = new HashMap<>();
-        response.items().forEach(v -> pks.put(v.get(PARTITION_KEY).s(), ""));
-        return new ArrayList<>(pks.keySet());
+        return  new DynamoPaginationResult<>(response.items(), response.lastEvaluatedKey());
     }
 
     /**
@@ -109,26 +167,18 @@ public class DynamoDBStore implements IKeyValueStore {
      */
     @Override
     public Map<String, String> getAll(String tableName, String partitionKey) throws IOException {
-
-        Map<String, String> expressionAttributesNames = new HashMap<>();
-        expressionAttributesNames.put(PK_E, PK);
-        expressionAttributesNames.put(SK_E, SK);
-        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(PK_V, AttributeValue.builder().s(tableName).build());
-        expressionAttributeValues.put(SK_V, AttributeValue.builder().s(String.format("%s#", partitionKey)).build());
-
-        final QueryRequest request = QueryRequest.builder()
-                .tableName(this.mantisTable)
-                .keyConditionExpression(String.format("%s = %s and begins_with(%s, %s)", PK_E, PK_V, SK_E, SK_V))
-                .expressionAttributeNames(expressionAttributesNames)
-                .expressionAttributeValues(expressionAttributeValues)
-                .build();
-
-        log.info("querying for all items in partition {} in table {}", partitionKey, tableName);
-        final QueryResponse response = this.client.query(request);
         final Map<String, String> items = new HashMap<>();
-        response.items()
-                .forEach(v -> items.put(v.get(SECONDARY_KEY).s(), v.get(DATA_KEY).s()));
+        Map<String, AttributeValue> lastEvaluatedKey = null;
+        do {
+            DynamoPaginationResult<List<Map<String, AttributeValue>>> result = this._getAll(tableName, partitionKey, lastEvaluatedKey);
+            if (!result.lastEvaluatedKey.isEmpty()) {
+                log.info("partial result for get all query, left off at SK={} of table={}", result.lastEvaluatedKey.get("SK").s(), tableName);
+            }
+            lastEvaluatedKey = result.lastEvaluatedKey;
+            result.result.forEach(v -> items.put(v.get(SECONDARY_KEY).s(), v.get(DATA_KEY).s()));
+        } while (!lastEvaluatedKey.isEmpty());
+
+        log.info("found {} items when querying for all items in partition {} in table {}", items.size(), partitionKey, tableName);
         return items;
     }
 
