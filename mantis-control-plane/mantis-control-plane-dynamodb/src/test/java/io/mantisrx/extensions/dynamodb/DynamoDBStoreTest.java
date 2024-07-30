@@ -159,8 +159,40 @@ public class DynamoDBStoreTest {
         assertEquals(skData1.size(), itemsPK1.size());
         final Map<String, String> itemsPK3 = store.getAll(table, pks.get(2));
         assertEquals(skData3.size(), itemsPK3.size());
-
     }
+
+    @Test
+    public void testInsertAndGetAllMoreThanLimit() throws Exception {
+        IKeyValueStore store = new DynamoDBStore(client, table);
+        int numRows = DynamoDBStore.QUERY_LIMIT * 2 + 1;
+        final List<String> pks = makePKs(1);
+        final Map<String, String> skData1 = new HashMap<>();
+        for (int i = 0; i < numRows; i++) {
+            skData1.put(String.valueOf(i), V1);
+        }
+        assertTrue(store.upsertAll(table, pks.get(0), skData1));
+        final Map<String, String> itemsPK1 = store.getAll(table, pks.get(0));
+        assertEquals(skData1.size(), itemsPK1.size());
+    }
+
+    @Test
+    public void testUpsertAndGetAllPkMoreThanLimit() throws Exception {
+        IKeyValueStore store = new DynamoDBStore(client, table);
+        int numRows = DynamoDBStore.QUERY_LIMIT * 2 + 1;
+        final List<String> pks = new ArrayList<>();
+        for (int i = 0; i < numRows; i++) {
+            pks.add(UUID.randomUUID().toString());
+        }
+        Collections.sort(pks);
+        final Map<String, String> skData1 = new HashMap<>();
+        for(int i=0; i< numRows; i++) {
+            store.upsert(table, pks.get(i), String.valueOf(i), V1);
+        }
+        final List<String> allPKs = store.getAllPartitionKeys(table);
+        Collections.sort(allPKs);
+        assertEquals(pks,allPKs);
+    }
+
     private List<String> makePKs(int num) {
         final List<String> pks = new ArrayList<>();
         for(int i = 0; i<3; i++) {
