@@ -15,6 +15,7 @@
  */
 package io.mantisrx.extensions.dynamodb;
 
+import static io.mantisrx.extensions.dynamodb.DynamoDBMasterMonitor.MASTER_NULL;
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.times;
@@ -78,7 +79,7 @@ public class DynamoDBMasterMonitorTest {
         TestSubscriber<MasterDescription> testSubscriber = new TestSubscriber<>();
         m.getMasterObservable().subscribe(testSubscriber);
         m.start();
-        assertEquals(m.getLatestMaster(), DynamoDBMasterMonitor.MASTER_NULL);
+        assertEquals(MASTER_NULL, m.getLatestMaster());
         lockSupport.takeLock(lockKey, otherMaster);
         await()
                 .atLeast(DynamoDBLockSupportRule.heartbeatDuration)
@@ -92,7 +93,7 @@ public class DynamoDBMasterMonitorTest {
                 .pollDelay(DynamoDBLockSupportRule.heartbeatDuration)
                 .atMost(Duration.ofMillis(DynamoDBLockSupportRule.heartbeatDuration.toMillis()*2))
                 .untilAsserted(() -> assertEquals(m.getLatestMaster(), thatMaster));
-        testSubscriber.assertValues(otherMaster, thatMaster);
+        testSubscriber.assertValues(MASTER_NULL, otherMaster, thatMaster);
         m.shutdown();
     }
 
@@ -133,7 +134,7 @@ public class DynamoDBMasterMonitorTest {
             .atLeast(DynamoDBLockSupportRule.heartbeatDuration)
             .pollDelay(DynamoDBLockSupportRule.heartbeatDuration)
             .atMost(Duration.ofMillis(DynamoDBLockSupportRule.heartbeatDuration.toMillis()*2))
-            .untilAsserted(() -> assertEquals(DynamoDBMasterMonitor.MASTER_NULL, m.getLatestMaster()));
+            .untilAsserted(() -> assertEquals(MASTER_NULL, m.getLatestMaster()));
         lockSupport.releaseLock(lockKey);
 
         m.shutdown();
