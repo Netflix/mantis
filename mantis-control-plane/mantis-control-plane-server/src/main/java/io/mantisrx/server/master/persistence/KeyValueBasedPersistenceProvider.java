@@ -386,9 +386,11 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-            workersByJobId
-                .computeIfAbsent(workers.get(0).getJobId(), k -> Lists.newArrayList())
-                .addAll(workers);
+            if(!workers.isEmpty()) {
+                workersByJobId
+                    .computeIfAbsent(workers.get(0).getJobId(), k -> Lists.newArrayList())
+                    .addAll(workers);
+            }
         }
         return workersByJobId;
     }
