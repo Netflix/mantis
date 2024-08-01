@@ -78,6 +78,10 @@ public interface CoreConfiguration {
     @Default("10000")
     int getAsyncHttpClientReadTimeoutMs();
 
+    @Config("mantis.asyncHttpClient.followRedirect")
+    @Default("true")
+    boolean getAsyncHttpClientFollowRedirect();
+
     @Config("mantis.leader.monitor.factory")
     @Default("io.mantisrx.server.core.master.LocalLeaderFactory")
     String getLeaderMonitorFactoryName();

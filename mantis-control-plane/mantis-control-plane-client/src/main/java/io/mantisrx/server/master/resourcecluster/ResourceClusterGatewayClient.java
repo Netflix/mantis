@@ -128,6 +128,7 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
             .setConnectTimeout(configuration.getAsyncHttpClientConnectionTimeoutMs())
             .setRequestTimeout(configuration.getAsyncHttpClientRequestTimeoutMs())
             .setReadTimeout(configuration.getAsyncHttpClientReadTimeoutMs())
+            .setFollowRedirect(configuration.getAsyncHttpClientFollowRedirect())
             .build());
   }
 }
