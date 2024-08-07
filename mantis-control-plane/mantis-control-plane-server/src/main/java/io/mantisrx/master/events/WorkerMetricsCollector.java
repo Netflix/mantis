@@ -134,6 +134,8 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
                     // do nothing; This is the initial state
                     break;
                 case Launched:
+                    log.debug("Worker {} launched with scheduling time: {}",
+                        workerId, Math.max(0L, workerStatusEvent.getTimestamp() - metadata.getAcceptedAt()));
                     // this represents the scheduling time
                     workerMetrics.reportSchedulingDuration(
                         Math.max(0L, workerStatusEvent.getTimestamp() - metadata.getAcceptedAt()));
