@@ -15,6 +15,7 @@
  */
 package io.mantisrx.server.master.client;
 
+import com.mantisrx.common.utils.Services;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -82,6 +83,17 @@ public class HighAvailabilityServicesUtil {
     return HAServiceInstanceRef.get();
   }
 
+  // This getter is used in situations where the context does not know the core configuration.  For example, this
+  // is used to create a MantisClient when configuring a JobSource, where a job instance does not know how Mantis
+  // is configured.
+  // Note that in this context, the agent should have configured HighAvailabilityServices.
+  public static HighAvailabilityServices get() {
+      if (HAServiceInstanceRef.get() == null) {
+          throw new RuntimeException("HighAvailabilityServices have not been initialized");
+      }
+      return HAServiceInstanceRef.get();
+  }
+
   private static class LocalHighAvailabilityServices extends AbstractIdleService implements HighAvailabilityServices {
     private final MasterMonitor masterMonitor;
     private final CoreConfiguration configuration;
@@ -131,6 +143,7 @@ public class HighAvailabilityServicesUtil {
         private final MasterMonitor masterMonitor;
         private final Counter resourceLeaderChangeCounter;
         private final Counter resourceLeaderAlreadyRegisteredCounter;
+        private final Counter resourceLeaderIsEmptyCounter;
         private final AtomicInteger rmConnections = new AtomicInteger(0);
         private final CoreConfiguration configuration;
 
@@ -152,9 +165,11 @@ public class HighAvailabilityServicesUtil {
                 .name(metricsGroup)
                 .addCounter("resourceLeaderChangeCounter")
                 .addCounter("resourceLeaderAlreadyRegisteredCounter")
+                .addCounter("resourceLeaderIsEmptyCounter")
                 .build());
             resourceLeaderChangeCounter = metrics.getCounter("resourceLeaderChangeCounter");
             resourceLeaderAlreadyRegisteredCounter = metrics.getCounter("resourceLeaderAlreadyRegisteredCounter");
+            resourceLeaderIsEmptyCounter = metrics.getCounter("resourceLeaderIsEmptyCounter");
 
         }
 
@@ -209,7 +224,12 @@ public class HighAvailabilityServicesUtil {
                         .subscribe(nextDescription -> {
                             log.info("nextDescription={}", nextDescription);
 
-                            if (nextDescription.equals(((ResourceClusterGatewayClient)currentResourceClusterGateway).getMasterDescription())) {
+                            // We do not want to update if the master is set to null.  This is usually due to a newly
+                            // initialized master monitor.
+                            if (nextDescription.equals(MasterDescription.MASTER_NULL)) {
+                                resourceLeaderIsEmptyCounter.increment();
+                                return;
+                            } else if (nextDescription.equals(((ResourceClusterGatewayClient)currentResourceClusterGateway).getMasterDescription())) {
                                 resourceLeaderAlreadyRegisteredCounter.increment();
                                 return;
                             }

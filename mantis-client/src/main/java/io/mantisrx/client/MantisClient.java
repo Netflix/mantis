@@ -113,6 +113,12 @@ public class MantisClient {
         this.clientWrapper = clientWrapper;
     }
 
+    public MantisClient(HighAvailabilityServices haServices) {
+        haServices.awaitRunning();
+        clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
+        this.disablePingFiltering = false;
+    }
+
     public MantisClient(MasterClientWrapper clientWrapper) {
         this(clientWrapper, false);
     }

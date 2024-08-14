@@ -19,6 +19,6 @@ package io.mantisrx.connector.job.core;
 public class MantisSourceJobConnectorFactory {
 
     public static MantisSourceJobConnector getConnector() {
-        return new MantisSourceJobConnector();
+        return new MantisSourceJobConnector(false);
     }
 }

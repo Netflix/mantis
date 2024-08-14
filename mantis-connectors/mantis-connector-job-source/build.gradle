@@ -22,6 +22,7 @@ dependencies {
     implementation project(":mantis-runtime")
     implementation project(":mantis-client")
     implementation project(":mantis-control-plane:mantis-control-plane-core")
+    implementation project(":mantis-control-plane:mantis-control-plane-client")
     implementation project(":mantis-publish:mantis-publish-core")
 
     implementation "com.google.code.gson:gson:$gsonVersion"
