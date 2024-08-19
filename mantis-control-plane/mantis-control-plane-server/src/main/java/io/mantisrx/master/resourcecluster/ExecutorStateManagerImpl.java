@@ -338,9 +338,9 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             return Optional.empty();
         }
 
-        log.info("Applying assignment request: {} to constraints {}.", request, bestFitTeGroupKey);
+        log.info("Applying assignment request: {} to best fit TE group {}.", request, bestFitTeGroupKey);
         if (!this.executorsByGroup.containsKey(bestFitTeGroupKey.get())) {
-            log.warn("No available TE found for constraints: {}, request: {}", bestFitTeGroupKey.get(), request);
+            log.warn("No available TE found for best fit TE group: {}, request: {}", bestFitTeGroupKey.get(), request);
             return Optional.empty();
         }
 
@@ -508,6 +508,13 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             return taskExecutors;
         } else {
             log.warn("Not enough available TEs found for scheduling constraints {}, request: {}", schedulingConstraints, request);
+            if (taskExecutors.isPresent()) {
+                log.debug("Found {} Task Executors: {} for request: {} with constraints: {}",
+                    taskExecutors.get().size(), taskExecutors.get(), request, schedulingConstraints);
+            } else {
+                log.warn("No suitable Task Executors found for request: {} with constraints: {}",
+                    request, schedulingConstraints);
+            }
 
             // If there are not enough workers with the given spec then add the request the pending ones
             if (!isJobIdAlreadyPending && request.getAllocationRequests().size() > 2) {
@@ -581,8 +588,10 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
      */
     private Optional<TaskExecutorGroupKey> findBestGroupByFitnessCalculator(SchedulingConstraints requestedConstraints) {
         log.info("Falling back to find best group by fitness calculator for constraints: {}", requestedConstraints);
+        log.debug("All present executor groups: {}", executorsByGroup.keySet());
 
-        return executorsByGroup.keySet()
+        // Filter and sort Task Executor Group Keys based on fitness score
+        final List<Map.Entry<TaskExecutorGroupKey, Double>> groupFitnessList = executorsByGroup.keySet()
             .stream()
             // Filter out if both sizeName exist and are different (ie. small vs large)
             .filter(taskExecutorGroupKey -> {
@@ -618,8 +627,18 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
                     return Comparator.<String>nullsLast(Comparator.reverseOrder()).compare(generation1, generation2);
                 }
             })
-            .map(AbstractMap.SimpleEntry::getKey)
-            .findFirst();
+            .collect(Collectors.toList());
+
+        if (groupFitnessList.isEmpty()) {
+            log.debug("No suitable Task Executor Groups found for constraints: {}", requestedConstraints);
+        } else {
+            log.debug("Fitness calculation results for the Task Executor Groups:");
+            for (Map.Entry<TaskExecutorGroupKey, Double> entry : groupFitnessList) {
+                log.debug("TaskExecutorGroupKey: {}, Fitness Score: {}", entry.getKey(), entry.getValue());
+            }
+        }
+
+        return groupFitnessList.stream().map(Map.Entry::getKey).findFirst();
     }
 
     /**
