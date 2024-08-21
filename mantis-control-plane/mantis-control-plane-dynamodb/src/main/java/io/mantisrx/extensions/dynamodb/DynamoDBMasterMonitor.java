@@ -40,13 +40,13 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
 
+
 @Slf4j
 public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor {
 
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBMasterMonitor.class);
 
-    public static final MasterDescription MASTER_NULL =
-            new MasterDescription("NONE", "localhost", -1, -1, -1, "uri://", -1, -1L);
+
     private final ThreadFactory monitorThreadFactory = r -> {
         Thread thread = new Thread(r);
         thread.setName("dynamodb-monitor-" + System.currentTimeMillis());
@@ -92,7 +92,7 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
             String partitionKey,
             Duration pollInterval,
             Duration gracefulShutdown) {
-        masterSubject = BehaviorSubject.create(MASTER_NULL);
+        masterSubject = BehaviorSubject.create(MasterDescription.MASTER_NULL);
         this.lockClient = lockClient;
         this.partitionKey = partitionKey;
         this.pollInterval = pollInterval;
@@ -147,8 +147,6 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
         if (optionalLock.isPresent()) {
             final LockItem lock = optionalLock.get();
             nextDescription = lock.getData().map(this::bytesToMaster).orElse(null);
-            logger.warn("failed to decode leader bytes");
-            this.lockDecodeFailedCounter.increment();
         } else {
             nextDescription = null;
             logger.warn("no leader found");
@@ -163,8 +161,8 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     }
 
     private void updateLeader(@Nullable MasterDescription nextDescription) {
-        final MasterDescription prev = Optional.ofNullable(masterSubject.getValue()).orElse(MASTER_NULL);
-        final MasterDescription next = (nextDescription == null) ? MASTER_NULL : nextDescription;
+        final MasterDescription prev = Optional.ofNullable(masterSubject.getValue()).orElse(MasterDescription.MASTER_NULL);
+        final MasterDescription next = (nextDescription == null) ? MasterDescription.MASTER_NULL : nextDescription;
         if (!prev.equals(next)) {
             logger.info("leader changer information previous {} and next {}", prev.getHostname(), next.getHostname());
             masterSubject.onNext(next);
@@ -183,8 +181,9 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
             return jsonMapper.readValue(bytes, MasterDescription.class);
         } catch (IOException e) {
             logger.error("unable to parse master description bytes: {}", data, e);
+            this.lockDecodeFailedCounter.increment();
         }
-        return MASTER_NULL;
+        return MasterDescription.MASTER_NULL;
     }
 
     @Override
@@ -201,6 +200,6 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     @Override
     @Nullable
     public MasterDescription getLatestMaster() {
-        return Optional.ofNullable(masterSubject.getValue()).orElse(MASTER_NULL);
+        return Optional.ofNullable(masterSubject.getValue()).orElse(MasterDescription.MASTER_NULL);
     }
 }

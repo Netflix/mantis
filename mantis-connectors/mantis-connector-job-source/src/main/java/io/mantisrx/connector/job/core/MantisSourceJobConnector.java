@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observer;
@@ -59,12 +61,17 @@ public class MantisSourceJobConnector {
     private static final String ZK_ROOT = "mantis.zookeeper.root";
     private static final String ZK_LEADER_PATH = "mantis.zookeeper.leader.announcement.path";
 
-    public MantisSourceJobConnector(Properties props) {
-        this.props = props;
+    public MantisSourceJobConnector(boolean configureDefaults) {
+        if (configureDefaults) {
+            props = defaultProperties();
+        } else {
+            props = null;
+        }
     }
 
-    public MantisSourceJobConnector() {
-        props = new Properties();
+    // todo(kmg-stripe): Can we remove this?  It seems it is only used by main in this class for testing.
+    private static Properties defaultProperties() {
+        Properties props = new Properties();
 
         final String defaultZkConnect = "127.0.0.1:2181";
         final String defaultZkRoot = "/mantis/master";
@@ -99,6 +106,7 @@ public class MantisSourceJobConnector {
         }
 
         LOGGER.info("Mantis Zk settings used for Source Job connector: connectString {} root {} path {}", connectString, zookeeperRoot, zookeeperLeaderAnnouncementPath);
+        return props;
     }
 
     @Deprecated
@@ -130,7 +138,8 @@ public class MantisSourceJobConnector {
             String jobName,
             SinkParameters params,
             Observer<SinkConnectionsStatus> sinkObserver) {
-        return new MantisSSEJob.Builder(props)
+        MantisSSEJob.Builder builder = props != null ? new MantisSSEJob.Builder(props) : new MantisSSEJob.Builder(HighAvailabilityServicesUtil.get());
+        return builder
                 .name(jobName)
                 .sinkConnectionsStatusObserver(sinkObserver)
                 .onConnectionReset(throwable -> LOGGER.error("Reconnecting due to error: " + throwable.getMessage()))
@@ -163,7 +172,7 @@ public class MantisSourceJobConnector {
             Args.parse(MantisSourceJobConnector.class, args);
 
             final CountDownLatch latch = new CountDownLatch(20);
-            MantisSourceJobConnector sourceJobConnector = new MantisSourceJobConnector();
+            MantisSourceJobConnector sourceJobConnector = new MantisSourceJobConnector(true);
             MantisSSEJob job = sourceJobConnector.connectToJob("TestSourceJob", params);
             Subscription subscription = job.connectAndGetObservable()
                     .doOnNext(o -> {

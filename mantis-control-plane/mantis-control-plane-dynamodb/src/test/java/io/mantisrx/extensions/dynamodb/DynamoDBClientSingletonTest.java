@@ -132,7 +132,7 @@ public class DynamoDBClientSingletonTest {
 
         // We can, depending on timing, sometimes get a MASTER_NULL value which is safe to ignore.
         MasterDescription[] actualLeaders = testSubscriber.getOnNextEvents().stream()
-            .filter(md -> md != DynamoDBMasterMonitor.MASTER_NULL)
+            .filter(md -> md != MasterDescription.MASTER_NULL)
             .collect(Collectors.toList())
             .toArray(new MasterDescription[]{});
 

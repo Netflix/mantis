@@ -49,6 +49,9 @@ public class MasterDescription {
     private final long createTime;
     private final int consolePort;
 
+    public static final MasterDescription MASTER_NULL =
+        new MasterDescription("NONE", "localhost", -1, -1, -1, "uri://", -1, -1L);
+
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public MasterDescription(
