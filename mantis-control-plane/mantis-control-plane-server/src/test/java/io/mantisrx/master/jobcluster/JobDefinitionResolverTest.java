@@ -57,6 +57,7 @@ public class JobDefinitionResolverTest {
 
     private JobClusterDefinitionImpl createFakeJobClusterDefn(String clusterName, List<Label> labels, List<Parameter> parameters, SLA sla, SchedulingInfo schedulingInfo)  {
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
+                .withJobJarUrl("http://" + DEFAULT_ARTIFACT_NAME)
                 .withArtifactName(DEFAULT_ARTIFACT_NAME)
                 .withSchedulingInfo(schedulingInfo)
                 .withVersion(DEFAULT_VERSION)
@@ -95,7 +96,7 @@ public class JobDefinitionResolverTest {
         SchedulingInfo schedulingInfo = TWO_WORKER_SCHED_INFO;
 
         try {
-            JobDefinition givenJobDefn = new JobDefinition.Builder().withArtifactName(artifactName).withName(clusterName).withSchedulingInfo(schedulingInfo).withVersion(version).build();
+            JobDefinition givenJobDefn = new JobDefinition.Builder().withJobJarUrl("http://" + artifactName).withArtifactName(artifactName).withName(clusterName).withSchedulingInfo(schedulingInfo).withVersion(version).build();
             JobDefinitionResolver resolver = new JobDefinitionResolver();
             JobDefinition resolvedJobDefinition = resolver.getResolvedJobDefinition("user", givenJobDefn, jobClusterMetadata);
 
@@ -122,7 +123,7 @@ public class JobDefinitionResolverTest {
 
         // Only ArtifactName and schedInfo is specified
         try {
-            JobDefinition givenJobDefn = new JobDefinition.Builder().withArtifactName(artifactName).withName(clusterName).withSchedulingInfo(schedulingInfo).build();
+            JobDefinition givenJobDefn = new JobDefinition.Builder().withJobJarUrl("http://" + artifactName).withArtifactName(artifactName).withName(clusterName).withSchedulingInfo(schedulingInfo).build();
             JobDefinitionResolver resolver = new JobDefinitionResolver();
             JobDefinition resolvedJobDefinition = resolver.getResolvedJobDefinition("user", givenJobDefn, jobClusterMetadata);
 
@@ -173,7 +174,7 @@ public class JobDefinitionResolverTest {
 
         // Only new artifact and version is specified
         try {
-            JobDefinition givenJobDefn = new JobDefinition.Builder().withArtifactName(artifactName).withName(clusterName).withVersion(version).build();
+            JobDefinition givenJobDefn = new JobDefinition.Builder().withJobJarUrl("http://" + artifactName).withArtifactName(artifactName).withName(clusterName).withVersion(version).build();
             JobDefinitionResolver resolver = new JobDefinitionResolver();
             JobDefinition resolvedJobDefinition = resolver.getResolvedJobDefinition("user", givenJobDefn, jobClusterMetadata);
             fail();
@@ -185,7 +186,7 @@ public class JobDefinitionResolverTest {
 
         // Only new artifact is specified
         try {
-            JobDefinition givenJobDefn = new JobDefinition.Builder().withArtifactName(artifactName).withName(clusterName).build();
+            JobDefinition givenJobDefn = new JobDefinition.Builder().withJobJarUrl("http://" + artifactName).withArtifactName(artifactName).withName(clusterName).build();
             JobDefinitionResolver resolver = new JobDefinitionResolver();
             JobDefinition resolvedJobDefinition = resolver.getResolvedJobDefinition("user", givenJobDefn, jobClusterMetadata);
             fail();
@@ -429,13 +430,16 @@ public class JobDefinitionResolverTest {
 
         String clusterName = "lookupJobClusterConfigTest";
         JobClusterConfig clusterConfig1 = new JobClusterConfig.Builder()
+                .withJobJarUrl("http://" + DEFAULT_ARTIFACT_NAME)
                 .withArtifactName(DEFAULT_ARTIFACT_NAME)
                 .withSchedulingInfo(SINGLE_WORKER_SCHED_INFO)
                 .withVersion(DEFAULT_VERSION)
                 .build();
 
+        String artifactName = "artifact2";
         JobClusterConfig clusterConfig2 = new JobClusterConfig.Builder()
-                .withArtifactName("artifact2")
+                .withJobJarUrl("http://" + artifactName)
+                .withArtifactName(artifactName)
                 .withSchedulingInfo(TWO_WORKER_SCHED_INFO)
                 .withVersion("0.0.2")
                 .build();

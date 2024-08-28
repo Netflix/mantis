@@ -222,8 +222,10 @@ public class JobClusterAkkaTest {
     }
 
     private JobClusterDefinitionImpl createFakeJobClusterDefn(String clusterName, List<Label> labels, SLA sla, SchedulingInfo schedulingInfo)  {
+        String artifactName = "myart";
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-                .withArtifactName("myart")
+                .withJobJarUrl("http://" + artifactName)
+                .withArtifactName(artifactName)
                 .withSchedulingInfo(schedulingInfo)
                 .withVersion("0.0.1")
                 .build();
@@ -303,6 +305,7 @@ public class JobClusterAkkaTest {
                 .withLabels(labelList)
                 .withSchedulingInfo(schedulingInfo)
                 .withDeploymentStrategy(deploymentStrategy)
+                .withJobJarUrl("http://" + artifactName)
                 .withArtifactName(artifactName)
                 .withVersion(artifactVersion)
                 .withSubscriptionTimeoutSecs(subsTimeoutSecs)
@@ -440,6 +443,7 @@ public class JobClusterAkkaTest {
         Label l = new Label("labelname","labelvalue");
         labels.add(l);
         String clusterName = "testJobClusterUpdateAndDelete";
+        String artifactName = "myart";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, labels);
@@ -450,7 +454,8 @@ public class JobClusterAkkaTest {
 
 
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-                .withArtifactName("myart")
+                .withJobJarUrl("http://" + artifactName)
+                .withArtifactName(artifactName)
                 .withSchedulingInfo(SINGLE_WORKER_SCHED_INFO)
                 .withVersion("0.0.2")
                 .build();
@@ -1085,6 +1090,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmitWithVersionAndNoSchedInfo() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithVersionAndNoSchedInfo";
+        String artifactName = "myart2";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
@@ -1095,7 +1101,8 @@ public class JobClusterAkkaTest {
         assertEquals(SUCCESS, createResp.responseCode);
 
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-                .withArtifactName("myart2")
+                .withJobJarUrl("http://" + artifactName)
+                .withArtifactName(artifactName)
                 .withSchedulingInfo(TWO_WORKER_SCHED_INFO)
                 .withVersion("0.0.2")
                 .build();

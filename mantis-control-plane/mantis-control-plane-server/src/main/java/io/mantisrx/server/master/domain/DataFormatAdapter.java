@@ -151,11 +151,10 @@ public class DataFormatAdapter {
 
     public static NamedJob.Jar convertJobClusterConfigToJar(JobClusterConfig jConfig) throws MalformedURLException {
         SchedulingInfo sInfo = jConfig.getSchedulingInfo();
-        String name = jConfig.getArtifactName();
         long uploadedAt = jConfig.getUploadedAt();
         String version = jConfig.getVersion();
 
-        return new NamedJob.Jar(generateURL(name), uploadedAt, version, sInfo);
+        return new NamedJob.Jar(new URL(jConfig.getJobJarUrl()), uploadedAt, version, sInfo);
     }
 
     public static JobClusterConfig convertJarToJobClusterConfig(NamedJob.Jar jar ) {
@@ -164,13 +163,13 @@ public class DataFormatAdapter {
         Optional<String> artifactName = extractArtifactName(jar.getUrl());
         String version = jar.getVersion();
         return new JobClusterConfig.Builder()
+                .withJobJarUrl(jar.getUrl().toString())
                 .withArtifactName(artifactName.orElse(""))
                 .withVersion(version)
                 .withSchedulingInfo(jar.getSchedulingInfo())
                 .withUploadedAt(jar.getUploadedAt())
                 .build();
     }
-
 
 
     public static URL generateURL(String artifactName) throws MalformedURLException {
@@ -484,7 +483,7 @@ public class DataFormatAdapter {
 
         // generate job defn
         JobDefinition jobDefn = new JobDefinition(archJob.getName(), archJob.getUser(),
-                artifactName.orElse(""), null,archJob.getParameters(), archJob.getSla(),
+                jarUrl == null ? "" : jarUrl.toString(), artifactName.orElse(""), null, archJob.getParameters(), archJob.getSla(),
                 archJob.getSubscriptionTimeoutSecs(),schedulingInfo, archJob.getNumStages(),archJob.getLabels(), null);
         Optional<JobId> jIdOp = JobId.fromId(archJob.getJobId());
         if(!jIdOp.isPresent()) {
