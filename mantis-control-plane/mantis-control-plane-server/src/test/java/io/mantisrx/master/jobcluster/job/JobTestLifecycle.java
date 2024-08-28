@@ -238,6 +238,7 @@ public class JobTestLifecycle {
                     .withParameters(Lists.newArrayList())
                     .withLabels(Lists.newArrayList())
                     .withSchedulingInfo(schedInfo)
+                    .withJobJarUrl("http://myart")
                     .withArtifactName("myart")
                     .withSubscriptionTimeoutSecs(30)
                     .withUser("njoshi")

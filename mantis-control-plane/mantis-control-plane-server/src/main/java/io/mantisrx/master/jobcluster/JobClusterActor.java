@@ -1511,6 +1511,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         return
             new JobDefinition.Builder()
                 .withJobSla(new JobSla.Builder().build())
+                .withJobJarUrl(clusterConfig.getJobJarUrl())
                 .withArtifactName(clusterConfig.getArtifactName())
                 .withVersion(clusterConfig.getVersion())
                 .withLabels(clusterDefinition.getLabels())
@@ -1657,6 +1658,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private void validateJobDefinition(JobDefinition definition) throws InvalidJobRequestException {
         if (definition == null) {
             throw new InvalidJobRequestException("MantisJobDefinition cannot be null");
+        }
+        if (definition.getJobJarUrl() == null) {
+            throw new InvalidJobRequestException("MantisJobDefinition job jobJarUrl attribute cannot be null");
         }
         if (definition.getArtifactName() == null) {
             throw new InvalidJobRequestException("MantisJobDefinition job artifactName attribute cannot be null");
@@ -2174,6 +2178,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 return;
             }
             JobClusterConfig newConfig = new JobClusterConfig.Builder().from(jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig())
+                // TODO(swada): do we need to add jobJarURL to UpdateJobClusterArtifactRequest as well?
                     .withArtifactName(artifactReq.getArtifactName())
                     .withVersion(artifactReq.getVersion())
                     .withUploadedAt(System.currentTimeMillis())

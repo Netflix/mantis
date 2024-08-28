@@ -194,6 +194,7 @@ public class LabelManagerTest {
             .withParameters(Lists.newArrayList())
             .withLabels(labelList)
             .withSchedulingInfo(JobClusterAkkaTest.SINGLE_WORKER_SCHED_INFO)
+            .withJobJarUrl("http://" + artifactName)
             .withArtifactName(artifactName)
             .withVersion(version)
             .withSubscriptionTimeoutSecs(1)
