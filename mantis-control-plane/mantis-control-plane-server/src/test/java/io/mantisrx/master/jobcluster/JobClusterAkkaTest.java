@@ -775,7 +775,7 @@ public class JobClusterAkkaTest {
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
 
-        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "1.0.1", true, "user");
+        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "http://a1", "1.0.1", true, "user");
 
         jobClusterActor.tell(req, probe.getRef());
         UpdateJobClusterArtifactResponse resp = probe.expectMsgClass(UpdateJobClusterArtifactResponse.class);
@@ -814,7 +814,7 @@ public class JobClusterAkkaTest {
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
 
-        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "0.0.1", true, "user");
+        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "http://a1", "0.0.1", true, "user");
 
         jobClusterActor.tell(req, probe.getRef());
         UpdateJobClusterArtifactResponse resp = probe.expectMsgClass(UpdateJobClusterArtifactResponse.class);
@@ -851,7 +851,7 @@ public class JobClusterAkkaTest {
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
 
-        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "1.0.1", true, "user");
+        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "http://a1", "1.0.1", true, "user");
 
         jobClusterActor.tell(req, probe.getRef());
         UpdateJobClusterArtifactResponse resp = probe.expectMsgClass(UpdateJobClusterArtifactResponse.class);
@@ -875,7 +875,7 @@ public class JobClusterAkkaTest {
 
         // Update again
 
-        req = new UpdateJobClusterArtifactRequest(clusterName, "a2", "1.0.3", true, "user");
+        req = new UpdateJobClusterArtifactRequest(clusterName, "a2", "http:/a2", "1.0.3", true, "user");
 
         jobClusterActor.tell(req, probe.getRef());
         resp = probe.expectMsgClass(UpdateJobClusterArtifactResponse.class);
@@ -2058,7 +2058,7 @@ public class JobClusterAkkaTest {
             // Update artifact with skip submit = false
             String artifact = "newartifact.zip";
             String version = "0.0.2";
-            jobClusterActor.tell(new UpdateJobClusterArtifactRequest(clusterName, artifact, version,false, user), probe.getRef());
+            jobClusterActor.tell(new UpdateJobClusterArtifactRequest(clusterName, artifact, "http://" + artifact, version,false, user), probe.getRef());
             UpdateJobClusterArtifactResponse resp = probe.expectMsgClass(UpdateJobClusterArtifactResponse.class);
 
             // ensure new job was launched

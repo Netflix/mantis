@@ -2178,7 +2178,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 return;
             }
             JobClusterConfig newConfig = new JobClusterConfig.Builder().from(jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig())
-                // TODO(swada): do we need to add jobJarURL to UpdateJobClusterArtifactRequest as well?
+                    .withJobJarUrl(artifactReq.getjobJarUrl())
                     .withArtifactName(artifactReq.getArtifactName())
                     .withVersion(artifactReq.getVersion())
                     .withUploadedAt(System.currentTimeMillis())

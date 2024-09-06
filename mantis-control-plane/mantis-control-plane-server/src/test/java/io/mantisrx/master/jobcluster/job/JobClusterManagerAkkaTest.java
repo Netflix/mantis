@@ -1147,6 +1147,7 @@ public class JobClusterManagerAkkaTest {
         UpdateJobClusterArtifactRequest req = new JobClusterManagerProto.UpdateJobClusterArtifactRequest(
             clusterName,
             "myjar",
+            "http://myjar",
             "1.0.1",
             true,
             "user");

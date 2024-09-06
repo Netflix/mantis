@@ -109,8 +109,8 @@ public class JobClusterConfig {
         public Builder() {}
 
         public Builder withJobJarUrl(String jobJarUrl) {
-            Preconditions.checkNotNull(jobJarUrl, "artifactName cannot be null");
-            Preconditions.checkArgument(!jobJarUrl.isEmpty(), "ArtifactName cannot be empty");
+            Preconditions.checkNotNull(jobJarUrl, "jobJarUrl cannot be null");
+            Preconditions.checkArgument(!jobJarUrl.isEmpty(), "jobJarUrl cannot be empty");
             this.jobJarUrl = jobJarUrl;
             return this;
         }
