@@ -15,7 +15,6 @@
  */
 package io.mantisrx.server.master.client;
 
-import com.mantisrx.common.utils.Services;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -149,7 +148,17 @@ public class HighAvailabilityServicesUtil {
 
         public HighAvailabilityServicesImpl(CoreConfiguration configuration) {
             this.configuration = configuration;
-            final ILeaderMonitorFactory factory = ConfigUtils.createInstance(configuration.getLeaderMonitorFactoryName(), ILeaderMonitorFactory.class);
+            ILeaderMonitorFactory factory;
+
+            // add catch to help back compatibility on configuration.getLeaderMonitorFactoryName() call in case old
+            // runtime is used with agent on newer version.
+            try {
+                factory = ConfigUtils.createInstance(configuration.getLeaderMonitorFactoryName(), ILeaderMonitorFactory.class);
+            } catch (Exception e) {
+                log.error("Failed to initialize high availability services", e);
+                factory = new LocalLeaderFactory();
+            }
+
             if(factory instanceof LocalLeaderFactory) {
                 log.warn("using default non-local Zookeeper leader monitoring you should set: "+
                     "mantis.leader.monitor.factory=io.mantisrx.server.core.master.ZookeeperLeaderMonitorFactory");
