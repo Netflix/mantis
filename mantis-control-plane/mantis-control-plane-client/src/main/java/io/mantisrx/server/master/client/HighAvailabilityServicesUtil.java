@@ -32,6 +32,8 @@ import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGatewayClient;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -148,18 +150,25 @@ public class HighAvailabilityServicesUtil {
 
         public HighAvailabilityServicesImpl(CoreConfiguration configuration) {
             this.configuration = configuration;
-            ILeaderMonitorFactory factory;
+            ILeaderMonitorFactory factory = null;
 
             // add catch to help back compatibility on configuration.getLeaderMonitorFactoryName() call in case old
             // runtime is used with agent on newer version.
             try {
-                factory = ConfigUtils.createInstance(configuration.getLeaderMonitorFactoryName(), ILeaderMonitorFactory.class);
-            } catch (AbstractMethodError e) {
-                log.error("Failed to initialize high availability services", e);
-                factory = new LocalLeaderFactory();
+                final String targetMethodName = "getLeaderMonitorFactoryName";
+                Method parentMethod = configuration.getClass().getSuperclass().getDeclaredMethod(targetMethodName);
+                Method childMethod = configuration.getClass().getMethod(targetMethodName);
+                // only invoke this when the method is not abstract
+                if (!Modifier.isAbstract(parentMethod.getModifiers())
+                    || !Modifier.isAbstract(childMethod.getModifiers())) {
+                    log.info("Using configuration.getLeaderMonitorFactoryName to create ILeaderMonitorFactory.");
+                    factory = ConfigUtils.createInstance(configuration.getLeaderMonitorFactoryName(), ILeaderMonitorFactory.class);
+                }
+            } catch (NoSuchMethodException e) {
+                log.error("Configuration doesn't contain expected method: getLeaderMonitorFactoryName.", e);
             }
 
-            if(factory instanceof LocalLeaderFactory) {
+            if(null == factory || factory instanceof LocalLeaderFactory) {
                 log.warn("using default non-local Zookeeper leader monitoring you should set: "+
                     "mantis.leader.monitor.factory=io.mantisrx.server.core.master.ZookeeperLeaderMonitorFactory");
                 masterMonitor = new ZookeeperLeaderMonitorFactory().createLeaderMonitor(configuration);
