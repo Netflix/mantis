@@ -154,7 +154,7 @@ public class HighAvailabilityServicesUtil {
             // runtime is used with agent on newer version.
             try {
                 factory = ConfigUtils.createInstance(configuration.getLeaderMonitorFactoryName(), ILeaderMonitorFactory.class);
-            } catch (Throwable e) {
+            } catch (AbstractMethodError e) {
                 log.error("Failed to initialize high availability services", e);
                 factory = new LocalLeaderFactory();
             }
