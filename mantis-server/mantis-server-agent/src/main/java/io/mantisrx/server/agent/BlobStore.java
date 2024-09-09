@@ -118,7 +118,7 @@ public interface BlobStore extends Closeable {
             {
                 return blobStore.get(blobUrl);
             }
-            catch (IOException e) {
+            catch (Exception e) {
                 log.error("Get blob error, fallback to next blobstore", e);
             }
 
