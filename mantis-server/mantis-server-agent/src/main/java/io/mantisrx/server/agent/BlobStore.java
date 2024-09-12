@@ -23,6 +23,7 @@ import java.net.URI;
 import java.util.concurrent.locks.Lock;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -41,6 +42,10 @@ public interface BlobStore extends Closeable {
      */
     default BlobStore withPrefix(URI prefixUri) {
         return new PrefixedBlobStore(prefixUri, this);
+    }
+
+    default BlobStore withFallbackStore(BlobStore fallbackStore) {
+        return new FallbackEnabledBlobStore(this, fallbackStore);
     }
 
     /**
@@ -67,6 +72,23 @@ public interface BlobStore extends Closeable {
                 .withThreadSafeBlobStore();
     }
 
+    static BlobStore forHadoopFileSystem(URI clusterStoragePath, URI fallbackStoragePath, File localStoreDir)
+        throws Exception {
+        final org.apache.hadoop.fs.FileSystem fileSystem =
+            FileSystemInitializer.create(clusterStoragePath);
+
+        final org.apache.hadoop.fs.FileSystem fallbackFileSystem =
+            FileSystemInitializer.create(fallbackStoragePath);
+
+        return
+            new HadoopFileSystemBlobStore(fileSystem, localStoreDir)
+                .withPrefix(clusterStoragePath)
+                .withFallbackStore(
+                    new HadoopFileSystemBlobStore(fallbackFileSystem, localStoreDir).withPrefix(fallbackStoragePath))
+                .withZipCapabilities()
+                .withThreadSafeBlobStore();
+    }
+
     @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     class PrefixedBlobStore implements BlobStore {
         private final URI rootUri;
@@ -81,6 +103,32 @@ public interface BlobStore extends Closeable {
         @Override
         public void close() throws IOException {
             blobStore.close();
+        }
+    }
+
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+    @Slf4j
+    class FallbackEnabledBlobStore implements BlobStore {
+        private final BlobStore blobStore;
+        private final BlobStore fallbackBlobStore;
+
+        @Override
+        public File get(URI blobUrl) throws IOException {
+            try
+            {
+                return blobStore.get(blobUrl);
+            }
+            catch (Exception e) {
+                log.error("Get blob error, fallback to next blobstore", e);
+            }
+
+            return fallbackBlobStore.get(blobUrl);
+        }
+
+        @Override
+        public void close() throws IOException {
+            blobStore.close();
+            fallbackBlobStore.close();
         }
     }
 

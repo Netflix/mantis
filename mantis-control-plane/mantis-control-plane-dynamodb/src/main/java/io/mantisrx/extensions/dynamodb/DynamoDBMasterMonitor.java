@@ -17,6 +17,9 @@ package io.mantisrx.extensions.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClient;
 import com.amazonaws.services.dynamodbv2.LockItem;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.MasterDescription;
@@ -30,7 +33,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -38,13 +40,13 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
 
+
 @Slf4j
 public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor {
 
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBMasterMonitor.class);
 
-    private static final MasterDescription MASTER_NULL =
-            new MasterDescription("NONE", "localhost", -1, -1, -1, "uri://", -1, -1L);
+
     private final ThreadFactory monitorThreadFactory = r -> {
         Thread thread = new Thread(r);
         thread.setName("dynamodb-monitor-" + System.currentTimeMillis());
@@ -66,20 +68,23 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     private final Duration gracefulShutdown;
 
     private final BehaviorSubject<MasterDescription> masterSubject;
-    private final AtomicReference<MasterDescription> latestMaster = new AtomicReference<>();
 
     private final ObjectMapper jsonMapper = DefaultObjectMapper.getInstance();
+
+    private final Metrics metrics;
+
+    private final Counter noLockPresentCounter;
+    private final Counter lockDecodeFailedCounter;
+    private final Counter nullNextLeaderCounter;
 
     /**
      * Creates a MasterMonitor backed by DynamoDB. This should be used if you are using a {@link DynamoDBLeaderElector}
      */
     public DynamoDBMasterMonitor() {
-        masterSubject = BehaviorSubject.create();
-        final DynamoDBConfig conf = DynamoDBClientSingleton.getDynamoDBConf();
-        pollInterval = Duration.parse(conf.getDynamoDBLeaderHeartbeatDuration());
-        gracefulShutdown = Duration.parse(conf.getDynamoDBMonitorGracefulShutdownDuration());
-        lockClient = DynamoDBClientSingleton.getLockClient();
-        partitionKey = DynamoDBClientSingleton.getPartitionKey();
+        this(DynamoDBClientSingleton.getLockClient(),
+            DynamoDBClientSingleton.getPartitionKey(),
+            Duration.parse(DynamoDBClientSingleton.getDynamoDBConf().getDynamoDBLeaderHeartbeatDuration()),
+            Duration.parse(DynamoDBClientSingleton.getDynamoDBConf().getDynamoDBMonitorGracefulShutdownDuration()));
     }
 
     public DynamoDBMasterMonitor(
@@ -87,11 +92,23 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
             String partitionKey,
             Duration pollInterval,
             Duration gracefulShutdown) {
-        masterSubject = BehaviorSubject.create();
+        masterSubject = BehaviorSubject.create(MasterDescription.MASTER_NULL);
         this.lockClient = lockClient;
         this.partitionKey = partitionKey;
         this.pollInterval = pollInterval;
         this.gracefulShutdown = gracefulShutdown;
+
+        Metrics m = new Metrics.Builder()
+            .id("DynamoDBMasterMonitor")
+            .addCounter("no_lock_present")
+            .addCounter("lock_decode_failed")
+            .addCounter("null_next_leader")
+            .build();
+        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
+
+        this.noLockPresentCounter = metrics.getCounter("no_lock_present");
+        this.lockDecodeFailedCounter = metrics.getCounter("lock_decode_failed");
+        this.nullNextLeaderCounter = metrics.getCounter("null_next_leader");
     }
 
     @Override
@@ -133,18 +150,22 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
         } else {
             nextDescription = null;
             logger.warn("no leader found");
+            this.noLockPresentCounter.increment();
         }
-        updateLeader(nextDescription);
+
+        if (nextDescription != null) {
+            updateLeader(nextDescription);
+        } else {
+            this.nullNextLeaderCounter.increment();
+        }
     }
 
     private void updateLeader(@Nullable MasterDescription nextDescription) {
-        final MasterDescription previousDescription = latestMaster.getAndSet(nextDescription);
-        final MasterDescription next = (nextDescription == null) ? MASTER_NULL : nextDescription;
-        final MasterDescription prev =
-                (previousDescription == null) ? MASTER_NULL : previousDescription;
+        final MasterDescription prev = Optional.ofNullable(masterSubject.getValue()).orElse(MasterDescription.MASTER_NULL);
+        final MasterDescription next = (nextDescription == null) ? MasterDescription.MASTER_NULL : nextDescription;
         if (!prev.equals(next)) {
             logger.info("leader changer information previous {} and next {}", prev.getHostname(), next.getHostname());
-            masterSubject.onNext(nextDescription);
+            masterSubject.onNext(next);
         }
     }
 
@@ -160,8 +181,9 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
             return jsonMapper.readValue(bytes, MasterDescription.class);
         } catch (IOException e) {
             logger.error("unable to parse master description bytes: {}", data, e);
+            this.lockDecodeFailedCounter.increment();
         }
-        return MASTER_NULL;
+        return MasterDescription.MASTER_NULL;
     }
 
     @Override
@@ -178,6 +200,6 @@ public class DynamoDBMasterMonitor extends BaseService implements MasterMonitor 
     @Override
     @Nullable
     public MasterDescription getLatestMaster() {
-        return latestMaster.get();
+        return Optional.ofNullable(masterSubject.getValue()).orElse(MasterDescription.MASTER_NULL);
     }
 }

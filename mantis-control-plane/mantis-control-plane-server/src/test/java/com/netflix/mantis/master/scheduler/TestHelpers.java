@@ -62,6 +62,7 @@ public class TestHelpers {
                     stageNum,
                     new JobMetadata(mantisJobMetadata.getJobId().getId(),
                             mantisJobMetadata.getJobJarUrl(),
+                            mantisJobMetadata.getJobDefinition().getVersion(),
                             mantisJobMetadata.getTotalStages(),
                             mantisJobMetadata.getUser(),
                             mantisJobMetadata.getSchedulingInfo(),

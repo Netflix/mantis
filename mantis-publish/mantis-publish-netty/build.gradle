@@ -40,7 +40,6 @@ test {
 }
 
 shadowJar {
-    classifier = null
     relocate('com.fasterxml', 'io.mantisrx.shaded.com.fasterxml')
     relocate('io.netty', 'io.mantisrx.shaded.io.netty')
     relocate('META-INF/native/libnetty', 'META-INF/native/libio_mantisrx_shaded_netty')

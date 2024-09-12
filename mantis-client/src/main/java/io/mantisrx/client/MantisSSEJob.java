@@ -23,6 +23,7 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.parameter.SinkParameters;
 import io.mantisrx.server.master.client.ConditionalRetry;
+import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.NoSuchJobException;
 import io.reactivx.mantis.operators.DropOperator;
 import java.io.Closeable;
@@ -179,10 +180,6 @@ public class MantisSSEJob implements Closeable {
         private Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver = null;
         private long dataRecvTimeoutSecs = 5;
 
-        public Builder(Properties properties) {
-            this(new MantisClient(properties));
-        }
-
         public Builder() {
             Properties properties = new Properties();
             properties.setProperty("mantis.zookeeper.connectionTimeMs", "1000");
@@ -191,8 +188,16 @@ public class MantisSSEJob implements Closeable {
             properties.setProperty("mantis.zookeeper.connectString", System.getenv("mantis.zookeeper.connectString"));
             properties.setProperty("mantis.zookeeper.root", System.getenv("mantis.zookeeper.root"));
             properties.setProperty("mantis.zookeeper.leader.announcement.path",
-                    System.getenv("mantis.zookeeper.leader.announcement.path"));
+                System.getenv("mantis.zookeeper.leader.announcement.path"));
             mantisClient = new MantisClient(properties);
+        }
+
+        public Builder(HighAvailabilityServices haServices) {
+            this(new MantisClient(haServices));
+        }
+
+        public Builder(Properties properties) {
+            this(new MantisClient(properties));
         }
 
         public Builder(MantisClient mantisClient) {

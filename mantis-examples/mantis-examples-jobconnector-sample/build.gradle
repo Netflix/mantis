@@ -17,7 +17,7 @@ dependencies {
     api libraries.mantisShaded
 
     implementation project(':mantis-runtime')
-    implementation project(':mantis-connectors:mantis-connector-job')
+    implementation project(':mantis-connectors:mantis-connector-job-source')
 
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12

@@ -39,6 +39,10 @@ jobs:
       packages: write
 
     steps:
+      - name: Setup Git
+        run: |
+          git config --global user.name "Mantis OSS Maintainers"
+          git config --global user.email "mantis-oss-dev@googlegroups.com"
       - name: Checkout PR
         uses: actions/checkout@v3
       - name: Setup jdk

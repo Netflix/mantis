@@ -34,7 +34,7 @@ public class JobMetadataTest {
                         Lists.newArrayList(),
                         Lists.newArrayList()).build();
         JobMetadata jobMetadata = new JobMetadata(
-                "testId", new URL("http://artifact.zip"),1,"testUser",schedulingInfo, Lists.newArrayList(),0,10, 0);
+                "testId", new URL("http://artifact.zip"), "111", 1,"testUser",schedulingInfo, Lists.newArrayList(),0,10, 0);
         assertEquals(jobMetadata.getJobArtifact(), ArtifactID.of("artifact.zip"));
     }
 }

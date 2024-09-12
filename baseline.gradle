@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-allprojects {
-    apply plugin: 'com.palantir.baseline-idea'
-}
+// allprojects {
+//     apply plugin: 'com.palantir.baseline-idea'
+// }
 
-subprojects {
-    // Currently, if any subproject applies the blanket Baseline plugin, it forces the Baseline plugin
-    // to be applied to ALL projects. And we are not prepared to address all of the build errors that
-    // occur as a result at this time.
+// subprojects {
+//     // Currently, if any subproject applies the blanket Baseline plugin, it forces the Baseline plugin
+//     // to be applied to ALL projects. And we are not prepared to address all of the build errors that
+//     // occur as a result at this time.
 
-    apply plugin: 'com.palantir.baseline-exact-dependencies'
-    apply plugin: 'com.palantir.baseline-format'
-}
+//     apply plugin: 'com.palantir.baseline-exact-dependencies'
+//     apply plugin: 'com.palantir.baseline-format'
+// }

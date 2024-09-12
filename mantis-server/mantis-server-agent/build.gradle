@@ -87,5 +87,6 @@ docker {
 dockerSyncBuildContext.dependsOn(pushServerJob.getTasksByName("mantisZipArtifact", false))
 dockerSyncBuildContext.dependsOn(mantisExamplesSineFunctionMantisZipArtifact)
 dockerSyncBuildContext.dependsOn(installDist)
+dockerSyncBuildContext.dependsOn(project.tasks.processTestResources)
 
 mainClassName = "io.mantisrx.server.agent.AgentV2Main"

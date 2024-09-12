@@ -34,9 +34,9 @@ import org.slf4j.LoggerFactory;
 import rx.functions.Func0;
 
 
-public class LeadershipManagerZkImpl implements ILeadershipManager {
+public class LeadershipManagerImpl implements ILeadershipManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(LeadershipManagerZkImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(LeadershipManagerImpl.class);
     private final Gauge isLeaderGauge;
     private final Gauge isLeaderReadyGauge;
     private final AtomicBoolean firstTimeLeaderMode = new AtomicBoolean(false);
@@ -46,7 +46,7 @@ public class LeadershipManagerZkImpl implements ILeadershipManager {
     private volatile boolean isReady = false;
     private volatile Instant becameLeaderAt;
 
-    public LeadershipManagerZkImpl(final MasterConfiguration config,
+    public LeadershipManagerImpl(final MasterConfiguration config,
                                    final ServiceLifecycle serviceLifecycle) {
         this.config = config;
         this.serviceLifecycle = serviceLifecycle;
