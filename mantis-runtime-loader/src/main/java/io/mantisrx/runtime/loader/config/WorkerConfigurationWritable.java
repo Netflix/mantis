@@ -75,6 +75,7 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     int asyncHttpClientConnectionTimeoutMs;
     int asyncHttpClientRequestTimeoutMs;
     int asyncHttpClientReadTimeoutMs;
+    boolean asyncHttpClientFollowRedirect;
     String leaderMonitorFactory;
     String metricsCollectorClass;
     String jobAutoscalerManagerClassName;
@@ -128,6 +129,11 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     @Override
     public int getMetricsPublisherFrequencyInSeconds() {
         return this.metricsPublisherFrequencyInSeconds;
+    }
+
+    @Override
+    public boolean getAsyncHttpClientFollowRedirect() {
+        return this.asyncHttpClientFollowRedirect;
     }
 
     @Override
