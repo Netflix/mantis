@@ -16,19 +16,19 @@
 
 package io.mantisrx.master.jobcluster;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import io.mantisrx.master.jobcluster.JobClusterActor.JobInfo;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.domain.SLA;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.joda.time.Instant;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class SLAEnforcerTest {
 
@@ -267,6 +267,64 @@ public class SLAEnforcerTest {
 		assertTrue(jobsToDelete.contains(new JobId("cname",4)));
         assertTrue(jobsToDelete.contains(new JobId("cname",5)));
 	}
+
+    @Test
+    public void slaMaxShouldLimitAcceptedJobsToOneIfEnabled() {
+        Instant now = Instant.now();
+        int min = 0;
+        int max = 2;
+        SLA sla = new SLA(min,max, null, null);
+
+        SLAEnforcer slaEnf = new SLAEnforcer(sla);
+
+        List<JobInfo> jobList = Lists.newArrayList(
+            new JobInfo(new JobId("cname", 1), null, now.getMillis(), null, JobState.Accepted, null),
+            new JobInfo(new JobId("cname", 2), null, now.getMillis(), null, JobState.Launched, null),
+            new JobInfo(new JobId("cname", 3), null, now.getMillis(), null, JobState.Accepted, null),
+            new JobInfo(new JobId("cname", 4), null, now.getMillis(), null, JobState.Launched, null),
+            new JobInfo(new JobId("cname", 5), null, now.getMillis(), null, JobState.Accepted, null),
+            new JobInfo(new JobId("cname", 6), null, now.getMillis(), null, JobState.Accepted, null)
+        );
+
+        // We expect the two launched jobs and the latest accepted job to remain
+        Set<JobId> jobsToDelete = new HashSet<>(slaEnf.enforceSLAMax(jobList, 1));
+        assertTrue(jobsToDelete.contains(jobList.get(0).jobId));
+        assertTrue(jobsToDelete.contains(jobList.get(2).jobId));
+        assertTrue(jobsToDelete.contains(jobList.get(4).jobId));
+
+        assertFalse(jobsToDelete.contains(jobList.get(1).jobId));
+        assertFalse(jobsToDelete.contains(jobList.get(3).jobId));
+        assertFalse(jobsToDelete.contains(jobList.get(5).jobId));
+    }
+
+    @Test
+    public void sla11ShouldNotLetJobsPileUpIfEnabled() {
+        Instant now = Instant.now();
+        int min = 1;
+        int max = 1;
+        SLA sla = new SLA(min,max, null, null);
+
+        SLAEnforcer slaEnf = new SLAEnforcer(sla);
+
+        List<JobInfo> jobList = Lists.newArrayList(
+            new JobInfo(new JobId("cname", 1), null, now.getMillis(), null, JobState.Launched, null),
+            new JobInfo(new JobId("cname", 2), null, now.getMillis(), null, JobState.Accepted, null),
+            new JobInfo(new JobId("cname", 3), null, now.getMillis(), null, JobState.Accepted, null),
+            new JobInfo(new JobId("cname", 4), null, now.getMillis(), null, JobState.Accepted, null),
+            new JobInfo(new JobId("cname", 5), null, now.getMillis(), null, JobState.Accepted, null),
+            new JobInfo(new JobId("cname", 6), null, now.getMillis(), null, JobState.Accepted, null)
+        );
+
+        // We expect the launched job and the latest accepted job
+        Set<JobId> jobsToDelete = new HashSet<>(slaEnf.enforceSLAMax(jobList, 1));
+        assertFalse(jobsToDelete.contains(jobList.get(0).jobId));
+        assertFalse(jobsToDelete.contains(jobList.get(5).jobId));
+
+        assertTrue(jobsToDelete.contains(jobList.get(1).jobId));
+        assertTrue(jobsToDelete.contains(jobList.get(2).jobId));
+        assertTrue(jobsToDelete.contains(jobList.get(3).jobId));
+        assertTrue(jobsToDelete.contains(jobList.get(4).jobId));
+    }
 
 
 }

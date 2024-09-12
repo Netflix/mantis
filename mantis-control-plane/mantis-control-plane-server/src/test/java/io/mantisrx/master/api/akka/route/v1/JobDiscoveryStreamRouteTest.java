@@ -90,7 +90,8 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
                     JobClustersManagerActor.props(
                         new MantisJobStore(new FileBasedPersistenceProvider(true)),
                         lifecycleEventPublisher,
-                        CostsCalculator.noop()),
+                        CostsCalculator.noop(),
+                        0),
                     "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);

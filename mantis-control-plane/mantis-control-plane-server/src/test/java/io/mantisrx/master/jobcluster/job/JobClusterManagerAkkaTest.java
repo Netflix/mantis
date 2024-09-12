@@ -162,7 +162,8 @@ public class JobClusterManagerAkkaTest {
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreMock,
             eventPublisher,
-            costsCalculator));
+            costsCalculator,
+            0));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
             true), ActorRef.noSender());
@@ -302,7 +303,8 @@ public class JobClusterManagerAkkaTest {
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreSpied,
             eventPublisher,
-            costsCalculator));
+            costsCalculator,
+            0));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
             true), probe.getRef());
@@ -322,7 +324,8 @@ public class JobClusterManagerAkkaTest {
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStore,
             eventPublisher,
-            costsCalculator));
+            costsCalculator,
+            0));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
@@ -377,7 +380,8 @@ public class JobClusterManagerAkkaTest {
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreSpied,
             eventPublisher,
-            costsCalculator));
+            costsCalculator,
+            0));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
             true), probe.getRef());
@@ -403,7 +407,8 @@ public class JobClusterManagerAkkaTest {
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreSpied,
             eventPublisher,
-            costsCalculator));
+            costsCalculator,
+            0));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
             false), probe.getRef());
@@ -521,7 +526,8 @@ public class JobClusterManagerAkkaTest {
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreSpied,
             eventPublisher,
-            costsCalculator));
+            costsCalculator,
+            0));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
@@ -664,7 +670,8 @@ public class JobClusterManagerAkkaTest {
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreSpied,
             eventPublisher,
-            costsCalculator));
+            costsCalculator,
+            0));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
             false), probe.getRef());
@@ -742,7 +749,8 @@ public class JobClusterManagerAkkaTest {
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreSpied,
             eventPublisher,
-            costsCalculator));
+            costsCalculator,
+            0));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,

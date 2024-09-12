@@ -200,8 +200,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         final MantisJobStore jobStore,
         final MantisSchedulerFactory mantisSchedulerFactory,
         final LifecycleEventPublisher eventPublisher,
-        final CostsCalculator costsCalculator) {
-        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator);
+        final CostsCalculator costsCalculator,
+        final int slaHeadroomForAcceptedJobs) {
+        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator, slaHeadroomForAcceptedJobs);
     }
 
     private final Receive initializedBehavior;
@@ -222,17 +223,21 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
     private final Metrics metrics;
 
+    private final int slaHeadroomForAcceptedJobs;
+
 
     public JobClusterActor(
         final String name,
         final MantisJobStore jobStore,
         final MantisSchedulerFactory schedulerFactory,
         final LifecycleEventPublisher eventPublisher,
-        final CostsCalculator costsCalculator) {
+        final CostsCalculator costsCalculator,
+        final int slaHeadroomForAcceptedJobs) {
         this.name = name;
         this.jobStore = jobStore;
         this.mantisSchedulerFactory = schedulerFactory;
         this.eventPublisher = eventPublisher;
+        this.slaHeadroomForAcceptedJobs = slaHeadroomForAcceptedJobs;
 
         this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, costsCalculator);
 
@@ -1956,7 +1961,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         List<JobInfo> jobsStuckInTerminatingList = jobManager.getJobsStuckInTerminating(now, getExpireAcceptedDelayMs());
 
-
         if(!slaEnforcer.hasSLA()) {
             return;
         }
@@ -1984,7 +1988,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             listOfJobs.addAll(jobManager.getActiveJobsList());
             listOfJobs.addAll(jobManager.getAcceptedJobsList());
 
-            List<JobId> jobsToKill = slaEnforcer.enforceSLAMax(Collections.unmodifiableList(listOfJobs));
+            List<JobId> jobsToKill = slaEnforcer.enforceSLAMax(Collections.unmodifiableList(listOfJobs), this.slaHeadroomForAcceptedJobs);
 
             for (JobId jobId : jobsToKill) {
                 logger.info("Request termination for job {}", jobId);
