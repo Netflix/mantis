@@ -293,6 +293,7 @@ public class DataFormatAdapterTest {
         assertEquals(DEFAULT_SCHED_INFO,clusterConfig1.getSchedulingInfo());
         assertEquals(version,clusterConfig1.getVersion());
         assertEquals(artifactName, clusterConfig1.getArtifactName());
+        assertEquals("http://" + artifactName, clusterConfig1.getJobJarUrl());
 
     }
 
@@ -394,6 +395,7 @@ public class DataFormatAdapterTest {
         assertEquals(DEFAULT_SCHED_INFO,clusterConfig1.getSchedulingInfo());
         assertEquals(version,clusterConfig1.getVersion());
         assertEquals(artifactName, clusterConfig1.getArtifactName());
+        assertEquals("http://" + artifactName, clusterConfig1.getJobJarUrl());
 
     }
 

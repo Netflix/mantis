@@ -271,6 +271,8 @@ public class JobTestLifecycle {
             assertEquals(JobState.Accepted,resp.getJobMetadata().get().getState());
 
             assertTrue(resp.getJobMetadata().get().getStageMetadata(1).isPresent());
+            assertEquals(resp.getJobMetadata().get().getJobJarUrl().toString(), "http://myart");
+            assertEquals(resp.getJobMetadata().get().getArtifactName(), "myart");
 
             // send launched event
 

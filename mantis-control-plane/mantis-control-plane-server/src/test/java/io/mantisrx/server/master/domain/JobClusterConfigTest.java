@@ -27,6 +27,7 @@ import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 
 public class JobClusterConfigTest {
@@ -118,6 +119,32 @@ public class JobClusterConfigTest {
             .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
             .withMigrationConfig(WorkerMigrationConfig.DEFAULT)
             .build();
+    }
+
+    public void jobJarUrlMultiComponentPath() {
+        String name = "jobJarUrlMultiComponentPath";
+        JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
+            .withJobJarUrl("http://foo/bar/baz/" + DEFAULT_ARTIFACT_NAME)
+            .withArtifactName(DEFAULT_ARTIFACT_NAME)
+            .withSchedulingInfo(DEFAULT_SCHED_INFO)
+            .withVersion("0.0.1")
+            .build();
+        try {
+            final JobClusterDefinitionImpl fakeJobCluster = new JobClusterDefinitionImpl.Builder()
+                .withJobClusterConfig(clusterConfig)
+                .withName(name)
+                .withUser("nj")
+                .withParameters(Lists.newArrayList())
+                .withIsReadyForJobMaster(true)
+                .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
+                .withMigrationConfig(WorkerMigrationConfig.DEFAULT)
+                .withLabel(new Label(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "testcluster"))
+                .build();
+
+            assertEquals(fakeJobCluster.getJobClusterConfig().getJobJarUrl(), "http://foo/bar/baz/" + DEFAULT_ARTIFACT_NAME);
+        } catch(Exception e) {
+            fail();
+        }
     }
 
     @Test

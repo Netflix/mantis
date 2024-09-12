@@ -93,15 +93,17 @@ public class JobDefinitionResolverTest {
 
         String version = "0.0.2";
         String artifactName = "myArt2";
+        String artifactUrl = "http://foo/bar/" + artifactName;
         SchedulingInfo schedulingInfo = TWO_WORKER_SCHED_INFO;
 
         try {
-            JobDefinition givenJobDefn = new JobDefinition.Builder().withJobJarUrl("http://" + artifactName).withArtifactName(artifactName).withName(clusterName).withSchedulingInfo(schedulingInfo).withVersion(version).build();
+            JobDefinition givenJobDefn = new JobDefinition.Builder().withJobJarUrl(artifactUrl).withArtifactName(artifactName).withName(clusterName).withSchedulingInfo(schedulingInfo).withVersion(version).build();
             JobDefinitionResolver resolver = new JobDefinitionResolver();
             JobDefinition resolvedJobDefinition = resolver.getResolvedJobDefinition("user", givenJobDefn, jobClusterMetadata);
 
             // assert the specified values are being used
             assertEquals(artifactName, resolvedJobDefinition.getArtifactName());
+            assertEquals(artifactUrl, resolvedJobDefinition.getJobJarUrl().toString());
             assertEquals(schedulingInfo, resolvedJobDefinition.getSchedulingInfo());
             assertEquals(version, resolvedJobDefinition.getVersion());
 
@@ -123,12 +125,13 @@ public class JobDefinitionResolverTest {
 
         // Only ArtifactName and schedInfo is specified
         try {
-            JobDefinition givenJobDefn = new JobDefinition.Builder().withJobJarUrl("http://" + artifactName).withArtifactName(artifactName).withName(clusterName).withSchedulingInfo(schedulingInfo).build();
+            JobDefinition givenJobDefn = new JobDefinition.Builder().withJobJarUrl(artifactUrl).withArtifactName(artifactName).withName(clusterName).withSchedulingInfo(schedulingInfo).build();
             JobDefinitionResolver resolver = new JobDefinitionResolver();
             JobDefinition resolvedJobDefinition = resolver.getResolvedJobDefinition("user", givenJobDefn, jobClusterMetadata);
 
             // assert the specified values are being used
             assertEquals(artifactName, resolvedJobDefinition.getArtifactName());
+            assertEquals(artifactUrl, resolvedJobDefinition.getJobJarUrl().toString());
             assertEquals(schedulingInfo, resolvedJobDefinition.getSchedulingInfo());
             // assert a version no was generated
             assertTrue(resolvedJobDefinition.getVersion()!= null && !resolvedJobDefinition.getVersion().isEmpty());
@@ -171,10 +174,11 @@ public class JobDefinitionResolverTest {
 
         String version = "0.0.2";
         String artifactName = "myArt2";
+        String artifactUrl = "http://foo/bar/" + artifactName;
 
         // Only new artifact and version is specified
         try {
-            JobDefinition givenJobDefn = new JobDefinition.Builder().withJobJarUrl("http://" + artifactName).withArtifactName(artifactName).withName(clusterName).withVersion(version).build();
+            JobDefinition givenJobDefn = new JobDefinition.Builder().withJobJarUrl(artifactUrl).withArtifactName(artifactName).withName(clusterName).withVersion(version).build();
             JobDefinitionResolver resolver = new JobDefinitionResolver();
             JobDefinition resolvedJobDefinition = resolver.getResolvedJobDefinition("user", givenJobDefn, jobClusterMetadata);
             fail();
@@ -228,6 +232,7 @@ public class JobDefinitionResolverTest {
 
             // artifact will get populated using the given version.
             assertEquals(DEFAULT_ARTIFACT_NAME, resolvedJobDefinition.getArtifactName());
+            assertEquals("http://" + DEFAULT_ARTIFACT_NAME, resolvedJobDefinition.getJobJarUrl().toString());
             // scheduling info will be the one specified by us
             assertEquals(schedulingInfo, resolvedJobDefinition.getSchedulingInfo());
             // version should match what we set.
@@ -257,6 +262,7 @@ public class JobDefinitionResolverTest {
 
             // assert the artifact is inherited
             assertEquals(DEFAULT_ARTIFACT_NAME, resolvedJobDefinition.getArtifactName());
+            assertEquals("http://" + DEFAULT_ARTIFACT_NAME, resolvedJobDefinition.getJobJarUrl().toString());
             // assert the scheduling info is inherited
             assertEquals(SINGLE_WORKER_SCHED_INFO, resolvedJobDefinition.getSchedulingInfo());
             // assert a version is the one we gave
@@ -312,6 +318,7 @@ public class JobDefinitionResolverTest {
 
             // artifact will get populated using the given version.
             assertEquals(DEFAULT_ARTIFACT_NAME, resolvedJobDefinition.getArtifactName());
+            assertEquals("http://" + DEFAULT_ARTIFACT_NAME, resolvedJobDefinition.getJobJarUrl().toString());
             // scheduling info will be the one specified by us
             assertEquals(schedulingInfo, resolvedJobDefinition.getSchedulingInfo());
             // version should match the latest on the cluster
@@ -341,6 +348,7 @@ public class JobDefinitionResolverTest {
 
             // assert the artifact is inherited
             assertEquals(DEFAULT_ARTIFACT_NAME, resolvedJobDefinition.getArtifactName());
+            assertEquals("http://" + DEFAULT_ARTIFACT_NAME, resolvedJobDefinition.getJobJarUrl().toString());
             // assert the scheduling info is inherited
             assertEquals(SINGLE_WORKER_SCHED_INFO, resolvedJobDefinition.getSchedulingInfo());
             // assert a version is the dfeault one.
@@ -371,6 +379,7 @@ public class JobDefinitionResolverTest {
 
             // assert the artifact is inherited
             assertEquals(DEFAULT_ARTIFACT_NAME, resolvedJobDefinition.getArtifactName());
+            assertEquals("http://" + DEFAULT_ARTIFACT_NAME, resolvedJobDefinition.getJobJarUrl().toString());
             // assert the scheduling info is inherited
             assertEquals(SINGLE_WORKER_SCHED_INFO, resolvedJobDefinition.getSchedulingInfo());
             // assert a version is the dfeault one.
@@ -467,6 +476,7 @@ public class JobDefinitionResolverTest {
         Optional<JobClusterConfig> config = resolver.getJobClusterConfigForVersion(jobClusterMetadata, DEFAULT_VERSION);
         assertTrue(config.isPresent());
         assertEquals(DEFAULT_ARTIFACT_NAME, config.get().getArtifactName());
+        assertEquals("http://" + DEFAULT_ARTIFACT_NAME, config.get().getJobJarUrl());
         assertEquals(DEFAULT_VERSION, config.get().getVersion());
         assertEquals(SINGLE_WORKER_SCHED_INFO, config.get().getSchedulingInfo());
 
@@ -474,6 +484,7 @@ public class JobDefinitionResolverTest {
         Optional<JobClusterConfig> config2 = resolver.getJobClusterConfigForVersion(jobClusterMetadata, "0.0.2");
         assertTrue(config2.isPresent());
         assertEquals("artifact2", config2.get().getArtifactName());
+        assertEquals("http://artifact2", config2.get().getJobJarUrl());
         assertEquals("0.0.2", config2.get().getVersion());
         assertEquals(TWO_WORKER_SCHED_INFO, config2.get().getSchedulingInfo());
 
