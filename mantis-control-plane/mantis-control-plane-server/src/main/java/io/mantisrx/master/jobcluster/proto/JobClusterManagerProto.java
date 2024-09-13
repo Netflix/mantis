@@ -525,6 +525,7 @@ public class JobClusterManagerProto {
 
     public static final class UpdateJobClusterArtifactRequest extends BaseRequest {
         private final String artifactName;
+        private final String jobJarUrl;
         private final String version;
         private final boolean skipSubmit;
         private final String user;
@@ -535,6 +536,7 @@ public class JobClusterManagerProto {
         public UpdateJobClusterArtifactRequest(
                 @JsonProperty("name") final String clusterName,
                 @JsonProperty("url") final String artifact,
+                @JsonProperty("jobJarUrl") final String jobJarUrl,
                 @JsonProperty("version") final String version,
                 @JsonProperty("skipsubmit") final boolean skipSubmit,
                 @JsonProperty("user") final String user) {
@@ -551,6 +553,7 @@ public class JobClusterManagerProto {
 
             this.clusterName = clusterName;
             this.artifactName = artifact;
+            this.jobJarUrl = jobJarUrl != null ? jobJarUrl : "http://" + artifact;
             this.version = version;
             this.skipSubmit = skipSubmit;
             this.user = user;
@@ -558,6 +561,10 @@ public class JobClusterManagerProto {
 
         public String getArtifactName() {
             return artifactName;
+        }
+
+        public String getjobJarUrl() {
+            return jobJarUrl;
         }
 
         public String getVersion() {
@@ -580,6 +587,7 @@ public class JobClusterManagerProto {
         public String toString() {
             return "UpdateJobClusterArtifactRequest{" +
                    "artifactName='" + artifactName + '\'' +
+                   "jobJarUrl='" + jobJarUrl + '\'' +
                    ", version='" + version + '\'' +
                    ", skipSubmit=" + skipSubmit +
                    ", user='" + user + '\'' +

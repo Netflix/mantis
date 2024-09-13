@@ -323,9 +323,8 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
    	 */
    	@Deprecated @Override
    	public URL getJobJarUrl() {
-
    		try {
-            return DataFormatAdapter.generateURL(getArtifactName());
+            return new URL(jobDefinition.getJobJarUrl());
    		} catch (MalformedURLException e) {
    			// should not happen
    			throw new RuntimeException(e);

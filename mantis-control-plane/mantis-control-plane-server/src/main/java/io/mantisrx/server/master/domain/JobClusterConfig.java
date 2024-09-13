@@ -27,6 +27,7 @@ import java.util.Objects;
 
 public class JobClusterConfig {
 
+    private final String jobJarUrl;
     private final String artifactName;
     private final String version;
     private final long uploadedAt;
@@ -34,12 +35,14 @@ public class JobClusterConfig {
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public JobClusterConfig(@JsonProperty("artifactName") String artifactName,
+    public JobClusterConfig(@JsonProperty("jobJarUrl") String jobJarUrl,
+                            @JsonProperty("artifactName") String artifactName,
                             @JsonProperty("uploadedAt") long uploadedAt,
                             @JsonProperty("version") String version,
                             @JsonProperty("schedulingInfo") SchedulingInfo schedulingInfo
 
     ) {
+        this.jobJarUrl = jobJarUrl;
         this.artifactName = artifactName;
         this.uploadedAt = uploadedAt;
         this.version = (version == null || version.isEmpty()) ?
@@ -47,6 +50,10 @@ public class JobClusterConfig {
                 version;
         this.schedulingInfo = schedulingInfo;
 
+    }
+
+    public String getJobJarUrl() {
+        return jobJarUrl;
     }
 
     public String getArtifactName() {
@@ -68,7 +75,7 @@ public class JobClusterConfig {
 
     @Override
     public String toString() {
-        return "JobClusterConfig [artifactName=" + artifactName + ", version=" + version + ", uploadedAt=" + uploadedAt
+        return "JobClusterConfig [jobJarUrl=" + jobJarUrl + ", artifactName=" + artifactName + ", version=" + version + ", uploadedAt=" + uploadedAt
                 + ", schedulingInfo=" + schedulingInfo + "]";
     }
 
@@ -78,6 +85,7 @@ public class JobClusterConfig {
         if (o == null || getClass() != o.getClass()) return false;
         JobClusterConfig that = (JobClusterConfig) o;
         return uploadedAt == that.uploadedAt &&
+                Objects.equals(jobJarUrl, that.jobJarUrl) &&
                 Objects.equals(artifactName, that.artifactName) &&
                 Objects.equals(version, that.version) &&
                 Objects.equals(schedulingInfo, that.schedulingInfo);
@@ -86,11 +94,12 @@ public class JobClusterConfig {
     @Override
     public int hashCode() {
 
-        return Objects.hash(artifactName, version, uploadedAt, schedulingInfo);
+        return Objects.hash(jobJarUrl, artifactName, version, uploadedAt, schedulingInfo);
     }
 
     public static class Builder {
 
+        String jobJarUrl;
         String artifactName;
         String version;
         long uploadedAt = -1;
@@ -98,6 +107,13 @@ public class JobClusterConfig {
 
 
         public Builder() {}
+
+        public Builder withJobJarUrl(String jobJarUrl) {
+            Preconditions.checkNotNull(jobJarUrl, "jobJarUrl cannot be null");
+            Preconditions.checkArgument(!jobJarUrl.isEmpty(), "jobJarUrl cannot be empty");
+            this.jobJarUrl = jobJarUrl;
+            return this;
+        }
 
         public Builder withArtifactName(String artifactName) {
             Preconditions.checkNotNull(artifactName, "artifactName cannot be null");
@@ -126,6 +142,7 @@ public class JobClusterConfig {
         }
 
         public Builder from(JobClusterConfig config) {
+            jobJarUrl = config.getJobJarUrl();
             artifactName = config.getArtifactName();
             version = config.getVersion();
             uploadedAt = config.getUploadedAt();
@@ -135,11 +152,12 @@ public class JobClusterConfig {
 
         // TODO add validity checks for SchedulingInfo, MachineDescription etc
         public JobClusterConfig build() {
+            Preconditions.checkNotNull(jobJarUrl);
             Preconditions.checkNotNull(artifactName);
             Preconditions.checkNotNull(schedulingInfo);
             this.uploadedAt = (uploadedAt == -1) ? System.currentTimeMillis() : uploadedAt;
             this.version = (version == null || version.isEmpty()) ? "" + System.currentTimeMillis() : version;
-            return new JobClusterConfig(artifactName, uploadedAt, version, schedulingInfo);
+            return new JobClusterConfig(jobJarUrl, artifactName, uploadedAt, version, schedulingInfo);
         }
     }
 

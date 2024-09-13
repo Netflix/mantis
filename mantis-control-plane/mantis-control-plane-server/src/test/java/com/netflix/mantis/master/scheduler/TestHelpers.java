@@ -41,6 +41,7 @@ public class TestHelpers {
                                                             final MachineDefinition machineDefinition) {
         try {
         	JobDefinition jobDefinition = new JobDefinition.Builder()
+                .withJobJarUrl("http://jar")
                 .withArtifactName("jar")
                 .withSchedulingInfo(new SchedulingInfo(Collections.singletonMap(0,
                     StageSchedulingInfo.builder()

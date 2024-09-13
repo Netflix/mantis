@@ -120,9 +120,10 @@ public class JobTestHelper {
     }
 
     public static IJobClusterDefinition generateJobClusterDefinition(String name, SchedulingInfo schedInfo, WorkerMigrationConfig migrationConfig) {
+        String artifactName = "myart";
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-            .withArtifactName("myart")
-
+            .withJobJarUrl("http://" + artifactName)
+            .withArtifactName(artifactName)
             .withSchedulingInfo(schedInfo)
             .withVersion("0.0.1")
             .build();
@@ -148,6 +149,7 @@ public class JobTestHelper {
             .withParameters(Lists.newArrayList())
             .withLabels(Lists.newArrayList())
             .withSchedulingInfo(schedInfo)
+            .withJobJarUrl("http://myart")
             .withArtifactName("myart")
             .withSubscriptionTimeoutSecs(0)
             .withUser("njoshi")

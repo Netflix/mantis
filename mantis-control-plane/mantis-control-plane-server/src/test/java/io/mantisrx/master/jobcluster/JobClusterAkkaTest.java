@@ -222,8 +222,10 @@ public class JobClusterAkkaTest {
     }
 
     private JobClusterDefinitionImpl createFakeJobClusterDefn(String clusterName, List<Label> labels, SLA sla, SchedulingInfo schedulingInfo)  {
+        String artifactName = "myart";
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-                .withArtifactName("myart")
+                .withJobJarUrl("http://" + artifactName)
+                .withArtifactName(artifactName)
                 .withSchedulingInfo(schedulingInfo)
                 .withVersion("0.0.1")
                 .build();
@@ -303,6 +305,7 @@ public class JobClusterAkkaTest {
                 .withLabels(labelList)
                 .withSchedulingInfo(schedulingInfo)
                 .withDeploymentStrategy(deploymentStrategy)
+                .withJobJarUrl("http://" + artifactName)
                 .withArtifactName(artifactName)
                 .withVersion(artifactVersion)
                 .withSubscriptionTimeoutSecs(subsTimeoutSecs)
@@ -440,6 +443,7 @@ public class JobClusterAkkaTest {
         Label l = new Label("labelname","labelvalue");
         labels.add(l);
         String clusterName = "testJobClusterUpdateAndDelete";
+        String artifactName = "myart";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, labels);
@@ -450,7 +454,8 @@ public class JobClusterAkkaTest {
 
 
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-                .withArtifactName("myart")
+                .withJobJarUrl("http://" + artifactName)
+                .withArtifactName(artifactName)
                 .withSchedulingInfo(SINGLE_WORKER_SCHED_INFO)
                 .withVersion("0.0.2")
                 .build();
@@ -770,7 +775,7 @@ public class JobClusterAkkaTest {
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
 
-        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "1.0.1", true, "user");
+        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "http://a1", "1.0.1", true, "user");
 
         jobClusterActor.tell(req, probe.getRef());
         UpdateJobClusterArtifactResponse resp = probe.expectMsgClass(UpdateJobClusterArtifactResponse.class);
@@ -809,7 +814,7 @@ public class JobClusterAkkaTest {
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
 
-        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "0.0.1", true, "user");
+        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "http://a1", "0.0.1", true, "user");
 
         jobClusterActor.tell(req, probe.getRef());
         UpdateJobClusterArtifactResponse resp = probe.expectMsgClass(UpdateJobClusterArtifactResponse.class);
@@ -846,7 +851,7 @@ public class JobClusterAkkaTest {
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
 
-        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "1.0.1", true, "user");
+        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(clusterName, "a1", "http://a1", "1.0.1", true, "user");
 
         jobClusterActor.tell(req, probe.getRef());
         UpdateJobClusterArtifactResponse resp = probe.expectMsgClass(UpdateJobClusterArtifactResponse.class);
@@ -870,7 +875,7 @@ public class JobClusterAkkaTest {
 
         // Update again
 
-        req = new UpdateJobClusterArtifactRequest(clusterName, "a2", "1.0.3", true, "user");
+        req = new UpdateJobClusterArtifactRequest(clusterName, "a2", "http:/a2", "1.0.3", true, "user");
 
         jobClusterActor.tell(req, probe.getRef());
         resp = probe.expectMsgClass(UpdateJobClusterArtifactResponse.class);
@@ -1085,6 +1090,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmitWithVersionAndNoSchedInfo() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithVersionAndNoSchedInfo";
+        String artifactName = "myart2";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
@@ -1095,7 +1101,8 @@ public class JobClusterAkkaTest {
         assertEquals(SUCCESS, createResp.responseCode);
 
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-                .withArtifactName("myart2")
+                .withJobJarUrl("http://" + artifactName)
+                .withArtifactName(artifactName)
                 .withSchedulingInfo(TWO_WORKER_SCHED_INFO)
                 .withVersion("0.0.2")
                 .build();
@@ -2051,7 +2058,7 @@ public class JobClusterAkkaTest {
             // Update artifact with skip submit = false
             String artifact = "newartifact.zip";
             String version = "0.0.2";
-            jobClusterActor.tell(new UpdateJobClusterArtifactRequest(clusterName, artifact, version,false, user), probe.getRef());
+            jobClusterActor.tell(new UpdateJobClusterArtifactRequest(clusterName, artifact, "http://" + artifact, version,false, user), probe.getRef());
             UpdateJobClusterArtifactResponse resp = probe.expectMsgClass(UpdateJobClusterArtifactResponse.class);
 
             // ensure new job was launched
