@@ -360,7 +360,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     String getSchedulingConstraintsString();
 
     @Config("mantis.sla.headroomForAcceptedJobs")
-    @Default("0")
+    @Default("3")
     int getSlaMaxHeadroomForAccepted();
 
     default Duration getHeartbeatInterval() {
