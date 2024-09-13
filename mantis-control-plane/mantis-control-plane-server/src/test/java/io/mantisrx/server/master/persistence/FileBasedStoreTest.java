@@ -77,12 +77,12 @@ public class FileBasedStoreTest {
     }
 
     private JobClusterDefinitionImpl createFakeJobClusterDefn(String clusterName, List<Label> labels)  {
+        String artifactName = "myart";
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-                .withArtifactName("myart")
-
+                .withJobJarUrl("http://" + artifactName)
+                .withArtifactName(artifactName)
                 .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2), Lists.newArrayList(), Lists.newArrayList()).build())
                 .withVersion("0.0.1")
-
                 .build();
 
         return new JobClusterDefinitionImpl.Builder()

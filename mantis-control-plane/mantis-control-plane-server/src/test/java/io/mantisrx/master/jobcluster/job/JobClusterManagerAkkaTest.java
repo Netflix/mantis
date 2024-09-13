@@ -186,10 +186,10 @@ public class JobClusterManagerAkkaTest {
         final String name,
         List<Label> labels,
         WorkerMigrationConfig migrationConfig) {
-
+        String artifactName = "myart";
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-            .withArtifactName("myart")
-
+            .withJobJarUrl("http://" + artifactName)
+            .withArtifactName(artifactName)
             .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1)
                 .singleWorkerStageWithConstraints(
                     new MachineDefinition(
@@ -235,6 +235,7 @@ public class JobClusterManagerAkkaTest {
                     Lists.newArrayList(),
                     Lists.newArrayList())
                 .build())
+            .withJobJarUrl("http://myart")
             .withArtifactName("myart")
             .withSubscriptionTimeoutSecs(0)
             .withUser("njoshi")
@@ -1018,8 +1019,10 @@ public class JobClusterManagerAkkaTest {
             JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, createResp.responseCode);
 
+        String artifactName = "myart2";
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-            .withArtifactName("myart2")
+            .withJobJarUrl("http://" + artifactName)
+            .withArtifactName(artifactName)
             .withSchedulingInfo(TWO_WORKER_SCHED_INFO)
             .withVersion("0.0.2")
             .build();
@@ -1152,6 +1155,7 @@ public class JobClusterManagerAkkaTest {
         UpdateJobClusterArtifactRequest req = new JobClusterManagerProto.UpdateJobClusterArtifactRequest(
             clusterName,
             "myjar",
+            "http://myjar",
             "1.0.1",
             true,
             "user");

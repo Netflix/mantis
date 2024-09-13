@@ -81,7 +81,7 @@ public class DataFormatAdapterTest {
         long uploadedAt = 1234l;
         String artifactName = "artifact1";
         String version = "0.0.1";
-        JobClusterConfig config = new JobClusterConfig(artifactName, uploadedAt, version, DEFAULT_SCHED_INFO);
+        JobClusterConfig config = new JobClusterConfig("http://" + artifactName, artifactName, uploadedAt, version, DEFAULT_SCHED_INFO);
 
         try {
             NamedJob.Jar convertedJar = DataFormatAdapter.convertJobClusterConfigToJar(config);
@@ -211,6 +211,7 @@ public class DataFormatAdapterTest {
 
         long uAt = 1234l;
         JobClusterConfig jobClusterConfig =  new JobClusterConfig.Builder()
+                .withJobJarUrl("http://" + artifactName)
                 .withArtifactName(artifactName)
                 .withSchedulingInfo(DEFAULT_SCHED_INFO)
                 .withVersion(version)
@@ -292,6 +293,7 @@ public class DataFormatAdapterTest {
         assertEquals(DEFAULT_SCHED_INFO,clusterConfig1.getSchedulingInfo());
         assertEquals(version,clusterConfig1.getVersion());
         assertEquals(artifactName, clusterConfig1.getArtifactName());
+        assertEquals("http://" + artifactName, clusterConfig1.getJobJarUrl());
 
     }
 
@@ -310,6 +312,7 @@ public class DataFormatAdapterTest {
 
         long uAt = 1234l;
         JobClusterConfig jobClusterConfig =  new JobClusterConfig.Builder()
+            .withJobJarUrl("http://" + artifactName)
             .withArtifactName(artifactName)
             .withSchedulingInfo(DEFAULT_SCHED_INFO)
             .withVersion(version)
@@ -392,6 +395,7 @@ public class DataFormatAdapterTest {
         assertEquals(DEFAULT_SCHED_INFO,clusterConfig1.getSchedulingInfo());
         assertEquals(version,clusterConfig1.getVersion());
         assertEquals(artifactName, clusterConfig1.getArtifactName());
+        assertEquals("http://" + artifactName, clusterConfig1.getJobJarUrl());
 
     }
 
@@ -835,6 +839,7 @@ public class DataFormatAdapterTest {
         JobSla jobSla = new JobSla(100,10,JobSla.StreamSLAType.Lossy,MantisJobDurationType.Perpetual,"userType");
 
         JobDefinition jobDefn = new JobDefinition.Builder()
+                                                    .withJobJarUrl("http://" + artifactName)
                                                     .withArtifactName(artifactName)
                                                     .withName(clusterName)
                                                     .withLabels(labels)
