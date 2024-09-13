@@ -15,7 +15,7 @@
  */
 
 plugins {
-    id 'com.gradle.enterprise' version '3.4.1'
+    id 'com.gradle.enterprise' version '3.13.1'
 }
 
 rootProject.name = 'mantis'
