@@ -80,7 +80,7 @@ public class JobStatusRouteTest {
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
                 ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
-                    new MantisJobStore(new FileBasedPersistenceProvider(true)), lifecycleEventPublisher, CostsCalculator.noop()), "jobClustersManager");
+                    new MantisJobStore(new FileBasedPersistenceProvider(true)), lifecycleEventPublisher, CostsCalculator.noop(), 0), "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);

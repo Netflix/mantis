@@ -15,7 +15,7 @@
  */
 
 plugins {
-    id 'com.gradle.enterprise' version '3.4.1'
+    id 'com.gradle.enterprise' version '3.18.1'
 }
 
 rootProject.name = 'mantis'
@@ -33,7 +33,6 @@ include 'mantis-control-plane:mantis-control-plane-client'
 include 'mantis-control-plane:mantis-control-plane-core'
 include 'mantis-control-plane:mantis-control-plane-server'
 include 'mantis-control-plane:mantis-control-plane-dynamodb'
-include 'mantis-control-plane:mantis-control-plane-store:mantis-control-plane-store-dynamodb'
 
 include 'mantis-discovery-proto'
 

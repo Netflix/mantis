@@ -23,12 +23,17 @@ import io.mantisrx.server.master.domain.SLA;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SLAEnforcer {
 	private static final Logger logger = LoggerFactory.getLogger(SLAEnforcer.class);
 	private final Optional<SLA> sla;
+
+    // Comparator sorts JobInfo by job number in ascending order.
 	private final Comparator<JobInfo> comparator = (o1, o2) -> {
         if (o2 == null)
             return -1;
@@ -66,14 +71,26 @@ public class SLAEnforcer {
 		return 0;
 	}
 
+    /**
+     * Walk the set of jobs in descending order (newest jobs first) track no. of  running jobs. Once this
+     * count equals slamax mark the rest of them for deletion.
+     *
+     * @param list A sorted (by job number) set of jobs in either running or accepted state
+     * @return A list of jobs ids that need to be terminated.
+     */
+    public List<JobId> enforceSLAMax(List<JobInfo> list) {
+        return enforceSLAMax(list, 0);
+    }
+
 	/**
 	 * Walk the set of jobs in descending order (newest jobs first) track no. of  running jobs. Once this
 	 * count equals slamax mark the rest of them for deletion.
 	 *
 	 * @param list A sorted (by job number) set of jobs in either running or accepted state
-	 * @return
+     * @param slaMaxAcceptedJobAllowance The number of accepted jobs above the SLA max allowed. 0 for unlimited.
+	 * @return A list of jobs ids that need to be terminated.
 	 */
-	public List<JobId> enforceSLAMax(List<JobInfo> list) {
+	public List<JobId> enforceSLAMax(List<JobInfo> list, int slaMaxAcceptedJobAllowance) {
 		Preconditions.checkNotNull(list, "runningOrAcceptedJobSet is null");
 
 		List<JobId> jobsToDelete = Lists.newArrayList();
@@ -102,6 +119,15 @@ public class SLAEnforcer {
                     }
                 }
             }
+        }
+
+        int headroom = slaMax - activeJobCount; // If we're under SLA max we account for this in our allowance.
+        if (slaMaxAcceptedJobAllowance > 0) {
+            list.stream()
+                .filter(job -> job.state == JobState.Accepted)
+                .sorted(comparator.reversed())
+                .skip(headroom + slaMaxAcceptedJobAllowance)
+                .forEach(job -> jobsToDelete.add(job.jobId));
         }
 
 		return jobsToDelete;

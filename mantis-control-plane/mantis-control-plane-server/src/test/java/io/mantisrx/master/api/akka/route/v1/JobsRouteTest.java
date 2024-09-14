@@ -122,7 +122,8 @@ public class JobsRouteTest extends RouteTestBase {
                     JobClustersManagerActor.props(
                         new MantisJobStore(new FileBasedPersistenceProvider(true)),
                         lifecycleEventPublisher,
-                        CostsCalculator.noop()),
+                        CostsCalculator.noop(),
+                        0),
                     "jobClustersManager");
 
                 IMantisPersistenceProvider simpleCachedFileStorageProvider = new FileBasedPersistenceProvider(new FileBasedStore());

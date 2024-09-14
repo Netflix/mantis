@@ -329,7 +329,7 @@ public class JobClusterAkkaTest {
         MantisSchedulerFactory schedulerMock = mock(MantisSchedulerFactory.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(name);
-        ActorRef jobClusterActor = system.actorOf(props(name, jobStoreMock, schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(name, jobStoreMock, schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -376,7 +376,7 @@ public class JobClusterAkkaTest {
             when(jobStoreMock.getArchivedJob(jobId)).thenReturn(of(job1));
             SLA sla = new SLA(1,1,null,null);
             final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, Lists.newArrayList(),sla);
-            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
             jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
             JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
             assertEquals(SUCCESS, createResp.responseCode);
@@ -447,7 +447,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, labels);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -514,7 +514,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, labels);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -542,7 +542,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, labels);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -578,7 +578,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, labels);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -621,7 +621,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -704,7 +704,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -737,7 +737,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -770,7 +770,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -809,7 +809,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -846,7 +846,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -914,7 +914,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -949,7 +949,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
 
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1004,7 +1004,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1042,7 +1042,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1095,7 +1095,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1200,7 +1200,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1241,7 +1241,7 @@ public class JobClusterAkkaTest {
 
         SLA sla = new SLA(1,1,null,null);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, Lists.newArrayList(),sla);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1297,7 +1297,7 @@ public class JobClusterAkkaTest {
 
         SLA sla = new SLA(1,1,null,null);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, Lists.newArrayList(),sla);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1379,7 +1379,7 @@ public class JobClusterAkkaTest {
 
         SLA sla = new SLA(1,1,null,null);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, Lists.newArrayList(),sla);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1462,7 +1462,7 @@ public class JobClusterAkkaTest {
 
         SLA sla = new SLA(1,1,"0/1 * * * * ?",IJobClusterDefinition.CronPolicy.KEEP_NEW);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, Lists.newArrayList(),sla);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1512,7 +1512,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1561,7 +1561,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1613,7 +1613,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1678,7 +1678,7 @@ public class JobClusterAkkaTest {
                 .build();
         final JobClusterDefinitionImpl fakeJobCluster =
                 createFakeJobClusterDefn(clusterName, Lists.newArrayList(), NO_OP_SLA, schedulingInfo1);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(
                 fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp =
@@ -1754,7 +1754,7 @@ public class JobClusterAkkaTest {
                 .build();
         final JobClusterDefinitionImpl fakeJobCluster =
                 createFakeJobClusterDefn(clusterName, Lists.newArrayList(), NO_OP_SLA, schedulingInfo1);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(
                 fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp =
@@ -1823,7 +1823,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1864,7 +1864,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1918,7 +1918,7 @@ public class JobClusterAkkaTest {
         Label label = new Label("clabelName", "cLabelValue");
         clusterLabels.add(label);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, clusterLabels);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -1995,7 +1995,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -2030,7 +2030,7 @@ public class JobClusterAkkaTest {
             SLA sla = new SLA(1,1,null,null);
             final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, Lists.newArrayList(),sla);
 
-            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
             jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
             JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
             assertEquals(SUCCESS, createResp.responseCode);
@@ -2101,7 +2101,7 @@ public class JobClusterAkkaTest {
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
             final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
             Mockito.doThrow(Exception.class).when(jobStoreMock).storeNewJob(any());
-            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
             jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
             JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
             assertEquals(SUCCESS, createResp.responseCode);
@@ -2137,7 +2137,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -2190,7 +2190,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -2234,7 +2234,7 @@ public class JobClusterAkkaTest {
 
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStore, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStore, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -2292,7 +2292,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -2326,7 +2326,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -2353,7 +2353,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -2413,7 +2413,7 @@ public class JobClusterAkkaTest {
 
             final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
 
-            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator));
+            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher, costsCalculator, 0));
             jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
             JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
             assertEquals(SUCCESS, createResp.responseCode);
@@ -2479,7 +2479,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -2531,7 +2531,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -2639,7 +2639,7 @@ public class JobClusterAkkaTest {
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
@@ -2814,7 +2814,7 @@ public class JobClusterAkkaTest {
             MantisScheduler schedulerMock = mock(MantisScheduler.class);
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
             final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator));
+            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
             jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
             JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
             assertEquals(SUCCESS, createResp.responseCode);
@@ -2917,7 +2917,7 @@ public class JobClusterAkkaTest {
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreSpied, schedulerMockFactory, eventPublisher, costsCalculator));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreSpied, schedulerMockFactory, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);

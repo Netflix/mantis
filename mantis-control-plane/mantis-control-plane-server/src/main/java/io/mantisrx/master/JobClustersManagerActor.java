@@ -140,8 +140,8 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
-    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator) {
-        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, costsCalculator)
+    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator, int slaHeadroomForAcceptedJobs) {
+        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, costsCalculator, slaHeadroomForAcceptedJobs)
             .withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -152,11 +152,14 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
 
     JobClusterInfoManager jobClusterInfoManager;
 
+    private final int slaHeadroomForAcceptedJobs;
+
     private ActorRef jobListHelperActor;
-    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator) {
+    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator, int slaHeadroomForAcceptedJobs) {
         this.jobStore = store;
         this.eventPublisher = eventPublisher;
         this.costsCalculator = costsCalculator;
+        this.slaHeadroomForAcceptedJobs = slaHeadroomForAcceptedJobs;
 
         MetricGroupId metricGroupId = getMetricGroupId();
         Metrics m = new Metrics.Builder()
@@ -857,9 +860,10 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                     logger.error("Cannot create actor for cluster with invalid name {}", clusterName);
                     return empty();
                 }
+
                 ActorRef jobClusterActor =
                     getContext().actorOf(
-                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, this.costsCalculator),
+                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, this.costsCalculator, slaHeadroomForAcceptedJobs),
                         "JobClusterActor-" + clusterName);
                 getContext().watch(jobClusterActor);
 
