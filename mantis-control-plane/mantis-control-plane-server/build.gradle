@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-plugins {
-    id 'org.gradle.test-retry' version '1.0.0'
-}
 
 apply plugin: 'application'
 apply plugin: 'com.bmuschko.docker-java-application'
