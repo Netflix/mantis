@@ -149,21 +149,36 @@ public class MantisClient {
 
     public <T> Observable<SinkClient<T>> getSinkClientByJobName(final String jobName, final SinkConnectionFunc<T> sinkConnectionFunc,
                                                                 final Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, final long dataRecvTimeoutSecs) {
-        final AtomicReference<String> lastJobIdRef = new AtomicReference<>();
-        return clientWrapper.getNamedJobsIds(jobName)
+        return getSinkClientByJobName(jobName, sinkConnectionFunc, sinkConnectionsStatusObserver, dataRecvTimeoutSecs, false);
+    }
+
+    public <T> Observable<SinkClient<T>> getSinkClientByJobName(final String jobName, final SinkConnectionFunc<T> sinkConnectionFunc,
+                                                                final Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, final long dataRecvTimeoutSecs,
+                                                                final boolean connectToAllJobs) {
+        if (connectToAllJobs) {
+            return clientWrapper.getNamedJobsIds(jobName)
+                .flatMap((final String jobId) -> {
+                    if (MasterClientWrapper.InvalidNamedJob.equals(jobId))
+                        return Observable.just(getErrorSinkClient(jobId));
+                    logger.info("Connecting to job " + jobName + " with new jobId=" + jobId);
+                    return Observable.fromCallable(() ->
+                        getSinkClientByJobId(jobId, sinkConnectionFunc, sinkConnectionsStatusObserver, dataRecvTimeoutSecs)
+                    ).onErrorReturn(error -> {
+                        logger.error("Error getting sink client for jobId " + jobId, error);
+                        return getErrorSinkClient(jobId);
+                    });
+                })
+                .toList()
+                .map(sinkClients -> {
+                    @SuppressWarnings("unchecked")
+                    List<SinkClient<T>> typedSinkClients = (List<SinkClient<T>>) (List<?>) sinkClients;
+                    return SinkClientImpl.mergeSinkClients(typedSinkClients);
+                })
+                .flatMap(Observable::just);
+        } else {
+            final AtomicReference<String> lastJobIdRef = new AtomicReference<>();
+            return clientWrapper.getNamedJobsIds(jobName)
                 .doOnUnsubscribe(() -> lastJobIdRef.set(null))
-                //                .lift(new Observable.Operator<String, String>() {
-                //                    @Override
-                //                    public Subscriber<? super String> call(Subscriber<? super String> subscriber) {
-                //                        subscriber.add(Subscriptions.create(new Action0() {
-                //                            @Override
-                //                            public void call() {
-                //                                lastJobIdRef.set(null);
-                //                            }
-                //                        }));
-                //                        return subscriber;
-                //                    }
-                //                })
                 .filter((String newJobId) -> {
                     logger.info("Got job cluster's new jobId=" + newJobId);
                     return newJobIdIsGreater(lastJobIdRef.get(), newJobId);
@@ -175,6 +190,7 @@ public class MantisClient {
                     logger.info("Connecting to job " + jobName + " with new jobId=" + jobId);
                     return getSinkClientByJobId(jobId, sinkConnectionFunc, sinkConnectionsStatusObserver, dataRecvTimeoutSecs);
                 });
+        }
     }
 
     private Boolean newJobIdIsGreater(String oldJobId, String newJobId) {

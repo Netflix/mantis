@@ -287,6 +287,36 @@ public class SinkClientImpl<T> implements SinkClient<T> {
         });
     }
 
+    public static <T> SinkClient<T> mergeSinkClients(List<SinkClient<T>> sinkClients) {
+        return new SinkClient<T>() {
+            @Override
+            public boolean hasError() {
+                return sinkClients.stream().anyMatch(SinkClient::hasError);
+            }
+
+            @Override
+            public String getError() {
+                return sinkClients.stream()
+                    .filter(SinkClient::hasError)
+                    .map(SinkClient::getError)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.joining("; "));
+            }
+
+            @Override
+            public Observable<Observable<T>> getResults() {
+                return Observable.from(sinkClients)
+                    .flatMap(SinkClient::getResults);
+            }
+
+            @Override
+            public Observable<Observable<T>> getPartitionedResults(final int forIndex, final int totalPartitions) {
+                return Observable.from(sinkClients)
+                    .flatMap(client -> client.getPartitionedResults(forIndex, totalPartitions));
+            }
+        };
+    }
+
     @ToString
     class SinkConnections<T> {
 
