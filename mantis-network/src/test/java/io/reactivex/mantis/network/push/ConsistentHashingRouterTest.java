@@ -78,6 +78,25 @@ public class ConsistentHashingRouterTest {
         assertEquals(ringEntries.size(), ring.size());
     }
 
+    @Test
+    public void shouldNotHaveHashCollisionsLargeJob() {
+
+        int numberOfRingEntriesPerSlot = 1000;
+        List<String> ringEntries = generateStageToStageSlots("2", 500, 4)
+            .stream()
+            .flatMap(slot -> IntStream.range(0, numberOfRingEntriesPerSlot)
+                .boxed()
+                .map(entryNum -> slot + "-" + entryNum))
+            .collect(Collectors.toList());
+
+        HashFunction hashFunction = HashFunctions.xxh3();
+
+        Set<Long> ring = new HashSet<>();
+        ringEntries.stream().forEach(entry -> ring.add(hashFunction.computeHash(entry.getBytes())));
+
+        assertEquals(ringEntries.size(), ring.size());
+    }
+
     /**
      * Generates slot ids that look the same as those that come from mantis stages.
      * Example: stage_2_index_38_partition_1
