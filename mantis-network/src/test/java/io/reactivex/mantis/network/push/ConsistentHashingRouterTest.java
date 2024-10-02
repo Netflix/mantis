@@ -39,7 +39,7 @@ public class ConsistentHashingRouterTest {
         final AtomicLong hashInvocationCounter = new AtomicLong(0);
         HashFunction instrumentedKetama = bytes -> {
             hashInvocationCounter.getAndIncrement();
-            return HashFunctions.ketamaExtended().computeHash(bytes);
+            return HashFunctions.xxh3().computeHash(bytes);
         };
 
         ConsistentHashingRouter<String, String> router = new ConsistentHashingRouter<>("test-router", x -> x.getKeyBytes(), instrumentedKetama);
