@@ -45,7 +45,7 @@ public class Routers {
                                 .put(valueBytes) // value bytes
                                 .array();
             }
-        }, HashFunctions.ketama());
+        }, HashFunctions.xxh3());
     }
 
     private static byte[] dataPayload(byte[] data) {

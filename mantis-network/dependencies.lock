@@ -4,31 +4,6 @@
             "locked": "1.18.20"
         }
     },
-    "baseline-exact-dependencies-main": {
-        "io.mantisrx:mql-jvm": {
-            "locked": "3.4.0"
-        }
-    },
-    "baseline-exact-dependencies-test": {
-        "com.netflix.spectator:spectator-api": {
-            "locked": "1.3.10"
-        },
-        "org.junit.jupiter:junit-jupiter-api": {
-            "locked": "5.4.2"
-        },
-        "org.junit.jupiter:junit-jupiter-engine": {
-            "locked": "5.4.2"
-        },
-        "org.junit.jupiter:junit-jupiter-params": {
-            "locked": "5.4.2"
-        },
-        "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
-        },
-        "org.slf4j:slf4j-log4j12": {
-            "locked": "1.7.0"
-        }
-    },
     "compileClasspath": {
         "com.google.code.findbugs:jsr305": {
             "firstLevelTransitive": [
@@ -91,6 +66,9 @@
             ],
             "locked": "1.3.8"
         },
+        "net.openhft:zero-allocation-hashing": {
+            "locked": "0.26ea0"
+        },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -116,7 +94,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.5"
+            "locked": "1.1.10.7"
         }
     },
     "lombok": {
@@ -201,6 +179,9 @@
             ],
             "locked": "1.0"
         },
+        "net.openhft:zero-allocation-hashing": {
+            "locked": "0.26ea0"
+        },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -223,7 +204,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.5"
+            "locked": "1.1.10.7"
         }
     },
     "testAnnotationProcessor": {
@@ -293,6 +274,9 @@
             ],
             "locked": "1.3.8"
         },
+        "net.openhft:zero-allocation-hashing": {
+            "locked": "0.26ea0"
+        },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -330,7 +314,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.5"
+            "locked": "1.1.10.7"
         }
     },
     "testRuntimeClasspath": {
@@ -413,6 +397,9 @@
             ],
             "locked": "1.0"
         },
+        "net.openhft:zero-allocation-hashing": {
+            "locked": "0.26ea0"
+        },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -447,7 +434,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.5"
+            "locked": "1.1.10.7"
         }
     }
 }

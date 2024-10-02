@@ -22,10 +22,11 @@ ext {
 dependencies {
     api "io.netty:netty-handler:$nettyVersion"
     implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    implementation "net.openhft:zero-allocation-hashing:0.+"
     api project(':mantis-common')
     compileOnly libraries.spectatorApi
     testImplementation libraries.spectatorApi
-    
+
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
     testImplementation libraries.slf4jLog4j12
