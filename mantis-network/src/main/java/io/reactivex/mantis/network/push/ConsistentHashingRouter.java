@@ -107,6 +107,9 @@ public class ConsistentHashingRouter<K, V> extends Router<KeyValuePair<K, V>> {
                 }
                 byte[] connectionBytes = (connectionId + "-" + i).getBytes();
                 long hash = hashFunction.computeHash(connectionBytes);
+                if (ring.containsKey(hash)) {
+                    logger.error("Hash collision when computing ring. {} hashed to a value already in the ring.", connectionId + "-" + i);
+                }
                 ring.put(hash, connection);
             }
         }
@@ -114,17 +117,18 @@ public class ConsistentHashingRouter<K, V> extends Router<KeyValuePair<K, V>> {
     }
 
     private SortedMap<Long, AsyncConnection<KeyValuePair<K, V>>> hashConnections(Set<AsyncConnection<KeyValuePair<K, V>>> connections) {
+
         SnapshotCache<SortedMap<Long, AsyncConnection<KeyValuePair<K, V>>>> cache = cachedRingRef.get();
 
         if (cache == null) {
-            logger.info("Recomputing ring due null reference");
+            logger.info("Recomputing ring due to null reference");
             computeRing(connections);
         } else {
             SortedMap<Long, AsyncConnection<KeyValuePair<K, V>>> cachedRing = cache.getCache();
             // determine if need to recompute cache
             if (cachedRing.size() != (connections.size() * connectionRepetitionOnRing)) {
                 // number of connections not equal
-                logger.info("Recomputing ring due to difference in number of connections versus cache");
+                logger.info("Recomputing ring due to difference in number of connections ({}) versus cache size ({}).", connections.size() * connectionRepetitionOnRing, cachedRing.size());
                 computeRing(connections);
             } else {
                 // number of connections equal, check timestamp

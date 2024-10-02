@@ -18,6 +18,7 @@ package io.reactivex.mantis.network.push;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import net.openhft.hashing.LongHashFunction;
 
 
 public class HashFunctions {
@@ -35,6 +36,26 @@ public class HashFunctions {
                         | (bKey[0] & 0xFF);
             }
         };
+    }
+
+    public static HashFunction ketamaExtended() {
+        return new HashFunction() {
+            @Override
+            public long computeHash(byte[] keyBytes) {
+                byte[] bKey = computeMd5(keyBytes);
+                return ((long) (bKey[6] & 0xFF) << 48)
+                    | ((long) (bKey[5] & 0xFF) << 40)
+                    | ((long) (bKey[4] & 0xFF) << 32)
+                    | ((long) (bKey[3] & 0xFF) << 24)
+                    | ((long) (bKey[2] & 0xFF) << 16)
+                    | ((long) (bKey[1] & 0xFF) << 8)
+                    | (bKey[0] & 0xFF);
+            }
+        };
+    }
+
+    public static HashFunction xxh3() {
+        return bytes -> LongHashFunction.xx3().hashBytes(bytes);
     }
 
     public static byte[] computeMd5(byte[] keyBytes) {
