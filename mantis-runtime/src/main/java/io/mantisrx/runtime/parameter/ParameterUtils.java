@@ -128,7 +128,7 @@ public class ParameterUtils {
 
         ParameterDefinition<Integer> sse_numConsumerThreads = new IntParameter()
                 .name("mantis.sse.numConsumerThreads")
-                .validator(Validators.range(1, 8))
+                .validator(Validators.range(1, 64))
                 .description("number of consumer threads draining the queue to write to SSE")
                 .defaultValue(1)
                 .build();
