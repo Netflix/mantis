@@ -187,6 +187,10 @@ public class JobClusterManagerAkkaTest {
         List<Label> labels,
         WorkerMigrationConfig migrationConfig) {
         String artifactName = "myart";
+        if (labels.stream().noneMatch(l -> l.getName().equals("_mantis.resourceCluster"))) {
+            labels.add(new Label("_mantis.resourceCluster", "akkaTestCluster1"));
+        }
+
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
             .withJobJarUrl("http://" + artifactName)
             .withArtifactName(artifactName)
@@ -1008,6 +1012,7 @@ public class JobClusterManagerAkkaTest {
         List<Label> labels = Lists.newLinkedList();
         Label l = new Label("labelname", "labelvalue");
         labels.add(l);
+        labels.add(new Label("_mantis.resourceCluster", "cl2"));
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
             clusterName,
             labels);
@@ -1031,7 +1036,7 @@ public class JobClusterManagerAkkaTest {
             .withJobClusterConfig(clusterConfig)
             .withName(clusterName)
             .withParameters(Lists.newArrayList())
-
+            .withLabels(labels)
             .withUser(user)
             .withIsReadyForJobMaster(true)
             .withOwner(DEFAULT_JOB_OWNER)
@@ -1119,6 +1124,7 @@ public class JobClusterManagerAkkaTest {
         List<Label> labels2 = Lists.newLinkedList();
         Label l = new Label("labelname", "labelvalue");
         labels2.add(l);
+        labels2.add(new Label("_mantis.resourceCluster", "cl2"));
 
         UpdateJobClusterLabelsRequest req = new JobClusterManagerProto.UpdateJobClusterLabelsRequest(
             clusterName,
@@ -1132,7 +1138,7 @@ public class JobClusterManagerAkkaTest {
         jobClusterManagerActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
         GetJobClusterResponse getResp = probe.expectMsgClass(GetJobClusterResponse.class);
         assertEquals(SUCCESS, getResp.responseCode);
-        assertEquals(1, getResp.getJobCluster().get().getLabels().size());
+        assertEquals(2, getResp.getJobCluster().get().getLabels().size());
         assertEquals(l, getResp.getJobCluster().get().getLabels().get(0));
     }
 
@@ -1419,15 +1425,21 @@ public class JobClusterManagerAkkaTest {
 
             assertEquals(SUCCESS, getLastSubmittedJobIdStreamResponse.responseCode);
 
-            CountDownLatch jobIdLatch = new CountDownLatch(1);
+            CountDownLatch jobIdLatch = new CountDownLatch(2);
             assertTrue(getLastSubmittedJobIdStreamResponse.getjobIdBehaviorSubject().isPresent());
             BehaviorSubject<JobId> jobIdBehaviorSubject =
                 getLastSubmittedJobIdStreamResponse.getjobIdBehaviorSubject().get();
 
             jobIdBehaviorSubject.subscribeOn(Schedulers.io()).subscribe((jId) -> {
                 System.out.println("Got Jid -> " + jId);
-                assertEquals(clusterName + "-1", jId.getId());
-                jobIdLatch.countDown();
+                if (jId.getId().endsWith("1")) {
+                    assertEquals(clusterName + "-1", jId.getId());
+                    jobIdLatch.countDown();
+                }
+                else if (jId.getId().endsWith("2")) {
+                    assertEquals(clusterName + "-2", jId.getId());
+                    jobIdLatch.countDown();
+                }
             });
 
             jobDefn = createJob(clusterName);
@@ -1440,9 +1452,62 @@ public class JobClusterManagerAkkaTest {
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
                 JobClusterManagerProto.SubmitJobResponse.class);
             assertEquals(SUCCESS, submitResp.responseCode);
+            assertTrue(submitResp.getJobId().isPresent());
 
-            jobIdLatch.await(1, TimeUnit.SECONDS);
+            // mark job as launched
+            WorkerId workerId = new WorkerId(submitResp.getJobId().get().getId(), 0, 1);
+            WorkerEvent startEvent = new WorkerHeartbeat(new Status(
+                submitResp.getJobId().get().getId(),
+                1,
+                workerId.getWorkerIndex(),
+                workerId.getWorkerNum(),
+                TYPE.HEARTBEAT,
+                "",
+                MantisJobState.Started));
+            WorkerEvent launchEvent = new WorkerLaunched(
+                workerId,
+                1,
+                "hostname",
+                "vmid1",
+                Optional.empty(),
+                Optional.empty(),
+                new WorkerPorts(1, 2, 3, 4, 5));
 
+            jobClusterManagerActor.tell(launchEvent, probe.getRef());
+            jobClusterManagerActor.tell(startEvent, probe.getRef());
+
+            jobClusterManagerActor.tell(
+                new JobClusterManagerProto.SubmitJobRequest(
+                    clusterName,
+                    "me",
+                    jobDefn),
+                probe.getRef());
+            submitResp = probe.expectMsgClass(
+                JobClusterManagerProto.SubmitJobResponse.class);
+            assertEquals(SUCCESS, submitResp.responseCode);
+            assertTrue(submitResp.getJobId().isPresent());
+            workerId = new WorkerId(submitResp.getJobId().get().getId(), 0, 1);
+            startEvent = new WorkerHeartbeat(new Status(
+                submitResp.getJobId().get().getId(),
+                1,
+                workerId.getWorkerIndex(),
+                workerId.getWorkerNum(),
+                TYPE.HEARTBEAT,
+                "",
+                MantisJobState.Started));
+            launchEvent = new WorkerLaunched(
+                workerId,
+                1,
+                "hostname",
+                "vmid1",
+                Optional.empty(),
+                Optional.empty(),
+                new WorkerPorts(1, 2, 3, 4, 5));
+
+            jobClusterManagerActor.tell(launchEvent, probe.getRef());
+            jobClusterManagerActor.tell(startEvent, probe.getRef());
+
+            assertTrue(jobIdLatch.await(10, TimeUnit.SECONDS));
             // try a non existent cluster
             jobClusterManagerActor.tell(
                 new GetLastSubmittedJobIdStreamRequest("randomC"),
