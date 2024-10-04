@@ -226,6 +226,7 @@ public class TestContainerHelloWorld {
         }
 
         // test sse
+        Thread.sleep(Duration.ofSeconds(5).toMillis());
         String cmd = "curl -N -H \"Accept: text/event-stream\"  \"localhost:5055\" & sleep 3; kill $!";
         Container.ExecResult lsResult = agent0.execInContainer("bash", "-c", cmd);
         String stdout = lsResult.getStdout();
