@@ -146,12 +146,12 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
         if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
             return PushServers.infiniteStreamLegacyTcpNestedMantisGroup(
                 config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
-                HashFunctions.ketama());
+                HashFunctions.xxh3());
         }
         // ScalarToKey or KeyTKey
         return PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(
             config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
-            HashFunctions.ketama());
+            HashFunctions.xxh3());
     }
 
     private boolean useSpsc() {
