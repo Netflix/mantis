@@ -136,6 +136,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -219,7 +220,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final MantisSchedulerFactory mantisSchedulerFactory;
     private final LifecycleEventPublisher eventPublisher;
 
-    private final BehaviorSubject<JobId> jobIdSubmissionSubject;
+    private final BehaviorSubject<JobId> jobIdStartedSubject;
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
     private final Metrics metrics;
 
@@ -241,7 +242,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, costsCalculator);
 
-        jobIdSubmissionSubject = BehaviorSubject.create();
+        jobIdStartedSubject = BehaviorSubject.create();
 
         initializedBehavior =  buildInitializedBehavior();
         disabledBehavior = buildDisabledBehavior();
@@ -852,9 +853,16 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                          ,() -> {
                             // Push the last jobId
 
-                             if(initReq.jobList.size() > 0) {
+                             if(!initReq.jobList.isEmpty()) {
                                  JobId lastJobId = new JobId(this.name, initReq.lastJobNumber);
-                                 this.jobIdSubmissionSubject.onNext(lastJobId);
+                                 JobId lastLaunchedJobId = initReq.jobList.stream()
+                                     .filter(job -> job.getState() == JobState.Launched)
+                                     .max(Comparator.comparingLong(a -> a.getJobId().getJobNum()))
+                                     .map(jm -> new JobId(this.name, jm.getJobId().getJobNum()))
+                                     .orElse(lastJobId);
+                                logger.info("Publish last launched job id: {}, last submit job id: {}",
+                                    lastLaunchedJobId, lastJobId);
+                                 this.jobIdStartedSubject.onNext(lastLaunchedJobId);
                              }
 
 
@@ -1569,7 +1577,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 throw new PersistException(e);
             }
 
-            jobIdSubmissionSubject.onNext(jId);
             numJobSubmissions.increment();
         } catch (PersistException pe) {
             throw pe;
@@ -1623,6 +1630,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(jobInfoOp.isPresent()) {
             // enforce SLA
             jobManager.markJobStarted(jobInfoOp.get());
+            this.jobIdStartedSubject.onNext(startedEvent.jobid);
             getSelf().tell(new JobClusterProto.EnforceSLARequest(Instant.now(), of(jobInfoOp.get().jobDefinition)), getSelf());
         }
 
@@ -1879,7 +1887,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(logger.isTraceEnabled()) { logger.trace("Enter onGetLatestJobDiscoveryInfo {}", request); }
         ActorRef sender = getSender();
         if(this.name.equals(request.getJobCluster())) {
-            JobId latestJobId = jobIdSubmissionSubject.getValue();
+            JobId latestJobId = this.jobIdStartedSubject.getValue();
             logger.debug("[{}] latest job Id for cluster: {}", name, latestJobId);
             if (latestJobId != null) {
                 Optional<JobInfo> jInfo = jobManager.getJobInfoForNonTerminalJob(latestJobId);
@@ -1934,7 +1942,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(logger.isTraceEnabled()) { logger.trace("Enter onGetLastSubmittedJobIdSubject {}", request); }
         ActorRef sender = getSender();
         if(this.name.equals(request.getClusterName())) {
-            sender.tell(new GetLastSubmittedJobIdStreamResponse(request.requestId,SUCCESS,"",of(this.jobIdSubmissionSubject)),getSelf());
+            sender.tell(new GetLastSubmittedJobIdStreamResponse(request.requestId,SUCCESS,"",of(this.jobIdStartedSubject)),getSelf());
         } else {
             String msg = "Job Cluster " + request.getClusterName() + " In request does not match the name of this actor " + this.name;
             logger.warn(msg);
