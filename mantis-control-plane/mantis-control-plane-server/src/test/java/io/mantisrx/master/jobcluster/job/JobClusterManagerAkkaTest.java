@@ -30,6 +30,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -89,6 +90,7 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobClusterConfig;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
+import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.domain.SLA;
@@ -99,6 +101,7 @@ import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.store.FileBasedStore;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -1596,7 +1599,7 @@ public class JobClusterManagerAkkaTest {
     }
 
     @Test
-    public void testNonTerminalEventFromZombieWorkerLeadsToTermination() {
+    public void testNonTerminalEventFromZombieWorkerLeadsToTermination() throws IOException {
         TestKit probe = new TestKit(system);
         String clusterName = "testNonTerminalEventFromZombieWorkerLeadsToTermination";
 
@@ -1612,6 +1615,18 @@ public class JobClusterManagerAkkaTest {
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
         WorkerId zWorker1 = new WorkerId("randomCluster", "randomCluster-1", 0, 1);
+        when(jobStoreMock.loadCompletedJobsForCluster(any(), anyInt(), any()))
+            // .thenReturn(ImmutableList.of());
+            .thenReturn(ImmutableList.of(
+                new CompletedJob(
+                    clusterName,
+                    clusterName + "-1",
+                    "v1",
+                    JobState.Completed,
+                    -1L,
+                    -1L,
+                    "ut",
+                    ImmutableList.of())));
         when(jobStoreMock.getArchivedJob(zWorker1.getJobId()))
             .thenReturn(Optional.of(
                 new MantisJobMetadataImpl.Builder().withJobDefinition(mock(JobDefinition.class))

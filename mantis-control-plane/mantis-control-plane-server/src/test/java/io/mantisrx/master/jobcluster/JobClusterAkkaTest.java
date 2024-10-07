@@ -56,6 +56,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -114,7 +115,14 @@ import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.domain.*;
+import io.mantisrx.server.master.domain.DataFormatAdapter;
+import io.mantisrx.server.master.domain.IJobClusterDefinition;
+import io.mantisrx.server.master.domain.JobClusterConfig;
+import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
+import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
+import io.mantisrx.server.master.domain.JobDefinition;
+import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.server.master.domain.SLA;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -123,6 +131,7 @@ import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.store.FileBasedStore;
 import io.mantisrx.server.master.store.NamedJob;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.File;
 import java.time.Duration;
@@ -643,6 +652,18 @@ public class JobClusterAkkaTest {
                     .withJobDefinition(jobDefn)
                     .withJobState(JobState.Completed)
                     .build();
+            when(jobStoreMock.loadCompletedJobsForCluster(any(), anyInt(), any()))
+                // .thenReturn(ImmutableList.of());
+                .thenReturn(ImmutableList.of(
+                    new CompletedJob(
+                        completedJobMock.getClusterName(),
+                        completedJobMock.getJobId().getId(),
+                        "v1",
+                        JobState.Completed,
+                        -1L,
+                        -1L,
+                        completedJobMock.getUser(),
+                        completedJobMock.getLabels())));
             when(jobStoreMock.getArchivedJob(any())).thenReturn(of(completedJobMock));
             doAnswer((Answer) invocation -> {
                 storeCompletedCalled.countDown();
