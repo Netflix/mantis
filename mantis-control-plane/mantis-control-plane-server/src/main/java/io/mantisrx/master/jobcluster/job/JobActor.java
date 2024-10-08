@@ -1906,20 +1906,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 for (JobWorker worker : stage.getAllWorkers()) {
                     IMantisWorkerMetadata workerMeta = worker.getMetadata();
                     if (!workerMeta.getLastHeartbeatAt().isPresent()) {
+                        // the worker is still waiting for resource allocation and the scheduler should take care of
+                        // the retry logic.
                         Instant acceptedAt = Instant.ofEpochMilli(workerMeta.getAcceptedAt());
-                        if (Duration.between(acceptedAt, currentTime).getSeconds() > stuckInSubmitToleranceSecs) {
-                            // worker stuck in accepted
-                            LOGGER.info("Job {}, Worker {} stuck in accepted state for {}", this.jobMgr.getJobId(),
-                                    workerMeta.getWorkerId(), Duration.between(acceptedAt, currentTime).getSeconds());
-
-                            workersToResubmit.add(worker);
-                            eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(
-                                WARN,
-                                "worker stuck in Accepted state, resubmitting worker",
-                                workerMeta.getStageNum(),
-                                workerMeta.getWorkerId(),
-                                workerMeta.getState()));
-                        }
+                        LOGGER.warn("Job {}, Worker {} stuck in accepted state since {}",
+                            this.jobMgr.getJobId(),
+                            workerMeta.getWorkerId(),
+                            acceptedAt);
                     } else {
                         if (Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds()
                             > missedHeartBeatToleranceSecs) {
