@@ -56,7 +56,7 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
 
     GroupToScalar(GroupToScalarComputation<K, T, R> computation,
                   Config<K, T, R> config, Codec<K> inputKeyCodec, Codec<T> inputCodec) {
-        super(config.description, inputKeyCodec, inputCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, inputKeyCodec, inputCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }
@@ -78,6 +78,7 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
         // 'stateful group calculation' use case
         // do not allow config override
         private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
+        private int concurrency = DEFAULT_STAGE_CONCURRENCY;
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
         /**
@@ -119,6 +120,12 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
             return this;
         }
 
+        public Config<K, T, R> concurrentInput(final int concurrency) {
+            this.inputStrategy = INPUT_STRATEGY.CONCURRENT;
+			this.concurrency = concurrency;
+            return this;
+        }
+
         public Codec<R> getCodec() {
             return codec;
         }
@@ -134,6 +141,8 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
         public INPUT_STRATEGY getInputStrategy() {
             return inputStrategy;
         }
+
+        public int getConcurrency() { return concurrency; }
 
         public Config<K, T, R> withParameters(List<ParameterDefinition<?>> params) {
             this.parameters = params;

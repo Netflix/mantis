@@ -54,7 +54,7 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
 
     public ScalarToGroup(ToGroupComputation<T, K, R> computation,
                   Config<T, K, R> config, Codec<T> inputCodec) {
-        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
 
@@ -76,6 +76,7 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
         private String description;
         // default input type is concurrent for 'grouping' use case
         private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.CONCURRENT;
+        private int concurrency = DEFAULT_STAGE_CONCURRENCY;
         private long keyExpireTimeSeconds = Long.MAX_VALUE; // never expire by default
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
@@ -108,11 +109,18 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
 
         public Config<T, K, R> serialInput() {
             this.inputStrategy = INPUT_STRATEGY.SERIAL;
+            this.concurrency = 1;
             return this;
         }
 
         public Config<T, K, R> concurrentInput() {
             this.inputStrategy = INPUT_STRATEGY.CONCURRENT;
+            return this;
+        }
+
+        public Config<T, K, R> concurrentInput(final int concurrency) {
+            this.inputStrategy = INPUT_STRATEGY.CONCURRENT;
+			this.concurrency = concurrency;
             return this;
         }
 
@@ -136,6 +144,8 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
         public INPUT_STRATEGY getInputStrategy() {
             return inputStrategy;
         }
+
+        public int getConcurrency() { return concurrency; }
 
         public long getKeyExpireTimeSeconds() {
             return keyExpireTimeSeconds;
