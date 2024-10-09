@@ -173,18 +173,14 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
 
     private void onFailedToBatchScheduleRequestEvent(FailedToBatchScheduleRequestEvent event) {
         batchSchedulingFailures.increment();
-        if (event.getAttempt() >= this.maxScheduleRetries) {
-            log.error("Failed to submit the batch request {} because of ", event.getScheduleRequestEvent(), event.getThrowable());
-        } else {
-            Duration timeout = Duration.ofMillis(intervalBetweenRetries.toMillis());
-            log.error("Failed to submit the request {}; Retrying in {} because of ",
-                event.getScheduleRequestEvent(), timeout, event.getThrowable());
+        Duration timeout = Duration.ofMillis(intervalBetweenRetries.toMillis());
+        log.warn("BatchScheduleRequest failed to allocate resource: {}; Retrying in {} because of ",
+            event.getScheduleRequestEvent(), timeout, event.getThrowable());
 
-            getTimers().startSingleTimer(
-                getBatchSchedulingQueueKeyFor(event.getScheduleRequestEvent().getJobId()),
-                event.onRetry(),
-                timeout);
-        }
+        getTimers().startSingleTimer(
+            getBatchSchedulingQueueKeyFor(event.getScheduleRequestEvent().getJobId()),
+            event.onRetry(),
+            timeout);
     }
 
     private void onScheduleRequestEvent(ScheduleRequestEvent event) {

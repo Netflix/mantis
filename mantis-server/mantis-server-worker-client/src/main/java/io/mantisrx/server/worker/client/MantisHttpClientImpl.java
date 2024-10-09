@@ -81,7 +81,7 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
     }
 
     protected void trackConnection(Channel channel) {
-        log.info("Tracking connection: {}", channel.toString());
+        log.debug("Tracking connection: {}", channel.toString());
         synchronized (connectionTracker) {
             if (isClosed.get()) {
                 log.info("Http client is already closed. Close the channel immediately. {}", channel);

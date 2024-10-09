@@ -40,7 +40,7 @@ jobs:
           restore-keys: |
             - ${{ runner.os }}-gradlewrapper-
       - name: Build with Gradle
-        run: ./gradlew --info --stacktrace build --warning-mode=all
+        run: ./gradlew --info --stacktrace build akkatest --warning-mode=all
         env:
           CI_NAME: github_actions
           CI_BUILD_NUMBER: ${{ github.sha }}
