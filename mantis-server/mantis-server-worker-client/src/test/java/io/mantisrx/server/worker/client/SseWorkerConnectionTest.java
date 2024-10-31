@@ -148,4 +148,51 @@ public class SseWorkerConnectionTest {
         logger.info("Connection tracker size: {}", client.connectionTrackerSize());
         assertEquals(0, client.connectionTrackerSize());
     }
+
+    @Test
+    public void testStreamContentBuffersBeforeDrop() throws Exception {
+        int bufferSize = 50;
+        int dataPoints = 100;
+        SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
+        String metricGroupString = "testmetric";
+        MetricGroupId metricGroupId = new MetricGroupId(metricGroupString);
+        SseWorkerConnection workerConnection = new SseWorkerConnection("connection_type",
+            "hostname",
+            80,
+            b -> {},
+            b -> {},
+            t -> {},
+            600,
+            false,
+            new CopyOnWriteArraySet<>(),
+            bufferSize,
+            null,
+            true,
+            metricGroupId);
+        HttpClientResponse<ServerSentEvent> response = mock(HttpClientResponse.class);
+        TestScheduler testScheduler = Schedulers.test();
+
+        // Events are just "0", "1", "2", ...
+        Observable<ServerSentEvent> contentObs = Observable.interval(1, TimeUnit.SECONDS, testScheduler)
+            .map(t -> new ServerSentEvent(Unpooled.copiedBuffer(Long.toString(t), Charset.defaultCharset())));
+
+        when(response.getContent()).thenReturn(contentObs);
+
+        TestSubscriber<MantisServerSentEvent> subscriber = new TestSubscriber<>(1);
+
+        workerConnection.streamContent(response, b -> {}, 600, "delimiter").subscribeOn(testScheduler).subscribe(subscriber);
+
+        testScheduler.advanceTimeBy(dataPoints, TimeUnit.SECONDS);
+        subscriber.assertValueCount(1);
+        List<MantisServerSentEvent> events = subscriber.getOnNextEvents();
+        assertEquals("0", events.get(0).getEventAsString());
+
+        Metrics metrics = MetricsRegistry.getInstance().getMetric(metricGroupId);
+        Counter onNextCounter = metrics.getCounter(DropOperator.Counters.onNext.toString());
+        Counter droppedCounter = metrics.getCounter(DropOperator.Counters.dropped.toString());
+        logger.info("next: {}", onNextCounter.value());
+        logger.info("drop: {}", droppedCounter.value());
+        assertTrue(onNextCounter.value() >= bufferSize); // Should pull AT LEAST the buffer.
+        assertTrue(droppedCounter.value() <=  dataPoints - bufferSize); // We should not drop any of the buffer.
+    }
 }
