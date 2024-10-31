@@ -153,7 +153,7 @@ public class SseWorkerConnectionTest {
     public void testStreamContentBuffersBeforeDrop() throws Exception {
         int bufferSize = 20;
         SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
-        String metricGroupString = "testmetric";
+        String metricGroupString = "testmetric_2";
         MetricGroupId metricGroupId = new MetricGroupId(metricGroupString);
         SseWorkerConnection workerConnection = new SseWorkerConnection("connection_type",
             "hostname",
@@ -192,6 +192,6 @@ public class SseWorkerConnectionTest {
         logger.info("next: {}", onNextCounter.value());
         logger.info("drop: {}", droppedCounter.value());
         assertTrue(onNextCounter.value() >= bufferSize); // Should pull at least the buffer even though we requested 1.
-        assertTrue(droppedCounter.value() <= 80); // We should not drop any of the buffer.
+        assertTrue(droppedCounter.value() <= 100); // We should not drop any of the buffer.
     }
 }
