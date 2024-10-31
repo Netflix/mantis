@@ -168,7 +168,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     }
 
     @Config("mantis.master.scheduler.max-retries")
-    @Default("10")
+    @Default("60")
     int getSchedulerMaxRetries();
 
     @Config("mantis.zookeeper.leader.election.path")
