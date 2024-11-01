@@ -305,6 +305,7 @@ public class SseWorkerConnection {
         }
         return response.getContent()
                 .lift(new DropOperator<ServerSentEvent>(metricGroupId))
+                .rebatchRequests(this.bufferSize <= 0 ? 1 : this.bufferSize)
                 .flatMap((ServerSentEvent t1) -> {
                     lastDataReceived.set(System.currentTimeMillis());
                     if (isConnected.get() && isReceivingData.compareAndSet(false, true))
