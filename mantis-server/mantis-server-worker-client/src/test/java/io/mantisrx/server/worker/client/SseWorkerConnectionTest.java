@@ -192,7 +192,7 @@ public class SseWorkerConnectionTest {
         Counter droppedCounter = metrics.getCounter(DropOperator.Counters.dropped.toString());
         logger.info("next: {}", onNextCounter.value());
         logger.info("drop: {}", droppedCounter.value());
-        assertTrue(onNextCounter.value() >= bufferSize); // Should pull at least the buffer even though we requested 1.
+        assertTrue(onNextCounter.value() >= bufferSize); // Should request at least the buffer even though we requested 1.
         assertTrue(droppedCounter.value() <= totalEvents - bufferSize ); // We should not drop any of the buffer.
     }
 }
