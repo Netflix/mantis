@@ -67,15 +67,15 @@ public interface CoreConfiguration {
     int getAsyncHttpClientMaxConnectionsPerHost();
 
     @Config("mantis.asyncHttpClient.connectionTimeoutMs")
-    @Default("10000")
+    @Default("90000")
     int getAsyncHttpClientConnectionTimeoutMs();
 
     @Config("mantis.asyncHttpClient.requestTimeoutMs")
-    @Default("10000")
+    @Default("90000")
     int getAsyncHttpClientRequestTimeoutMs();
 
     @Config("mantis.asyncHttpClient.readTimeoutMs")
-    @Default("10000")
+    @Default("90000")
     int getAsyncHttpClientReadTimeoutMs();
 
     @Config("mantis.asyncHttpClient.followRedirect")

@@ -24,6 +24,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -129,6 +130,16 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
             .setRequestTimeout(configuration.getAsyncHttpClientRequestTimeoutMs())
             .setReadTimeout(configuration.getAsyncHttpClientReadTimeoutMs())
             .setFollowRedirect(configuration.getAsyncHttpClientFollowRedirect())
+            // set the http client thread priority to max - 1 to ensure control plane signals can still be retrieved
+            // even when the worker is busy.
+            .setThreadFactory(new DefaultThreadFactory(generateThreadPoolName(), Thread.MAX_PRIORITY - 1))
             .build());
+  }
+
+  private String generateThreadPoolName() {
+      return String.format(
+          "resourceClusterGatewayClient-httpclient-%s-%s",
+          this.masterDescription.getHostname(),
+          this.clusterID.getResourceID());
   }
 }
