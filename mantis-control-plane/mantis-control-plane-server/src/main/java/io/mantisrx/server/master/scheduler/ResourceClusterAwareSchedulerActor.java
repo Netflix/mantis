@@ -288,7 +288,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         try {
             final TaskExecutorRegistration info = resourceCluster.getTaskExecutorInfo(taskExecutorID)
                 .join();
-            boolean success =
+            boolean success = //todo this return state is not wired to actual processing
                 jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
                     event.getEvent().getRequest().getWorkerId(),
                     event.getEvent().getRequest().getStageNum(),
@@ -308,6 +308,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             }
         } catch (Exception ex) {
             log.warn("Failed to route message due to error in getting TaskExecutor info: {}", taskExecutorID, ex);
+            self().tell(event.onFailure(ex), self());
         }
     }
 
@@ -520,6 +521,11 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
 
         ScheduleRequestEvent event;
         TaskExecutorID taskExecutorID;
+
+        FailedToScheduleRequestEvent onFailure(Throwable throwable) {
+            return new FailedToScheduleRequestEvent(
+                this.event, 1, ExceptionUtils.stripCompletionException(throwable));
+        }
     }
 
     @Value
