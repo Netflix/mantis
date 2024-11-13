@@ -64,4 +64,9 @@ public class FakeMantisScheduler implements MantisScheduler {
     public void initializeRunningWorker(final ScheduleRequest scheduleRequest, final String hostname, final String hostID) {
         // no-op
     }
+
+    @Override
+    public boolean schedulerHandlesAllocationRetries() {
+        return false;
+    }
 }
