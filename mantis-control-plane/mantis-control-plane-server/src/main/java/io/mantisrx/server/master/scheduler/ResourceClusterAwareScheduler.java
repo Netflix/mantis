@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ResourceClusterAwareScheduler implements MantisScheduler {
 
     private final ActorRef schedulerActor;
+    private final boolean handlesAllocationRetries;
 
     @Override
     public void scheduleWorkers(BatchScheduleRequest scheduleRequest) {
@@ -66,5 +67,10 @@ public class ResourceClusterAwareScheduler implements MantisScheduler {
         schedulerActor.tell(
             new InitializeRunningWorkerRequestEvent(scheduleRequest, TaskExecutorID.of(hostID)),
             null);
+    }
+
+    @Override
+    public boolean schedulerHandlesAllocationRetries() {
+        return handlesAllocationRetries;
     }
 }
