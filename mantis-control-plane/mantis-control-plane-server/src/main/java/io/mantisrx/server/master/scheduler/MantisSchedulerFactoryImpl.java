@@ -63,7 +63,8 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
                                 executeStageRequestFactory,
                                 jobMessageRouter,
                                 metricsRegistry),
-                            "scheduler-for-" + cid.getResourceID()));
+                            "scheduler-for-" + cid.getResourceID()),
+                            masterConfiguration.getSchedulerHandlesAllocationRetries());
                     });
         } else {
             log.error("Scheduler gets unexpected null clusterID");

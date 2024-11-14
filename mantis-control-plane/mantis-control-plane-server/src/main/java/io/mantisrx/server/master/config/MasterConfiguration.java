@@ -363,6 +363,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("3")
     int getSlaMaxHeadroomForAccepted();
 
+    @Config("mantis.scheduler.handlesAllocationRetries")
+    @Default("true")
+    boolean getSchedulerHandlesAllocationRetries();
+
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());
     }

@@ -209,6 +209,11 @@ public class JobTestMigrationTests {
             // TODO Auto-generated method stub
 
         }
+
+        @Override
+        public boolean schedulerHandlesAllocationRetries(){
+            return false;
+        }
     }
 
     public static void main(String[] args) {

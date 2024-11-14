@@ -1906,13 +1906,29 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 for (JobWorker worker : stage.getAllWorkers()) {
                     IMantisWorkerMetadata workerMeta = worker.getMetadata();
                     if (!workerMeta.getLastHeartbeatAt().isPresent()) {
-                        // the worker is still waiting for resource allocation and the scheduler should take care of
-                        // the retry logic.
                         Instant acceptedAt = Instant.ofEpochMilli(workerMeta.getAcceptedAt());
-                        LOGGER.warn("Job {}, Worker {} stuck in accepted state since {}",
-                            this.jobMgr.getJobId(),
-                            workerMeta.getWorkerId(),
-                            acceptedAt);
+                        if(!scheduler.schedulerHandlesAllocationRetries()) {
+                            // worker stuck in accepted and the scheduler will not retry allocation requests, so
+                            // we must resubmit
+                            if (Duration.between(acceptedAt, currentTime).getSeconds() > stuckInSubmitToleranceSecs) {
+                                LOGGER.info("Resubmitting Job {}, Worker {} that has been stuck in accepted state for {}", this.jobMgr.getJobId(),
+                                    workerMeta.getWorkerId(), Duration.between(acceptedAt, currentTime).getSeconds());
+                                workersToResubmit.add(worker);
+                                eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(
+                                    WARN,
+                                    "worker stuck in Accepted state, resubmitting worker",
+                                    workerMeta.getStageNum(),
+                                    workerMeta.getWorkerId(),
+                                    workerMeta.getState()));
+                            }
+                        } else {
+                            // the worker is still waiting for resource allocation and the scheduler should take care of
+                            // the retry logic.
+                            LOGGER.warn("Job {}, Worker {} stuck in accepted state since {}",
+                                this.jobMgr.getJobId(),
+                                workerMeta.getWorkerId(),
+                                acceptedAt);
+                        }
                     } else {
                         if (Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds()
                             > missedHeartBeatToleranceSecs) {

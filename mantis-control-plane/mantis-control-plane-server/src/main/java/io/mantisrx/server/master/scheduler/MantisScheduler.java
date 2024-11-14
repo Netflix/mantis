@@ -76,4 +76,11 @@ public interface MantisScheduler {
      */
     void initializeRunningWorker(final ScheduleRequest scheduleRequest, final String hostname, final String hostID);
 
+    /**
+     * This should return true if the underlying scheduler handles retrying worker allocations.
+     *
+     * @return If there are not enough resources to schedule the worker and the scheduler automatically retries until
+     * the worker is assigned, then return true; otherwise, return false.
+     */
+    boolean schedulerHandlesAllocationRetries();
 }
