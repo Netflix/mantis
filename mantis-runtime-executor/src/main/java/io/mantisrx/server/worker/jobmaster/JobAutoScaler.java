@@ -398,13 +398,13 @@ public class JobAutoScaler {
         return desiredWorkers;
       }
 
-      public void scaleDownStage(final int numCurrentWorkers, final int desiredWorkers, final String reason) {
+      public boolean scaleDownStage(final int numCurrentWorkers, final int desiredWorkers, final String reason) {
         logger.info("scaleDownStage decrementing number of workers from {} to {}", numCurrentWorkers, desiredWorkers);
         cancelOutstandingScalingRequest();
         final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
         if (scalingPolicy != null && scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleDownEnabled()) {
             logger.warn("Scaledown is disabled for all autoscaling strategy. For stage {} of job {}", stage, jobId);
-            return;
+            return false;
         }
         final Subscription subscription = masterClientApi.scaleJobStage(jobId, stage, desiredWorkers, reason)
           .retryWhen(retryLogic)
@@ -414,6 +414,7 @@ public class JobAutoScaler {
           })
         .subscribe();
         setOutstandingScalingRequest(subscription);
+        return true;
       }
 
       public int getStage() {
