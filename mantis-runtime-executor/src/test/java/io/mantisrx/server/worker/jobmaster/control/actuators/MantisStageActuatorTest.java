@@ -20,6 +20,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
 import org.junit.Test;
@@ -34,6 +35,7 @@ public class MantisStageActuatorTest {
     @Test
     public void shouldEchoCeilingOfInput() {
         JobAutoScaler.StageScaler mockScaler = mock(JobAutoScaler.StageScaler.class);
+        when(mockScaler.scaleDownStage(any(Integer.class), any(Integer.class), any())).thenReturn(true);
         Observable<Double> result = data.lift(new MantisStageActuator(1, mockScaler));
 
         TestSubscriber<Double> testSubscriber = new TestSubscriber<>();
@@ -45,6 +47,7 @@ public class MantisStageActuatorTest {
     @Test
     public void shouldCallScalerWhenInputChanged() {
         JobAutoScaler.StageScaler mockScaler = mock(JobAutoScaler.StageScaler.class);
+        when(mockScaler.scaleDownStage(any(Integer.class), any(Integer.class), any())).thenReturn(true);
         Observable<Double> result = data.lift(new MantisStageActuator(1, mockScaler));
 
         TestSubscriber<Double> testSubscriber = new TestSubscriber<>();
@@ -55,5 +58,19 @@ public class MantisStageActuatorTest {
         verify(mockScaler).scaleUpStage(eq(1), eq(2), any());
         verify(mockScaler).scaleUpStage(eq(2), eq(3), any());
         verify(mockScaler).scaleDownStage(eq(3), eq(1), any());
+    }
+
+    @Test
+    public void shouldReturnOriginalValueWhenScaleDownFails() {
+        JobAutoScaler.StageScaler mockScaler = mock(JobAutoScaler.StageScaler.class);
+        when(mockScaler.scaleDownStage(eq(3), eq(1), any())).thenReturn(false);
+
+        MantisStageActuator actuator = new MantisStageActuator(3, mockScaler);
+        Observable<Double> result = Observable.just(0.1).lift(actuator);
+
+        TestSubscriber<Double> testSubscriber = new TestSubscriber<>();
+        result.subscribe(testSubscriber);
+        testSubscriber.assertCompleted();
+        testSubscriber.assertValues(3.0); // Expecting the original value since scaleDownStage fails
     }
 }
