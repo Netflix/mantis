@@ -138,6 +138,19 @@ public class SseWorkerConnectionTest {
         logger.info("Connection tracker size: {}", client.connectionTrackerSize());
         assertEquals(1, client.connectionTrackerSize());
 
+        client.resetConn();
+
+        logger.info("Connection tracker size: {}", client.connectionTrackerSize());
+        assertEquals(0, client.connectionTrackerSize());
+
+        // Test can still add more channels after the client gets reset.
+        client.trackConnection(dummyChannel);
+        logger.info("Connection tracker size: {}", client.connectionTrackerSize());
+        assertEquals(1, client.connectionTrackerSize());
+
+        client.trackConnection(dummyChannel);
+        logger.info("Connection tracker size: {}", client.connectionTrackerSize());
+        assertEquals(2, client.connectionTrackerSize());
         client.closeConn();
 
         logger.info("Connection tracker size: {}", client.connectionTrackerSize());
