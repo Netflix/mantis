@@ -98,11 +98,11 @@ public class SseWorkerConnection {
                                 @Override
                                 public Observable<?> call(Integer integer) {
                                     if (isShutdown) {
-                                        logger.info(getName() + ": Is shutdown, stopping retries");
+                                        logger.info("{}: Is shutdown, stopping retries", getName());
                                         return Observable.empty();
                                     }
                                     long delay = 2 * (integer > 10 ? 10 : integer);
-                                    logger.info(getName() + ": retrying conx after sleeping for " + delay + " secs");
+                                    logger.info("{}: retrying conx after sleeping for {} secs", getName(), delay);
                                     return Observable.timer(delay, TimeUnit.SECONDS);
                                 }
                             });
@@ -188,7 +188,7 @@ public class SseWorkerConnection {
         shutdownSubject.onNext(true);
         shutdownSubject.onCompleted();
         isShutdown = true;
-        resetConnected();
+        closeConnected();
     }
 
     private <I, O> HttpClientBuilder<I, O> newHttpClientBuilder(String host, int port) {
@@ -249,18 +249,34 @@ public class SseWorkerConnection {
                             return streamContent(response, updateDataRecvngStatus, dataRecvTimeoutSecs, delimiter);
                         })
                         .doOnError((Throwable throwable) -> {
+                            // Only reset connection status, do not close SSE http client.
+                            // otherwise it would cause infinite retry loop by the retryWhen below
                             resetConnected();
-                            logger.warn(getName() +
-                                    "Error on getting response from SSE server: " + throwable.getMessage());
+                            logger.warn("{}: Error on getting response from SSE server: {}",
+                                getName(), throwable.getMessage());
                             connectionResetHandler.call(throwable);
                         })
                         .retryWhen(retryLogic)
-                        .doOnCompleted(this::resetConnected);
+                        .doOnError((Throwable throwable) -> {
+                            closeConnected();
+                            logger.error("{}: non-retryable error on getting response from SSE server: ",
+                                getName(), throwable);
+                            connectionResetHandler.call(throwable);
+                        })
+                        .doOnCompleted(this::closeConnected);
+    }
+
+    /***
+     * close SSE connection status and close the SSE http client.
+     */
+    private void closeConnected() {
+        // explicitly close the connection
+        ((MantisHttpClientImpl<?, ?>)client).closeConn();
+        resetConnected();
     }
 
     private void resetConnected() {
-        // explicitly close the connection
-        ((MantisHttpClientImpl<?, ?>)client).closeConn();
+        ((MantisHttpClientImpl<?, ?>)client).resetConn();
         if (isConnected.getAndSet(false)) {
             if (updateConxStatus != null)
                 updateConxStatus.call(false);
