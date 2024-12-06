@@ -43,7 +43,9 @@ public class MantisStageActuator extends IActuator {
 
         String reason = "Clutch determined " + desiredNumWorkers + " instance(s) for target resource usage.";
         if (desiredNumWorkers < this.lastValue) {
-            scaler.scaleDownStage(lastValue.intValue(), desiredNumWorkers.intValue(), reason);
+            if (!scaler.scaleDownStage(lastValue.intValue(), desiredNumWorkers.intValue(), reason)) {
+                return this.lastValue * 1.0;
+            }
             this.lastValue = desiredNumWorkers;
         } else if (desiredNumWorkers > this.lastValue) {
             scaler.scaleUpStage(lastValue.intValue(), desiredNumWorkers.intValue(), reason);
