@@ -38,6 +38,7 @@ public class ClutchMantisStageActuator implements Observable.Transformer<Tuple3<
 
         String reason = tup._1;
         if (desiredNumWorkers < tup._3) {
+            // If scale down is disabled, return current value
             if (!scaler.scaleDownStage(tup._3, desiredNumWorkers, reason)) {
                 return tup._3 * 1.0;
             }
