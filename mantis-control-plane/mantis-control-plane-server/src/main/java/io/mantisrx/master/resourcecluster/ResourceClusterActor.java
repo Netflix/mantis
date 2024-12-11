@@ -518,6 +518,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             if (activeDisableTaskExecutorsByAttributesRequests.remove(request.getRequest()) || (request.getRequest().getTaskExecutorID().isPresent() && disabledTaskExecutors.remove(request.getRequest().getTaskExecutorID().get()))) {
                 mantisJobStore.deleteExpiredDisableTaskExecutorsRequest(request.getRequest());
             }
+
+            // also re-enable the node if the state is still valid.
+            if (request.getRequest().getTaskExecutorID().isPresent()) {
+                final TaskExecutorState state = this.executorStateManager.get(
+                    request.getRequest().getTaskExecutorID().get());
+                state.onNodeEnabled();
+            }
         } catch (Exception e) {
             log.error("Failed to delete expired {}", request.getRequest());
         }

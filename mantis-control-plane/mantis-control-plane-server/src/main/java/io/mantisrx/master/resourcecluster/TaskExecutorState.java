@@ -170,6 +170,15 @@ class TaskExecutorState {
         }
     }
 
+    boolean onNodeEnabled() {
+        if (this.disabled) {
+            this.disabled = false;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     boolean onHeartbeat(TaskExecutorHeartbeat heartbeat)
         throws IllegalStateException, TaskExecutorTaskCancelledException {
         if (!isRegistered()) {

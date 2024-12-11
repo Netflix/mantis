@@ -34,6 +34,7 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.config.dynamic.LongDynamicProperty;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.ExpireDisableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
@@ -581,6 +582,16 @@ public class ResourceClusterActorTest {
     @Test
     public void testIfDisableTaskExecutorRequestsMarkTaskExecutorsAsDisabled() throws Exception {
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(Ack.getInstance(),
+            resourceCluster
+                .heartBeatFromTaskExecutor(
+                    new TaskExecutorHeartbeat(
+                        TASK_EXECUTOR_ID,
+                        CLUSTER_ID,
+                        TaskExecutorReport.available())).get());
+        assertEquals(
+            ImmutableList.of(TASK_EXECUTOR_ID),
+            resourceCluster.getAvailableTaskExecutors().get());
         // mark task executor as disabled with an expiry set to 10 seconds
         resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
         assertEquals(
@@ -588,6 +599,22 @@ public class ResourceClusterActorTest {
             resourceCluster.getAvailableTaskExecutors().get());
         assertEquals(
             new ResourceOverview(1, 0, 0, 0, 1),
+            resourceCluster.resourceOverview().get());
+
+        TestKit probe = new TestKit(actorSystem);
+        resourceClusterActor.tell(
+            new ExpireDisableTaskExecutorsRequest(
+                new DisableTaskExecutorsRequest(
+                    null,
+                    CLUSTER_ID,
+                    Instant.now().minus(Duration.ofSeconds(1)),
+                    Optional.of(TASK_EXECUTOR_ID))),
+            probe.getRef());
+        assertEquals(
+            ImmutableList.of(TASK_EXECUTOR_ID),
+            resourceCluster.getAvailableTaskExecutors().get());
+        assertEquals(
+            new ResourceOverview(1, 1, 0, 0, 0),
             resourceCluster.resourceOverview().get());
     }
 
