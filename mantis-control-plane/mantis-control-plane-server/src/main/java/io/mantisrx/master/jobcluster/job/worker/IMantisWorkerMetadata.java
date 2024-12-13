@@ -186,6 +186,12 @@ public interface IMantisWorkerMetadata {
     long getLaunchedAt();
 
     /**
+     * Whether this worker has entered launched state.
+     * @return true if launched.
+     */
+    boolean hasLaunched();
+
+    /**
      * The timestamp at which this worker started initialization.
      * @return
      */

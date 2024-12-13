@@ -155,7 +155,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
     private final Counter numWorkerResubmissions;
     private final Counter numWorkerResubmitLimitReached;
-    private final Counter numWorkerTerminated;
     private final Counter numScaleStage;
     private final Counter numWorkersCompletedNotTerminal;
     private final Counter numSchedulingChangesRefreshed;
@@ -261,16 +260,16 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .id(metricsGroupId)
                 .addCounter("numWorkerResubmissions")
                 .addCounter("numWorkerResubmitLimitReached")
-                .addCounter("numWorkerTerminated")
+                .addCounter("numWorkerStuckInAccepted")
                 .addCounter("numScaleStage")
                 .addCounter("numWorkersCompletedNotTerminal")
                 .addCounter("numSchedulingChangesRefreshed")
                 .addCounter("numMissingWorkerPorts")
+                .addCounter("numWorkerMissingHeartbeat")
                 .build();
         this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
         this.numWorkerResubmissions = metrics.getCounter("numWorkerResubmissions");
         this.numWorkerResubmitLimitReached = metrics.getCounter("numWorkerResubmitLimitReached");
-        this.numWorkerTerminated = metrics.getCounter("numWorkerTerminated");
         this.numScaleStage = metrics.getCounter("numScaleStage");
         this.numWorkersCompletedNotTerminal = metrics.getCounter("numWorkersCompletedNotTerminal");
         this.numSchedulingChangesRefreshed = metrics.getCounter("numSchedulingChangesRefreshed");
@@ -313,8 +312,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
         LOGGER.info("Stored mantis job");
 
-        this.workerManager = new WorkerManager(this, jobClusterDefinition.getWorkerMigrationConfig(),
-                this.mantisScheduler, isSubmit, ConfigurationProvider.getConfig().isBatchSchedulingEnabled());
+        this.workerManager = new WorkerManager(
+            this,
+            jobClusterDefinition.getWorkerMigrationConfig(),
+            this.mantisScheduler,
+            isSubmit,
+            ConfigurationProvider.getConfig().isBatchSchedulingEnabled(),
+            this.metrics);
 
         long checkAgainInSeconds = getWorkerTimeoutSecs();
         long refreshStageAssignementsDurationMs = ConfigurationProvider.getConfig()
@@ -1331,6 +1335,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .build();
         private volatile boolean stageAssignmentPotentiallyChanged;
         private final boolean batchSchedulingEnabled;
+        private final Counter numWorkerStuckInAccepted;
+        private final Counter numWorkerMissingHeartbeat;
 
         /**
          * Creates an instance of this class.
@@ -1343,8 +1349,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          */
         WorkerManager(
                 IMantisJobManager jobMgr, WorkerMigrationConfig migrationConfig, MantisScheduler scheduler,
-                boolean isSubmit, boolean batchSchedulingEnabled) throws Exception {
+                boolean isSubmit, boolean batchSchedulingEnabled, Metrics metrics) throws Exception {
 
+            this.numWorkerStuckInAccepted = metrics.getCounter("numWorkerStuckInAccepted");
+            this.numWorkerMissingHeartbeat = metrics.getCounter("numWorkerMissingHeartbeat");
             workerNumberGenerator = new WorkerNumberGenerator((isSubmit) ? 0
                     : jobMgr.getJobDetails().getNextWorkerNumberToUse(), WorkerNumberGenerator.DEFAULT_INCREMENT_STEP);
             this.scheduler = scheduler;
@@ -1905,8 +1913,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // For each worker in the stage
                 for (JobWorker worker : stage.getAllWorkers()) {
                     IMantisWorkerMetadata workerMeta = worker.getMetadata();
-                    if (!workerMeta.getLastHeartbeatAt().isPresent()) {
+
+                    // Job Actor should start retry/resubmit workers once a worker gets allocated (before its allocation
+                    // the retry should be handled by scheduler to avoid retries when the scheduler is still waiting
+                    // for resources).
+                    if (!workerMeta.hasLaunched()) {
                         Instant acceptedAt = Instant.ofEpochMilli(workerMeta.getAcceptedAt());
+                        this.numWorkerStuckInAccepted.increment();
                         if(!scheduler.schedulerHandlesAllocationRetries()) {
                             // worker stuck in accepted and the scheduler will not retry allocation requests, so
                             // we must resubmit
@@ -1924,7 +1937,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         } else {
                             // the worker is still waiting for resource allocation and the scheduler should take care of
                             // the retry logic.
-                            LOGGER.warn("Job {}, Worker {} stuck in accepted state since {}",
+                            LOGGER.warn("Job {}, Worker {} stuck in accepted state since {}, pending scheduler retry",
                                 this.jobMgr.getJobId(),
                                 workerMeta.getWorkerId(),
                                 acceptedAt);
@@ -1933,6 +1946,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         if (Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds()
                             > missedHeartBeatToleranceSecs) {
                             // heartbeat too old
+                            this.numWorkerMissingHeartbeat.increment();
                             LOGGER.info("Job {}, Worker {} Duration between last heartbeat and now {} "
                                     + "missed heart beat threshold {} exceeded", this.jobMgr.getJobId(),
                                 workerMeta.getWorkerId(), Duration.between(
@@ -2014,7 +2028,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             // Make sure we know about this worker. If not terminate it
             Map<Integer, Integer> workerToStageMap = mantisJobMetaData.getWorkerNumberToStageMap();
             if (!workerToStageMap.containsKey(event.getWorkerId().getWorkerNum())) {
-                LOGGER.warn("Event {} from Unknown worker {} ", event.getWorkerId(), event);
+                LOGGER.info("Event {} from Unknown worker {} ", event.getWorkerId(), event);
                 return empty();
             }
 
@@ -2035,7 +2049,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 scheduler.unscheduleAndTerminateWorker(event.getWorkerId(), host);
             } else {
-                LOGGER.warn("Job {} Terminal event from Unknown worker {}. Ignoring", jobId, event.getWorkerId());
+                LOGGER.info("Job {} Terminal event from Unknown worker {}. Ignoring", jobId, event.getWorkerId());
             }
         }
 

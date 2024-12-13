@@ -740,6 +740,78 @@ public class JobTestLifecycle {
 		probe.expectTerminated(jobActor);
 	}
 
+    @Test
+    public void testHeartBeatMissingResubmit() {
+        final TestKit probe = new TestKit(system);
+        String clusterName= "testHeartBeatMissingResubmit";
+        IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName);
+
+        JobDefinition jobDefn;
+        try {
+            SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).multiWorkerStageWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
+
+            jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
+
+            MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+            MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
+                .withJobId(new JobId(clusterName,2))
+                .withSubmittedAt(Instant.now())
+                .withJobState(JobState.Accepted)
+
+                .withNextWorkerNumToUse(1)
+                .withJobDefinition(jobDefn)
+                .build();
+            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, costsCalculator));
+
+            jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
+            JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
+            assertEquals(SUCCESS, initMsg.responseCode);
+            String jobId = clusterName + "-2";
+            jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
+            GetJobDetailsResponse resp = probe.expectMsgClass(GetJobDetailsResponse.class);
+            assertEquals(SUCCESS, resp.responseCode);
+            assertEquals(JobState.Accepted,resp.getJobMetadata().get().getState());
+            int stageNo = 1;
+
+            WorkerId workerId = new WorkerId(jobId, 0, 1);
+            // check job status again
+            jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
+            GetJobDetailsResponse resp2 = probe.expectMsgClass(GetJobDetailsResponse.class);
+            assertEquals(SUCCESS, resp2.responseCode);
+
+            // No worker has started.
+            assertEquals(JobState.Accepted,resp2.getJobMetadata().get().getState());
+            WorkerId workerId2 = new WorkerId(jobId, 1, 2);
+
+            // check job status again
+            jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
+            GetJobDetailsResponse resp3 = probe.expectMsgClass(GetJobDetailsResponse.class);
+            assertEquals(SUCCESS, resp3.responseCode);
+
+            // 2 worker have started so job should be started.
+            assertEquals(JobState.Accepted, resp3.getJobMetadata().get().getState());
+
+            JobTestHelper.sendHeartBeat(probe, jobActor, jobId,1, workerId2);
+
+            JobTestHelper.sendHeartBeat(probe, jobActor, jobId,1, workerId);
+
+            // check hb status in the future where we expect all last HBs to be stale.
+            Instant now = Instant.now();
+            jobActor.tell(new JobProto.CheckHeartBeat(now.plusSeconds(240)), probe.getRef());
+
+            Thread.sleep(1000);
+
+            // 1 original submissions and 0 resubmits because of worker not in launched state with HB timeouts
+            verify(schedulerMock, times(1)).scheduleWorkers(any());
+            // 0 kills due to resubmits
+            verify(schedulerMock, times(0)).unscheduleAndTerminateWorker(any(), any());
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+
 	@Test
 	public void testHeartBeatEnforcement() {
 		final TestKit probe = new TestKit(system);

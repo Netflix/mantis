@@ -323,6 +323,10 @@ public class MantisWorkerMetadataImpl implements IMantisWorkerMetadata {
         return launchedAt;
     }
 
+    public boolean hasLaunched() {
+        return launchedAt > 0;
+    }
+
 
     public long getStartingAt() {
         return startingAt;
