@@ -716,9 +716,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
 
             int count = 50;
+            String jobClusterName = jobClusterMetadata.getJobClusterDefinition().getName();
             if(!initReq.jobList.isEmpty()) {
                 logger.info("Cluster {} is disabled however it has {} active/accepted jobs",
-                        jobClusterMetadata.getJobClusterDefinition().getName(), initReq.jobList.size());
+                    jobClusterName, initReq.jobList.size());
                 for(IMantisJobMetadata jobMeta : initReq.jobList) {
                     try {
                         if(count == 0) {
@@ -728,7 +729,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         if(!JobState.isTerminalState(jobMeta.getState())) {
                             logger.info("Job {} is in non terminal state {} for disabled cluster {}."
                                     + "Marking it complete", jobMeta.getJobId(), jobMeta.getState(),
-                                    jobClusterMetadata.getJobClusterDefinition().getName());
+                                jobClusterName);
                             count--;
                             jobManager.markCompleted(jobMeta);
                             jobStore.archiveJob(jobMeta);
@@ -751,6 +752,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             return;
         } else {
+            String jobClusterName = jobClusterMetadata.getJobClusterDefinition().getName();
             // new cluster initialization
             if (initReq.createInStore) {
                 try {
@@ -758,7 +760,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     eventPublisher.publishAuditEvent(
                             new LifecycleEventsProto.AuditEvent(
                                     LifecycleEventsProto.AuditEvent.AuditEventType.JOB_CLUSTER_CREATE,
-                                    jobClusterMetadata.getJobClusterDefinition().getName(),
+                                jobClusterName,
                                     "saved job cluster " + name)
                     );
                     logger.info("successfully saved job cluster {}", name);
@@ -790,6 +792,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 cronManager = new CronManager(name, getSelf(), jobClusterMetadata.getJobClusterDefinition().getSLA());
             } catch (Exception e) {
                 logger.warn("Exception initializing cron", e);
+                getSender().tell(new JobClusterManagerProto.CreateJobClusterResponse(
+                    initReq.requestId, CLIENT_ERROR,
+                    "Job Cluster " + jobClusterName + " could not be created due to cron initialization error" + e.getMessage(),
+                    jobClusterName), getSelf());
             }
             initRunningJobs(initReq, sender);
 
@@ -916,7 +922,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } catch  (Exception e) {
             logger.error("job cluster not created");
             sender.tell(new UpdateJobClusterResponse(request.requestId, SERVER_ERROR, name
-                    + " Job cluster updation failed " + e.getMessage()), getSelf());
+                    + " Job cluster update failed " + e.getMessage()), getSelf());
             numJobClusterUpdateErrors.increment();
         }
     }
@@ -2135,11 +2141,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             );
         } catch(IllegalArgumentException e) {
             logger.error("Invalid arguement job cluster not updated ", e);
-            sender.tell(new UpdateJobClusterSLAResponse(slaRequest.requestId, CLIENT_ERROR, name + " Job cluster SLA updation failed " + e.getMessage()), getSelf());
+            sender.tell(new UpdateJobClusterSLAResponse(slaRequest.requestId, CLIENT_ERROR, name + " Job cluster SLA update failed " + e.getMessage()), getSelf());
 
         } catch(Exception e) {
             logger.error("job cluster not updated ", e);
-            sender.tell(new UpdateJobClusterSLAResponse(slaRequest.requestId, SERVER_ERROR, name + " Job cluster SLA updation failed " + e.getMessage()), getSelf());
+            sender.tell(new UpdateJobClusterSLAResponse(slaRequest.requestId, SERVER_ERROR, name + " Job cluster SLA update failed " + e.getMessage()), getSelf());
         }
         if(logger.isTraceEnabled()) { logger.trace("Exit onJobClusterUpdateSLA {}", slaRequest); }
     }
@@ -3217,7 +3223,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 isCronActive = true;
             } catch (IllegalArgumentException e) {
                 destroyCron();
-                logger.error("Failed to start cron for {}: {}", jobClusterName, e);
+                logger.error("Failed to start cron for {}: {}. The format of the cron schedule may be incorrect.", jobClusterName, e);
                 throw new SchedulerException(e.getMessage(), e);
             }
 
