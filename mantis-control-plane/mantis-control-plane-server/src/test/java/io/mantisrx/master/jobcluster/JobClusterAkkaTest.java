@@ -1569,6 +1569,21 @@ public class JobClusterAkkaTest {
     }
 
     @Test
+    public void testUnsupportedCronSubmit() {
+        TestKit probe = new TestKit(system);
+        String clusterName = "testUnsupportedCronSubmit";
+        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+        SLA sla = new SLA(1,1,"0 18 * * *",IJobClusterDefinition.CronPolicy.KEEP_NEW);
+        final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, Lists.newArrayList(),sla);
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
+        jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
+        JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+        assertEquals(CLIENT_ERROR, createResp.responseCode);
+    }
+
+    @Test
     public void testJobSubmitWithUnique() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithUnique";
