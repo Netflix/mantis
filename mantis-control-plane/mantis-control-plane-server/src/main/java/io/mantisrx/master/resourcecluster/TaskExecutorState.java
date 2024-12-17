@@ -32,6 +32,7 @@ import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -62,6 +63,9 @@ class TaskExecutorState {
 
     // last interaction initiated by the task executor
     private Instant lastActivity;
+
+    // last interaction time when this instance was leased by the scheduler in findBestFit.
+    private Instant lastSchedulerLeased;
     private final Clock clock;
     private final RpcService rpcService;
     private final JobMessageRouter jobMessageRouter;
@@ -78,6 +82,7 @@ class TaskExecutorState {
             null,
             false,
             clock.instant(),
+            Instant.MIN,
             clock,
             rpcService,
             jobMessageRouter,
@@ -276,6 +281,15 @@ class TaskExecutorState {
     // that are caused from within the server do not cause an uptick.
     Instant getLastActivity() {
         return this.lastActivity;
+    }
+
+    Duration getLastSchedulerLeasedDuration()
+    {
+        return Duration.between(this.lastSchedulerLeased, this.clock.instant());
+    }
+
+    void updateLastSchedulerLeased() {
+        this.lastSchedulerLeased = this.clock.instant();
     }
 
     TaskExecutorRegistration getRegistration() {
