@@ -288,7 +288,8 @@ class TaskExecutorState {
         return Duration.between(this.lastSchedulerLeased, this.clock.instant());
     }
 
-    void updateLastSchedulerLeased() {
+    void updateLastSchedulerLeased()
+    {
         this.lastSchedulerLeased = this.clock.instant();
     }
 
