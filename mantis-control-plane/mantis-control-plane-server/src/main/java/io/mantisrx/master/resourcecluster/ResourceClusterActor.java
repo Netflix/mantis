@@ -120,6 +120,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private final Duration heartbeatTimeout;
     private final Duration assignmentTimeout;
     private final Duration disabledTaskExecutorsCheckInterval;
+    private final Duration schedulerLeaseExpirationDuration;
 
     private final ExecutorStateManager executorStateManager;
     private final Clock clock;
@@ -139,9 +140,39 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final boolean isJobArtifactCachingEnabled;
 
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled, boolean isJobArtifactCachingEnabled, Map<String, String> schedulingAttributes, FitnessCalculator fitnessCalculator) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled, isJobArtifactCachingEnabled, schedulingAttributes, fitnessCalculator)
-                .withMailbox("akka.actor.metered-mailbox");
+    static Props props(
+        final ClusterID clusterID,
+        final Duration heartbeatTimeout,
+        Duration assignmentTimeout,
+        Duration disabledTaskExecutorsCheckInterval,
+        Duration schedulerLeaseExpirationDuration,
+        Clock clock,
+        RpcService rpcService,
+        MantisJobStore mantisJobStore,
+        JobMessageRouter jobMessageRouter,
+        int maxJobArtifactsToCache,
+        String jobClustersWithArtifactCachingEnabled,
+        boolean isJobArtifactCachingEnabled,
+        Map<String, String> schedulingAttributes,
+        FitnessCalculator fitnessCalculator
+    ) {
+        return Props.create(
+            ResourceClusterActor.class,
+            clusterID,
+            heartbeatTimeout,
+            assignmentTimeout,
+            disabledTaskExecutorsCheckInterval,
+            schedulerLeaseExpirationDuration,
+            clock,
+            rpcService,
+            mantisJobStore,
+            jobMessageRouter,
+            maxJobArtifactsToCache,
+            jobClustersWithArtifactCachingEnabled,
+            isJobArtifactCachingEnabled,
+            schedulingAttributes,
+            fitnessCalculator
+        ).withMailbox("akka.actor.metered-mailbox");
     }
 
     ResourceClusterActor(
@@ -149,6 +180,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         Duration heartbeatTimeout,
         Duration assignmentTimeout,
         Duration disabledTaskExecutorsCheckInterval,
+        Duration schedulerLeaseExpirationDuration,
         Clock clock,
         RpcService rpcService,
         MantisJobStore mantisJobStore,
@@ -162,6 +194,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
         this.disabledTaskExecutorsCheckInterval = disabledTaskExecutorsCheckInterval;
+        this.schedulerLeaseExpirationDuration = schedulerLeaseExpirationDuration;
         this.isJobArtifactCachingEnabled = isJobArtifactCachingEnabled;
 
         this.clock = clock;
@@ -173,7 +206,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.maxJobArtifactsToCache = maxJobArtifactsToCache;
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
 
-        this.executorStateManager = new ExecutorStateManagerImpl(schedulingAttributes, fitnessCalculator);
+        this.executorStateManager = new ExecutorStateManagerImpl(
+            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration);
 
         this.metrics = new ResourceClusterActorMetrics();
     }
@@ -523,10 +557,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             if (request.getRequest().getTaskExecutorID().isPresent()) {
                 final TaskExecutorState state = this.executorStateManager.get(
                     request.getRequest().getTaskExecutorID().get());
-                state.onNodeEnabled();
+                if (state != null) {
+                    state.onNodeEnabled();
+                }
             }
         } catch (Exception e) {
-            log.error("Failed to delete expired {}", request.getRequest());
+            log.error("Failed to delete expired {}", request.getRequest(), e);
         }
     }
 

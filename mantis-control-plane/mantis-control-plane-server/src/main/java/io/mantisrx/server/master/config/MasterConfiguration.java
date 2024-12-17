@@ -329,6 +329,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("60000") // 1 minute
     int getAssignmentIntervalInMs();
 
+    @Config("mantis.agent.assignment.scheduler.lease.ms")
+    @Default("100")
+    int getSchedulerLeaseExpirationDurationInMs();
+
     @Config("mantis.job.costsCalculator.class")
     @Default("io.mantisrx.master.jobcluster.job.NoopCostsCalculator")
     CostsCalculator getJobCostsCalculator();
