@@ -60,6 +60,7 @@ import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.CreateJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterResponse;
@@ -701,7 +702,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         // create sla enforcer
         slaEnforcer = new SLAEnforcer(jobClusterMetadata.getJobClusterDefinition().getSLA());
         long expireFrequency = ConfigurationProvider.getConfig().getCompletedJobPurgeFrequencySeqs();
-
+        String jobClusterName = jobClusterMetadata.getJobClusterDefinition().getName();
         // If cluster is disabled
         if(jobClusterMetadata.isDisabled()) {
             logger.info("Cluster {} initialized but is Disabled", jobClusterMetadata
@@ -716,7 +717,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
 
             int count = 50;
-            String jobClusterName = jobClusterMetadata.getJobClusterDefinition().getName();
             if(!initReq.jobList.isEmpty()) {
                 logger.info("Cluster {} is disabled however it has {} active/accepted jobs",
                     jobClusterName, initReq.jobList.size());
@@ -752,7 +752,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             return;
         } else {
-            String jobClusterName = jobClusterMetadata.getJobClusterDefinition().getName();
             // new cluster initialization
             if (initReq.createInStore) {
                 try {
@@ -793,7 +792,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             } catch (Exception e) {
                 logger.warn("Exception initializing cron", e);
                 getSender().tell(new JobClusterManagerProto.CreateJobClusterResponse(
-                    initReq.requestId, CLIENT_ERROR,
+                    initReq.requestId, e instanceof SchedulerException?CLIENT_ERROR:SERVER_ERROR,
                     "Job Cluster " + jobClusterName + " could not be created due to cron initialization error" + e.getMessage(),
                     jobClusterName), getSelf());
             }
@@ -1277,13 +1276,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     .withLastJobCount(this.jobClusterMetadata.getLastJobCount())
                     .withJobClusterDefinition((JobClusterDefinitionImpl)this.jobClusterMetadata.getJobClusterDefinition())
                     .build();
-            //update store
-            jobStore.updateJobCluster(jobClusterMetadata);
-            this.jobClusterMetadata = jobClusterMetadata;
             if (cronManager == null) {
                 cronManager = new CronManager(name, getSelf(), jobClusterMetadata.getJobClusterDefinition().getSLA());
             }
             this.cronManager.initCron();
+            //update store after cron init
+            jobStore.updateJobCluster(jobClusterMetadata);
+            this.jobClusterMetadata = jobClusterMetadata;
             // change behavior to enabled
             getContext().become(initializedBehavior);
 
@@ -1300,7 +1299,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } catch(Exception e) {
             String errorMsg = String.format("Exception enabling cluster %s due to %s", name, e.getMessage());
             logger.error(errorMsg,e);
-            sender.tell(new EnableJobClusterResponse(req.requestId, SERVER_ERROR, errorMsg), getSelf());
+            sender.tell(new EnableJobClusterResponse(req.requestId, e instanceof SchedulerException?CLIENT_ERROR:SERVER_ERROR, errorMsg), getSelf());
             numJobClusterEnableErrors.increment();
         }
         if(logger.isTraceEnabled()) { logger.trace("Enter onJobClusterEnable"); }
@@ -2128,18 +2127,17 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     .withJobClusterDefinition(updatedDefn)
                     .build();
 
-            updateAndSaveJobCluster(jobCluster);
             if(cronManager != null)
                 cronManager.destroyCron();
             this.cronManager = new CronManager(name, getSelf(), newSla);
-
+            updateAndSaveJobCluster(jobCluster); //update after cron succeeds
             sender.tell(new UpdateJobClusterSLAResponse(slaRequest.requestId, SUCCESS, name + " SLA updated"), getSelf());
 
             eventPublisher.publishAuditEvent(
                     new LifecycleEventsProto.AuditEvent(LifecycleEventsProto.AuditEvent.AuditEventType.JOB_CLUSTER_UPDATE,
                         jobClusterMetadata.getJobClusterDefinition().getName(), name+" SLA update")
             );
-        } catch(IllegalArgumentException e) {
+        } catch(IllegalArgumentException | SchedulerException e) {
             logger.error("Invalid arguement job cluster not updated ", e);
             sender.tell(new UpdateJobClusterSLAResponse(slaRequest.requestId, CLIENT_ERROR, name + " Job cluster SLA update failed " + e.getMessage()), getSelf());
 
@@ -3223,7 +3221,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 isCronActive = true;
             } catch (IllegalArgumentException e) {
                 destroyCron();
-                logger.error("Failed to start cron for {}: {}. The format of the cron schedule may be incorrect.", jobClusterName, e);
+                logger.error("Failed to start cron for {}: {}. The format of the cron schedule may be incorrect.", jobClusterName, e.getStackTrace());
                 throw new SchedulerException(e.getMessage(), e);
             }
 

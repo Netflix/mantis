@@ -1535,18 +1535,53 @@ public class JobClusterAkkaTest {
     }
 
     @Test
-    public void testUnsupportedCronSubmit() {
+    public void testInvalidCronSubmit() {
         TestKit probe = new TestKit(system);
-        String clusterName = "testUnsupportedCronSubmit";
+        String clusterName = "testInvalidCronSubmit";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
-        SLA sla = new SLA(1,1,"0 18 * * *",IJobClusterDefinition.CronPolicy.KEEP_NEW);
+        SLA sla = new SLA(1,1,"a b * * * * * * *",IJobClusterDefinition.CronPolicy.KEEP_NEW);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, Lists.newArrayList(),sla);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(CLIENT_ERROR, createResp.responseCode);
+    }
+
+    @Test
+    public void testInvalidCronSLAUpdate() throws Exception  {
+        TestKit probe = new TestKit(system);
+        String clusterName = "testJobClusterInvalidSLAUpdateIgnored";
+        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+        final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
+        jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
+        JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+        assertEquals(SUCCESS, createResp.responseCode);
+
+        UpdateJobClusterSLARequest updateSlaReq = new UpdateJobClusterSLARequest(clusterName, 2, 1,"a b * * * * * * *",IJobClusterDefinition.CronPolicy.KEEP_NEW,false,"user" );
+        jobClusterActor.tell(updateSlaReq, probe.getRef());
+        UpdateJobClusterSLAResponse resp = probe.expectMsgClass(UpdateJobClusterSLAResponse.class);
+
+        assertEquals(CLIENT_ERROR, resp.responseCode);
+        assertEquals(jobClusterActor, probe.getLastSender());
+
+        jobClusterActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
+        GetJobClusterResponse resp3 = probe.expectMsgClass(GetJobClusterResponse.class);
+
+        assertEquals(SUCCESS, resp3.responseCode);
+        assertTrue(resp3.getJobCluster() != null);
+        System.out.println("Job cluster " + resp3.getJobCluster());
+        assertEquals(clusterName, resp3.getJobCluster().get().getName());
+        // No changes to original SLA
+        assertEquals(0, resp3.getJobCluster().get().getSla().getMin());
+        assertEquals(0, resp3.getJobCluster().get().getSla().getMax());
+
+        verify(jobStoreMock, times(1)).createJobCluster(any());
+        verify(jobStoreMock, times(0)).updateJobCluster(any());
     }
 
     @Test
