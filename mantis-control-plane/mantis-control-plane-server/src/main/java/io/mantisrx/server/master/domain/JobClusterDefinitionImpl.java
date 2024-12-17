@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.master.domain;
 
+import com.netflix.fenzo.triggers.TriggerUtils;
 import io.mantisrx.common.Label;
 import io.mantisrx.master.jobcluster.LabelManager.SystemLabels;
 import io.mantisrx.master.jobcluster.job.JobState;
@@ -64,6 +65,8 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
     ) {
         Preconditions.checkNotNull(jobClusterConfigs);
         Preconditions.checkArgument(!jobClusterConfigs.isEmpty());
+        if (sla != null && sla.getCronSpec() != null)
+            TriggerUtils.validateCronExpression(sla.getCronSpec());
         this.owner = owner;
         this.name = name;
         this.sla = Optional.ofNullable(sla).orElse(new SLA(0, 0, null, CronPolicy.KEEP_EXISTING));
