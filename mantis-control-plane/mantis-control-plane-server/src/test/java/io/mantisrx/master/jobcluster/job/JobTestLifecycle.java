@@ -23,10 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -118,6 +115,7 @@ public class JobTestLifecycle {
 		try {
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName);
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
 			MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 			MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
                     .withJobId(new JobId(clusterName,1))
@@ -151,6 +149,7 @@ public class JobTestLifecycle {
 //			IMantisStorageProvider storageProvider = new SimpleCachedFileStorageProvider();
 //			MantisJobStore	jobStore = new MantisJobStore(storageProvider);
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
 			MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 			MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
                     .withJobId(new JobId(clusterName,1))
@@ -246,6 +245,7 @@ public class JobTestLifecycle {
                     .withJobSla(new JobSla(0, 0, null, MantisJobDurationType.Perpetual, null))
                     .build();
             MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
             MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
                     .withJobId(new JobId(clusterName,1))
@@ -338,6 +338,7 @@ public class JobTestLifecycle {
 		try {
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName);
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
 			MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 			Mockito.doThrow(IOException.class).when(jobStoreMock).storeNewJob(any());
 			MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
@@ -385,6 +386,7 @@ public class JobTestLifecycle {
 
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
 			MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 			MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
                     .withJobId(new JobId(clusterName,2))
@@ -497,6 +499,7 @@ public class JobTestLifecycle {
 
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
 			MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 			MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
 					.withJobId(new JobId(clusterName,1))
@@ -605,6 +608,7 @@ public class JobTestLifecycle {
 
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
 			MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 			MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
 					.withJobId(new JobId(clusterName,2))
@@ -709,6 +713,7 @@ public class JobTestLifecycle {
 		JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName);
 
 		MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
 		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 		MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
                 .withJobId(new JobId(clusterName,3))
@@ -741,7 +746,7 @@ public class JobTestLifecycle {
 	}
 
     @Test
-    public void testHeartBeatMissingResubmit() {
+    public void testNoHeartBeatAfterLaunchResubmit() {
         final TestKit probe = new TestKit(system);
         String clusterName= "testHeartBeatMissingResubmit";
         IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName);
@@ -753,6 +758,8 @@ public class JobTestLifecycle {
             jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 
             MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
             MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
                 .withJobId(new JobId(clusterName,2))
@@ -792,13 +799,95 @@ public class JobTestLifecycle {
             // 2 worker have started so job should be started.
             assertEquals(JobState.Accepted, resp3.getJobMetadata().get().getState());
 
-            JobTestHelper.sendHeartBeat(probe, jobActor, jobId,1, workerId2);
-
-            JobTestHelper.sendHeartBeat(probe, jobActor, jobId,1, workerId);
-
-            // check hb status in the future where we expect all last HBs to be stale.
             Instant now = Instant.now();
             jobActor.tell(new JobProto.CheckHeartBeat(now.plusSeconds(240)), probe.getRef());
+            Thread.sleep(1000);
+
+            // 1 original submissions and 0 resubmits because of worker not in launched state with HB timeouts
+            verify(schedulerMock, times(1)).scheduleWorkers(any());
+            // 1 kills due to resubmits
+            verify(schedulerMock, times(0)).unscheduleAndTerminateWorker(any(), any());
+
+            // launch worker but no HB yet
+            JobTestHelper.sendWorkerLaunchedEvent(probe, jobActor, workerId2, stageNo);
+
+            // check hb status in the future where we expect all last HBs to be stale.
+            now = Instant.now();
+            jobActor.tell(new JobProto.CheckHeartBeat(now.plusSeconds(240)), probe.getRef());
+            Thread.sleep(1000);
+
+            // job status remain as accepted
+            jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
+            GetJobDetailsResponse resp4 = probe.expectMsgClass(GetJobDetailsResponse.class);
+            assertEquals(SUCCESS, resp4.responseCode);
+            assertEquals(JobState.Accepted, resp4.getJobMetadata().get().getState());
+
+            // 1 original submissions and 0 resubmits because of worker not in launched state with HB timeouts
+            verify(schedulerMock, times(2)).scheduleWorkers(any());
+            // 1 kills due to resubmits
+            verify(schedulerMock, times(1)).unscheduleAndTerminateWorker(eq(workerId2), any());
+        } catch (Exception e) {
+            fail("unexpected exception " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testHeartBeatPendingSchedulingNoResubmit() {
+        final TestKit probe = new TestKit(system);
+        String clusterName= "testHeartBeatMissingResubmit";
+        IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName);
+
+        JobDefinition jobDefn;
+        try {
+            SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).multiWorkerStageWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
+
+            jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
+
+            MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+            MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+            MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
+                .withJobId(new JobId(clusterName,2))
+                .withSubmittedAt(Instant.now())
+                .withJobState(JobState.Accepted)
+
+                .withNextWorkerNumToUse(1)
+                .withJobDefinition(jobDefn)
+                .build();
+            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, costsCalculator));
+
+            jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
+            JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
+            assertEquals(SUCCESS, initMsg.responseCode);
+            String jobId = clusterName + "-2";
+            jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
+            GetJobDetailsResponse resp = probe.expectMsgClass(GetJobDetailsResponse.class);
+            assertEquals(SUCCESS, resp.responseCode);
+            assertEquals(JobState.Accepted,resp.getJobMetadata().get().getState());
+            int stageNo = 1;
+
+            WorkerId workerId = new WorkerId(jobId, 0, 1);
+            // check job status again
+            jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
+            GetJobDetailsResponse resp2 = probe.expectMsgClass(GetJobDetailsResponse.class);
+            assertEquals(SUCCESS, resp2.responseCode);
+
+            // No worker has started.
+            assertEquals(JobState.Accepted,resp2.getJobMetadata().get().getState());
+            WorkerId workerId2 = new WorkerId(jobId, 1, 2);
+
+            // check job status again
+            jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
+            GetJobDetailsResponse resp3 = probe.expectMsgClass(GetJobDetailsResponse.class);
+            assertEquals(SUCCESS, resp3.responseCode);
+
+            // 2 worker have started so job should be started.
+            assertEquals(JobState.Accepted, resp3.getJobMetadata().get().getState());
+
+            // trigger HB check far into the future where no retry on scheduling is expected because the worker has not
+            // switched into launched state yet.
+            Instant now = Instant.now();
+            jobActor.tell(new JobProto.CheckHeartBeat(now.plusSeconds(99999)), probe.getRef());
 
             Thread.sleep(1000);
 
@@ -807,8 +896,7 @@ public class JobTestLifecycle {
             // 0 kills due to resubmits
             verify(schedulerMock, times(0)).unscheduleAndTerminateWorker(any(), any());
         } catch (Exception e) {
-            e.printStackTrace();
-            fail();
+            fail("unexpected exception " + e.getMessage());
         }
     }
 
@@ -825,6 +913,7 @@ public class JobTestLifecycle {
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
 			MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 			MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
 	                .withJobId(new JobId(clusterName,2))
@@ -920,6 +1009,7 @@ public class JobTestLifecycle {
 
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
 			//MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
 			MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
