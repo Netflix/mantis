@@ -1,32 +1,7 @@
 {
     "annotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
-        }
-    },
-    "baseline-exact-dependencies-main": {
-        "org.slf4j:slf4j-api": {
-            "locked": "1.7.0"
-        }
-    },
-    "baseline-exact-dependencies-test": {
-        "com.netflix.spectator:spectator-api": {
-            "locked": "1.3.10"
-        },
-        "org.junit.jupiter:junit-jupiter-api": {
-            "locked": "5.4.2"
-        },
-        "org.junit.jupiter:junit-jupiter-engine": {
-            "locked": "5.4.2"
-        },
-        "org.junit.jupiter:junit-jupiter-params": {
-            "locked": "5.4.2"
-        },
-        "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
-        },
-        "org.slf4j:slf4j-log4j12": {
-            "locked": "1.7.0"
+            "locked": "1.18.36"
         }
     },
     "compileClasspath": {
@@ -135,7 +110,7 @@
             "locked": "1.2.1"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
@@ -154,12 +129,12 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.5"
+            "locked": "1.1.10.7"
         }
     },
     "lombok": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "runtimeClasspath": {
@@ -272,6 +247,12 @@
             ],
             "locked": "1.0"
         },
+        "net.openhft:zero-allocation-hashing": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "0.27ea0"
+        },
         "org.apache.hadoop:hadoop-common": {
             "locked": "2.7.3"
         },
@@ -300,12 +281,12 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.5"
+            "locked": "1.1.10.7"
         }
     },
     "testAnnotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testCompileClasspath": {
@@ -426,10 +407,10 @@
             "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
+            "locked": "5.14.2"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
@@ -448,7 +429,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.5"
+            "locked": "1.1.10.7"
         }
     },
     "testRuntimeClasspath": {
@@ -564,6 +545,12 @@
             ],
             "locked": "1.0"
         },
+        "net.openhft:zero-allocation-hashing": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "0.27ea0"
+        },
         "org.apache.avro:avro": {
             "locked": "1.10.2"
         },
@@ -601,10 +588,10 @@
             "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
+            "locked": "5.14.2"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
@@ -625,7 +612,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.5"
+            "locked": "1.1.10.7"
         }
     }
 }
