@@ -43,7 +43,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class MantisJobDiscoveryTest {
+class MantisJobDiscoveryTest {
 
     private static final Logger logger = LoggerFactory.getLogger(MantisJobDiscoveryTest.class);
     private final Map<String, String> streamJobClusterMap = new HashMap<>();
@@ -121,8 +121,8 @@ public class MantisJobDiscoveryTest {
         assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().get(1).getHost(), currentJobWorkers.get().getIngestStageWorkers().getWorkers().get(0).getHost());
     }
 
+    @Disabled("another flaky test")
     @Test
-    @Ignore("another flaky test")
     public void testJobDiscoveryFetchFailureHandlingAfterSuccess() throws IOException, InterruptedException {
         String jobCluster = "MantisJobDiscoveryTestJobCluster";
         String jobId = jobCluster + "-1";
