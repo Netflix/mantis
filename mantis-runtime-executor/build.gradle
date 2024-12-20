@@ -33,9 +33,16 @@ dependencies {
     implementation libraries.spectatorApi
 
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoAll
+    testImplementation libraries.mockitoCore
     testImplementation 'org.hamcrest:hamcrest-all:1.3'
     testImplementation libraries.vavrTest
     testImplementation(testFixtures(project(":mantis-common")))
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
+}
+
+tasks.withType(Test) {
+    jvmArgs += [
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED'
+    ]
 }
