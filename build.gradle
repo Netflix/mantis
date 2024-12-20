@@ -100,11 +100,11 @@ ext.libraries = [
 allprojects {
     apply plugin: 'nebula.netflixoss'
 
-    // java {
-    //     toolchain {
-    //         languageVersion.set(JavaLanguageVersion.of(17))
-    //     }
-    // }
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
+    }
 }
 
 def printAllReleasedArtifacts = project.tasks.create('printAllReleasedArtifacts')
@@ -120,8 +120,8 @@ subprojects {
 
     group = 'io.mantisrx'
 
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 
     if (project.hasProperty('useMavenLocal')) {
         repositories {
