@@ -1,7 +1,7 @@
 {
     "annotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "compileClasspath": {
@@ -9,12 +9,12 @@
             "locked": "0.9.2"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "lombok": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "runtimeClasspath": {
@@ -77,7 +77,7 @@
     },
     "testAnnotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testCompileClasspath": {
@@ -85,7 +85,7 @@
             "locked": "0.9.2"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testRuntimeClasspath": {

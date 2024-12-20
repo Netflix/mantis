@@ -1,7 +1,7 @@
 {
     "annotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "compileClasspath": {
@@ -113,7 +113,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -146,7 +146,7 @@
             "locked": "20180813"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -176,7 +176,7 @@
     },
     "lombok": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "runtimeClasspath": {
@@ -325,7 +325,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -405,7 +405,7 @@
     },
     "testAnnotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testCompileClasspath": {
@@ -517,7 +517,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -556,10 +556,10 @@
             "locked": "20180813"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
+            "locked": "5.14.2"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -733,7 +733,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -790,7 +790,7 @@
             "locked": "20180813"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
+            "locked": "5.14.2"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [

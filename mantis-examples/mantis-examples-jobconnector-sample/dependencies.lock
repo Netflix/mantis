@@ -1,7 +1,7 @@
 {
     "annotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "compileClasspath": {
@@ -95,7 +95,7 @@
             "locked": "1.2.1"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
@@ -119,7 +119,7 @@
     },
     "lombok": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "runtimeClasspath": {
@@ -145,13 +145,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.8.5"
+            "locked": "2.8.2"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.8.5"
+            "locked": "2.8.2"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -329,7 +329,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -411,7 +411,7 @@
     },
     "testAnnotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testCompileClasspath": {
@@ -505,7 +505,7 @@
             "locked": "1.2.1"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
@@ -550,13 +550,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.8.5"
+            "locked": "2.8.2"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.8.5"
+            "locked": "2.8.2"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -734,7 +734,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [

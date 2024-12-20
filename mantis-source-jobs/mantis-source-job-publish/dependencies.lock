@@ -1,7 +1,7 @@
 {
     "annotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "compileClasspath": {
@@ -21,7 +21,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.8.5"
+            "locked": "2.8.2"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -54,7 +54,6 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker-client"
             ],
@@ -102,12 +101,6 @@
             ],
             "project": true
         },
-        "io.mantisrx:mantis-runtime-autoscaler-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "project": true
-        },
         "io.mantisrx:mantis-runtime-executor": {
             "project": true
         },
@@ -119,7 +112,7 @@
         },
         "io.mantisrx:mantis-rxcontrol": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
         },
@@ -172,7 +165,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -205,7 +198,7 @@
             "locked": "20180813"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -235,7 +228,7 @@
     },
     "lombok": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "runtimeClasspath": {
@@ -261,14 +254,14 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.8.5"
+            "locked": "2.8.2"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core",
                 "io.mantisrx:mantis-publish-netty"
             ],
-            "locked": "2.8.5"
+            "locked": "2.8.2"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -283,14 +276,14 @@
                 "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-server-worker-client"
             ],
-            "locked": "1.8.12"
+            "locked": "1.8.2"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core",
                 "io.mantisrx:mantis-publish-netty"
             ],
-            "locked": "1.8.12"
+            "locked": "1.8.2"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -306,7 +299,7 @@
         },
         "com.yahoo.datasketches:sketches-core": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
+                "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-rxcontrol"
             ],
             "locked": "0.9.1"
@@ -323,8 +316,7 @@
                 "io.mantisrx:mantis-control-plane-core",
                 "io.mantisrx:mantis-network",
                 "io.mantisrx:mantis-remote-observable",
-                "io.mantisrx:mantis-runtime",
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime"
             ],
             "project": true
         },
@@ -340,7 +332,6 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker-client"
             ],
@@ -386,13 +377,6 @@
         "io.mantisrx:mantis-runtime": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-publish",
-                "io.mantisrx:mantis-runtime-autoscaler-api",
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "project": true
-        },
-        "io.mantisrx:mantis-runtime-autoscaler-api": {
-            "firstLevelTransitive": [
                 "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
@@ -408,13 +392,12 @@
         },
         "io.mantisrx:mantis-rxcontrol": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
@@ -477,7 +460,7 @@
         "io.vavr:vavr": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core",
-                "io.mantisrx:mantis-runtime-autoscaler-api",
+                "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-rxcontrol",
                 "io.mantisrx:mantis-shaded"
@@ -494,7 +477,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -510,7 +493,7 @@
         },
         "nz.ac.waikato.cms.moa:moa": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "locked": "2017.06"
         },
@@ -562,12 +545,6 @@
             ],
             "locked": "20180813"
         },
-        "org.quartz-scheduler:quartz": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "locked": "2.2.3"
-        },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -581,7 +558,6 @@
                 "io.mantisrx:mantis-publish-netty",
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime",
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-rxcontrol"
             ],
@@ -604,7 +580,7 @@
     },
     "testAnnotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testCompileClasspath": {
@@ -624,7 +600,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.8.5"
+            "locked": "2.8.2"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -657,7 +633,6 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker-client"
             ],
@@ -705,12 +680,6 @@
             ],
             "project": true
         },
-        "io.mantisrx:mantis-runtime-autoscaler-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "project": true
-        },
         "io.mantisrx:mantis-runtime-executor": {
             "project": true
         },
@@ -722,7 +691,7 @@
         },
         "io.mantisrx:mantis-rxcontrol": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
         },
@@ -775,7 +744,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -817,10 +786,10 @@
             "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
+            "locked": "5.14.2"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -871,14 +840,14 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.8.5"
+            "locked": "2.8.2"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core",
                 "io.mantisrx:mantis-publish-netty"
             ],
-            "locked": "2.8.5"
+            "locked": "2.8.2"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -893,14 +862,14 @@
                 "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-server-worker-client"
             ],
-            "locked": "1.8.12"
+            "locked": "1.8.2"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core",
                 "io.mantisrx:mantis-publish-netty"
             ],
-            "locked": "1.8.12"
+            "locked": "1.8.2"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -916,7 +885,7 @@
         },
         "com.yahoo.datasketches:sketches-core": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
+                "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-rxcontrol"
             ],
             "locked": "0.9.1"
@@ -933,8 +902,7 @@
                 "io.mantisrx:mantis-control-plane-core",
                 "io.mantisrx:mantis-network",
                 "io.mantisrx:mantis-remote-observable",
-                "io.mantisrx:mantis-runtime",
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime"
             ],
             "project": true
         },
@@ -950,7 +918,6 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker-client"
             ],
@@ -996,13 +963,6 @@
         "io.mantisrx:mantis-runtime": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-publish",
-                "io.mantisrx:mantis-runtime-autoscaler-api",
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "project": true
-        },
-        "io.mantisrx:mantis-runtime-autoscaler-api": {
-            "firstLevelTransitive": [
                 "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
@@ -1018,13 +978,12 @@
         },
         "io.mantisrx:mantis-rxcontrol": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
@@ -1087,7 +1046,7 @@
         "io.vavr:vavr": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core",
-                "io.mantisrx:mantis-runtime-autoscaler-api",
+                "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-rxcontrol",
                 "io.mantisrx:mantis-shaded"
@@ -1104,7 +1063,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -1120,7 +1079,7 @@
         },
         "nz.ac.waikato.cms.moa:moa": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "locked": "2017.06"
         },
@@ -1182,13 +1141,7 @@
             "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
-        },
-        "org.quartz-scheduler:quartz": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "locked": "2.2.3"
+            "locked": "5.14.2"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -1203,7 +1156,6 @@
                 "io.mantisrx:mantis-publish-netty",
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime",
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-rxcontrol"
             ],

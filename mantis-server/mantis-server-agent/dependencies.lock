@@ -1,7 +1,7 @@
 {
     "annotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "compileClasspath": {
@@ -114,7 +114,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "net.lingala.zip4j:zip4j": {
             "locked": "2.9.0"
@@ -153,7 +153,7 @@
             "locked": "20180813"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -182,7 +182,7 @@
     },
     "lombok": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "runtimeClasspath": {
@@ -293,19 +293,19 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.118.Final"
+            "locked": "4.1.115.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.118.Final"
+            "locked": "4.1.115.Final"
         },
         "io.netty:netty-handler": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "4.1.118.Final"
+            "locked": "4.1.115.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
@@ -332,7 +332,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -412,7 +412,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-dynamodb"
             ],
-            "locked": "2.31.28"
+            "locked": "2.29.38"
         },
         "software.amazon.awssdk:bom": {
             "firstLevelTransitive": [
@@ -430,12 +430,12 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-dynamodb"
             ],
-            "locked": "2.31.28"
+            "locked": "2.29.38"
         }
     },
     "testAnnotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testCompileClasspath": {
@@ -485,7 +485,6 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker-client"
             ],
@@ -521,12 +520,6 @@
             ],
             "project": true
         },
-        "io.mantisrx:mantis-runtime-autoscaler-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "project": true
-        },
         "io.mantisrx:mantis-runtime-executor": {
             "project": true
         },
@@ -538,7 +531,7 @@
         },
         "io.mantisrx:mantis-rxcontrol": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
         },
@@ -593,7 +586,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -637,11 +630,11 @@
             ],
             "locked": "20180813"
         },
-        "org.mockito:mockito-all": {
-            "locked": "2.0.2-beta"
+        "org.mockito:mockito-core": {
+            "locked": "5.14.2"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -723,7 +716,7 @@
         },
         "com.yahoo.datasketches:sketches-core": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
+                "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-rxcontrol"
             ],
             "locked": "0.9.1"
@@ -743,8 +736,7 @@
                 "io.mantisrx:mantis-control-plane-core",
                 "io.mantisrx:mantis-network",
                 "io.mantisrx:mantis-remote-observable",
-                "io.mantisrx:mantis-runtime",
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime"
             ],
             "project": true
         },
@@ -756,7 +748,6 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker-client"
             ],
@@ -789,13 +780,6 @@
         },
         "io.mantisrx:mantis-runtime": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "project": true
-        },
-        "io.mantisrx:mantis-runtime-autoscaler-api": {
-            "firstLevelTransitive": [
                 "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
@@ -811,13 +795,12 @@
         },
         "io.mantisrx:mantis-rxcontrol": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-executor"
             ],
             "project": true
@@ -840,20 +823,20 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.118.Final"
+            "locked": "4.1.115.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.118.Final"
+            "locked": "4.1.115.Final"
         },
         "io.netty:netty-handler": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "4.1.118.Final"
+            "locked": "4.1.115.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
@@ -872,7 +855,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core",
                 "io.mantisrx:mantis-control-plane-dynamodb",
-                "io.mantisrx:mantis-runtime-autoscaler-api",
+                "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-rxcontrol",
                 "io.mantisrx:mantis-shaded"
@@ -889,7 +872,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -914,7 +897,7 @@
         },
         "nz.ac.waikato.cms.moa:moa": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-autoscaler-api"
+                "io.mantisrx:mantis-runtime-executor"
             ],
             "locked": "2017.06"
         },
@@ -975,14 +958,8 @@
             ],
             "locked": "20180813"
         },
-        "org.mockito:mockito-all": {
-            "locked": "2.0.2-beta"
-        },
-        "org.quartz-scheduler:quartz": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "locked": "2.2.3"
+        "org.mockito:mockito-core": {
+            "locked": "5.14.2"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -995,7 +972,6 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime",
-                "io.mantisrx:mantis-runtime-autoscaler-api",
                 "io.mantisrx:mantis-runtime-executor",
                 "io.mantisrx:mantis-rxcontrol"
             ],
@@ -1019,7 +995,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-dynamodb"
             ],
-            "locked": "2.31.28"
+            "locked": "2.29.38"
         },
         "software.amazon.awssdk:bom": {
             "firstLevelTransitive": [
@@ -1037,7 +1013,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-dynamodb"
             ],
-            "locked": "2.31.28"
+            "locked": "2.29.38"
         }
     }
 }
