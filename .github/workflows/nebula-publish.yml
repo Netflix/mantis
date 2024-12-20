@@ -20,7 +20,7 @@ jobs:
       - name: Setup jdk
         uses: actions/setup-java@v2
         with:
-          java-version: 8
+          java-version: 17
           distribution: 'zulu'
       - name: Publish candidate
         if: contains(github.ref, '-rc.')
