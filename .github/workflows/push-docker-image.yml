@@ -48,7 +48,7 @@ jobs:
       - name: Setup jdk
         uses: actions/setup-java@v1
         with:
-          java-version: 8
+          java-version: 17
 
       - name: Generate dockerfiles
         uses: gradle/gradle-build-action@v2

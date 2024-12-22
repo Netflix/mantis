@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.agent;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,7 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 
 public class BlobStoreTest {
     @Test
@@ -41,11 +41,11 @@ public class BlobStoreTest {
 
         final URI expectedUri =
             new URI("s3://mantisrx.s3.store/mantis/jobs/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip");
-        verify(blobStore, times(1)).get(Matchers.eq(expectedUri));
+        verify(blobStore, times(1)).get(ArgumentMatchers.eq(expectedUri));
 
         prefixedBlobStpre.get(new URI(
             "https://mantisrx.region.prod.io.net/mantis-artifacts/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
-        verify(blobStore, times(2)).get(Matchers.eq(expectedUri));
+        verify(blobStore, times(2)).get(ArgumentMatchers.eq(expectedUri));
     }
 
     @Test
@@ -67,16 +67,16 @@ public class BlobStoreTest {
 
         final URI expectedUri =
             new URI("s3://mantisrx.s3.store/mantis/jobs/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip");
-        verify(blobStore, times(1)).get(Matchers.eq(expectedUri));
+        verify(blobStore, times(1)).get(ArgumentMatchers.eq(expectedUri));
 
         final URI expectedFallbackUri =
             new URI("s3://mantisrx.s3.store.fallback/mantis/jobs/sananthanarayanan-mantis-jobs-sine-function-thin-0.1"
                 + ".0.zip");
-        verify(fallbackBlobStore, times(1)).get(Matchers.eq(expectedFallbackUri));
+        verify(fallbackBlobStore, times(1)).get(ArgumentMatchers.eq(expectedFallbackUri));
 
         // test non-fallback path
         fallbackEnabledBlobStore.get(new URI("http://sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
-        verify(blobStore, times(2)).get(Matchers.eq(expectedUri));
-        verify(fallbackBlobStore, times(1)).get(Matchers.eq(expectedFallbackUri));
+        verify(blobStore, times(2)).get(ArgumentMatchers.eq(expectedUri));
+        verify(fallbackBlobStore, times(1)).get(ArgumentMatchers.eq(expectedFallbackUri));
     }
 }
