@@ -74,11 +74,12 @@ public class JobClusterProto {
         /**
          * Invoked during Job Cluster Creation
          * @param jobClusterDefinition
+         * @param lastJobNumber
          * @param user
          * @param requestor
          */
-        public InitializeJobClusterRequest(final JobClusterDefinitionImpl jobClusterDefinition, String user, ActorRef requestor) {
-            this(jobClusterDefinition, false, 0, Lists.newArrayList(), user, requestor, true);
+        public InitializeJobClusterRequest(final JobClusterDefinitionImpl jobClusterDefinition, long lastJobNumber, String user, ActorRef requestor) {
+            this(jobClusterDefinition, false, lastJobNumber, Lists.newArrayList(), user, requestor, true);
 
         }
 

@@ -107,6 +107,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -856,9 +857,7 @@ public class JobClusterManagerAkkaTest {
         GetJobClusterResponse resp2 = probe.expectMsgClass(GetJobClusterResponse.class);
         assertEquals(SUCCESS, resp2.responseCode);
         assertEquals(clusterName, resp2.getJobCluster().get().getName());
-
-        //assertEquals(jobClusterManagerActor, probe.getLastSender().path());
-
+        assertEquals(0L, resp2.getJobCluster().get().getLastJobCount());
     }
 
     @Test
@@ -879,6 +878,7 @@ public class JobClusterManagerAkkaTest {
         GetJobClusterResponse resp2 = probe.expectMsgClass(GetJobClusterResponse.class);
         assertEquals(SUCCESS, resp2.responseCode);
         assertEquals(clusterName, resp2.getJobCluster().get().getName());
+        assertEquals(0L, resp2.getJobCluster().get().getLastJobCount());
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
             fakeJobCluster,
@@ -893,9 +893,32 @@ public class JobClusterManagerAkkaTest {
         GetJobClusterResponse resp4 = probe.expectMsgClass(GetJobClusterResponse.class);
         assertEquals(SUCCESS, resp4.responseCode);
         assertEquals(clusterName, resp4.getJobCluster().get().getName());
+        assertEquals(0L, resp4.getJobCluster().get().getLastJobCount());
+    }
 
-        //assertEquals(jobClusterManagerActor, probe.getLastSender().path());
+    @Test
+    public void testJobClusterCreateDeletedDup() throws IOException {
+        TestKit probe = new TestKit(system);
+        String clusterName = "testJobClusterCreateCluster";
+        List<CompletedJob> completedJobs = new ArrayList<>();
+        completedJobs.add(new CompletedJob(clusterName, clusterName + "-45", "123", JobState.Completed, 0, 0, "me", new ArrayList<>()));
+        when(jobStoreMock.loadCompletedJobsForCluster(clusterName, 1, null))
+            .thenReturn(completedJobs);
+        final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
+            clusterName,
+            Lists.newArrayList());
+        jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
+            fakeJobCluster,
+            "user"), probe.getRef());
+        JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
+            JobClusterManagerProto.CreateJobClusterResponse.class);
+        assertEquals(SUCCESS_CREATED, resp.responseCode);
 
+        jobClusterManagerActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
+        GetJobClusterResponse resp2 = probe.expectMsgClass(GetJobClusterResponse.class);
+        assertEquals(SUCCESS, resp2.responseCode);
+        assertEquals(clusterName, resp2.getJobCluster().get().getName());
+        assertEquals(45L, resp2.getJobCluster().get().getLastJobCount());
     }
 
     @Test
