@@ -811,6 +811,16 @@ public class JobClusterAkkaTest {
             "user");
         assertEquals("artifact1-1.zip", req2.getArtifactName());
         assertEquals("http://artifact1-1.zip", req2.getjobJarUrl());
+
+        UpdateJobClusterArtifactRequest req3 = new UpdateJobClusterArtifactRequest(
+            clusterName,
+            "https://path1/artifact1-1.zip",
+            null,
+            "1",
+            true,
+            "user");
+        assertEquals("https://path1/artifact1-1.zip", req3.getArtifactName());
+        assertEquals("https://path1/artifact1-1.zip", req3.getjobJarUrl());
     }
 
     @Test
