@@ -557,7 +557,7 @@ public class JobClusterManagerProto {
             // json property "url".
             this.jobJarUrl = jobJarUrl != null ?
                 jobJarUrl :
-                (artifact.startsWith("http://") ? artifact : "http://" + artifact);
+                (artifact.startsWith("http://") || artifact.startsWith("https://") ? artifact : "http://" + artifact);
             this.version = version;
             this.skipSubmit = skipSubmit;
             this.user = user;
