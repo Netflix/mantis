@@ -553,7 +553,11 @@ public class JobClusterManagerProto {
 
             this.clusterName = clusterName;
             this.artifactName = artifact;
-            this.jobJarUrl = jobJarUrl != null ? jobJarUrl : "http://" + artifact;
+            // [Note] in the legacy setup this artifact field is used to host the job jar url field (it maps to the
+            // json property "url".
+            this.jobJarUrl = jobJarUrl != null ?
+                jobJarUrl :
+                (artifact.startsWith("http://") ? artifact : "http://" + artifact);
             this.version = version;
             this.skipSubmit = skipSubmit;
             this.user = user;

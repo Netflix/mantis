@@ -790,6 +790,30 @@ public class JobClusterAkkaTest {
     }
 
     @Test
+    public void testJobClusterArtifactUpdateBackCompat() throws Exception {
+        String clusterName = "testJobClusterArtifactUpdateBackCompat";
+        UpdateJobClusterArtifactRequest req = new UpdateJobClusterArtifactRequest(
+            clusterName,
+            "http://path1/artifact1-1.zip",
+            null,
+            "1",
+            true,
+            "user");
+        assertEquals("http://path1/artifact1-1.zip", req.getArtifactName());
+        assertEquals("http://path1/artifact1-1.zip", req.getjobJarUrl());
+
+        UpdateJobClusterArtifactRequest req2 = new UpdateJobClusterArtifactRequest(
+            clusterName,
+            "artifact1-1.zip",
+            null,
+            "1",
+            true,
+            "user");
+        assertEquals("artifact1-1.zip", req2.getArtifactName());
+        assertEquals("http://artifact1-1.zip", req2.getjobJarUrl());
+    }
+
+    @Test
     public void testJobClusterArtifactUpdate() throws Exception  {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterArtifactUpdate";
