@@ -1943,9 +1943,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                 acceptedAt);
                         }
                     } else {
-                        // no heartbeat or heartbeat too old
-                        if (!workerMeta.getLastHeartbeatAt().isPresent() || Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds()
-                            > missedHeartBeatToleranceSecs) {
+                        // no heartbeat in a timely manner since launched or heartbeat too old
+                        boolean noTimelyHeartbeatSinceLaunched = !workerMeta.getLastHeartbeatAt().isPresent()
+                            && Duration.between(Instant.ofEpochSecond(workerMeta.getLaunchedAt()), currentTime).getSeconds() > missedHeartBeatToleranceSecs;
+                        boolean heartbeatTooOld = workerMeta.getLastHeartbeatAt().isPresent()
+                            && Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds() > missedHeartBeatToleranceSecs;
+                        if (noTimelyHeartbeatSinceLaunched || heartbeatTooOld) {
                             this.numWorkerMissingHeartbeat.increment();
 
                             if (!workerMeta.getLastHeartbeatAt().isPresent()) {
