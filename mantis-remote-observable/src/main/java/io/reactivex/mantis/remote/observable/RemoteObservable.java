@@ -112,7 +112,7 @@ public class RemoteObservable {
             maxFrameLength = Integer.parseInt(maxFrameLengthStr);
         }
 
-        String bufferSizeStr = ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantisClient.buffer.size", DEFAULT_BUFFER_SIZE_STR);
+        String bufferSizeStr = ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("workerClient.buffer.size", DEFAULT_BUFFER_SIZE_STR);
         bufferSize = Integer.parseInt(Optional.ofNullable(bufferSizeStr).orElse(DEFAULT_BUFFER_SIZE_STR));
     }
 
