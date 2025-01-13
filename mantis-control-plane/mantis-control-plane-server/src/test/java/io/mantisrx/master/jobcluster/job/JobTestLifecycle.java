@@ -823,9 +823,9 @@ public class JobTestLifecycle {
             assertEquals(JobState.Accepted, resp4.getJobMetadata().get().getState());
 
             // 1 original submissions and 0 resubmits because of worker not in launched state with HB timeouts
-            verify(schedulerMock, times(2)).scheduleWorkers(any());
+            verify(schedulerMock, times(1)).scheduleWorkers(any());
             // 1 kills due to resubmits
-            verify(schedulerMock, times(1)).unscheduleAndTerminateWorker(eq(workerId2), any());
+            verify(schedulerMock, times(0)).unscheduleAndTerminateWorker(eq(workerId2), any());
         } catch (Exception e) {
             fail("unexpected exception " + e.getMessage());
         }

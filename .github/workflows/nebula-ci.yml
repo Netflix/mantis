@@ -48,7 +48,7 @@ jobs:
           CI_BRANCH: ${{ github.ref }}
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Test Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Unit Test Results
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Event File
           path: ${{ github.event_path }}
