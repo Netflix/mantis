@@ -291,6 +291,7 @@ public class ExecutorStateManagerTests {
             ATTRIBUTES_WITH_SCALE_GROUP_1,
             stateManager);
 
+        this.actual.set(Clock.fixed(Instant.ofEpochSecond(2), ZoneId.systemDefault()));
         bestFitO =
             stateManager.findBestFit(
                 new TaskExecutorBatchAssignmentRequest(
@@ -364,11 +365,13 @@ public class ExecutorStateManagerTests {
     }
 
     @Test
-    public void testGetBestFit_WithDifferentResourcesSameSku() {
+    public void testGetBestFit_WithDifferentResourcesSameSku() throws InterruptedException {
         registerNewTaskExecutor(TASK_EXECUTOR_ID_1,
             MACHINE_DEFINITION_2,
             ATTRIBUTES_WITH_SCALE_GROUP_2,
             stateManager);
+
+        this.actual.set(Clock.fixed(Instant.ofEpochSecond(2), ZoneId.systemDefault()));
 
         // should get te1 with group2
         Optional<BestFit> bestFitO =
@@ -385,6 +388,19 @@ public class ExecutorStateManagerTests {
             MACHINE_DEFINITION_2,
             ATTRIBUTES_WITH_SCALE_GROUP_1,
             stateManager);
+
+        // do not move the clock, should still get nothing as scheduler lease is still valid
+        bestFitO =
+            stateManager.findBestFit(
+                new TaskExecutorBatchAssignmentRequest(
+                    new HashSet<>(Arrays.asList(
+                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2), null, 0),
+                        TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_1), null, 1))),
+                    CLUSTER_ID));
+
+        assertFalse(bestFitO.isPresent());
+
+        this.actual.set(Clock.fixed(Instant.ofEpochSecond(3), ZoneId.systemDefault()));
 
         bestFitO =
             stateManager.findBestFit(
@@ -605,6 +621,7 @@ public class ExecutorStateManagerTests {
         stateManager.tryMarkAvailable(TaskExecutorID.of("te3"));
 
         // matching found for 2cores, 14GB since the fit TE shape is now 2cores, 14GB and there are 2 TE available
+        this.actual.set(Clock.fixed(Instant.ofEpochSecond(2), ZoneId.systemDefault()));
         bestFit =
             stateManager.findBestFit(new TaskExecutorBatchAssignmentRequest(
                 new HashSet<>(Arrays.asList(

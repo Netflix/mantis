@@ -39,6 +39,8 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration.TaskEx
 import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.cache.RemovalListener;
+
+import java.time.Duration;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -111,6 +113,8 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
 
     private final Map<String, String> schedulingAttributes;
 
+    private final Duration schedulerLeaseExpirationDuration;
+
     private final Cache<TaskExecutorID, TaskExecutorState> archivedState = CacheBuilder.newBuilder()
         .maximumSize(10000)
         .expireAfterWrite(24, TimeUnit.HOURS)
@@ -121,11 +125,16 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
     ExecutorStateManagerImpl(Map<String, String> schedulingAttributes) {
         this.schedulingAttributes = schedulingAttributes;
         this.fitnessCalculator = new CpuWeightedFitnessCalculator();
+        this.schedulerLeaseExpirationDuration = Duration.ofMillis(100);
     }
 
-    ExecutorStateManagerImpl(Map<String, String> schedulingAttributes, FitnessCalculator fitnessCalculator) {
+    ExecutorStateManagerImpl(
+        Map<String, String> schedulingAttributes,
+        FitnessCalculator fitnessCalculator,
+        Duration schedulerLeaseExpirationDuration) {
         this.schedulingAttributes = schedulingAttributes;
         this.fitnessCalculator = fitnessCalculator;
+        this.schedulerLeaseExpirationDuration = schedulerLeaseExpirationDuration;
     }
 
     @Override
@@ -357,10 +366,22 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
                     }
                     TaskExecutorState st = this.taskExecutorStateMap.get(teHolder.getId());
                     return st.isAvailable() &&
+                        // when a TE is returned from here to be used for scheduling, its state remain active until
+                        // the scheduler trigger another message to update (lock) the state. However when large number
+                        // of the requests are active at the same time on same sku, the gap between here and the message
+                        // to lock the state can be large so another schedule request message can be in between and
+                        // got the same set of TEs. To avoid this, a lease is added to each TE state to temporarily
+                        // lock the TE to be used again. Since this is only lock between actor messages and lease
+                        // duration can be short.
+                        st.getLastSchedulerLeasedDuration().compareTo(this.schedulerLeaseExpirationDuration) > 0 &&
                         st.getRegistration() != null;
                 })
                 .limit(numWorkers)
-                .map(TaskExecutorHolder::getId)
+                .map(teHolder -> {
+                    TaskExecutorState st = this.taskExecutorStateMap.get(teHolder.getId());
+                    st.updateLastSchedulerLeased();
+                    return teHolder.getId();
+                })
                 .collect(Collectors.toMap(
                     taskExecutorID -> taskExecutorID,
                     this.taskExecutorStateMap::get)));

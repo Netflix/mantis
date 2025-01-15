@@ -27,6 +27,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -36,7 +37,7 @@ import rx.Observable;
 import rx.observers.TestSubscriber;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DynamoDBMasterMonitorTest {
+public class DynamoDBMasterMonitorSingletonTest {
 
     private static final String TABLE_NAME = "mantis-dynamodb-leader-test";
 
@@ -69,37 +70,39 @@ public class DynamoDBMasterMonitorTest {
     @Test
     public void getCurrentLeader() throws JsonProcessingException, InterruptedException {
         final String lockKey = "mantis-leader";
-        final DynamoDBMasterMonitor m = new DynamoDBMasterMonitor(
+        final DynamoDBMasterMonitorSingleton m = new DynamoDBMasterMonitorSingleton(
             lockSupport.getLockClient(),
             lockKey,
             DynamoDBLockSupportRule.heartbeatDuration,
             GRACEFUL
             );
         TestSubscriber<MasterDescription> testSubscriber = new TestSubscriber<>();
-        m.getMasterObservable().subscribe(testSubscriber);
+        m.getMasterSubject().subscribe(testSubscriber);
         m.start();
-        assertEquals(MasterDescription.MASTER_NULL, m.getLatestMaster());
+        assertEquals(MasterDescription.MASTER_NULL, m.getMasterSubject().getValue());
         lockSupport.takeLock(lockKey, otherMaster);
         await()
                 .atLeast(DynamoDBLockSupportRule.heartbeatDuration)
                 .pollDelay(DynamoDBLockSupportRule.heartbeatDuration)
                 .atMost(Duration.ofMillis(DynamoDBLockSupportRule.heartbeatDuration.toMillis()*2))
-                .untilAsserted(() -> assertEquals(otherMaster, m.getLatestMaster()));
+                .untilAsserted(() -> assertEquals(otherMaster, m.getMasterSubject().getValue()));
         lockSupport.releaseLock(lockKey);
         lockSupport.takeLock(lockKey, thatMaster);
         await()
                 .atLeast(DynamoDBLockSupportRule.heartbeatDuration)
                 .pollDelay(DynamoDBLockSupportRule.heartbeatDuration)
                 .atMost(Duration.ofMillis(DynamoDBLockSupportRule.heartbeatDuration.toMillis()*2))
-                .untilAsserted(() -> assertEquals(m.getLatestMaster(), thatMaster));
+                .untilAsserted(() -> assertEquals(m.getMasterSubject().getValue(), thatMaster));
         testSubscriber.assertValues(MasterDescription.MASTER_NULL, otherMaster, thatMaster);
         m.shutdown();
+        testSubscriber.awaitTerminalEvent();
+        testSubscriber.assertCompleted();
     }
 
     @Test
     public void runShutdown() throws IOException {
         final String key = "dne";
-        final DynamoDBMasterMonitor m = new DynamoDBMasterMonitor(
+        final DynamoDBMasterMonitorSingleton m = new DynamoDBMasterMonitorSingleton(
             mockLockClient,
             key,
             DynamoDBLockSupportRule.heartbeatDuration,
@@ -117,14 +120,16 @@ public class DynamoDBMasterMonitorTest {
     @Test
     public void monitorDoesNotReturnNull() throws IOException, InterruptedException {
         final String lockKey = "mantis-leader";
-        final DynamoDBMasterMonitor m = new DynamoDBMasterMonitor(
+        final DynamoDBMasterMonitorSingleton m = new DynamoDBMasterMonitorSingleton(
             lockSupport.getLockClient(),
             lockKey,
             DynamoDBLockSupportRule.heartbeatDuration,
             GRACEFUL
         );
         TestSubscriber<MasterDescription> testSubscriber = new TestSubscriber<>();
-        m.getMasterObservable().subscribe(testSubscriber);
+        m.getMasterSubject().subscribe(testSubscriber);
+        // ensure it's not NULL at the start
+        assertEquals(MasterDescription.MASTER_NULL, m.getMasterSubject().getValue());
         m.start();
 
         // Write Null
@@ -133,13 +138,13 @@ public class DynamoDBMasterMonitorTest {
             .atLeast(DynamoDBLockSupportRule.heartbeatDuration)
             .pollDelay(DynamoDBLockSupportRule.heartbeatDuration)
             .atMost(Duration.ofMillis(DynamoDBLockSupportRule.heartbeatDuration.toMillis()*2))
-            .untilAsserted(() -> assertEquals(MasterDescription.MASTER_NULL, m.getLatestMaster()));
+            .untilAsserted(() -> assertEquals(MasterDescription.MASTER_NULL, m.getMasterSubject().getValue()));
         lockSupport.releaseLock(lockKey);
 
         m.shutdown();
 
-        testSubscriber.assertNoTerminalEvent();
-        testSubscriber.assertNotCompleted();
+        testSubscriber.awaitTerminalEvent(10, TimeUnit.SECONDS);
+        testSubscriber.assertCompleted();
         testSubscriber.assertNoErrors();
         Observable.from(testSubscriber.getOnNextEvents())
             .forEach(Assert::assertNotNull);

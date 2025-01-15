@@ -174,6 +174,7 @@ class ResourceClustersManagerActor extends AbstractActor {
                     Duration.ofMillis(masterConfiguration.getHeartbeatIntervalInMs()),
                     Duration.ofMillis(masterConfiguration.getAssignmentIntervalInMs()),
                     Duration.ofMillis(masterConfiguration.getAssignmentIntervalInMs()),
+                    Duration.ofMillis(masterConfiguration.getSchedulerLeaseExpirationDurationInMs()),
                     clock,
                     rpcService,
                     mantisJobStore,

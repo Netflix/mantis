@@ -1943,15 +1943,29 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                 acceptedAt);
                         }
                     } else {
-                        if (Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds()
-                            > missedHeartBeatToleranceSecs) {
-                            // heartbeat too old
+                        // no heartbeat in a timely manner since launched or heartbeat too old
+                        // note: the worker has been launched
+                        boolean noTimelyHeartbeatSinceLaunched = !workerMeta.getLastHeartbeatAt().isPresent()
+                            && Duration.between(Instant.ofEpochSecond(workerMeta.getLaunchedAt()), currentTime).getSeconds() > missedHeartBeatToleranceSecs;
+                        boolean heartbeatTooOld = workerMeta.getLastHeartbeatAt().isPresent()
+                            && Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds() > missedHeartBeatToleranceSecs;
+                        if (noTimelyHeartbeatSinceLaunched || heartbeatTooOld) {
                             this.numWorkerMissingHeartbeat.increment();
-                            LOGGER.info("Job {}, Worker {} Duration between last heartbeat and now {} "
-                                    + "missed heart beat threshold {} exceeded", this.jobMgr.getJobId(),
-                                workerMeta.getWorkerId(), Duration.between(
-                                    workerMeta.getLastHeartbeatAt().get(),
-                                    currentTime).getSeconds(), missedHeartBeatToleranceSecs);
+
+                            if (!workerMeta.getLastHeartbeatAt().isPresent()) {
+                                LOGGER.warn("Job {}, Worker {} hasn't received heartbeat, threshold {} exceeded",
+                                    this.jobMgr.getJobId(),
+                                    workerMeta.getWorkerId(),
+                                    missedHeartBeatToleranceSecs);
+                            } else {
+                                LOGGER.warn("Job {}, Worker {} Duration between last heartbeat and now {} "
+                                        + "missed heart beat threshold {} exceeded",
+                                    this.jobMgr.getJobId(),
+                                    workerMeta.getWorkerId(),
+                                    Duration.between(
+                                        workerMeta.getLastHeartbeatAt().get(),
+                                        currentTime).getSeconds(), missedHeartBeatToleranceSecs);
+                            }
 
                             if (ConfigurationProvider.getConfig().isHeartbeatTerminationEnabled()) {
                                 eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(WARN,

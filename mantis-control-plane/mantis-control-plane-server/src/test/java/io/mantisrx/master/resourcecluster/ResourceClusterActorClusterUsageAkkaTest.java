@@ -72,6 +72,7 @@ public class ResourceClusterActorClusterUsageAkkaTest {
     private static final ClusterID CLUSTER_ID = ClusterID.of("clusterId");
     private static final Duration heartbeatTimeout = Duration.ofSeconds(10);
     private static final Duration checkForDisabledExecutorsInterval = Duration.ofSeconds(10);
+    private static final Duration schedulerLeaseExpirationDuration = Duration.ofMillis(100);
     private static final Duration assignmentTimeout = Duration.ofSeconds(1);
     private static final String HOST_NAME = "hostname";
     private static final WorkerPorts WORKER_PORTS = new WorkerPorts(1, 2, 3, 4, 5);
@@ -166,6 +167,7 @@ public class ResourceClusterActorClusterUsageAkkaTest {
                 heartbeatTimeout,
                 assignmentTimeout,
                 checkForDisabledExecutorsInterval,
+                schedulerLeaseExpirationDuration,
                 Clock.systemDefaultZone(),
                 rpcService,
                 mantisJobStore,

@@ -102,6 +102,7 @@ public class ResourceClusterActorTest {
     private static final ClusterID CLUSTER_ID = ClusterID.of("clusterId");
     private static final Duration heartbeatTimeout = Duration.ofSeconds(10);
     private static final Duration checkForDisabledExecutorsInterval = Duration.ofSeconds(10);
+    private static final Duration schedulerLeaseExpirationDuration = Duration.ofMillis(100);
     private static final Duration assignmentTimeout = Duration.ofSeconds(1);
     private static final String HOST_NAME = "hostname";
 
@@ -201,6 +202,7 @@ public class ResourceClusterActorTest {
                 heartbeatTimeout,
                 assignmentTimeout,
                 checkForDisabledExecutorsInterval,
+                schedulerLeaseExpirationDuration,
                 Clock.systemDefaultZone(),
                 rpcService,
                 mantisJobStore,
