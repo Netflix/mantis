@@ -38,6 +38,7 @@ buildscript {
     }
 }
 
+
 ext.versions = [
         commons  : "3.5",
         flink    : "1.14.2",
