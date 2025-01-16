@@ -795,6 +795,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     initReq.requestId, e instanceof SchedulerException?CLIENT_ERROR:SERVER_ERROR,
                     "Job Cluster " + jobClusterName + " could not be created due to cron initialization error" + e.getMessage(),
                     jobClusterName), getSelf());
+                return;
             }
             initRunningJobs(initReq, sender);
 
