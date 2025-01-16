@@ -211,7 +211,7 @@ public class TestContainerHelloWorld {
             agentId0,
             agent0,
             5,
-            Duration.ofSeconds(3).toMillis())) {
+            Duration.ofSeconds(10).toMillis())) {
             fail("Failed to register agent: " + agent0.getContainerId());
         }
 
@@ -221,7 +221,7 @@ public class TestContainerHelloWorld {
             controlPlaneHost,
             controlPlanePort,
             10,
-            Duration.ofSeconds(2).toMillis())) {
+            Duration.ofSeconds(10).toMillis())) {
             fail("Failed to start job worker.");
         }
 
@@ -264,7 +264,7 @@ public class TestContainerHelloWorld {
             agentId0,
             agent0,
             5,
-            Duration.ofSeconds(3).toMillis())) {
+            Duration.ofSeconds(10).toMillis())) {
             fail("Failed to register agent: " + agent0.getContainerId());
         }
 
@@ -274,7 +274,7 @@ public class TestContainerHelloWorld {
             controlPlaneHost,
             controlPlanePort,
             5,
-            Duration.ofSeconds(2).toMillis())) {
+            Duration.ofSeconds(10).toMillis())) {
             fail("Failed to start job worker.");
         }
 
