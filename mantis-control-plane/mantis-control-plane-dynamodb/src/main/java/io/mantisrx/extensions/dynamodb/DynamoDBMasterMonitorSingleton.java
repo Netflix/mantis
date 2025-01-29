@@ -78,7 +78,7 @@ class DynamoDBMasterMonitorSingleton {
 
             // We allow agents to disable the shutdown hook as avoid losing contact with the master prematurely.
             // Master should keep this because it releases the leader lock.
-            if (!DynamoDBClientSingleton.getDynamoDBConf().getDisableMonitorShutdown()) {
+            if (DynamoDBClientSingleton.getDynamoDBConf().getEnableShutdownHook()) {
                 Runtime.getRuntime()
                     .addShutdownHook(new Thread(instance::shutdown, "dynamodb-monitor-shutdown-" + instance.hashCode()));
             }

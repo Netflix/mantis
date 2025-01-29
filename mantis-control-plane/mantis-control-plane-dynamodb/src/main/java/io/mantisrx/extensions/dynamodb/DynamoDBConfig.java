@@ -68,7 +68,7 @@ public interface DynamoDBConfig {
     @Default("false")
     boolean getDynamoDBUseLocal();
 
-    @Config("mantis.ext.dynamodb.disableMonitorShutdown")
-    @Default("false")
-    boolean getDisableMonitorShutdown();
+    @Config("mantis.ext.dynamodb.enableShutdownHook")
+    @Default("true")
+    boolean getEnableShutdownHook();
 }
