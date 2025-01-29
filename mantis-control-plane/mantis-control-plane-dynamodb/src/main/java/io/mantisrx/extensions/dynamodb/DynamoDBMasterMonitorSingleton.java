@@ -45,7 +45,6 @@ class DynamoDBMasterMonitorSingleton {
         Thread thread = new Thread(r);
         thread.setName("dynamodb-monitor-" + System.currentTimeMillis());
         thread.setDaemon(true); // allow JVM to shut down if monitor is still running
-        thread.setPriority(Thread.NORM_PRIORITY);
         thread.setUncaughtExceptionHandler((t, e) -> logger.error("thread: {} failed with {}", t.getName(), e.getMessage(), e) );
         return thread;
     };
@@ -76,8 +75,10 @@ class DynamoDBMasterMonitorSingleton {
     public static synchronized DynamoDBMasterMonitorSingleton getInstance() {
         if (instance == null) {
             instance = new DynamoDBMasterMonitorSingleton();
-            Runtime.getRuntime()
-                .addShutdownHook(new Thread(instance::shutdown, "dynamodb-monitor-shutdown-" + instance.hashCode()));
+            if (!DynamoDBClientSingleton.getDynamoDBConf().getDisableMonitorShutdown()) {
+                Runtime.getRuntime()
+                    .addShutdownHook(new Thread(instance::shutdown, "dynamodb-monitor-shutdown-" + instance.hashCode()));
+            }
             instance.start();
         }
         return instance;
