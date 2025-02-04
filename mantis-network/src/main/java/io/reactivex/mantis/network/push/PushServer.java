@@ -193,7 +193,7 @@ public abstract class PushServer<T, R> {
                                                 final Counter legacyMsgProcessedCounter, final Counter legacyDroppedWrites,
                                                 final Action0 connectionSubscribeCallback) {
         return manageConnectionWithCompression(writer, host, port, groupId, slotId, id, lastWriteTime, applicationHeartbeats, heartbeatSubscription,
-            applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback, false, false, null);
+            applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback, false, false, null, null);
 
     }
 
@@ -231,7 +231,7 @@ public abstract class PushServer<T, R> {
                                                                Func1<T, Boolean> predicate, final Action0 connectionClosedCallback,
                                                                final Counter legacyMsgProcessedCounter, final Counter legacyDroppedWrites,
                                                                final Action0 connectionSubscribeCallback, boolean compressOutput, boolean isSSE,
-                                                               byte[] delimiter) {
+                                                               byte[] delimiter, String availabilityZone) {
 
         if (id == null || id.isEmpty()) {
             id = host + "_" + port + "_" + System.currentTimeMillis();
@@ -308,7 +308,7 @@ public abstract class PushServer<T, R> {
         }
 
         final AsyncConnection<T> connection = new AsyncConnection<T>(host,
-            port, id, slotId, groupId, subject, predicate);
+            port, id, slotId, groupId, subject, predicate, availabilityZone);
 
         final Channel channel = writer.getChannel();
         channel.closeFuture().addListener(new GenericFutureListener<io.netty.util.concurrent.Future<Void>>() {

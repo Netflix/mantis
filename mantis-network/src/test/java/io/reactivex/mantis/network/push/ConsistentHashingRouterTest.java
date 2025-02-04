@@ -46,7 +46,7 @@ public class ConsistentHashingRouterTest {
 
         PublishSubject<List<byte[]>> subj = PublishSubject.create();
         Set<AsyncConnection<KeyValuePair<String, String>>> connections = generateStageToStageSlots("2", 40, 2).stream()
-            .map(slot -> new AsyncConnection<KeyValuePair<String, String>>("fakehost", 123456, slot, slot, "test-group", subj, x -> true))
+            .map(slot -> new AsyncConnection<KeyValuePair<String, String>>("fakehost", 123456, slot, slot, "test-group", subj, x -> true, null))
             .collect(Collectors.toSet());
 
         List<KeyValuePair<String, String>> data = new ArrayList<>();

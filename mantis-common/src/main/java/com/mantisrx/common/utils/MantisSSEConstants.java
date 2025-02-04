@@ -45,4 +45,6 @@ public class MantisSSEConstants {
     public static final String MQL = "mql";
 
     public static final String TARGET_JOB = "sourceJobName";
+
+    public static final String AVAILABILITY_ZONE = "availabilityZone";
 }
