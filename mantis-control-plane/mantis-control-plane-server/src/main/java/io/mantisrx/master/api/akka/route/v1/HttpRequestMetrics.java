@@ -66,6 +66,7 @@ public class HttpRequestMetrics {
         public static final String LAST_SUBMITTED_JOB_ID_STREAM = "api.v1.lastSubmittedJobIdStream.instance";
 
         public static final String RESOURCE_CLUSTERS = "api.v1.resourceClusters";
+        public static final String JOB_CLUSTER_SCALER_RULES = "api.v1.jobClusters.scalerRules";
 
         private static String[] endpoints = new String[]{
                 JOB_ARTIFACTS,

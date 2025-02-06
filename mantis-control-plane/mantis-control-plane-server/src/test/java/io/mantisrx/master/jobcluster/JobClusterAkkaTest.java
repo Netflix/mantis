@@ -99,6 +99,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClust
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterSLARequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
@@ -2238,6 +2239,38 @@ public class JobClusterAkkaTest {
     ////////////////////////////////// JOB SUBMIT OPERATIONS END/////////////////////////////////////////////////////////////
 
     ////////////////////////////////// OTHER JOB OPERATIONS //////////////////////////////////////////////////////////////
+
+    @Test
+    public void testCreateScalerRuleFromEmpty() {
+        TestKit probe = new TestKit(system);
+        String clusterName = "testCreateScalerRuleFromEmpty";
+        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+        final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
+        jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
+        JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+        assertEquals(SUCCESS, createResp.responseCode);
+
+        try {
+            // default job with 1 stage == (1 worker)
+            final JobDefinition jobDefn = createJob(clusterName,1, MantisJobDurationType.Transient);
+            String jobId = clusterName + "-1";
+
+            JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn, jobId);
+            JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
+
+            JobTestHelper.createJobClusterScalerRuleAndVerifySuccess(probe, clusterName, jobClusterActor);
+            // todo: verify job actor response to rule update
+
+            verify(jobStoreMock, times(1)).createJobCluster(any());
+            verify(jobStoreMock, times(1)).updateJobCluster(any());
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
 
     @Test
     public void testGetLastSubmittedJobSubject() {

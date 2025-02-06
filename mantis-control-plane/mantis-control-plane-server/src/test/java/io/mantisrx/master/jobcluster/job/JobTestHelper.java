@@ -32,12 +32,9 @@ import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
 import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
-import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.master.jobcluster.proto.*;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.SubmitJobRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterProto;
-import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
@@ -46,6 +43,7 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
@@ -63,6 +61,8 @@ import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.junit.Test;
@@ -305,6 +305,55 @@ public class JobTestHelper {
         } else {
             assertEquals(jobId, submitResponse.getJobId().get().getId());
         }
+    }
+
+    public static void createJobClusterScalerRuleAndVerifySuccess(final TestKit probe, String clusterName, ActorRef jobClusterActor) {
+        Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
+        StageScalingPolicy scalingPolicy;
+
+        smap.put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
+        smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
+        scalingPolicy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
+        int desireSize = 19;
+
+        JobClusterScalerRuleProto.ScalerConfig scalerConfig =
+            JobClusterScalerRuleProto.ScalerConfig.builder()
+                .type("standard")
+                .desireSize(desireSize)
+                .scalingPolicy(scalingPolicy)
+                .build();
+
+        JobClusterScalerRuleProto.TriggerConfig triggerConfig =
+            JobClusterScalerRuleProto.TriggerConfig.builder()
+                .triggerType("cron")
+                .scheduleCron("0 0 * * *")
+                .scheduleDuration("PT1H")
+                .customTrigger("none")
+                .build();
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key", "value");
+
+        JobClusterScalerRuleProto.CreateScalerRuleRequest ruleRequest = JobClusterScalerRuleProto.CreateScalerRuleRequest.builder()
+            .jobClusterName(clusterName)
+            .scalerConfig(scalerConfig)
+            .triggerConfig(triggerConfig)
+            .metadata(metadata)
+            .build();
+
+        jobClusterActor.tell(ruleRequest, probe.getRef());
+        JobClusterScalerRuleProto.CreateScalerRuleResponse scaleResponse =
+            probe.expectMsgClass(JobClusterScalerRuleProto.CreateScalerRuleResponse.class);
+        assertEquals(SUCCESS, scaleResponse.responseCode);
+
+        JobClusterScalerRuleProto.GetScalerRulesRequest getRuleRequest =
+            new JobClusterScalerRuleProto.GetScalerRulesRequest(clusterName);
+        jobClusterActor.tell(getRuleRequest, probe.getRef());
+        JobClusterScalerRuleProto.GetScalerRulesResponse getScalerRulesResponse =
+            probe.expectMsgClass(JobClusterScalerRuleProto.GetScalerRulesResponse.class);
+        assertEquals(SUCCESS, getScalerRulesResponse.responseCode);
+        assertEquals(1, getScalerRulesResponse.getRules().size());
+        assertEquals("1", getScalerRulesResponse.getRules().get(0).getRuleId());
     }
 
     public static void scaleStageAndVerify(final TestKit probe, ActorRef jobClusterActor,
