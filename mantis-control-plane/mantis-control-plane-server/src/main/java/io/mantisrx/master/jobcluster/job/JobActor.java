@@ -69,6 +69,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.master.jobcluster.proto.JobProto.InitJob;
 import io.mantisrx.master.jobcluster.proto.JobProto.JobInitialized;
+import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
@@ -196,6 +197,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final MantisScheduler mantisScheduler;
     private final LifecycleEventPublisher eventPublisher;
     private final CostsCalculator costsCalculator;
+    private IJobClusterScalerRuleData scalerRuleData; //todo: impl scalerRule updates + stream API
     private boolean hasJobMaster;
     private volatile boolean allWorkersCompleted = false;
 
@@ -208,6 +210,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @param mantisScheduler      Reference to the {@link MantisScheduler} to be used to schedule work
      * @param eventPublisher       Reference to the event publisher {@link LifecycleEventPublisher} where lifecycle
      *                             events are to be published.
+     * @param costsCalculator      Reference to the costs calculator {@link CostsCalculator} to be used to calculate costs.
+     * @param initScalerRuleData   initial scaler rules.
      * @return
      */
     public static Props props(
@@ -216,9 +220,21 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             final MantisJobStore jobStore,
             final MantisScheduler mantisScheduler,
             final LifecycleEventPublisher eventPublisher,
-            final CostsCalculator costsCalculator) {
+            final CostsCalculator costsCalculator,
+            final IJobClusterScalerRuleData initScalerRuleData) {
         return Props.create(JobActor.class, jobClusterDefinition, jobMetadata, jobStore,
-                mantisScheduler, eventPublisher, costsCalculator);
+                mantisScheduler, eventPublisher, costsCalculator, initScalerRuleData);
+    }
+
+    public static Props props(
+        final IJobClusterDefinition jobClusterDefinition,
+        final MantisJobMetadataImpl jobMetadata,
+        final MantisJobStore jobStore,
+        final MantisScheduler mantisScheduler,
+        final LifecycleEventPublisher eventPublisher,
+        final CostsCalculator costsCalculator) {
+        return Props.create(JobActor.class, jobClusterDefinition, jobMetadata, jobStore,
+            mantisScheduler, eventPublisher, costsCalculator, null);
     }
 
     /**
@@ -236,7 +252,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         final MantisJobStore jobStore,
         final MantisScheduler scheduler,
         final LifecycleEventPublisher eventPublisher,
-        final CostsCalculator costsCalculator) {
+        final CostsCalculator costsCalculator,
+        IJobClusterScalerRuleData initScalerRuleData) {
 
         this.clusterName = jobMetadata.getClusterName();
         this.jobId = jobMetadata.getJobId();
@@ -246,6 +263,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.eventPublisher = eventPublisher;
         this.mantisJobMetaData = jobMetadata;
         this.costsCalculator = costsCalculator;
+        this.scalerRuleData = initScalerRuleData;
 
         initializedBehavior = getInitializedBehavior();
 
@@ -607,8 +625,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
 
                 .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
+                .match(IJobClusterScalerRuleData.class, this::onScalerRuleDataUpdate)
 
-                // EXPECTED MESSAGES END//
+            // EXPECTED MESSAGES END//
                 // UNEXPECTED MESSAGES BEGIN //
                 .match(InitJob.class, (x) -> getSender().tell(new JobInitialized(x.requestId, SUCCESS,
                         genUnexpectedMsg(x.toString(), this.jobId.getId(), state), this.jobId, x.requstor), getSelf()))
@@ -648,8 +667,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
 
                 .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
+                .match(IJobClusterScalerRuleData.class, this::onScalerRuleDataUpdate)
 
-                // EXPECTED MESSAGES END//
+            // EXPECTED MESSAGES END//
 
                 // UNEXPECTED MESSAGES BEGIN //
                 // explicit resubmit worker
@@ -884,6 +904,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     @Override
     public void onSendWorkerAssignments(final JobProto.SendWorkerAssignementsIfChanged r) {
         this.workerManager.refreshAndSendWorkerAssignments();
+    }
+
+    public void onScalerRuleDataUpdate(final IJobClusterScalerRuleData ruleData) {
+        LOGGER.info("Job actor {} received new Scaler Rule Data: {}", this.jobId, ruleData);
+        this.scalerRuleData = ruleData;
+        // TODO trigger stream API update
     }
 
     /**

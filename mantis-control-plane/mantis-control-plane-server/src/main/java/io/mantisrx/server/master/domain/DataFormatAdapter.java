@@ -36,6 +36,8 @@ import io.mantisrx.master.jobcluster.job.MantisStageMetadataImpl;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
+import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
+import io.mantisrx.master.jobcluster.scaler.JobClusterScalerRuleDataImplWritable;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.MantisJobDefinition;
 import io.mantisrx.runtime.MantisJobState;
@@ -458,6 +460,10 @@ public class DataFormatAdapter {
 
     public static IMantisJobMetadata convertMantisJobWriteableToMantisJobMetadata(MantisJobMetadata archJob, LifecycleEventPublisher eventPublisher) throws Exception {
         return convertMantisJobWriteableToMantisJobMetadata(archJob, eventPublisher, false);
+    }
+
+    public static JobClusterScalerRuleDataImplWritable convertJobClusterScalerRuleDataToWritable(IJobClusterScalerRuleData scalerRuleData) {
+        return (JobClusterScalerRuleDataImplWritable) scalerRuleData;
     }
 
     // TODO job specific migration config is not supported, migration config will be at cluster level

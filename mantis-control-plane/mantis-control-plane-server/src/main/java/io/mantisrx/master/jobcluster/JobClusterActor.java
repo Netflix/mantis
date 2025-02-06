@@ -111,7 +111,11 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateScheduli
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.JobStartedEvent;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
+import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
+import io.mantisrx.master.jobcluster.scaler.JobClusterScalerRuleDataFactory;
+import io.mantisrx.master.jobcluster.scaler.JobClusterScalerRuleDataImplWritable;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.server.core.JobCompletedReason;
@@ -203,8 +207,19 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         final MantisSchedulerFactory mantisSchedulerFactory,
         final LifecycleEventPublisher eventPublisher,
         final CostsCalculator costsCalculator,
+        final int slaHeadroomForAcceptedJobs,
+        final JobClusterScalerRuleDataFactory jobClusterScalerRuleDataFactory) {
+        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator, slaHeadroomForAcceptedJobs, jobClusterScalerRuleDataFactory);
+    }
+
+    public static Props props(
+        final String name,
+        final MantisJobStore jobStore,
+        final MantisSchedulerFactory mantisSchedulerFactory,
+        final LifecycleEventPublisher eventPublisher,
+        final CostsCalculator costsCalculator,
         final int slaHeadroomForAcceptedJobs) {
-        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator, slaHeadroomForAcceptedJobs);
+        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator, slaHeadroomForAcceptedJobs, (JobClusterScalerRuleDataFactory)JobClusterScalerRuleDataImplWritable::of);
     }
 
     private final Receive initializedBehavior;
@@ -214,6 +229,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final String name;
     private final MantisJobStore jobStore;
     private IJobClusterMetadata jobClusterMetadata;
+    private IJobClusterScalerRuleData jobClusterScalerRuleData; // todo: logging + metrics
     private CronManager cronManager;
 
     private SLAEnforcer slaEnforcer;
@@ -234,12 +250,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         final MantisSchedulerFactory schedulerFactory,
         final LifecycleEventPublisher eventPublisher,
         final CostsCalculator costsCalculator,
-        final int slaHeadroomForAcceptedJobs) {
+        final int slaHeadroomForAcceptedJobs,
+        JobClusterScalerRuleDataFactory jobClusterScalerRuleDataFactory) {
         this.name = name;
         this.jobStore = jobStore;
         this.mantisSchedulerFactory = schedulerFactory;
         this.eventPublisher = eventPublisher;
         this.slaHeadroomForAcceptedJobs = slaHeadroomForAcceptedJobs;
+        this.jobClusterScalerRuleData = jobClusterScalerRuleDataFactory.create(name);
 
         this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, costsCalculator);
 
@@ -527,6 +545,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(JobClusterProto.TriggerCronRequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(DisableJobClusterRequest.class, (x) -> getSender().tell(new DisableJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
 
+            .match(JobClusterScalerRuleProto.CreateScalerRuleRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.CreateScalerRuleResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), this.name, state)).build(), getSelf()))
+            .match(JobClusterScalerRuleProto.DeleteScalerRuleRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.DeleteScalerRuleResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), this.name, state)).build(), getSelf()))
+            .match(JobClusterScalerRuleProto.GetScalerRulesRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.GetScalerRulesResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), this.name, state)).build(), getSelf()))
+
             .match(Terminated.class, this::onTerminated)
 
             // UNEXPECTED MESSAGES END //
@@ -615,6 +637,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .match(JobStartedEvent.class, this::onJobStarted)
                 .match(GetLastSubmittedJobIdStreamRequest.class, this::onGetLastSubmittedJobIdSubject)
                 .match(ScaleStageRequest.class, this::onScaleStage)
+                .match(JobClusterScalerRuleProto.CreateScalerRuleRequest.class, this::onScalerRuleCreate)
+                .match(JobClusterScalerRuleProto.DeleteScalerRuleRequest.class, this::onScalerRuleDelete)
+                .match(JobClusterScalerRuleProto.GetScalerRulesRequest.class, this::onScalerRuleGet)
                  // EXPECTED MESSAGES END //
                  // EXPECTED MESSAGES BEGIN //
                 .match(JobClusterProto.InitializeJobClusterRequest.class,(x) -> getSender().tell(
@@ -703,6 +728,17 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         slaEnforcer = new SLAEnforcer(jobClusterMetadata.getJobClusterDefinition().getSLA());
         long expireFrequency = ConfigurationProvider.getConfig().getCompletedJobPurgeFrequencySeqs();
         String jobClusterName = jobClusterMetadata.getJobClusterDefinition().getName();
+
+        // init scaler rules
+        try {
+            IJobClusterScalerRuleData scalerRuleData = jobStore.getJobClusterScalerData(jobClusterName);
+            if (scalerRuleData != null) {
+                this.jobClusterScalerRuleData = scalerRuleData;
+            }
+        } catch (IOException iex) {
+            logger.error("Failed to load job cluster: {} scaler rules. Fall back to empty rules", this.name, iex);
+        }
+
         // If cluster is disabled
         if(jobClusterMetadata.isDisabled()) {
             logger.info("Cluster {} initialized but is Disabled", jobClusterMetadata
@@ -756,6 +792,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             if (initReq.createInStore) {
                 try {
                     jobStore.createJobCluster(jobClusterMetadata);
+                    // TODO (p1): support scale rules creation during job cluster creation.
                     eventPublisher.publishAuditEvent(
                             new LifecycleEventsProto.AuditEvent(
                                     LifecycleEventsProto.AuditEvent.AuditEventType.JOB_CLUSTER_CREATE,
@@ -850,8 +887,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                      }
                  })
                  //
-                 .flatMap((jobMeta) -> jobManager.bootstrapJob((MantisJobMetadataImpl)jobMeta, this.jobClusterMetadata))
-
+                 .flatMap((jobMeta) -> jobManager.bootstrapJob(
+                     (MantisJobMetadataImpl)jobMeta,
+                     this.jobClusterMetadata,
+                     this.jobClusterScalerRuleData))
                  .subscribe((jobInited) -> {
                             logger.info("Job Id {} initialized with code {}", jobInited.jobId, jobInited.responseCode);
                         },
@@ -1567,7 +1606,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 new LifecycleEventsProto.AuditEvent(LifecycleEventsProto.AuditEvent.AuditEventType.JOB_SUBMIT,
                     jId.getId(), jId + " submitter: " + user)
             );
-            jobManager.initJob(mantisJobMetaData, jobClusterMetadata, sender);
+            jobManager.initJob(mantisJobMetaData, jobClusterMetadata, jobClusterScalerRuleData, sender);
 
             numJobActorCreationCounter.increment();
             jobClusterMetadata = new JobClusterMetadataImpl.Builder().withJobClusterDefinition((JobClusterDefinitionImpl)this.jobClusterMetadata.getJobClusterDefinition())
@@ -2318,6 +2357,24 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:updateAndSaveJobCluster {}", jobCluster.getJobClusterDefinition().getName()); }
     }
 
+    private void updateAndSaveScalerRules(JobClusterScalerRuleProto.CreateScalerRuleRequest request) throws Exception {
+        // merge or create local rule data
+        IJobClusterScalerRuleData mergedJobClusterScalerRuleData = this.jobClusterScalerRuleData.merge(request);
+        jobStore.updateJobClusterScalerRule(mergedJobClusterScalerRuleData);
+        this.jobClusterScalerRuleData = mergedJobClusterScalerRuleData;
+
+        logger.info("successfully updated job cluster scaler rules: {}", this.jobClusterScalerRuleData);
+    }
+
+    private void updateAndSaveScalerRules(JobClusterScalerRuleProto.DeleteScalerRuleRequest request) throws Exception {
+        IJobClusterScalerRuleData mergedJobClusterScalerRuleData =
+            this.jobClusterScalerRuleData.delete(request.getRuleId());
+        jobStore.updateJobClusterScalerRule(mergedJobClusterScalerRuleData);
+        this.jobClusterScalerRuleData = mergedJobClusterScalerRuleData;
+
+        logger.info("deleted job cluster scaler rule {}. Now: {}", request.getRuleId(), this.jobClusterScalerRuleData);
+    }
+
     /**
      * Fetch job definition for quick submit mode.
      * If a job definition is passed return it immediately
@@ -2399,6 +2456,106 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             sender.tell(new ResubmitWorkerResponse(req.requestId, CLIENT_ERROR,  "Job " + req.getJobId() + " not found. Could not resubmit worker"), getSelf());
         }
         if(logger.isTraceEnabled()) { logger.trace("Exit JCA:onResubmitWorker {}", req); }
+    }
+
+    public void onScalerRuleCreate(JobClusterScalerRuleProto.CreateScalerRuleRequest req) {
+        // when a new rule is added, do the following:
+        // - merge/create local rule data
+        // - persist updated data
+        // - forward new data to all active job actors.
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("Enter JCA:onScalerRuleCreate {}", req);
+        }
+
+        ActorRef sender = getSender();
+        try {
+            // update local state + persist rules
+            updateAndSaveScalerRules(req);
+
+            // Forward the request to all active job actors.
+            jobManager.getJobInfoForActiveJobs()
+                .ifPresent(jobInfos -> jobInfos.forEach(
+                    ji -> ji.jobActor.forward(this.jobClusterScalerRuleData, getContext())));
+
+            sender.tell(
+                JobClusterScalerRuleProto.CreateScalerRuleResponse.builder()
+                    .requestId(req.requestId)
+                    .responseCode(SUCCESS)
+                    .ruleId(String.valueOf(this.jobClusterScalerRuleData.getLastRuleIdNumber()))
+                    .build(),
+                getSelf());
+        } catch (Exception ex) {
+            logger.error("Error updating scaler rule for {}", this.name, ex);
+            sender.tell(
+                JobClusterScalerRuleProto.CreateScalerRuleResponse.builder()
+                    .requestId(req.requestId)
+                    .responseCode(CLIENT_ERROR)
+                    .message(String.format("Could not create scaler rule for %s due to %s", this.name, ex.getMessage()))
+                    .build(),
+                getSelf()
+            );
+        }
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("Exit JCA:onScalerRuleCreate {}", req);
+        }
+    }
+
+    public void onScalerRuleDelete(JobClusterScalerRuleProto.DeleteScalerRuleRequest req) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("Enter JCA:onScalerRuleDelete {}", req);
+        }
+
+        ActorRef sender = getSender();
+        try {
+            // update local state + persist rules
+            updateAndSaveScalerRules(req);
+
+            // Forward the request to all active job actors.
+            jobManager.getJobInfoForActiveJobs()
+                .ifPresent(jobInfos -> jobInfos.forEach(
+                    ji -> ji.jobActor.forward(this.jobClusterScalerRuleData, getContext())));
+
+            sender.tell(
+                JobClusterScalerRuleProto.DeleteScalerRuleResponse.builder()
+                    .requestId(req.requestId)
+                    .responseCode(SUCCESS)
+                    .build(),
+                getSelf());
+        } catch (Exception ex) {
+            logger.error("Error updating scaler rule for {}", this.name, ex);
+            sender.tell(
+                JobClusterScalerRuleProto.CreateScalerRuleResponse.builder()
+                    .requestId(req.requestId)
+                    .responseCode(CLIENT_ERROR)
+                    .message(String.format("Could not delete scaler rule for %s due to %s", this.name, ex.getMessage()))
+                    .build(),
+                getSelf()
+            );
+        }
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("Exit JCA:onScalerRuleDelete {}", req);
+        }
+    }
+
+    public void onScalerRuleGet(JobClusterScalerRuleProto.GetScalerRulesRequest req) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("Enter JCA:onScalerRuleGet {}", req);
+        }
+
+        ActorRef sender = getSender();
+        sender.tell(
+            JobClusterScalerRuleProto.GetScalerRulesResponse.builder()
+                .requestId(req.requestId)
+                .responseCode(SUCCESS)
+                .rules(this.jobClusterScalerRuleData.toProtoRules())
+                .build(),
+            getSelf());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Exit JCA:onScalerRuleGet {}", req);
+        }
     }
 
 
@@ -2619,10 +2776,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             completedJobStore.onJobClusterDeletion();
         }
 
-        Observable<JobProto.JobInitialized> bootstrapJob(MantisJobMetadataImpl jobMeta, IJobClusterMetadata jobClusterMetadata) {
+        Observable<JobProto.JobInitialized> bootstrapJob(
+            MantisJobMetadataImpl jobMeta,
+            IJobClusterMetadata jobClusterMetadata,
+            IJobClusterScalerRuleData initScalerRuleData) {
 
             // create jobInfo
-            JobInfo jobInfo = createJobInfoAndActorAndWatchActor(jobMeta, jobClusterMetadata);
+            JobInfo jobInfo = createJobInfoAndActorAndWatchActor(jobMeta, jobClusterMetadata, initScalerRuleData);
 
             // add to appropriate map
             actorToJobIdMap.put(jobInfo.jobActor, jobInfo.jobId);
@@ -2662,9 +2822,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         }
 
-        JobInfo initJob(MantisJobMetadataImpl jobMeta, IJobClusterMetadata jobClusterMetadata, ActorRef sender) {
+        JobInfo initJob(
+            MantisJobMetadataImpl jobMeta,
+            IJobClusterMetadata jobClusterMetadata,
+            IJobClusterScalerRuleData initScalerRuleData,
+            ActorRef sender) {
 
-            JobInfo jobInfo = createJobInfoAndActorAndWatchActor(jobMeta, jobClusterMetadata);
+            JobInfo jobInfo = createJobInfoAndActorAndWatchActor(jobMeta, jobClusterMetadata, initScalerRuleData);
 
             markJobAccepted(jobInfo);
             jobInfo.jobActor.tell(new JobProto.InitJob(sender, true), context.self());
@@ -2674,11 +2838,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             return jobInfo;
         }
 
-        JobInfo createJobInfoAndActorAndWatchActor(MantisJobMetadataImpl jobMeta, IJobClusterMetadata jobClusterMetadata) {
+        JobInfo createJobInfoAndActorAndWatchActor(
+            MantisJobMetadataImpl jobMeta,
+            IJobClusterMetadata jobClusterMetadata,
+            IJobClusterScalerRuleData initScalerRuleData) {
 
             MantisScheduler scheduler1 = scheduler.forJob(jobMeta.getJobDefinition());
             ActorRef jobActor = context.actorOf(JobActor.props(jobClusterMetadata.getJobClusterDefinition(),
-                    jobMeta, jobStore, scheduler1, publisher, costsCalculator), "JobActor-" + jobMeta.getJobId().getId());
+                    jobMeta, jobStore, scheduler1, publisher, costsCalculator, initScalerRuleData), "JobActor-" + jobMeta.getJobId().getId());
 
 
             context.watch(jobActor);
@@ -2993,6 +3160,23 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 return unq != null && !unq.isEmpty() && unq.equals(uniqueId);
             }).findFirst();
 
+        }
+
+        Optional<List<JobInfo>> getJobInfoForActiveJobs() {
+            List<JobInfo> activeJobs = new ArrayList<>();
+            if(!acceptedJobsMap.isEmpty()) {
+                activeJobs.addAll(acceptedJobsMap.values());
+            }
+
+            if(!activeJobsMap.isEmpty()) {
+                activeJobs.addAll(activeJobsMap.values());
+            }
+
+            if (!activeJobs.isEmpty()) {
+                return Optional.of(activeJobs);
+            } else {
+                return Optional.empty();
+            }
         }
 
         private List<JobInfo> getJobActorsStuckInInit(long now, long allowedDelay) {

@@ -22,6 +22,8 @@ import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.MantisStageMetadataImpl;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
+import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
+import io.mantisrx.master.jobcluster.scaler.JobClusterScalerRule;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
@@ -130,6 +132,14 @@ public class MantisJobStore {
         archivedJobsMetadataCache.remove(jobId);
         archivedWorkersCache.remove(jobId);
         storageProvider.deleteJob(jobId);
+    }
+
+    public void updateJobClusterScalerRule(IJobClusterScalerRuleData scalerRuleData) throws Exception {
+        storageProvider.updateJobClusterScalerRule(scalerRuleData);
+    }
+
+    public IJobClusterScalerRuleData getJobClusterScalerData(String clusterName) throws IOException {
+        return storageProvider.getJobClusterScalerRuleData(clusterName);
     }
 
     public void storeCompletedJobForCluster(String name, CompletedJob completedJob) throws IOException {
