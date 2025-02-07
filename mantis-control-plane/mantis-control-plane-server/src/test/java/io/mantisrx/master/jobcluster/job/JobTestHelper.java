@@ -307,6 +307,40 @@ public class JobTestHelper {
         }
     }
 
+    public static JobClusterScalerRuleProto.CreateScalerRuleRequest createDummyCreateRuleRequest(String jobClusterName, int desireSize) {
+        Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
+        StageScalingPolicy scalingPolicy;
+
+        smap.put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
+        smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
+        scalingPolicy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
+
+        JobClusterScalerRuleProto.ScalerConfig scalerConfig =
+            JobClusterScalerRuleProto.ScalerConfig.builder()
+                .type("standard")
+                .desireSize(desireSize)
+                .scalingPolicy(scalingPolicy)
+                .build();
+
+        JobClusterScalerRuleProto.TriggerConfig triggerConfig =
+            JobClusterScalerRuleProto.TriggerConfig.builder()
+                .triggerType("cron")
+                .scheduleCron("0 0 * * *")
+                .scheduleDuration("PT1H")
+                .customTrigger("none")
+                .build();
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key", "value");
+
+        return JobClusterScalerRuleProto.CreateScalerRuleRequest.builder()
+            .jobClusterName(jobClusterName)
+            .scalerConfig(scalerConfig)
+            .triggerConfig(triggerConfig)
+            .metadata(metadata)
+            .build();
+    }
+
     public static void createJobClusterScalerRuleAndVerifySuccess(final TestKit probe, String clusterName, ActorRef jobClusterActor) {
         Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
         StageScalingPolicy scalingPolicy;

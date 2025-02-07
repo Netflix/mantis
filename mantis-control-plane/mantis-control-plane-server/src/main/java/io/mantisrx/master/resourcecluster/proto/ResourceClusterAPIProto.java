@@ -21,10 +21,8 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Singular;
-import lombok.Value;
+
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 public class ResourceClusterAPIProto {
@@ -52,6 +50,7 @@ public class ResourceClusterAPIProto {
 
         @Value
         @Builder
+        @EqualsAndHashCode
         public static class RegisteredResourceCluster {
             ClusterID id;
             String version;

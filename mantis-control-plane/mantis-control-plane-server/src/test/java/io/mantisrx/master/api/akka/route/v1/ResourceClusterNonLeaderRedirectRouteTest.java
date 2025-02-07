@@ -394,6 +394,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .assertEntityAs(Jackson.unmarshaller(UpgradeClusterContainersResponse.class),
                 UpgradeClusterContainersResponse.builder()
                     .responseCode(ResponseCode.SUCCESS)
+                    .message("Upgrade request submitted")
                     .clusterId(createRuleReq1.getClusterId())
                     .region(createRuleReq1.getRegion())
                     .optionalSkuId(createRuleReq1.getOptionalSkuId())
