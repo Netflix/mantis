@@ -2267,8 +2267,208 @@ public class JobClusterAkkaTest {
             verify(jobStoreMock, times(1)).createJobCluster(any());
             verify(jobStoreMock, times(1)).updateJobCluster(any());
         } catch (Exception e) {
-            e.printStackTrace();
-            fail();
+            fail("Exception occurred during test: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCreateAddAndDeleteRules() {
+        // Create a TestKit probe for communication with the actor.
+        TestKit probe = new TestKit(system);
+        String clusterName = "testCreateAddAndDeleteRules";
+
+        // Mocks for dependencies.
+        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+        // Create a fake job cluster definition.
+        final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
+
+        // Create the job cluster actor.
+        ActorRef jobClusterActor = system.actorOf(
+            props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0)
+        );
+
+        // Initialize the job cluster.
+        jobClusterActor.tell(
+            new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()),
+            probe.getRef()
+        );
+        JobClusterProto.InitializeJobClusterResponse initResp =
+            probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+        assertEquals(SUCCESS, initResp.responseCode);
+
+        try {
+            // 1. Create the first rule.
+            JobClusterScalerRuleProto.CreateScalerRuleRequest createRule1 =
+                JobTestHelper.createDummyCreateRuleRequest(clusterName, 10);
+            jobClusterActor.tell(createRule1, probe.getRef());
+            JobClusterScalerRuleProto.CreateScalerRuleResponse createResp1 =
+                probe.expectMsgClass(JobClusterScalerRuleProto.CreateScalerRuleResponse.class);
+            assertEquals(SUCCESS, createResp1.responseCode);
+
+            // Validate that the rule list now contains one rule with ruleId "1".
+            JobClusterScalerRuleProto.GetScalerRulesRequest getRulesReq =
+                new JobClusterScalerRuleProto.GetScalerRulesRequest(clusterName);
+            jobClusterActor.tell(getRulesReq, probe.getRef());
+            JobClusterScalerRuleProto.GetScalerRulesResponse getRulesResp1 =
+                probe.expectMsgClass(JobClusterScalerRuleProto.GetScalerRulesResponse.class);
+            assertEquals(SUCCESS, getRulesResp1.responseCode);
+            assertEquals(1, getRulesResp1.getRules().size());
+            assertEquals("1", getRulesResp1.getRules().get(0).getRuleId());
+
+            // 2. Create the second rule.
+            JobClusterScalerRuleProto.CreateScalerRuleRequest createRule2 =
+                JobTestHelper.createDummyCreateRuleRequest(clusterName, 20);
+            jobClusterActor.tell(createRule2, probe.getRef());
+            JobClusterScalerRuleProto.CreateScalerRuleResponse createResp2 =
+                probe.expectMsgClass(JobClusterScalerRuleProto.CreateScalerRuleResponse.class);
+            assertEquals(SUCCESS, createResp2.responseCode);
+
+            // Validate that there are now two rules with ruleIds "1" and "2".
+            jobClusterActor.tell(getRulesReq, probe.getRef());
+            JobClusterScalerRuleProto.GetScalerRulesResponse getRulesResp2 =
+                probe.expectMsgClass(JobClusterScalerRuleProto.GetScalerRulesResponse.class);
+            assertEquals(SUCCESS, getRulesResp2.responseCode);
+            assertEquals(2, getRulesResp2.getRules().size());
+            assertEquals("1", getRulesResp2.getRules().get(0).getRuleId());
+            assertEquals("2", getRulesResp2.getRules().get(1).getRuleId());
+
+            // 3. Delete the second rule (ruleId "2") and validate that only the first rule remains.
+            JobClusterScalerRuleProto.DeleteScalerRuleRequest deleteRule2 =
+                new JobClusterScalerRuleProto.DeleteScalerRuleRequest(clusterName, "2");
+
+            jobClusterActor.tell(deleteRule2, probe.getRef());
+            JobClusterScalerRuleProto.DeleteScalerRuleResponse deleteResp2 =
+                probe.expectMsgClass(JobClusterScalerRuleProto.DeleteScalerRuleResponse.class);
+            assertEquals(SUCCESS, deleteResp2.responseCode);
+
+            // Validate get rules now returns only the first rule.
+            jobClusterActor.tell(getRulesReq, probe.getRef());
+            JobClusterScalerRuleProto.GetScalerRulesResponse getRulesAfterDelete2 =
+                probe.expectMsgClass(JobClusterScalerRuleProto.GetScalerRulesResponse.class);
+            assertEquals(SUCCESS, getRulesAfterDelete2.responseCode);
+            assertEquals(1, getRulesAfterDelete2.getRules().size());
+            assertEquals("1", getRulesAfterDelete2.getRules().get(0).getRuleId());
+
+            // 4. Delete the first rule (ruleId "1") and validate that no rules remain.
+            JobClusterScalerRuleProto.DeleteScalerRuleRequest deleteRule1 =
+                new JobClusterScalerRuleProto.DeleteScalerRuleRequest(clusterName, "1");
+            jobClusterActor.tell(deleteRule1, probe.getRef());
+            JobClusterScalerRuleProto.DeleteScalerRuleResponse deleteResp1 =
+                probe.expectMsgClass(JobClusterScalerRuleProto.DeleteScalerRuleResponse.class);
+            assertEquals(SUCCESS, deleteResp1.responseCode);
+
+            // Validate get rules now returns an empty list.
+            jobClusterActor.tell(getRulesReq, probe.getRef());
+            JobClusterScalerRuleProto.GetScalerRulesResponse getRulesAfterDelete1 =
+                probe.expectMsgClass(JobClusterScalerRuleProto.GetScalerRulesResponse.class);
+            assertEquals(SUCCESS, getRulesAfterDelete1.responseCode);
+            assertEquals(0, getRulesAfterDelete1.getRules().size());
+
+        } catch (Exception e) {
+            fail("Exception during test: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteScalerRule() {
+        TestKit probe = new TestKit(system);
+        String clusterName = "testDeleteScalerRule";
+
+        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+        final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
+
+        ActorRef jobClusterActor = system.actorOf(
+            props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0)
+        );
+
+        jobClusterActor.tell(
+            new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()),
+            probe.getRef()
+        );
+        JobClusterProto.InitializeJobClusterResponse initResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+        assertEquals(SUCCESS, initResp.responseCode);
+
+        try {
+            final JobDefinition jobDefn = createJob(clusterName, 1, MantisJobDurationType.Transient);
+            String jobId = clusterName + "-1";
+            JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn, jobId);
+            JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
+
+            // Create a scaler rule first.
+            JobClusterScalerRuleProto.ScalerConfig scalerConfig =
+                JobClusterScalerRuleProto.ScalerConfig.builder()
+                    .type("standard")
+                    .desireSize(19)
+                    .scalingPolicy(new StageScalingPolicy(
+                        1, 1, 2, 1, 1, 60,
+                        new HashMap<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy>() {{
+                            put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
+                            put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
+                        }},
+                        false
+                    ))
+                    .build();
+
+            // Build a dummy trigger config.
+            JobClusterScalerRuleProto.TriggerConfig triggerConfig =
+                JobClusterScalerRuleProto.TriggerConfig.builder()
+                    .triggerType("cron")
+                    .scheduleCron("0 0 * * *")
+                    .scheduleDuration("PT1H")
+                    .customTrigger("none")
+                    .build();
+
+            // Dummy metadata.
+            Map<String, String> metadata = new HashMap<>();
+            metadata.put("key", "value");
+
+            // Build the CreateScalerRuleRequest.
+            JobClusterScalerRuleProto.CreateScalerRuleRequest createRequest =
+                JobClusterScalerRuleProto.CreateScalerRuleRequest.builder()
+                    .jobClusterName(clusterName)
+                    .scalerConfig(scalerConfig)
+                    .triggerConfig(triggerConfig)
+                    .metadata(metadata)
+                    .build();
+
+            // Tell the actor to create the scaler rule.
+            jobClusterActor.tell(createRequest, probe.getRef());
+            JobClusterScalerRuleProto.CreateScalerRuleResponse createResp =
+                probe.expectMsgClass(JobClusterScalerRuleProto.CreateScalerRuleResponse.class);
+            assertEquals(SUCCESS, createResp.responseCode);
+
+            // Verify that the rule was created (assumes ruleId "1" is assigned).
+            JobClusterScalerRuleProto.GetScalerRulesRequest getRulesReq =
+                new JobClusterScalerRuleProto.GetScalerRulesRequest(clusterName);
+            jobClusterActor.tell(getRulesReq, probe.getRef());
+            JobClusterScalerRuleProto.GetScalerRulesResponse getRulesResp =
+                probe.expectMsgClass(JobClusterScalerRuleProto.GetScalerRulesResponse.class);
+            assertEquals(SUCCESS, getRulesResp.responseCode);
+            assertEquals(1, getRulesResp.getRules().size());
+            assertEquals("1", getRulesResp.getRules().get(0).getRuleId());
+
+            JobClusterScalerRuleProto.DeleteScalerRuleRequest deleteRequest =
+                new JobClusterScalerRuleProto.DeleteScalerRuleRequest(clusterName, "1");
+
+            jobClusterActor.tell(deleteRequest, probe.getRef());
+            JobClusterScalerRuleProto.DeleteScalerRuleResponse deleteResp =
+                probe.expectMsgClass(JobClusterScalerRuleProto.DeleteScalerRuleResponse.class);
+            assertEquals(SUCCESS, deleteResp.responseCode);
+
+            // Verify that the rule list is now empty.
+            jobClusterActor.tell(getRulesReq, probe.getRef());
+            JobClusterScalerRuleProto.GetScalerRulesResponse getRulesAfterDelete =
+                probe.expectMsgClass(JobClusterScalerRuleProto.GetScalerRulesResponse.class);
+            assertEquals(SUCCESS, getRulesAfterDelete.responseCode);
+            assertEquals(0, getRulesAfterDelete.getRules().size());
+
+            // Optionally, verify that jobStoreMock was updated as expected.
+            verify(jobStoreMock, times(1)).updateJobCluster(any());
+        } catch (Exception e) {
+            fail("Exception occurred during test: " + e.getMessage());
         }
     }
 

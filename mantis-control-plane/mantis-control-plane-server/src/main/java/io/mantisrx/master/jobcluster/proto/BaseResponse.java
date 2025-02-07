@@ -17,9 +17,13 @@
 package io.mantisrx.master.jobcluster.proto;
 
 import com.netflix.spectator.impl.Preconditions;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class BaseResponse {
     public enum ResponseCode {
         SUCCESS(200),                  //200
