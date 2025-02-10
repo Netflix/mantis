@@ -66,6 +66,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorker
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ScaleStageRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ScaleStageResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.master.jobcluster.proto.JobProto.InitJob;
 import io.mantisrx.master.jobcluster.proto.JobProto.JobInitialized;
@@ -183,8 +184,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private volatile MantisJobMetadataImpl mantisJobMetaData;
 
     private final MantisJobStore jobStore;
-    // load from config
-    private int workerWritesBatchSize = 10;
 
     // Manages life cycle of worker
     private IWorkerManager workerManager = null;
@@ -193,10 +192,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final MantisScheduler mantisScheduler;
     private final LifecycleEventPublisher eventPublisher;
     private final CostsCalculator costsCalculator;
-    private IJobClusterScalerRuleData scalerRuleData;
-    private BehaviorSubject<JobScalerRuleInfo> scalerRuleInfoBehaviorSubject;
-    //todo: impl scalerRule updates + stream API
-    private boolean hasJobMaster;
+
+    // scaler rules state
+    private final BehaviorSubject<JobScalerRuleInfo> scalerRuleInfoBehaviorSubject;
+
     private volatile boolean allWorkersCompleted = false;
 
     /**
@@ -261,7 +260,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.eventPublisher = eventPublisher;
         this.mantisJobMetaData = jobMetadata;
         this.costsCalculator = costsCalculator;
-        this.scalerRuleData = initScalerRuleData;
         this.scalerRuleInfoBehaviorSubject = BehaviorSubject.create(JobScalerRuleInfo.builder()
             .jobCompleted(false)
             .jobId(this.jobId.getId())
@@ -312,8 +310,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * Validates the job definition, stores the job to persistence. Instantiates the SubscriptionManager to keep track
      * of subscription and runtime timeouts Instantiates the WorkerManager which manages the worker life cycle
      *
-     * @throws InvalidJobRequest
-     * @throws InvalidJobException
      */
     void initialize(boolean isSubmit) throws Exception {
         LOGGER.info("Initializing Job {}", jobId);
@@ -386,7 +382,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             .build())
                     .build();
         }
-        hasJobMaster = true;
     }
 
     private MachineDefinition getJobMasterMachineDef() {
@@ -505,7 +500,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
                         new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR,
                                 genUnexpectedMsg(x.toString(), this.jobId.getId(), state), empty()), getSelf()))
-
+                .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class, (x) -> getSender().tell(
+                    JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.builder()
+                        .responseCode(CLIENT_ERROR)
+                        .requestId(x.requestId)
+                        .message(genUnexpectedMsg(x.toString(), this.jobId.getId(), state))
+                        .build(),
+                    getSelf()))
                 .match(
                         JobProto.SendWorkerAssignementsIfChanged.class,
                         (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
@@ -574,6 +575,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
                         new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
                                 x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+                .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class, (x) -> getSender().tell(
+                    JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.builder()
+                        .responseCode(CLIENT_ERROR)
+                        .requestId(x.requestId)
+                        .message(genUnexpectedMsg(x.toString(), this.jobId.getId(), state))
+                        .build(),
+                    getSelf()))
 
                 .match(KillJobResponse.class, (x) -> LOGGER.info("Received Kill Job Response in"
                         + "Terminating State Ignoring"))
@@ -629,6 +637,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
                 .match(IJobClusterScalerRuleData.class, this::onScalerRuleDataUpdate)
+                .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class,  this::onGetJobScalerRuleStreamRequest)
 
             // EXPECTED MESSAGES END//
                 // UNEXPECTED MESSAGES BEGIN //
@@ -851,6 +860,41 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
     }
 
+    public void onGetJobScalerRuleStreamRequest(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest req) {
+        ActorRef sender = getSender();
+        if (req.getJobId().equals(this.jobId)) {
+            if (this.scalerRuleInfoBehaviorSubject != null) {
+                sender.tell(
+                    JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.builder()
+                        .responseCode(SUCCESS)
+                        .requestId(req.requestId)
+                        .jobScalerRuleStreamBehaviorSubject(this.scalerRuleInfoBehaviorSubject)
+                        .build(),
+                    getSelf());
+            } else {
+                LOGGER.error("scalerRuleInfoBehaviorSubject is null in {}", jobId);
+                sender.tell(
+                    JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.builder()
+                        .responseCode(SERVER_ERROR)
+                        .requestId(req.requestId)
+                        .message(String.format("%s has null scalerRuleInfoBehaviorSubject", this.jobId))
+                        .build(),
+                    getSelf());
+            }
+        } else {
+            String msg = String.format("JobCluster in the request %s does not match Job Actors job ID %s",
+                req.getJobId(), this.jobId);
+            LOGGER.error(msg);
+            sender.tell(
+                JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.builder()
+                    .responseCode(CLIENT_ERROR)
+                    .requestId(req.requestId)
+                    .message(msg)
+                    .build(),
+                getSelf());
+        }
+    }
+
     /**
      * Worker Events sent by the worker itself of the Scheduling Service.
      */
@@ -911,8 +955,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
     public void onScalerRuleDataUpdate(final IJobClusterScalerRuleData ruleData) {
         LOGGER.info("Job actor {} received new Scaler Rule Data: {}", this.jobId, ruleData);
-        this.scalerRuleData = ruleData;
-        // TODO trigger stream API update
+        this.scalerRuleInfoBehaviorSubject.onNext(JobScalerRuleInfo.builder()
+            .jobCompleted(false)
+            .jobId(this.jobId.getId())
+            .rules(ruleData == null ? null : ruleData.getProtoRules())
+            .build());
     }
 
     /**
@@ -1164,13 +1211,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         LOGGER.info("Entering JobActor:shutdown {}", jobId);
 
         workerManager.shutdown();
-
         eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
                 "job shutdown, reason: " + reason,
                 getJobId(), state));
         eventPublisher.publishAuditEvent(new LifecycleEventsProto.AuditEvent(
                 LifecycleEventsProto.AuditEvent.AuditEventType.JOB_TERMINATE,
                 jobId.getId(), "job shutdown, reason: " + reason));
+        this.scalerRuleInfoBehaviorSubject.onCompleted();
     }
 
     @Override
