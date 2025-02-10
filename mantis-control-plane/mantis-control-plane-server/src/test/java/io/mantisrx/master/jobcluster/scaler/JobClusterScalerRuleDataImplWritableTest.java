@@ -5,6 +5,7 @@ import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 
 import java.util.*;
 
+import io.mantisrx.runtime.descriptor.StageScalingRule;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -20,15 +21,15 @@ public class JobClusterScalerRuleDataImplWritableTest {
         scalingPolicy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
 
 
-        JobClusterScalerRuleProto.ScalerConfig scalerConfig =
-            JobClusterScalerRuleProto.ScalerConfig.builder()
+        StageScalingRule.ScalerConfig scalerConfig =
+            StageScalingRule.ScalerConfig.builder()
                 .type("standard")
                 .desireSize(desireSize)
                 .scalingPolicy(scalingPolicy)
                 .build();
 
-        JobClusterScalerRuleProto.TriggerConfig triggerConfig =
-            JobClusterScalerRuleProto.TriggerConfig.builder()
+        StageScalingRule.TriggerConfig triggerConfig =
+            StageScalingRule.TriggerConfig.builder()
                 .triggerType("cron")
                 .scheduleCron("0 0 * * *")
                 .scheduleDuration("PT1H")
@@ -53,7 +54,7 @@ public class JobClusterScalerRuleDataImplWritableTest {
         IJobClusterScalerRuleData data = JobClusterScalerRuleDataImplWritable.of(clusterName);
 
         // Before merge: no rules and lastRuleIdNumber is 0.
-        List<JobClusterScalerRuleProto.ScalerRule> protoRulesBefore = data.toProtoRules();
+        List<StageScalingRule> protoRulesBefore = data.getProtoRules();
         assertNotNull(protoRulesBefore);
         assertTrue(protoRulesBefore.isEmpty());
 
@@ -74,10 +75,10 @@ public class JobClusterScalerRuleDataImplWritableTest {
 
         // Check that the ruleId in the new rule is "1"
         JobClusterScalerRule newRule = writable.getScalerRules().get(0);
-        assertEquals("1", newRule.getRuleId());
+        assertEquals("1", newRule.getRule().getRuleId());
 
         // Also test that toProtoRules returns the correct data.
-        List<JobClusterScalerRuleProto.ScalerRule> protoRulesAfter = mergedData.toProtoRules();
+        List<StageScalingRule> protoRulesAfter = mergedData.getProtoRules();
         assertNotNull(protoRulesAfter);
         assertEquals(1, protoRulesAfter.size());
     }
@@ -104,7 +105,7 @@ public class JobClusterScalerRuleDataImplWritableTest {
         List<JobClusterScalerRule> remainingRules = writableAfterDelete.getScalerRules();
         assertEquals(1, remainingRules.size());
         // The remaining rule should have ruleId "2"
-        assertEquals("2", remainingRules.get(0).getRuleId());
+        assertEquals("2", remainingRules.get(0).getRule().getRuleId());
 
         // Deleting a non-existing rule should return the same instance.
         IJobClusterScalerRuleData unchanged = afterDelete.delete("non-existing");
@@ -120,11 +121,11 @@ public class JobClusterScalerRuleDataImplWritableTest {
         IJobClusterScalerRuleData mergedData = data.merge(req);
 
         // Convert to proto and verify that the returned list is not null and has expected size.
-        List<JobClusterScalerRuleProto.ScalerRule> protoRules = mergedData.toProtoRules();
+        List<StageScalingRule> protoRules = mergedData.getProtoRules();
         assertNotNull(protoRules);
         assertEquals(1, protoRules.size());
 
-        JobClusterScalerRuleProto.ScalerRule protoRule = protoRules.get(0);
+        StageScalingRule protoRule = protoRules.get(0);
         // Validate that the protoRule contains the expected fields (scalerConfig, triggerConfig, metadata)
         assertNotNull(protoRule.getScalerConfig());
         assertEquals("standard", protoRule.getScalerConfig().getType());

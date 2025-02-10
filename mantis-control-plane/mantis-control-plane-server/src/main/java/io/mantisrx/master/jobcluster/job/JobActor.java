@@ -80,11 +80,7 @@ import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-import io.mantisrx.server.core.JobCompletedReason;
-import io.mantisrx.server.core.JobSchedulingInfo;
-import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.WorkerAssignments;
-import io.mantisrx.server.core.WorkerHost;
+import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.core.domain.JobMetadata;
@@ -197,7 +193,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final MantisScheduler mantisScheduler;
     private final LifecycleEventPublisher eventPublisher;
     private final CostsCalculator costsCalculator;
-    private IJobClusterScalerRuleData scalerRuleData; //todo: impl scalerRule updates + stream API
+    private IJobClusterScalerRuleData scalerRuleData;
+    private BehaviorSubject<JobScalerRuleInfo> scalerRuleInfoBehaviorSubject;
+    //todo: impl scalerRule updates + stream API
     private boolean hasJobMaster;
     private volatile boolean allWorkersCompleted = false;
 
@@ -264,6 +262,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.mantisJobMetaData = jobMetadata;
         this.costsCalculator = costsCalculator;
         this.scalerRuleData = initScalerRuleData;
+        this.scalerRuleInfoBehaviorSubject = BehaviorSubject.create(JobScalerRuleInfo.builder()
+            .jobCompleted(false)
+            .jobId(this.jobId.getId())
+            .rules(initScalerRuleData == null ? null : initScalerRuleData.getProtoRules())
+            .build());
 
         initializedBehavior = getInitializedBehavior();
 

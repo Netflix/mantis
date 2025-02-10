@@ -1,6 +1,7 @@
 package io.mantisrx.master.jobcluster.scaler;
 
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
+import io.mantisrx.runtime.descriptor.StageScalingRule;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -54,10 +55,10 @@ public class JobClusterScalerRuleDataImplWritable implements IJobClusterScalerRu
 
     @Override
     public IJobClusterScalerRuleData delete(String ruleId) {
-        if (this.scalerRules.stream().anyMatch(r -> r.getRuleId().equals(ruleId))) {
+        if (this.scalerRules.stream().anyMatch(r -> r.getRule().getRuleId().equals(ruleId))) {
             List<JobClusterScalerRule> mergedRules = ImmutableList.<JobClusterScalerRule>builder()
                 .addAll(
-                    this.scalerRules.stream().filter(r -> !r.getRuleId().equals(ruleId)).iterator())
+                    this.scalerRules.stream().filter(r -> !r.getRule().getRuleId().equals(ruleId)).iterator())
                 .build();
             return new JobClusterScalerRuleDataImplWritable(
                 jobClusterName,
@@ -71,7 +72,7 @@ public class JobClusterScalerRuleDataImplWritable implements IJobClusterScalerRu
     }
 
     @Override
-    public List<JobClusterScalerRuleProto.ScalerRule> toProtoRules() {
+    public List<StageScalingRule> getProtoRules() {
         return this.scalerRules.stream().map(JobClusterScalerRule::toProto).collect(ImmutableList.toImmutableList());
     }
 }

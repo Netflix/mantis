@@ -17,8 +17,7 @@
 package io.mantisrx.master.api.akka.route.handlers;
 
 import static akka.pattern.PatternsCS.ask;
-import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.JOB_CLUSTER_INFO_HB_INSTANCE;
-import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.SCHED_INFO_HB_INSTANCE;
+import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.*;
 
 import akka.actor.ActorRef;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
@@ -32,6 +31,8 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInf
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
+import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.JobId;
@@ -58,9 +59,11 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
 
     private final Counter schedInfoStreamErrors;
     private final Counter lastSubmittedJobIdStreamErrors;
+    private final Counter jobScalerRuleInfoStreamErrors;
 
     private final AsyncLoadingCache<GetJobSchedInfoRequest, GetJobSchedInfoResponse> schedInfoCache;
     private final AsyncLoadingCache<GetLastSubmittedJobIdStreamRequest, GetLastSubmittedJobIdStreamResponse> lastSubmittedJobIdStreamRespCache;
+    private final AsyncLoadingCache<JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest, JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse> jobScalerRuleStreamRespCache;
 
     public JobDiscoveryRouteHandlerAkkaImpl(ActorRef jobClustersManagerActor, Duration serverIdleTimeout) {
         this.jobClustersManagerActor = jobClustersManagerActor;
@@ -77,13 +80,20 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
             .maximumSize(500)
             .buildAsync(this::lastSubmittedJobId);
 
+        jobScalerRuleStreamRespCache = Caffeine.newBuilder()
+            .expireAfterWrite(5, TimeUnit.SECONDS)
+            .maximumSize(500)
+            .buildAsync(this::jobScalerRuleSubject);
+
         Metrics m = new Metrics.Builder()
             .id("JobDiscoveryRouteHandlerAkkaImpl")
             .addCounter("schedInfoStreamErrors")
             .addCounter("lastSubmittedJobIdStreamErrors")
+            .addCounter("jobScalerRuleInfoStreamErrors")
             .build();
         this.schedInfoStreamErrors = m.getCounter("schedInfoStreamErrors");
         this.lastSubmittedJobIdStreamErrors = m.getCounter("lastSubmittedJobIdStreamErrors");
+        this.jobScalerRuleInfoStreamErrors = m.getCounter("jobScalerRuleInfoStreamErrors");
     }
 
 
@@ -158,6 +168,12 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
             .toCompletableFuture();
     }
 
+    private CompletableFuture<JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse> jobScalerRuleSubject(final JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest request, Executor executor) {
+        return ask(jobClustersManagerActor, request, askTimeout)
+            .thenApply(JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.class::cast)
+            .toCompletableFuture();
+    }
+
     @Override
     public CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> lastSubmittedJobIdStream(final GetLastSubmittedJobIdStreamRequest request,
                                                                                                    final boolean sendHeartbeats) {
@@ -200,6 +216,62 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
                 BaseResponse.ResponseCode.SERVER_ERROR,
                 "Failed to get last submitted jobId stream for " + request.getClusterName() + " error: " + e.getMessage()
             ));
+        }
+    }
+
+    @Override
+    public CompletionStage<JobClusterScalerRuleProto.GetJobScalerRuleStreamResponse> jobScalerRuleStream(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest request, boolean sendHeartbeats) {
+        CompletionStage<JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse> response =
+            jobScalerRuleStreamRespCache.get(request);
+        try {
+            AtomicBoolean isJobCompleted = new AtomicBoolean(false);
+            final String jobId = request.getJobId().getId();
+            final JobScalerRuleInfo completedJobScalerRuleInfo = new JobScalerRuleInfo(jobId, true, null);
+            return response.thenApply(getJobScalerRuleStreamSubjectResponse -> {
+                    BehaviorSubject<JobScalerRuleInfo> jobScalerRuleSubject =
+                        getJobScalerRuleStreamSubjectResponse.getJobScalerRuleStreamBehaviorSubject();
+                    if (getJobScalerRuleStreamSubjectResponse.responseCode.equals(BaseResponse.ResponseCode.SUCCESS) && jobScalerRuleSubject != null) {
+                        Observable<JobScalerRuleInfo> heartbeats =
+                            Observable.interval(5, serverIdleConnectionTimeout.getSeconds() - 1, TimeUnit.SECONDS)
+                                .map(x -> {
+                                    if(!isJobCompleted.get()) {
+                                        return JOB_SCALER_RULES_INFO_HB_INSTANCE;
+                                    } else {
+                                        return completedJobScalerRuleInfo;
+                                    }
+
+                                })
+                                .takeWhile(x -> sendHeartbeats);
+
+                        Observable<JobScalerRuleInfo> jobScalerRuleInfoWithHBObs = Observable.merge(
+                            jobScalerRuleSubject.doOnCompleted(() -> isJobCompleted.set(true)),
+                            heartbeats);
+                        return JobClusterScalerRuleProto.GetJobScalerRuleStreamResponse.builder()
+                            .requestId(getJobScalerRuleStreamSubjectResponse.requestId)
+                            .responseCode(getJobScalerRuleStreamSubjectResponse.responseCode)
+                            .message(getJobScalerRuleStreamSubjectResponse.message)
+                            .scalerRuleObs(jobScalerRuleInfoWithHBObs)
+                            .build();
+                    } else {
+                        logger.info("Failed to get job scaler rule info stream for {}", request.getJobId());
+                        jobScalerRuleInfoStreamErrors.increment();
+                        return JobClusterScalerRuleProto.GetJobScalerRuleStreamResponse.builder()
+                            .requestId(getJobScalerRuleStreamSubjectResponse.requestId)
+                            .responseCode(getJobScalerRuleStreamSubjectResponse.responseCode)
+                            .message(getJobScalerRuleStreamSubjectResponse.message)
+                            .build();
+                    }
+                });
+        } catch (Exception e) {
+            logger.error("caught exception fetching job scaler rule info stream for {}", request.getJobId(), e);
+            jobScalerRuleInfoStreamErrors.increment();
+            return CompletableFuture.completedFuture(
+                JobClusterScalerRuleProto.GetJobScalerRuleStreamResponse.builder()
+                    .requestId(0)
+                    .responseCode(BaseResponse.ResponseCode.SERVER_ERROR)
+                    .message("Failed to get scaler rule info stream for " + request.getJobId() + " error: " + e.getMessage())
+                    .build()
+            );
         }
     }
 }
