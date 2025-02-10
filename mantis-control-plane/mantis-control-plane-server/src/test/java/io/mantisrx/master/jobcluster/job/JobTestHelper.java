@@ -44,6 +44,7 @@ import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import io.mantisrx.runtime.descriptor.StageScalingRule;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
@@ -315,15 +316,15 @@ public class JobTestHelper {
         smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
         scalingPolicy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
 
-        JobClusterScalerRuleProto.ScalerConfig scalerConfig =
-            JobClusterScalerRuleProto.ScalerConfig.builder()
+        StageScalingRule.ScalerConfig scalerConfig =
+            StageScalingRule.ScalerConfig.builder()
                 .type("standard")
                 .desireSize(desireSize)
                 .scalingPolicy(scalingPolicy)
                 .build();
 
-        JobClusterScalerRuleProto.TriggerConfig triggerConfig =
-            JobClusterScalerRuleProto.TriggerConfig.builder()
+        StageScalingRule.TriggerConfig triggerConfig =
+            StageScalingRule.TriggerConfig.builder()
                 .triggerType("cron")
                 .scheduleCron("0 0 * * *")
                 .scheduleDuration("PT1H")
@@ -350,15 +351,15 @@ public class JobTestHelper {
         scalingPolicy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
         int desireSize = 19;
 
-        JobClusterScalerRuleProto.ScalerConfig scalerConfig =
-            JobClusterScalerRuleProto.ScalerConfig.builder()
+        StageScalingRule.ScalerConfig scalerConfig =
+            StageScalingRule.ScalerConfig.builder()
                 .type("standard")
                 .desireSize(desireSize)
                 .scalingPolicy(scalingPolicy)
                 .build();
 
-        JobClusterScalerRuleProto.TriggerConfig triggerConfig =
-            JobClusterScalerRuleProto.TriggerConfig.builder()
+        StageScalingRule.TriggerConfig triggerConfig =
+            StageScalingRule.TriggerConfig.builder()
                 .triggerType("cron")
                 .scheduleCron("0 0 * * *")
                 .scheduleDuration("PT1H")

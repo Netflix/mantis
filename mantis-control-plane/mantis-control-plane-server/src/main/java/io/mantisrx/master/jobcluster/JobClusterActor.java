@@ -60,7 +60,6 @@ import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.CreateJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterResponse;
@@ -548,6 +547,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(JobClusterScalerRuleProto.CreateScalerRuleRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.CreateScalerRuleResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), this.name, state)).build(), getSelf()))
             .match(JobClusterScalerRuleProto.DeleteScalerRuleRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.DeleteScalerRuleResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), this.name, state)).build(), getSelf()))
             .match(JobClusterScalerRuleProto.GetScalerRulesRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.GetScalerRulesResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), this.name, state)).build(), getSelf()))
+            .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), this.name, state)).build(), getSelf()))
 
             .match(Terminated.class, this::onTerminated)
 
@@ -640,6 +640,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .match(JobClusterScalerRuleProto.CreateScalerRuleRequest.class, this::onScalerRuleCreate)
                 .match(JobClusterScalerRuleProto.DeleteScalerRuleRequest.class, this::onScalerRuleDelete)
                 .match(JobClusterScalerRuleProto.GetScalerRulesRequest.class, this::onScalerRuleGet)
+                .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class, this::onJobScalerRuleStream)
                  // EXPECTED MESSAGES END //
                  // EXPECTED MESSAGES BEGIN //
                 .match(JobClusterProto.InitializeJobClusterRequest.class,(x) -> getSender().tell(
@@ -2550,7 +2551,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             JobClusterScalerRuleProto.GetScalerRulesResponse.builder()
                 .requestId(req.requestId)
                 .responseCode(SUCCESS)
-                .rules(this.jobClusterScalerRuleData.toProtoRules())
+                .rules(this.jobClusterScalerRuleData.getProtoRules())
                 .build(),
             getSelf());
         if (logger.isTraceEnabled()) {
@@ -2558,6 +2559,31 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         }
     }
 
+    public void onJobScalerRuleStream(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest req) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("Enter JCA:onJobScalerRuleStream {}", req);
+        }
+
+        ActorRef sender = getSender();
+        try {
+            jobManager.getJobInfoForNonTerminalJob(req.getJobId())
+                .ifPresent(jobInfo -> jobInfo.jobActor.forward(this.jobClusterScalerRuleData, getContext()));
+        } catch (Exception ex) {
+            logger.error("Error updating scaler rule for {}", this.name, ex);
+            sender.tell(
+                JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.builder()
+                    .requestId(req.requestId)
+                    .responseCode(CLIENT_ERROR)
+                    .message(String.format("Could not get scaler rule stream for %s due to %s", this.name, ex.getMessage()))
+                    .build(),
+                getSelf()
+            );
+        }
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("Exit JCA:onJobScalerRuleStream {}", req);
+        }
+    }
 
     static final class JobInfo  {
 

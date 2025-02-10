@@ -1,6 +1,7 @@
 package io.mantisrx.master.jobcluster.scaler;
 
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
+import io.mantisrx.runtime.descriptor.StageScalingRule;
 
 import java.util.List;
 
@@ -15,5 +16,5 @@ public interface IJobClusterScalerRuleData {
 
     IJobClusterScalerRuleData merge(JobClusterScalerRuleProto.CreateScalerRuleRequest scalerRuleReq);
     IJobClusterScalerRuleData delete(String ruleId);
-    List<JobClusterScalerRuleProto.ScalerRule> toProtoRules();
+    List<StageScalingRule> getProtoRules();
 }

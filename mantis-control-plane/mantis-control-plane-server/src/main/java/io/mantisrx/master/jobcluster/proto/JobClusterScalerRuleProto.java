@@ -1,11 +1,15 @@
 package io.mantisrx.master.jobcluster.proto;
 
 import com.netflix.spectator.impl.Preconditions;
-import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import io.mantisrx.runtime.descriptor.StageScalingRule;
+import io.mantisrx.server.core.JobScalerRuleInfo;
+import io.mantisrx.server.master.domain.JobId;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
+import rx.Observable;
+import rx.subjects.BehaviorSubject;
 
 import java.util.List;
 import java.util.Map;
@@ -17,30 +21,9 @@ public class JobClusterScalerRuleProto {
     @Value
     public static class CreateScalerRuleRequest extends BaseRequest {
         String jobClusterName;
-        ScalerConfig scalerConfig;
-        TriggerConfig triggerConfig;
+        StageScalingRule.ScalerConfig scalerConfig;
+        StageScalingRule.TriggerConfig triggerConfig;
         Map<String, String> metadata;
-    }
-
-    @Builder
-    @Value
-    public static class ScalerConfig {
-        String type; // only support standard scaling policy for now
-        StageScalingPolicy scalingPolicy;
-
-        /**
-         * Desired size when this config is triggered.
-         */
-        int desireSize;
-    }
-
-    @Builder
-    @Value
-    public static class TriggerConfig {
-        String triggerType;
-        String scheduleCron;
-        String scheduleDuration;
-        String customTrigger;
     }
 
     @EqualsAndHashCode(callSuper = true)
@@ -72,6 +55,18 @@ public class JobClusterScalerRuleProto {
     }
 
     @EqualsAndHashCode(callSuper = true)
+    @Value
+    public static class GetJobScalerRuleStreamRequest extends BaseRequest {
+        JobId jobId;
+
+        public GetJobScalerRuleStreamRequest(final JobId jobId) {
+            super();
+            Preconditions.checkNotNull(jobId, "jobId cannot be null");
+            this.jobId = jobId;
+        }
+    }
+
+    @EqualsAndHashCode(callSuper = true)
     @SuperBuilder
     @Value
     public static class CreateScalerRuleResponse extends BaseResponse {
@@ -82,21 +77,26 @@ public class JobClusterScalerRuleProto {
     @SuperBuilder
     @Value
     public static class GetScalerRulesResponse extends BaseResponse {
-        List<ScalerRule> rules;
-    }
-
-    @Builder
-    @Value
-    public static class ScalerRule {
-        String ruleId;
-        ScalerConfig scalerConfig;
-        TriggerConfig triggerConfig;
-        Map<String, String> metadata;
+        List<StageScalingRule> rules;
     }
 
     @EqualsAndHashCode(callSuper = true)
     @SuperBuilder
     @Value
     public static class DeleteScalerRuleResponse extends BaseResponse  {
+    }
+
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder
+    @Value
+    public static class GetJobScalerRuleStreamSubjectResponse extends BaseResponse {
+        BehaviorSubject<JobScalerRuleInfo> jobScalerRuleStreamBehaviorSubject;
+    }
+
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder
+    @Value
+    public static class GetJobScalerRuleStreamResponse extends BaseResponse {
+        Observable<JobScalerRuleInfo> scalerRuleObs;
     }
 }

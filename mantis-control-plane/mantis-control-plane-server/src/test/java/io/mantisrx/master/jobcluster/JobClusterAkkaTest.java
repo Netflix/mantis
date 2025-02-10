@@ -108,10 +108,7 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.WorkerMigrationConfig.MigrationStrategyEnum;
 import io.mantisrx.runtime.command.InvalidJobException;
-import io.mantisrx.runtime.descriptor.DeploymentStrategy;
-import io.mantisrx.runtime.descriptor.SchedulingInfo;
-import io.mantisrx.runtime.descriptor.StageDeploymentStrategy;
-import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import io.mantisrx.runtime.descriptor.*;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
@@ -2398,8 +2395,8 @@ public class JobClusterAkkaTest {
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
 
             // Create a scaler rule first.
-            JobClusterScalerRuleProto.ScalerConfig scalerConfig =
-                JobClusterScalerRuleProto.ScalerConfig.builder()
+            StageScalingRule.ScalerConfig scalerConfig =
+                StageScalingRule.ScalerConfig.builder()
                     .type("standard")
                     .desireSize(19)
                     .scalingPolicy(new StageScalingPolicy(
@@ -2413,8 +2410,8 @@ public class JobClusterAkkaTest {
                     .build();
 
             // Build a dummy trigger config.
-            JobClusterScalerRuleProto.TriggerConfig triggerConfig =
-                JobClusterScalerRuleProto.TriggerConfig.builder()
+            StageScalingRule.TriggerConfig triggerConfig =
+                StageScalingRule.TriggerConfig.builder()
                     .triggerType("cron")
                     .scheduleCron("0 0 * * *")
                     .scheduleDuration("PT1H")
