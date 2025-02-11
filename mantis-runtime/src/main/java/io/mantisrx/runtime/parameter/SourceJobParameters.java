@@ -32,6 +32,7 @@ public class SourceJobParameters {
     public static final String MANTIS_SOURCEJOB_CRITERION = "criterion";
     public static final String MANTIS_SOURCEJOB_CLIENT_ID = "clientId";
     public static final String MANTIS_SOURCEJOB_IS_BROADCAST_MODE = "isBroadcastMode";
+    public static final String MANTIS_SOURCEJOB_ADDITIONAL_PARAMS = "additionalParams";
     private static final Logger log = LoggerFactory.getLogger(SourceJobParameters.class);
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -68,6 +69,7 @@ public class SourceJobParameters {
         @JsonProperty(MantisSSEConstants.ENABLE_META_MESSAGES) public boolean enableMetaMessages;
         @JsonProperty(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION) public boolean enableCompressedBinary;
         @JsonProperty(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER) public String delimiter;
+        @JsonProperty(MANTIS_SOURCEJOB_ADDITIONAL_PARAMS) public Map<String, String> additionalParams;
 
         public TargetInfo(String jobName,
                           String criterion,
@@ -77,6 +79,18 @@ public class SourceJobParameters {
                           boolean enableMetaMessages,
                           boolean enableCompressedBinary,
                           String delimiter) {
+            this(jobName, criterion, clientId, samplePerSec, isBroadcastMode, enableMetaMessages, enableCompressedBinary, delimiter, null);
+        }
+
+        public TargetInfo(String jobName,
+                          String criterion,
+                          String clientId,
+                          int samplePerSec,
+                          boolean isBroadcastMode,
+                          boolean enableMetaMessages,
+                          boolean enableCompressedBinary,
+                          String delimiter,
+                          Map<String, String> additionalParams) {
             this.sourceJobName = jobName;
             this.criterion = criterion;
             this.clientId = clientId;
@@ -85,6 +99,7 @@ public class SourceJobParameters {
             this.enableMetaMessages = enableMetaMessages;
             this.enableCompressedBinary = enableCompressedBinary;
             this.delimiter = delimiter;
+            this.additionalParams = additionalParams;
         }
 
         public TargetInfo() {
@@ -102,12 +117,13 @@ public class SourceJobParameters {
                     Objects.equals(isBroadcastMode, that.isBroadcastMode) &&
                     Objects.equals(enableMetaMessages, that.enableMetaMessages) &&
                     Objects.equals(enableCompressedBinary, that.enableCompressedBinary) &&
-                    Objects.equals(delimiter, that.delimiter);
+                    Objects.equals(delimiter, that.delimiter) &&
+                    Objects.equals(additionalParams, that.additionalParams);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(sourceJobName, criterion, clientId, samplePerSec, isBroadcastMode, enableMetaMessages, enableCompressedBinary, delimiter);
+            return Objects.hash(sourceJobName, criterion, clientId, samplePerSec, isBroadcastMode, enableMetaMessages, enableCompressedBinary, delimiter, additionalParams);
         }
 
         @Override
@@ -121,6 +137,7 @@ public class SourceJobParameters {
                     "enableMetaMessages=" + enableMetaMessages + "," +
                     "enableCompressedBinary=" + enableCompressedBinary + "," +
                     "delimiter=" + delimiter + "," +
+                    "additionalParams=" + additionalParams +
                     "}";
         }
     }
@@ -135,6 +152,7 @@ public class SourceJobParameters {
         private boolean enableMetaMessages = false;
         private boolean enableCompressedBinary = false;
         private String delimiter = null;
+        private Map<String, String> additionalParams;
 
         public TargetInfoBuilder() {
         }
@@ -180,6 +198,11 @@ public class SourceJobParameters {
             return this;
         }
 
+        public TargetInfoBuilder withAdditionalParams(Map<String, String> additionalParams) {
+            this.additionalParams = additionalParams;
+            return this;
+        }
+
         public TargetInfo build() {
             return new TargetInfo(
                     sourceJobName,
@@ -189,7 +212,8 @@ public class SourceJobParameters {
                     isBroadcastMode,
                     enableMetaMessages,
                     enableCompressedBinary,
-                    delimiter);
+                    delimiter,
+                    additionalParams);
         }
     }
 
