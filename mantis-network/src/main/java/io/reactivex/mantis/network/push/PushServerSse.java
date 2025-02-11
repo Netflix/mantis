@@ -93,10 +93,10 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
 
         final String metricGroup = supportLegacyMetrics ? PUSH_SERVER_LEGACY_METRIC_GROUP_NAME : PUSH_SERVER_METRIC_GROUP_NAME;
         Metrics sseSinkMetrics = new Metrics.Builder()
-                .id(metricGroup, clientIdTag, sockAddrTag)
-                .addCounter(PROCESSED_COUNTER_METRIC_NAME)
-                .addCounter(DROPPED_COUNTER_METRIC_NAME)
-                .build();
+            .id(metricGroup, clientIdTag, sockAddrTag)
+            .addCounter(PROCESSED_COUNTER_METRIC_NAME)
+            .addCounter(DROPPED_COUNTER_METRIC_NAME)
+            .build();
 
         sseSinkMetrics = metricsRegistry.registerAndGet(sseSinkMetrics);
 
@@ -110,8 +110,8 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                 new RequestHandler<String, ServerSentEvent>() {
                     @Override
                     public Observable<Void> handle(
-                            HttpServerRequest<String> request,
-                            final HttpServerResponse<ServerSentEvent> response) {
+                        HttpServerRequest<String> request,
+                        final HttpServerResponse<ServerSentEvent> response) {
 
                         final Map<String, List<String>> queryParameters = request.getQueryParameters();
                         final Counter sseProcessedCounter;
@@ -142,6 +142,7 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                         String slotId = null;
                         String id = null;
                         Func1<T, Boolean> predicateFunction = null;
+                        String availabilityZone = null;
 
                         if (predicate != null) {
                             predicateFunction = predicate.call(queryParameters);
@@ -171,7 +172,7 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                                 }
                                 enableHeartbeats = true;
                             }
-                            if (queryParameters != null && queryParameters.containsKey(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION)) {
+                            if (queryParameters.containsKey(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION)) {
                                 String enableBinaryOutputStr = queryParameters.get(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION).get(0);
                                 if ("true".equalsIgnoreCase(enableBinaryOutputStr)) {
                                     logger.info("Binary compression requested");
@@ -229,6 +230,10 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                                     predicateFunction = (T datum) -> datum instanceof Map ? q.matches((Map) datum) : true;
                                 }
                             }
+
+                            if (queryParameters.containsKey(MantisSSEConstants.AVAILABILITY_ZONE)) {
+                                availabilityZone = queryParameters.get(MantisSSEConstants.AVAILABILITY_ZONE).get(0);
+                            }
                         }
 
                         InetSocketAddress socketAddress = (InetSocketAddress) response.getChannel().remoteAddress();
@@ -256,32 +261,32 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                         if (enableMetaMessages && metaMessagesFreqMSec.get() > 0) {
                             logger.info("Enabling Meta messages, interval : " + metaMessagesFreqMSec.get() + " ms");
                             metaMsgSubscription = metaMsgSubject
-                                    .throttleLast(metaMessagesFreqMSec.get(), TimeUnit.MILLISECONDS)
-                                    .doOnNext((String t) -> {
-                                                if (t != null && !t.isEmpty()) {
-                                                    long currentTime = System.currentTimeMillis();
-                                                    ByteBuf data = response.getAllocator().buffer().writeBytes(t.getBytes());
-                                                    response.writeAndFlush(new ServerSentEvent(data));
-                                                    lastWriteTime.set(currentTime);
-                                                }
-                                            }
-                                    ).subscribe();
+                                .throttleLast(metaMessagesFreqMSec.get(), TimeUnit.MILLISECONDS)
+                                .doOnNext((String t) -> {
+                                        if (t != null && !t.isEmpty()) {
+                                            long currentTime = System.currentTimeMillis();
+                                            ByteBuf data = response.getAllocator().buffer().writeBytes(t.getBytes());
+                                            response.writeAndFlush(new ServerSentEvent(data));
+                                            lastWriteTime.set(currentTime);
+                                        }
+                                    }
+                                ).subscribe();
                         }
 
                         if (enableHeartbeats && heartBeatReadIdleSec.get() > 0) {
                             logger.info("Enabling hearts, interval: " + heartBeatReadIdleSec);
                             heartbeatSubscription = Observable
-                                    .interval(2, heartBeatReadIdleSec.get(), TimeUnit.SECONDS)
-                                    .doOnNext((Long t1) -> {
-                                                long currentTime = System.currentTimeMillis();
-                                                long diff = (currentTime - lastWriteTime.get()) / 1000;
-                                                if (diff > heartBeatReadIdleSec.get()) {
-                                                    ByteBuf data = response.getAllocator().buffer().writeBytes("ping".getBytes());
-                                                    response.writeAndFlush(new ServerSentEvent(data));
-                                                    lastWriteTime.set(currentTime);
-                                                }
-                                            }
-                                    ).subscribe();
+                                .interval(2, heartBeatReadIdleSec.get(), TimeUnit.SECONDS)
+                                .doOnNext((Long t1) -> {
+                                        long currentTime = System.currentTimeMillis();
+                                        long diff = (currentTime - lastWriteTime.get()) / 1000;
+                                        if (diff > heartBeatReadIdleSec.get()) {
+                                            ByteBuf data = response.getAllocator().buffer().writeBytes("ping".getBytes());
+                                            response.writeAndFlush(new ServerSentEvent(data));
+                                            lastWriteTime.set(currentTime);
+                                        }
+                                    }
+                                ).subscribe();
                         }
                         Action0 connectionClosedCallback = null;
                         if (queryParameters != null && requestPostprocessor != null) {
@@ -304,17 +309,17 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                         }
 
                         return manageConnectionWithCompression(response, socketAddress.getHostString(), socketAddress.getPort(), groupId,
-                                slotId, id, lastWriteTime,
-                                enableHeartbeats, heartbeatSubscription, enableSampling, samplingTimeMsec, metaMsgSubject, metaMsgSubscription,
-                                predicateFunction, connectionClosedCallback, sseProcessedCounter,
-                                sseDroppedCounter,
-                                new SubscribeCallback(), enableBinaryOutput, true, delimiter);
+                            slotId, id, lastWriteTime,
+                            enableHeartbeats, heartbeatSubscription, enableSampling, samplingTimeMsec, metaMsgSubject, metaMsgSubscription,
+                            predicateFunction, connectionClosedCallback, sseProcessedCounter,
+                            sseDroppedCounter,
+                            new SubscribeCallback(), enableBinaryOutput, true, delimiter, availabilityZone);
                     }
                 })
-                .pipelineConfigurator(PipelineConfigurators.serveSseConfigurator())
-                .channelOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 5 * 1024 * 1024))
+            .pipelineConfigurator(PipelineConfigurators.serveSseConfigurator())
+            .channelOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 5 * 1024 * 1024))
 
-                .build();
+            .build();
         return server;
     }
 

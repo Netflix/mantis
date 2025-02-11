@@ -34,6 +34,8 @@ public class AsyncConnection<T> {
     private String slotId;
     private String id;
 
+    private String availabilityZone;
+
     private Observer<List<byte[]>> subject;
     private Func1<T, Boolean> predicate;
 
@@ -41,6 +43,13 @@ public class AsyncConnection<T> {
                            String slotId,
                            String groupId, Observer<List<byte[]>> subject,
                            Func1<T, Boolean> predicate) {
+        this(host, port, id, slotId, groupId, subject, predicate, null);
+    }
+
+    public AsyncConnection(String host, int port, String id,
+                           String slotId,
+                           String groupId, Observer<List<byte[]>> subject,
+                           Func1<T, Boolean> predicate, String availabilityZone) {
         this.host = host;
         this.port = port;
         this.id = id;
@@ -48,6 +57,7 @@ public class AsyncConnection<T> {
         this.subject = subject;
         this.predicate = predicate;
         this.slotId = slotId;
+        this.availabilityZone = availabilityZone;
     }
 
     public Func1<T, Boolean> getPredicate() {
@@ -74,6 +84,10 @@ public class AsyncConnection<T> {
         return id;
     }
 
+    public String getAvailabilityZone() {
+        return availabilityZone;
+    }
+
     public void close() {
         subject.onCompleted();
     }
@@ -85,8 +99,8 @@ public class AsyncConnection<T> {
     @Override
     public String toString() {
         return "AsyncConnection [host=" + host + ", port=" + port
-                + ", groupId=" + groupId + ", slotId=" + slotId + ", id=" + id
-                + "]";
+            + ", groupId=" + groupId + ", slotId=" + slotId + ", id=" + id
+            + "]";
     }
 
     @Override
