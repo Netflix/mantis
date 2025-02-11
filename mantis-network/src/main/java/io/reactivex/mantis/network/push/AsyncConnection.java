@@ -42,6 +42,13 @@ public class AsyncConnection<T> {
     public AsyncConnection(String host, int port, String id,
                            String slotId,
                            String groupId, Observer<List<byte[]>> subject,
+                           Func1<T, Boolean> predicate) {
+        this(host, port, id, slotId, groupId, subject, predicate, null);
+    }
+
+    public AsyncConnection(String host, int port, String id,
+                           String slotId,
+                           String groupId, Observer<List<byte[]>> subject,
                            Func1<T, Boolean> predicate, String availabilityZone) {
         this.host = host;
         this.port = port;
