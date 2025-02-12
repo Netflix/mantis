@@ -232,15 +232,16 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
             Map<String, String> additionalParams = new HashMap<>();
             for (Map.Entry<String, JsonElement> entry : srcObj.entrySet()) {
                 String key = entry.getKey();
-                if (!key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_NAME_PARAM) &&
-                    !key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_CRITERION) &&
-                    !key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_CLIENT_ID) &&
-                    !key.equals(MantisSSEConstants.SAMPLE) &&
-                    !key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_IS_BROADCAST_MODE) &&
-                    !key.equals(MantisSSEConstants.ENABLE_META_MESSAGES) &&
-                    !key.equals(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION)) {
-                    additionalParams.put(key, entry.getValue().getAsString());
+                if (key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_NAME_PARAM) ||
+                    key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_CRITERION) ||
+                    key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_CLIENT_ID) ||
+                    key.equals(MantisSSEConstants.SAMPLE) ||
+                    key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_IS_BROADCAST_MODE) ||
+                    key.equals(MantisSSEConstants.ENABLE_META_MESSAGES) ||
+                    key.equals(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION)) {
+                    LOGGER.warn("Overwriting key " + key + " in additionalParams");
                 }
+                additionalParams.put(key, entry.getValue().getAsString());
             }
 
             TargetInfo ti = new TargetInfo(
