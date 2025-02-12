@@ -1,4 +1,4 @@
-/*
+package io.mantisrx.test.containers;/*
  * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -73,22 +73,8 @@ public class TestContainerHelloWorld {
 
     private static final String LOGGING_ENABLED_METRICS_GROUP =
             "MasterApiMetrics;DeadLetterActor;JobDiscoveryRoute";
-    private static final String JOB_CLUSTER_CREATE = "{\"jobDefinition\":{\"name\":\"hello-sine-testcontainers\","
-        + "\"user\":\"mantisoss\",\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-%s"
-        + ".zip\"," +
-        "\"version\":\"0.2.9 2018-05-29 16:12:56\",\"schedulingInfo\":{\"stages\":{" +
-        "\"1\":{\"numberOfInstances\":\"1\",\"machineDefinition\":{\"cpuCores\":\"1\",\"memoryMB\":\"1024\",\"diskMB\":\"1024\",\"networkMbps\":\"128\",\"numPorts\":\"1\"},\"scalable\":true," +
-        "\"scalingPolicy\":{" +
-        "},\"softConstraints\":[],\"hardConstraints\":[]}}}," +
-        "\"parameters\":[{\"name\":\"useRandom\",\"value\":\"false\"}],\"labels\":[{\"name\":\"_mantis"
-        + ".resourceCluster\",\"value\":\"testcluster1\"},"
-        + "{\"name\":\"_mantis.user\",\"value\":\"mantisoss\"},{\"name\":\"_mantis"
-        + ".ownerEmail\",\"value\":\"mantisoss@netflix.com\"},{\"name\":\"_mantis.jobType\",\"value\":\"other\"},"
-        + "{\"name\":\"_mantis.criticality\",\"value\":\"low\"},{\"name\":\"_mantis.artifact.version\",\"value\":\"0.2.9\"}]," +
-        "\"migrationConfig\":{\"strategy\":\"PERCENTAGE\",\"configString\":\"{\\\"percentToMove\\\":25,\\\"intervalMs\\\":60000}\"},\"slaMin\":\"0\",\"slaMax\":\"0\",\"cronSpec\":null,\"cronPolicy\":\"KEEP_EXISTING\",\"isReadyForJobMaster\":true}," +
-        "\"owner\":{\"contactEmail\":\"mantisoss@netflix.com\",\"description\":\"\",\"name\":\"Mantis OSS\","
-        + "\"repo\":\"\",\"teamName\":\"\"}}";
-
+    private static final String JOB_CLUSTER_CREATE =
+        Utils.getStringFromResource("Job_cluster_hello_sine_create.json");;
 
     private static final String QUICK_SUBMIT =
         "{\"name\":\"hello-sine-testcontainers\",\"user\":\"mantisoss\",\"jobSla\":{\"durationType\":\"Perpetual\","
@@ -103,21 +89,6 @@ public class TestContainerHelloWorld {
         + "\"memoryMB\":1024,\"diskMB\":1024,\"networkMbps\":128,\"numPorts\":\"1\"},\"scalable\":true,"
         + "\"softConstraints\":[],\"hardConstraints\":[]}}},\"parameters\":[{\"name\":\"useRandom\",\"value\":\"false\"}],"
         + "\"isReadyForJobMaster\":false}";
-
-    public static String getBuildVersion() {
-        try (InputStream input = TestContainerHelloWorld.class.getClassLoader().getResourceAsStream(
-            "version.properties")) {
-            if (input == null) {
-                throw new RuntimeException("failed to get build version file.");
-            }
-            Properties prop = new Properties();
-            prop.load(input);
-            return prop.getProperty("version");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("failed to get build version in test: ", ex);
-        }
-    }
 
     private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -290,8 +261,8 @@ public class TestContainerHelloWorld {
         /*
         Uncomment following lines to keep the containers running.
          */
-        // log.warn("Waiting for exit test.");
-        // Thread.sleep(Duration.ofSeconds(3600).toMillis());
+         log.warn("Waiting for exit test.");
+         Thread.sleep(Duration.ofSeconds(3600).toMillis());
     }
 
     private static void zkCheck(GenericContainer<?> zookeeper) throws Exception {
@@ -321,7 +292,7 @@ public class TestContainerHelloWorld {
         MountableFile sampleArtifact = MountableFile.forHostPath(
             Paths.get(String.format(
                 "../mantis-examples/mantis-examples-sine-function/build/distributions/mantis-examples-sine-function-%s.zip",
-                getBuildVersion())));
+                Utils.getBuildVersion())));
 
         return USE_LOCAL_BUILT_IMAGE ?
             new GenericContainer<>(dockerFile)
@@ -440,7 +411,7 @@ public class TestContainerHelloWorld {
             .addPathSegments("api/v1/jobClusters")
             .build();
         log.info("Req: {}", reqUrl);
-        String payload = String.format(JOB_CLUSTER_CREATE, getBuildVersion());
+        String payload = String.format(JOB_CLUSTER_CREATE, Utils.getBuildVersion());
         log.info("using payload: {}", payload);
         RequestBody body = RequestBody.create(
             payload, MediaType.parse("application/json; charset=utf-8"));
@@ -466,6 +437,30 @@ public class TestContainerHelloWorld {
         String controlPlaneHost,
         int controlPlanePort,
         String agentId) {
+        try
+        {
+            Optional<Response> responseO = checkTeState(controlPlaneHost, controlPlanePort, agentId);
+            assertTrue(responseO.isPresent());
+            assertTrue(responseO.get().isSuccessful());
+            String resBody = responseO.get().body().string();
+            log.info("agent {}: {}", agentId, resBody);
+            assertTrue(resBody.contains("\"registered\":true,\"runningTask\":true"));
+
+            responseO = checkTeState(controlPlaneHost, controlPlanePort, "invalid");
+            assertTrue(responseO.isPresent());
+            assertEquals(404, responseO.get().code());
+        }
+        catch (IOException ioe) {
+            log.error("failed to check TE state", ioe);
+            fail("failed to check TE state " + ioe);
+        }
+    }
+
+    private void testJobScalerRules(
+        String controlPlaneHost,
+        int controlPlanePort,
+        String agentId
+    ) {
         try
         {
             Optional<Response> responseO = checkTeState(controlPlaneHost, controlPlanePort, agentId);
@@ -555,9 +550,9 @@ public class TestContainerHelloWorld {
             .build();
         log.info("Req: {}", reqUrl);
 
-        String buildVersion = getBuildVersion();
+        String buildVersion = Utils.getBuildVersion();
         log.info("using artifact version: {}", buildVersion);
-        String payload = String.format(REGULAR_SUBMIT, getBuildVersion());
+        String payload = String.format(REGULAR_SUBMIT, Utils.getBuildVersion());
         log.info("Submit payload: {}", payload);
         RequestBody body = RequestBody.create(
             payload, MediaType.parse("application/json; charset=utf-8"));
