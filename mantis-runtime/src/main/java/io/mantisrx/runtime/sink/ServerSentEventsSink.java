@@ -29,6 +29,7 @@ import io.reactivex.mantis.network.push.PushServerSse;
 import io.reactivex.mantis.network.push.PushServers;
 import io.reactivex.mantis.network.push.Routers;
 import io.reactivex.mantis.network.push.ServerConfig;
+import io.reactivex.mantis.network.push.Router;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     private Func2<Map<String, List<String>>, Context, Void> requestPostprocessor;
     private int port = -1;
     private final MantisPropertiesLoader propService;
+    private final Router<T> router;
 
     private PushServerSse<T, Context> pushServerSse;
     private HttpServer<ByteBuf, ServerSentEvent> httpServer;
@@ -76,6 +78,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         this.predicate = predicate;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
         this.subscribeProcessor = null;
+        this.router = null;
     }
 
     ServerSentEventsSink(Builder<T> builder) {
@@ -86,6 +89,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         this.requestPostprocessor = builder.requestPostprocessor;
         this.subscribeProcessor = builder.subscribeProcessor;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
+        this.router = builder.router;
     }
 
     @Override
@@ -152,7 +156,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
             String serverName = "SseSink";
             ServerConfig.Builder<T> config = new ServerConfig.Builder<T>()
                 .name(serverName)
-                .groupRouter(Routers.roundRobinSse(serverName, encoder))
+                .groupRouter(router != null ? router : Routers.roundRobinSse(serverName, encoder))
                 .port(port)
                 .metricsRegistry(context.getMetricsRegistry())
                 .maxChunkTimeMSec(maxReadTime())
@@ -249,6 +253,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         private Func1<Throwable, String> errorEncoder = Throwable::getMessage;
         private Predicate<T> predicate;
         private Func2<Map<String, List<String>>, Context, Void> subscribeProcessor;
+        private Router<T> router;
 
         public Builder<T> withEncoder(Func1<T, String> encoder) {
             this.encoder = encoder;
@@ -278,6 +283,11 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
 
         public Builder<T> withRequestPostprocessor(Func2<Map<String, List<String>>, Context, Void> postProcessor) {
             this.requestPostprocessor = postProcessor;
+            return this;
+        }
+
+        public Builder<T> withRouter(Router<T> router) {
+            this.router = router;
             return this;
         }
 
