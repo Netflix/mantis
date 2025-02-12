@@ -611,11 +611,14 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     }
 
     public void onGetJobScalerRuleStream(final JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest request) {
+        logger.info("enter onGetJobScalerRuleStream {}", request);
         Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getJobId().getCluster());
         ActorRef sender = getSender();
         if(jobClusterInfo.isPresent()) {
+            logger.info("forwarding to jobClusterActor {}", request.getJobId());
             jobClusterInfo.get().jobClusterActor.forward(request, getContext());
         } else {
+            logger.warn("error fwd to jobClusterActor {}", request.getJobId());
             sender.tell(
                 JobClusterScalerRuleProto.GetScalerRulesResponse.builder()
                     .requestId(request.requestId)

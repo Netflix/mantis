@@ -2566,10 +2566,22 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         ActorRef sender = getSender();
         try {
-            jobManager.getJobInfoForNonTerminalJob(req.getJobId())
-                .ifPresent(jobInfo -> jobInfo.jobActor.forward(this.jobClusterScalerRuleData, getContext()));
+            logger.debug("fwd job actor onJobScalerRuleStream {}", req);
+            Optional<JobInfo> jobInfoO = jobManager.getJobInfoForNonTerminalJob(req.getJobId());
+            if (jobInfoO.isPresent()) {
+                jobInfoO.get().jobActor.forward(req, getContext());
+            } else {
+                logger.error("Cannot find job actor onJobScalerRuleStream {}", req.getJobId());
+                sender.tell(
+                    JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.builder()
+                        .requestId(req.requestId)
+                        .responseCode(CLIENT_ERROR_NOT_FOUND)
+                        .message(String.format("Job %s not found or not active", req.getJobId()))
+                        .build(),
+                    getSelf());
+            }
         } catch (Exception ex) {
-            logger.error("Error updating scaler rule for {}", this.name, ex);
+            logger.error("Error fwd message to job actor for {}", this.name, ex);
             sender.tell(
                 JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.builder()
                     .requestId(req.requestId)

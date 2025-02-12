@@ -1,0 +1,74 @@
+{
+    "jobDefinition": {
+        "name": "hello-sine-testcontainers",
+        "user": "mantisoss",
+        "jobJarFileLocation": "file:///mantis-examples-sine-function-%s.zip",
+        "version": "0.2.9 2018-05-29 16:12:56",
+        "schedulingInfo": {
+            "stages": {
+                "1": {
+                    "numberOfInstances": "1",
+                    "machineDefinition": {
+                        "cpuCores": "1",
+                        "memoryMB": "1024",
+                        "diskMB": "1024",
+                        "networkMbps": "128",
+                        "numPorts": "1"
+                    },
+                    "scalable": true,
+                    "scalingPolicy": {},
+                    "softConstraints": [],
+                    "hardConstraints": []
+                }
+            }
+        },
+        "parameters": [
+            {
+                "name": "useRandom",
+                "value": "false"
+            }
+        ],
+        "labels": [
+            {
+                "name": "_mantis.resourceCluster",
+                "value": "testcluster1"
+            },
+            {
+                "name": "_mantis.user",
+                "value": "mantisoss"
+            },
+            {
+                "name": "_mantis.ownerEmail",
+                "value": "mantisoss@netflix.com"
+            },
+            {
+                "name": "_mantis.jobType",
+                "value": "other"
+            },
+            {
+                "name": "_mantis.criticality",
+                "value": "low"
+            },
+            {
+                "name": "_mantis.artifact.version",
+                "value": "0.2.9"
+            }
+        ],
+        "migrationConfig": {
+            "strategy": "PERCENTAGE",
+            "configString": "{\"percentToMove\":25,\"intervalMs\":60000}"
+        },
+        "slaMin": "0",
+        "slaMax": "0",
+        "cronSpec": null,
+        "cronPolicy": "KEEP_EXISTING",
+        "isReadyForJobMaster": true
+    },
+    "owner": {
+        "contactEmail": "mantisoss@netflix.com",
+        "description": "",
+        "name": "Mantis OSS",
+        "repo": "",
+        "teamName": ""
+    }
+}

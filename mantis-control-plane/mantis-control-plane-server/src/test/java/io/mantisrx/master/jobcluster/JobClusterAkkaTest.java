@@ -52,10 +52,7 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJ
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyResponse;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -110,6 +107,7 @@ import io.mantisrx.runtime.WorkerMigrationConfig.MigrationStrategyEnum;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.*;
 import io.mantisrx.server.core.JobCompletedReason;
+import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -2258,8 +2256,7 @@ public class JobClusterAkkaTest {
             JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn, jobId);
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
 
-            JobTestHelper.createJobClusterScalerRuleAndVerifySuccess(probe, clusterName, jobClusterActor);
-            // todo: verify job actor response to rule update
+            JobTestHelper.createJobClusterScalerRuleAndVerifySuccess(probe, clusterName, jobClusterActor, jobId);
 
             verify(jobStoreMock, times(1)).createJobCluster(any());
             verify(jobStoreMock, times(1)).updateJobCluster(any());

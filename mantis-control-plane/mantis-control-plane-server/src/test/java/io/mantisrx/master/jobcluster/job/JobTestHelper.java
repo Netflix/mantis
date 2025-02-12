@@ -17,9 +17,7 @@
 package io.mantisrx.master.jobcluster.job;
 
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -46,6 +44,7 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageScalingRule;
 import io.mantisrx.server.core.JobCompletedReason;
+import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -65,8 +64,10 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import javax.annotation.Nullable;
 import org.junit.Test;
+import rx.subjects.BehaviorSubject;
 
 
 public class JobTestHelper {
@@ -342,7 +343,8 @@ public class JobTestHelper {
             .build();
     }
 
-    public static void createJobClusterScalerRuleAndVerifySuccess(final TestKit probe, String clusterName, ActorRef jobClusterActor) {
+    public static void createJobClusterScalerRuleAndVerifySuccess(
+        final TestKit probe, String clusterName, ActorRef jobClusterActor, final String jobId) throws InterruptedException {
         Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
         StageScalingPolicy scalingPolicy;
 
@@ -389,6 +391,22 @@ public class JobTestHelper {
         assertEquals(SUCCESS, getScalerRulesResponse.responseCode);
         assertEquals(1, getScalerRulesResponse.getRules().size());
         assertEquals("1", getScalerRulesResponse.getRules().get(0).getRuleId());
+
+        jobClusterActor.tell(
+            new JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest(JobId.fromId(jobId).get()),
+            probe.getRef());
+        JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse ruleStreamResp =
+            probe.expectMsgClass(JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.class);
+        BehaviorSubject<JobScalerRuleInfo> ruleStreamSubject = ruleStreamResp.getJobScalerRuleStreamBehaviorSubject();
+        assertNotNull(ruleStreamSubject);
+        CountDownLatch latch = new CountDownLatch(1);
+        ruleStreamSubject.subscribe(ruleInfo -> {
+            latch.countDown();
+            assertEquals(1, ruleInfo.getRules().size());
+            assertEquals("1", ruleInfo.getRules().get(0).getRuleId());
+        });
+        assertTrue(latch.await(10, java.util.concurrent.TimeUnit.SECONDS));
+
     }
 
     public static void scaleStageAndVerify(final TestKit probe, ActorRef jobClusterActor,

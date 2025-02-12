@@ -680,6 +680,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
                 .match(IJobClusterScalerRuleData.class, this::onScalerRuleDataUpdate)
+                .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class,  this::onGetJobScalerRuleStreamRequest)
 
             // EXPECTED MESSAGES END//
 
