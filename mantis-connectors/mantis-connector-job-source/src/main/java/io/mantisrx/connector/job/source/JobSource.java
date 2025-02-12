@@ -17,6 +17,7 @@
 package io.mantisrx.connector.job.source;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mantisrx.common.utils.Closeables;
@@ -39,11 +40,8 @@ import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,8 +109,9 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
                 clientId = clientId + "_" + workerNo;
             }
             boolean enableCompressedBinary = targetInfo.enableCompressedBinary;
+            Map<String, String> additionalParams = targetInfo.additionalParams;
 
-            job = getSourceJob(sourceJobName, criterion, clientId, samplePerSec, enableMetaMessages, enableCompressedBinary, obs, Optional.<SinkParameters>empty());
+            job = getSourceJob(sourceJobName, criterion, clientId, samplePerSec, enableMetaMessages, enableCompressedBinary, obs, additionalParams, Optional.<SinkParameters>empty());
             jobs.add(job);
 
             if (sourceObs == null) {
@@ -155,6 +154,7 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
         public boolean enableMetaMessages;
         public boolean enableCompressedBinary;
         public String clientId;
+        public Map<String, String> additionalParams;
 
         public TargetInfo(String jobName,
                           String criterion,
@@ -163,6 +163,17 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
                           boolean isBroadcastMode,
                           boolean enableMetaMessages,
                           boolean enableCompressedBinary) {
+            this(jobName, criterion, clientId, samplePerSec, isBroadcastMode, enableMetaMessages, enableCompressedBinary, null);
+        }
+
+        public TargetInfo(String jobName,
+                          String criterion,
+                          String clientId,
+                          int samplePerSec,
+                          boolean isBroadcastMode,
+                          boolean enableMetaMessages,
+                          boolean enableCompressedBinary,
+                          Map<String, String> additionalParams) {
             this.sourceJobName = jobName;
             this.criterion = criterion;
             this.clientId = clientId;
@@ -170,6 +181,7 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
             this.isBroadcastMode = isBroadcastMode;
             this.enableMetaMessages = enableMetaMessages;
             this.enableCompressedBinary = enableCompressedBinary;
+            this.additionalParams = additionalParams;
         }
     }
 
@@ -216,6 +228,22 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
                 enableCompressedBinary = true;
             }
 
+            // Extract additionalParams
+            Map<String, String> additionalParams = new HashMap<>();
+            for (Map.Entry<String, JsonElement> entry : srcObj.entrySet()) {
+                String key = entry.getKey();
+                if (key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_NAME_PARAM) ||
+                    key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_CRITERION) ||
+                    key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_CLIENT_ID) ||
+                    key.equals(MantisSSEConstants.SAMPLE) ||
+                    key.equals(MantisSourceJobConnector.MANTIS_SOURCEJOB_IS_BROADCAST_MODE) ||
+                    key.equals(MantisSSEConstants.ENABLE_META_MESSAGES) ||
+                    key.equals(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION)) {
+                    LOGGER.warn("Overwriting key " + key + " in additionalParams");
+                }
+                additionalParams.put(key, entry.getValue().getAsString());
+            }
+
             TargetInfo ti = new TargetInfo(
                     sName,
                     criterion,
@@ -223,7 +251,8 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
                     sample,
                     isBroadCastMode,
                     enableMetaMessages,
-                    enableCompressedBinary);
+                    enableCompressedBinary,
+                    additionalParams);
             targetList.add(ti);
             LOGGER.info("sname: " + sName + " criterion: " + criterion + " isBroadcastMode " + isBroadCastMode);
         }
@@ -244,6 +273,7 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
         private boolean isBroadcastMode = false;
         private boolean enableMetaMessages = false;
         private boolean enableCompressedBinary = false;
+        private Map<String, String> additionalParams = new HashMap<>();
 
         public TargetInfoBuilder() {
         }
@@ -284,6 +314,11 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
             return this;
         }
 
+        public TargetInfoBuilder withAdditionalParams(Map<String, String> additionalParams) {
+            this.additionalParams = additionalParams;
+            return this;
+        }
+
         public TargetInfo build() {
             return new TargetInfo(
                     sourceJobName,
@@ -292,7 +327,8 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
                     samplePerSec,
                     isBroadcastMode,
                     enableMetaMessages,
-                    enableCompressedBinary);
+                    enableCompressedBinary,
+                    additionalParams);
         }
     }
 

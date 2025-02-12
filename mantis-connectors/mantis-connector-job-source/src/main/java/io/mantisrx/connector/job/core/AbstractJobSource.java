@@ -23,6 +23,7 @@ import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.runtime.parameter.SinkParameters;
 import io.mantisrx.runtime.source.Source;
 import java.io.UnsupportedEncodingException;
+import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,15 @@ public abstract class AbstractJobSource implements Source<MantisServerSentEvent>
                                                final Optional<String> subscriptionId,
                                                final boolean enableMetaMessages,
                                                boolean enableCompressedBinaryInput, final long metaMessageInterval) {
+        return this.getDefaultSinkParams(clientId, samplePerSec, criterion, subscriptionId, enableMetaMessages, enableCompressedBinaryInput, metaMessageInterval, null);
+    }
+
+    public SinkParameters getDefaultSinkParams(final String clientId,
+                                               final int samplePerSec,
+                                               final Optional<String> criterion,
+                                               final Optional<String> subscriptionId,
+                                               final boolean enableMetaMessages,
+                                               boolean enableCompressedBinaryInput, final long metaMessageInterval, Map<String, String> additionalParams) {
         SinkParameters.Builder defaultParamBuilder = new SinkParameters.Builder();
 
         try {
@@ -63,6 +73,11 @@ public abstract class AbstractJobSource implements Source<MantisServerSentEvent>
             }
             if (enableCompressedBinaryInput) {
                 defaultParamBuilder = defaultParamBuilder.withParameter(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION, Boolean.toString(true));
+            }
+            if (additionalParams != null) {
+                for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
+                    defaultParamBuilder.withParameter(entry.getKey(), entry.getValue());
+                }
             }
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e.getMessage());
