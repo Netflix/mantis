@@ -19,6 +19,7 @@ package io.mantisrx.connector.job.core;
 import io.mantisrx.client.MantisSSEJob;
 import io.mantisrx.client.SinkConnectionsStatus;
 import io.mantisrx.runtime.parameter.SinkParameters;
+import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,7 @@ public abstract class AbstractSourceJobSource extends AbstractJobSource {
         LOGGER.info("Connecting to source job " + sourceJobName + " obs " + sinkConnObs);
         boolean enableMetaMessages = false;
         boolean enableCompressedBinaryInput = false;
-        return connectToQueryBasedJob(MantisSourceJobConnectorFactory.getConnector(), criterion, sourceJobName, clientId, samplePerSec, enableMetaMessages, enableCompressedBinaryInput, sinkConnObs, Optional.<SinkParameters>empty());
+        return connectToQueryBasedJob(MantisSourceJobConnectorFactory.getConnector(), criterion, sourceJobName, clientId, samplePerSec, enableMetaMessages, enableCompressedBinaryInput, sinkConnObs, null, Optional.<SinkParameters>empty());
 
     }
 
@@ -72,13 +73,21 @@ public abstract class AbstractSourceJobSource extends AbstractJobSource {
     public MantisSSEJob getSourceJob(String sourceJobName, String criterion, String clientId,
                                      int samplePerSec, boolean enableMetaMessages, boolean enableCompressedBinaryInput, Observer<SinkConnectionsStatus> sinkConnObs, Optional<SinkParameters> sinkParamsO) {
         LOGGER.info("Connecting to source job " + sourceJobName + " obs " + sinkConnObs);
-        return connectToQueryBasedJob(MantisSourceJobConnectorFactory.getConnector(), criterion, sourceJobName, clientId, samplePerSec, enableMetaMessages, enableCompressedBinaryInput, sinkConnObs, sinkParamsO);
+        return connectToQueryBasedJob(MantisSourceJobConnectorFactory.getConnector(), criterion, sourceJobName, clientId, samplePerSec, enableMetaMessages, enableCompressedBinaryInput, sinkConnObs, null, sinkParamsO);
+
+    }
+
+    public MantisSSEJob getSourceJob(String sourceJobName, String criterion, String clientId,
+                                     int samplePerSec, boolean enableMetaMessages, boolean enableCompressedBinaryInput, Observer<SinkConnectionsStatus> sinkConnObs, Map<String, String> additionalParams, Optional<SinkParameters> sinkParamsO) {
+        LOGGER.info("Connecting to source job " + sourceJobName + " obs " + sinkConnObs);
+        return connectToQueryBasedJob(MantisSourceJobConnectorFactory.getConnector(), criterion, sourceJobName, clientId, samplePerSec, enableMetaMessages, enableCompressedBinaryInput, sinkConnObs, additionalParams, sinkParamsO);
 
     }
 
     private MantisSSEJob connectToQueryBasedJob(MantisSourceJobConnector connector, String criterion,
                                                 String jobName, String clientId, int samplePerSec, boolean enableMetaMessages, boolean enableCompressedBinaryInput,
                                                 Observer<SinkConnectionsStatus> sinkConnObs,
+                                                Map<String, String> additionalParams,
                                                 Optional<SinkParameters> sinkParamsO) {
         LOGGER.info("Connecting to " + jobName);
         if (criterion == null || criterion.isEmpty()) {
@@ -86,7 +95,7 @@ public abstract class AbstractSourceJobSource extends AbstractJobSource {
         }
         String subId = Integer.toString(criterion.hashCode());
         SinkParameters defaultParams = getDefaultSinkParams(clientId, samplePerSec,
-                Optional.of(criterion), Optional.of(subId), enableMetaMessages, enableCompressedBinaryInput, 500);
+                Optional.of(criterion), Optional.of(subId), enableMetaMessages, enableCompressedBinaryInput, 500, additionalParams);
 
         return connector.connectToJob(jobName, sinkParamsO.orElse(defaultParams), sinkConnObs);
     }
