@@ -12,12 +12,14 @@ import io.mantisrx.master.jobcluster.scaler.JobClusterScalerRuleDataImplWritable
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
-import io.mantisrx.runtime.descriptor.StageScalingRule;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.AfterClass;
@@ -63,15 +65,15 @@ public class JobTestScalerRule {
         smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
         scalingPolicy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
 
-        StageScalingRule.ScalerConfig scalerConfig =
-            StageScalingRule.ScalerConfig.builder()
+        JobScalingRule.ScalerConfig scalerConfig =
+            JobScalingRule.ScalerConfig.builder()
                 .type("standard")
-                .desireSize(desireSize)
-                .scalingPolicy(scalingPolicy)
+                .stageDesireSize(ImmutableMap.of(1, desireSize))
+                .scalingPolicies(ImmutableList.of(scalingPolicy))
                 .build();
 
-        StageScalingRule.TriggerConfig triggerConfig =
-            StageScalingRule.TriggerConfig.builder()
+        JobScalingRule.TriggerConfig triggerConfig =
+            JobScalingRule.TriggerConfig.builder()
                 .triggerType("cron")
                 .scheduleCron(cronSchedule)
                 .scheduleDuration("PT1H")

@@ -63,7 +63,6 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
     }
 
     private final JobAutoScaler.StageScaler scaler;
-    private final StageSchedulingInfo stageSchedulingInfo;
     private final long initialSize;
     private final ClutchConfiguration config;
     private final AtomicLong targetScale = new AtomicLong(0);
@@ -77,8 +76,7 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
             .build();
     AtomicDouble correction = new AtomicDouble(0.0);
 
-    public ClutchAutoScaler(StageSchedulingInfo stageSchedulingInfo, JobAutoScaler.StageScaler scaler, ClutchConfiguration config, int initialSize) {
-        this.stageSchedulingInfo = stageSchedulingInfo;
+    public ClutchAutoScaler(JobAutoScaler.StageScaler scaler, ClutchConfiguration config, int initialSize) {
         this.scaler = scaler;
         this.initialSize = initialSize;
         this.targetScale.set(initialSize);
@@ -150,9 +148,9 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
         metrics = metrics
                 .share();
 
-        ClutchController cpuController = new ClutchController(CPU, this.stageSchedulingInfo, this.config.cpu.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
-        ClutchController memController = new ClutchController(JVMMemory, this.stageSchedulingInfo, this.config.memory.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
-        ClutchController netController = new ClutchController(Network, this.stageSchedulingInfo, this.config.network.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
+        ClutchController cpuController = new ClutchController(CPU, this.config.cpu.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
+        ClutchController memController = new ClutchController(JVMMemory, this.config.memory.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
+        ClutchController netController = new ClutchController(Network, this.config.network.getOrElse(defaultConfig), this.gainDampeningFactor, this.initialSize, this.config.minSize, this.config.maxSize);
 
         Observable<ClutchControllerOutput> cpuSignal = metrics.filter(event -> event.getType().equals(CPU))
                 .compose(cpuController);
@@ -231,7 +229,6 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
 
         private final ClutchPIDConfig config;
         private final StageScalingPolicy.ScalingReason metric;
-        private final StageSchedulingInfo stageSchedulingInfo;
         private final AtomicDouble gainFactor;
         private final long initialSize;
         private final long min;
@@ -240,12 +237,11 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
 
         private final Integrator integrator;
 
-        public ClutchController(StageScalingPolicy.ScalingReason metric, StageSchedulingInfo stageSchedulingInfo, ClutchPIDConfig config, AtomicDouble gainFactor, long initialSize, long min, long max) {
+        public ClutchController(StageScalingPolicy.ScalingReason metric, ClutchPIDConfig config, AtomicDouble gainFactor, long initialSize, long min, long max) {
             this.metric = metric;
             this.config = config;
             this.gainFactor = gainFactor;
             this.initialSize = initialSize;
-            this.stageSchedulingInfo = stageSchedulingInfo;
             this.min = min;
             this.max = max;
 

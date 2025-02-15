@@ -22,10 +22,8 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
-import io.mantisrx.server.core.JobAssignmentResult;
-import io.mantisrx.server.core.JobSchedulingInfo;
-import io.mantisrx.server.core.NamedJobInfo;
-import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.*;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import rx.Observable;
@@ -93,7 +91,14 @@ public interface MantisMasterGateway {
 
   Observable<JobAssignmentResult> assignmentResults(String jobId);
 
-  /**
+    /**
+     * Subscribe to job scaler rule stream API.
+     * @param jobId
+     * @return Observable of JobScalerRuleInfo for the given jobId.
+     */
+    Observable<JobScalerRuleInfo> jobScalerRulesStream(final String jobId);
+
+    /**
    * Update the status of the worker to the mantis-master.
    *
    * @param status status that contains all the information about the worker such as the WorkerId,

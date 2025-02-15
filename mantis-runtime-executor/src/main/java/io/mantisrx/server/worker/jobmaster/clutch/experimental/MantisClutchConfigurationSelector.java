@@ -19,7 +19,7 @@ package io.mantisrx.server.worker.jobmaster.clutch.experimental;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
 import io.mantisrx.control.clutch.Clutch;
 import io.mantisrx.control.clutch.ClutchConfiguration;
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
+import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 import io.vavr.Function1;
 import io.vavr.Tuple;
@@ -34,7 +34,7 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
     private static final Logger logger = LoggerFactory.getLogger(MantisClutchConfigurationSelector.class);
 
     private final Integer stageNumber;
-    private final StageSchedulingInfo stageSchedulingInfo;
+    private final JobAutoScaler.StageScalingInfo stageScalingInfo;
     private final AtomicDouble trueCpuMax = new AtomicDouble(0.0);
     private final AtomicDouble trueNetworkMax = new AtomicDouble(0.0);
     private final AtomicDouble trueCpuMin = new AtomicDouble(0.0);
@@ -43,9 +43,9 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
     private final long ONE_DAY_MILLIS = 1000 * 60 * 60 * 24;
     private final long TEN_MINUTES_MILLIS = 1000 * 60 * 10;
 
-    public MantisClutchConfigurationSelector(Integer stageNumber, StageSchedulingInfo stageSchedulingInfo) {
+    public MantisClutchConfigurationSelector(Integer stageNumber, JobAutoScaler.StageScalingInfo stageScalingInfo) {
         this.stageNumber = stageNumber;
-        this.stageSchedulingInfo = stageSchedulingInfo;
+        this.stageScalingInfo = stageScalingInfo;
     }
 
     /**
@@ -92,7 +92,7 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
     public ClutchConfiguration apply(Map<Clutch.Metric, UpdateDoublesSketch> sketches) {
         updateTrueMaxValues(sketches);
 
-        double numberOfCpuCores = stageSchedulingInfo.getMachineDefinition().getCpuCores();
+        double numberOfCpuCores = stageScalingInfo.getStageMachineDefinition().getCpuCores();
 
         // Setpoint
         double setPoint = getSetpoint(sketches, numberOfCpuCores);
@@ -101,13 +101,13 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
         Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.3, 0.0);
 
         // Gain
-        long deltaT = stageSchedulingInfo.getScalingPolicy().getCoolDownSecs() / 30l;
+        long deltaT = stageScalingInfo.getScalingPolicy().getCoolDownSecs() / 30l;
         //double minMaxMidPoint = stageSchedulingInfo.getScalingPolicy().getMax() - stageSchedulingInfo.getScalingPolicy().getMin();
         double dampeningFactor = 0.33; // 0.4 caused a little oscillation too. We'll try 1/3 across each.
 
-        double kp = 1.0 / setPoint / deltaT * stageSchedulingInfo.getScalingPolicy().getMin(); //minMaxMidPoint * dampeningFactor;
+        double kp = 1.0 / setPoint / deltaT * stageScalingInfo.getScalingPolicy().getMin(); //minMaxMidPoint * dampeningFactor;
         double ki = 0.0 * dampeningFactor; // We don't want any "state" from integral gain right now.
-        double kd = 1.0 / setPoint / deltaT * stageSchedulingInfo.getScalingPolicy().getMin(); // minMaxMidPoint * dampeningFactor;
+        double kd = 1.0 / setPoint / deltaT * stageScalingInfo.getScalingPolicy().getMin(); // minMaxMidPoint * dampeningFactor;
 
         // TODO: Do we want to reset sketches, we need at least one day's values
         //resetSketches(sketches);
@@ -117,10 +117,10 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
                 .kp(kp)
                 .ki(ki)
                 .kd(kd)
-                .minSize(stageSchedulingInfo.getScalingPolicy().getMin())
-                .maxSize(stageSchedulingInfo.getScalingPolicy().getMax())
+                .minSize(stageScalingInfo.getScalingPolicy().getMin())
+                .maxSize(stageScalingInfo.getScalingPolicy().getMax())
                 .rope(rope)
-                .cooldownInterval(stageSchedulingInfo.getScalingPolicy().getCoolDownSecs())
+                .cooldownInterval(stageScalingInfo.getScalingPolicy().getCoolDownSecs())
                 .cooldownUnits(TimeUnit.SECONDS)
                 .build();
     }
@@ -191,8 +191,8 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
      * @return A boolean indicating if the job is underprovisioned.
      */
     private boolean isUnderprovisioined(Map<Clutch.Metric, UpdateDoublesSketch> sketches) {
-        double provisionedCpuLimit = stageSchedulingInfo.getMachineDefinition().getCpuCores() * 100.0;
-        double provisionedNetworkLimit = stageSchedulingInfo.getMachineDefinition().getNetworkMbps() * 1024.0 * 1024.0;
+        double provisionedCpuLimit = stageScalingInfo.getStageMachineDefinition().getCpuCores() * 100.0;
+        double provisionedNetworkLimit = stageScalingInfo.getStageMachineDefinition().getNetworkMbps() * 1024.0 * 1024.0;
 
         double cpu = sketches.get(Clutch.Metric.CPU).getQuantile(0.8);
         double network = sketches.get(Clutch.Metric.NETWORK).getQuantile(0.8);

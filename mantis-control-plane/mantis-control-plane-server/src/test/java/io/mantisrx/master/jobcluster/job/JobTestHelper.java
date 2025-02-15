@@ -42,7 +42,7 @@ import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
-import io.mantisrx.runtime.descriptor.StageScalingRule;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.Status;
@@ -57,6 +57,8 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.File;
 import java.time.Duration;
@@ -309,23 +311,26 @@ public class JobTestHelper {
         }
     }
 
-    public static JobClusterScalerRuleProto.CreateScalerRuleRequest createDummyCreateRuleRequest(String jobClusterName, int desireSize) {
+    public static JobClusterScalerRuleProto.CreateScalerRuleRequest createDummyCreateRuleRequest(
+        String jobClusterName,
+        int desireSize) {
         Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
         StageScalingPolicy scalingPolicy;
+        ImmutableMap<Integer, Integer> desireSizeMap = ImmutableMap.of(1, desireSize);
 
         smap.put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
         smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
         scalingPolicy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
 
-        StageScalingRule.ScalerConfig scalerConfig =
-            StageScalingRule.ScalerConfig.builder()
+        JobScalingRule.ScalerConfig scalerConfig =
+            JobScalingRule.ScalerConfig.builder()
                 .type("standard")
-                .desireSize(desireSize)
-                .scalingPolicy(scalingPolicy)
+                .stageDesireSize(desireSizeMap)
+                .scalingPolicies(ImmutableList.of(scalingPolicy))
                 .build();
 
-        StageScalingRule.TriggerConfig triggerConfig =
-            StageScalingRule.TriggerConfig.builder()
+        JobScalingRule.TriggerConfig triggerConfig =
+            JobScalingRule.TriggerConfig.builder()
                 .triggerType("cron")
                 .scheduleCron("0 0 * * *")
                 .scheduleDuration("PT1H")
@@ -353,15 +358,15 @@ public class JobTestHelper {
         scalingPolicy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
         int desireSize = 19;
 
-        StageScalingRule.ScalerConfig scalerConfig =
-            StageScalingRule.ScalerConfig.builder()
+        JobScalingRule.ScalerConfig scalerConfig =
+            JobScalingRule.ScalerConfig.builder()
                 .type("standard")
-                .desireSize(desireSize)
-                .scalingPolicy(scalingPolicy)
+                .stageDesireSize(ImmutableMap.of(1, desireSize))
+                .scalingPolicies(ImmutableList.of(scalingPolicy))
                 .build();
 
-        StageScalingRule.TriggerConfig triggerConfig =
-            StageScalingRule.TriggerConfig.builder()
+        JobScalingRule.TriggerConfig triggerConfig =
+            JobScalingRule.TriggerConfig.builder()
                 .triggerType("cron")
                 .scheduleCron("0 0 * * *")
                 .scheduleDuration("PT1H")

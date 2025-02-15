@@ -1,7 +1,7 @@
 package io.mantisrx.master.jobcluster.scaler;
 
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
-import io.mantisrx.runtime.descriptor.StageScalingRule;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -72,7 +72,7 @@ public class JobClusterScalerRuleDataImplWritable implements IJobClusterScalerRu
     }
 
     @Override
-    public List<StageScalingRule> getProtoRules() {
+    public List<JobScalingRule> getProtoRules() {
         return this.scalerRules.stream().map(JobClusterScalerRule::toProto).collect(ImmutableList.toImmutableList());
     }
 }

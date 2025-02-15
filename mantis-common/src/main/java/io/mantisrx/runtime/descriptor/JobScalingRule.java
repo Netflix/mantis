@@ -4,14 +4,17 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
+import lombok.Singular;
 import lombok.Value;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @Builder
 @Value
-public class StageScalingRule implements Serializable {
+public class JobScalingRule implements Serializable {
     private static final long serialVersionUID = 1L;
 
     String ruleId;
@@ -21,7 +24,7 @@ public class StageScalingRule implements Serializable {
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public StageScalingRule(
+    public JobScalingRule(
         @JsonProperty("ruleId") String ruleId,
         @JsonProperty("scalerConfig") ScalerConfig scalerConfig,
         @JsonProperty("triggerConfig") TriggerConfig triggerConfig,
@@ -36,22 +39,24 @@ public class StageScalingRule implements Serializable {
     @Value
     public static class ScalerConfig {
         String type; // only support standard scaling policy for now
-        StageScalingPolicy scalingPolicy;
+        @Singular
+        List<StageScalingPolicy> scalingPolicies;
 
         /**
          * Desired size when this config is triggered.
          */
-        int desireSize;
+        @Builder.Default
+        Map<Integer, Integer> stageDesireSize = Collections.emptyMap();;
 
         @JsonCreator
         @JsonIgnoreProperties(ignoreUnknown = true)
         public ScalerConfig(
             @JsonProperty("type") String type,
-            @JsonProperty("scalingPolicy") StageScalingPolicy scalingPolicy,
-            @JsonProperty("desireSize") int desireSize) {
+            @JsonProperty("scalingPolicies") List<StageScalingPolicy> scalingPolicies,
+            @JsonProperty("stageDesireSize") Map<Integer, Integer> stageDesireSize) {
             this.type = type;
-            this.scalingPolicy = scalingPolicy;
-            this.desireSize = desireSize;
+            this.scalingPolicies = scalingPolicies;
+            this.stageDesireSize = stageDesireSize;
         }
 
     }

@@ -1,7 +1,7 @@
 package io.mantisrx.server.core;
 
 import io.mantisrx.runtime.codec.JsonType;
-import io.mantisrx.runtime.descriptor.StageScalingRule;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -21,13 +21,13 @@ public class JobScalerRuleInfo implements JsonType {
     boolean jobCompleted;
 
     @Nullable
-    List<StageScalingRule> rules;
+    List<JobScalingRule> rules;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public JobScalerRuleInfo(@JsonProperty("jobId") String jobId,
                              @JsonProperty("jobCompleted") boolean jobCompleted,
-                             @JsonProperty("rules") List<StageScalingRule> rules) {
+                             @JsonProperty("rules") List<JobScalingRule> rules) {
         this.jobId = jobId;
         this.jobCompleted = jobCompleted;
         this.rules = rules;
