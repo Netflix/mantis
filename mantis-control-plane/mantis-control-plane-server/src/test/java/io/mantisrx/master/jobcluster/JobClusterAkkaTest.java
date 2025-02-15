@@ -107,7 +107,6 @@ import io.mantisrx.runtime.WorkerMigrationConfig.MigrationStrategyEnum;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.*;
 import io.mantisrx.server.core.JobCompletedReason;
-import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -128,6 +127,7 @@ import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.store.FileBasedStore;
 import io.mantisrx.server.master.store.NamedJob;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.File;
 import java.time.Duration;
@@ -2392,23 +2392,23 @@ public class JobClusterAkkaTest {
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
 
             // Create a scaler rule first.
-            StageScalingRule.ScalerConfig scalerConfig =
-                StageScalingRule.ScalerConfig.builder()
+            JobScalingRule.ScalerConfig scalerConfig =
+                JobScalingRule.ScalerConfig.builder()
                     .type("standard")
-                    .desireSize(19)
-                    .scalingPolicy(new StageScalingPolicy(
+                    .stageDesireSize(ImmutableMap.of(1, 19))
+                    .scalingPolicies(ImmutableList.of(new StageScalingPolicy(
                         1, 1, 2, 1, 1, 60,
                         new HashMap<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy>() {{
                             put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
                             put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
                         }},
                         false
-                    ))
+                    )))
                     .build();
 
             // Build a dummy trigger config.
-            StageScalingRule.TriggerConfig triggerConfig =
-                StageScalingRule.TriggerConfig.builder()
+            JobScalingRule.TriggerConfig triggerConfig =
+                JobScalingRule.TriggerConfig.builder()
                     .triggerType("cron")
                     .scheduleCron("0 0 * * *")
                     .scheduleDuration("PT1H")

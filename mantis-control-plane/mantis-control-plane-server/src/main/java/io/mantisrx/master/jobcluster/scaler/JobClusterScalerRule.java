@@ -1,32 +1,29 @@
 package io.mantisrx.master.jobcluster.scaler;
 
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
-import io.mantisrx.runtime.descriptor.StageScalingPolicy;
-import io.mantisrx.runtime.descriptor.StageScalingRule;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import lombok.Builder;
 import lombok.Value;
-
-import java.util.Map;
 
 @Builder
 @Value
 public class JobClusterScalerRule {
     String jobClusterName;
-    StageScalingRule rule;
+    JobScalingRule rule;
 
     public static JobClusterScalerRule fromProto(
         JobClusterScalerRuleProto.CreateScalerRuleRequest proto,
         long lastRuleIdNumber) {
         return JobClusterScalerRule.builder()
             .jobClusterName(proto.getJobClusterName())
-            .rule(StageScalingRule.builder()
+            .rule(JobScalingRule.builder()
                 .ruleId(String.valueOf(lastRuleIdNumber + 1))
-                .scalerConfig(StageScalingRule.ScalerConfig.builder()
+                .scalerConfig(JobScalingRule.ScalerConfig.builder()
                     .type(proto.getScalerConfig().getType())
-                    .desireSize(proto.getScalerConfig().getDesireSize())
-                    .scalingPolicy(proto.getScalerConfig().getScalingPolicy())
+                    .stageDesireSize(proto.getScalerConfig().getStageDesireSize())
+                    .scalingPolicies(proto.getScalerConfig().getScalingPolicies())
                     .build())
-                .triggerConfig(StageScalingRule.TriggerConfig.builder()
+                .triggerConfig(JobScalingRule.TriggerConfig.builder()
                     .triggerType(proto.getTriggerConfig().getTriggerType())
                     .scheduleCron(proto.getTriggerConfig().getScheduleCron())
                     .scheduleDuration(proto.getTriggerConfig().getScheduleDuration())
@@ -37,7 +34,7 @@ public class JobClusterScalerRule {
             .build();
     }
 
-    public StageScalingRule toProto() {
+    public JobScalingRule toProto() {
         return this.rule;
     }
 }

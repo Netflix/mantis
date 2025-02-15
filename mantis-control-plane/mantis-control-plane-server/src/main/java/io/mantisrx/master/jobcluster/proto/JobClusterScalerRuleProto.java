@@ -1,7 +1,7 @@
 package io.mantisrx.master.jobcluster.proto;
 
 import com.netflix.spectator.impl.Preconditions;
-import io.mantisrx.runtime.descriptor.StageScalingRule;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.master.domain.JobId;
 import lombok.Builder;
@@ -21,8 +21,8 @@ public class JobClusterScalerRuleProto {
     @Value
     public static class CreateScalerRuleRequest extends BaseRequest {
         String jobClusterName;
-        StageScalingRule.ScalerConfig scalerConfig;
-        StageScalingRule.TriggerConfig triggerConfig;
+        JobScalingRule.ScalerConfig scalerConfig;
+        JobScalingRule.TriggerConfig triggerConfig;
         Map<String, String> metadata;
     }
 
@@ -77,7 +77,7 @@ public class JobClusterScalerRuleProto {
     @SuperBuilder
     @Value
     public static class GetScalerRulesResponse extends BaseResponse {
-        List<StageScalingRule> rules;
+        List<JobScalingRule> rules;
     }
 
     @EqualsAndHashCode(callSuper = true)

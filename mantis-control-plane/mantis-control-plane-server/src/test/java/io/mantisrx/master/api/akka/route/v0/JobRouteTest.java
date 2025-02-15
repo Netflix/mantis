@@ -78,7 +78,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
-import io.mantisrx.runtime.descriptor.StageScalingRule;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
@@ -671,7 +671,7 @@ public class JobRouteTest {
                 logger.info("scalerRuleInfo {}", scalerRuleInfo);
                 try {
                     assertEquals(jobId, scalerRuleInfo.getJobId());
-                    List<StageScalingRule> rules = scalerRuleInfo.getRules();
+                    List<JobScalingRule> rules = scalerRuleInfo.getRules();
                     assertEquals(0, rules.size());
                 } catch (Exception e) {
                     logger.error("caught exception", e);
