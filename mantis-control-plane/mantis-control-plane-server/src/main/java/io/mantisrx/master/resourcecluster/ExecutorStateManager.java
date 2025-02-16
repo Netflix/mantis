@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
 /**
  * A component to manage the states of {@link TaskExecutorState} for a given {@link ResourceClusterActor}.
  */
-interface ExecutorStateManager {
+public interface ExecutorStateManager {
     /**
      * Store and track the given task executor's state inside this {@link ExecutorStateManager} if there is no existing
      * state already. Ignore the given state instance if there is already a state associated with the given ID.

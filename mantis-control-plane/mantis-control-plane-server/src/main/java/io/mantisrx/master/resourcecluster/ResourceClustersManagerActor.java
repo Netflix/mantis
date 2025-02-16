@@ -54,6 +54,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
@@ -183,7 +184,9 @@ class ResourceClustersManagerActor extends AbstractActor {
                     masterConfiguration.getJobClustersWithArtifactCachingEnabled(),
                     masterConfiguration.isJobArtifactCachingEnabled(),
                     masterConfiguration.getSchedulingConstraints(),
-                    masterConfiguration.getFitnessCalculator()),
+                    masterConfiguration.getFitnessCalculator(),
+                    Optional.of(masterConfiguration.getExecutorStateManager())
+                ),
                 "ResourceClusterActor-" + clusterID.getResourceID());
         log.info("Created resource cluster actor for {}", clusterID);
         return clusterActor;

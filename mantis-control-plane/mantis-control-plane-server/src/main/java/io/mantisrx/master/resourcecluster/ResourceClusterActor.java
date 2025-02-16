@@ -154,7 +154,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
-        FitnessCalculator fitnessCalculator
+        FitnessCalculator fitnessCalculator,
+        Optional<ExecutorStateManager> executorStateManager
     ) {
         return Props.create(
             ResourceClusterActor.class,
@@ -171,7 +172,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             jobClustersWithArtifactCachingEnabled,
             isJobArtifactCachingEnabled,
             schedulingAttributes,
-            fitnessCalculator
+            fitnessCalculator,
+            executorStateManager
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -189,7 +191,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
-        FitnessCalculator fitnessCalculator) {
+        FitnessCalculator fitnessCalculator,
+        Optional<ExecutorStateManager> executorStateManager) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -206,8 +209,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.maxJobArtifactsToCache = maxJobArtifactsToCache;
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
 
-        this.executorStateManager = new ExecutorStateManagerImpl(
-            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration);
+        this.executorStateManager = executorStateManager.orElseGet(() -> new ExecutorStateManagerImpl(
+            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration));
 
         this.metrics = new ResourceClusterActorMetrics();
     }

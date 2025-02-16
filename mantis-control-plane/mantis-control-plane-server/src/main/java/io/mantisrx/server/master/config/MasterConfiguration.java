@@ -22,6 +22,7 @@ import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.IKeyValueStore;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import io.mantisrx.master.resourcecluster.ExecutorStateManager;
 import java.time.Duration;
 import java.util.Map;
 import org.skife.config.Config;
@@ -162,6 +163,9 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.scheduler.fitnessCalculator.class")
     @Default("io.mantisrx.master.scheduler.CpuWeightedFitnessCalculator")
     FitnessCalculator getFitnessCalculator();
+
+    @Config("mantis.master.scheduler.executorstatemanager.class")
+    ExecutorStateManager getExecutorStateManager();
 
     default Duration getSchedulerIntervalBetweenRetries() {
         return Duration.ofMillis(getSchedulerIntervalBetweenRetriesInMs());
