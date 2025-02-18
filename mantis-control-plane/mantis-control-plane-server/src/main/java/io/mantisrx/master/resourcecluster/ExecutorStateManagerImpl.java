@@ -56,6 +56,7 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
@@ -353,29 +354,32 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             return Optional.empty();
         }
 
+        Stream<TaskExecutorHolder> availableTEs = this.executorsByGroup.get(bestFitTeGroupKey.get())
+            .descendingSet()
+            .stream()
+            .filter(teHolder -> {
+                if (!this.taskExecutorStateMap.containsKey(teHolder.getId())) {
+                    return false;
+                }
+                if (currentBestFit.contains(teHolder.getId())) {
+                    return false;
+                }
+                TaskExecutorState st = this.taskExecutorStateMap.get(teHolder.getId());
+                return st.isAvailable() &&
+                    // when a TE is returned from here to be used for scheduling, its state remain active until
+                    // the scheduler trigger another message to update (lock) the state. However when large number
+                    // of the requests are active at the same time on same sku, the gap between here and the message
+                    // to lock the state can be large so another schedule request message can be in between and
+                    // got the same set of TEs. To avoid this, a lease is added to each TE state to temporarily
+                    // lock the TE to be used again. Since this is only lock between actor messages and lease
+                    // duration can be short.
+                    st.getLastSchedulerLeasedDuration().compareTo(this.schedulerLeaseExpirationDuration) > 0 &&
+                    st.getRegistration() != null;
+            });
+
+
         return Optional.of(
-            this.executorsByGroup.get(bestFitTeGroupKey.get())
-                .descendingSet()
-                .stream()
-                .filter(teHolder -> {
-                    if (!this.taskExecutorStateMap.containsKey(teHolder.getId())) {
-                        return false;
-                    }
-                    if (currentBestFit.contains(teHolder.getId())) {
-                        return false;
-                    }
-                    TaskExecutorState st = this.taskExecutorStateMap.get(teHolder.getId());
-                    return st.isAvailable() &&
-                        // when a TE is returned from here to be used for scheduling, its state remain active until
-                        // the scheduler trigger another message to update (lock) the state. However when large number
-                        // of the requests are active at the same time on same sku, the gap between here and the message
-                        // to lock the state can be large so another schedule request message can be in between and
-                        // got the same set of TEs. To avoid this, a lease is added to each TE state to temporarily
-                        // lock the TE to be used again. Since this is only lock between actor messages and lease
-                        // duration can be short.
-                        st.getLastSchedulerLeasedDuration().compareTo(this.schedulerLeaseExpirationDuration) > 0 &&
-                        st.getRegistration() != null;
-                })
+                availableTEs
                 .limit(numWorkers)
                 .map(teHolder -> {
                     TaskExecutorState st = this.taskExecutorStateMap.get(teHolder.getId());
