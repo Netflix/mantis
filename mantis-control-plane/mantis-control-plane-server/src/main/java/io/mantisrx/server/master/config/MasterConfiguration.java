@@ -165,7 +165,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     FitnessCalculator getFitnessCalculator();
 
     @Config("mantis.master.scheduler.availabletaskexecutormutatorhook.class")
-    @DefaultNull
+    @Default("io.mantisrx.master.resourcecluster.PassthroughAvailableTaskExecutorMutatorHook")
     AvailableTaskExecutorMutatorHook getAvailableTaskExecutorMutatorHook();
 
     default Duration getSchedulerIntervalBetweenRetries() {

@@ -211,8 +211,7 @@ public class ResourceClusterActorTest {
                 "",
                 false,
                 ImmutableMap.of(),
-                new CpuWeightedFitnessCalculator(),
-                null);
+                new CpuWeightedFitnessCalculator());
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =
