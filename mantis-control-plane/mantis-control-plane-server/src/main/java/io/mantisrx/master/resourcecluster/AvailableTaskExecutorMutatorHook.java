@@ -16,5 +16,11 @@
 
 package io.mantisrx.master.resourcecluster;
 
+import io.mantisrx.master.resourcecluster.ExecutorStateManagerImpl.TaskExecutorHolder;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatchAssignmentRequest;
+import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import java.util.stream.Stream;
+
 public interface AvailableTaskExecutorMutatorHook {
+    Stream<TaskExecutorHolder> mutate(Stream<TaskExecutorHolder> taskExecutorHolderStream, TaskExecutorBatchAssignmentRequest request, SchedulingConstraints schedulingConstraints);
 }

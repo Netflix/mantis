@@ -123,10 +123,13 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
             log.info("Archived TaskExecutor: {} removed due to: {}", notification.getKey(), notification.getCause()))
         .build();
 
+    private final AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook;
+
     ExecutorStateManagerImpl(Map<String, String> schedulingAttributes) {
         this.schedulingAttributes = schedulingAttributes;
         this.fitnessCalculator = new CpuWeightedFitnessCalculator();
         this.schedulerLeaseExpirationDuration = Duration.ofMillis(100);
+        this.availableTaskExecutorMutatorHook = null;
     }
 
     ExecutorStateManagerImpl(
@@ -136,6 +139,17 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         this.schedulingAttributes = schedulingAttributes;
         this.fitnessCalculator = fitnessCalculator;
         this.schedulerLeaseExpirationDuration = schedulerLeaseExpirationDuration;
+        this.availableTaskExecutorMutatorHook = null;
+    }
+
+    ExecutorStateManagerImpl(Map<String, String> schedulingAttributes,
+                             FitnessCalculator fitnessCalculator,
+                             Duration schedulerLeaseExpirationDuration,
+                             AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook) {
+        this.schedulingAttributes = schedulingAttributes;
+        this.fitnessCalculator = fitnessCalculator;
+        this.schedulerLeaseExpirationDuration = schedulerLeaseExpirationDuration;
+        this.availableTaskExecutorMutatorHook = availableTaskExecutorMutatorHook;
     }
 
     @Override
@@ -312,7 +326,6 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
         for (Entry<SchedulingConstraints, List<TaskExecutorAllocationRequest>> entry : request.getGroupedBySchedulingConstraints().entrySet()) {
             final SchedulingConstraints schedulingConstraints = entry.getKey();
             final List<TaskExecutorAllocationRequest> allocationRequests = entry.getValue();
-
             Optional<Map<TaskExecutorID, TaskExecutorState>> taskExecutors = findTaskExecutorsFor(request, schedulingConstraints, allocationRequests, isJobIdAlreadyPending, bestFit);
 
             // Mark noResourcesAvailable if we can't find enough TEs for a given set of scheduling constraints
@@ -376,6 +389,10 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
                     st.getLastSchedulerLeasedDuration().compareTo(this.schedulerLeaseExpirationDuration) > 0 &&
                     st.getRegistration() != null;
             });
+
+        if(availableTaskExecutorMutatorHook != null) {
+            availableTEs = availableTaskExecutorMutatorHook.mutate(availableTEs, request, schedulingConstraints);
+        }
 
 
         return Optional.of(
@@ -672,7 +689,7 @@ class ExecutorStateManagerImpl implements ExecutorStateManager {
      */
     @Builder
     @Value
-    protected static class TaskExecutorHolder {
+    public static class TaskExecutorHolder {
         TaskExecutorID Id;
         String generation;
 

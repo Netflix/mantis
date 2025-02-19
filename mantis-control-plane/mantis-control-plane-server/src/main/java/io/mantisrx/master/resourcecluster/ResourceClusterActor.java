@@ -154,7 +154,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
-        FitnessCalculator fitnessCalculator
+        FitnessCalculator fitnessCalculator,
+        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook
     ) {
         return Props.create(
             ResourceClusterActor.class,
@@ -171,7 +172,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             jobClustersWithArtifactCachingEnabled,
             isJobArtifactCachingEnabled,
             schedulingAttributes,
-            fitnessCalculator
+            fitnessCalculator,
+            availableTaskExecutorMutatorHook
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -189,7 +191,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
-        FitnessCalculator fitnessCalculator) {
+        FitnessCalculator fitnessCalculator,
+        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -207,7 +210,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
 
         this.executorStateManager = new ExecutorStateManagerImpl(
-            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration);
+            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration, availableTaskExecutorMutatorHook);
 
         this.metrics = new ResourceClusterActorMetrics();
     }
@@ -957,7 +960,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     @Value
-    static class TaskExecutorBatchAssignmentRequest {
+    public static class TaskExecutorBatchAssignmentRequest {
         Set<TaskExecutorAllocationRequest> allocationRequests;
         ClusterID clusterID;
 
