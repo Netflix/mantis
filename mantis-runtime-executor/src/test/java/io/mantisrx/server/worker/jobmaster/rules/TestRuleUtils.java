@@ -46,10 +46,12 @@ public class TestRuleUtils {
             .build();
     }
 
-    private static StageScalingPolicy createDefaultStageScalingPolicy() {
+    public static StageScalingPolicy createDefaultStageScalingPolicy(int type) {
         Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> strategies = new HashMap<>();
-        strategies.put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(
-            StageScalingPolicy.ScalingReason.CPU,
+
+        StageScalingPolicy.ScalingReason reason = StageScalingPolicy.ScalingReason.values()[type];
+        strategies.put(reason, new StageScalingPolicy.Strategy(
+            reason,
             0.3,
             0.7,
             new StageScalingPolicy.RollingCount(3, 5)
@@ -65,5 +67,9 @@ public class TestRuleUtils {
             strategies,
             false // allowAutoScaleManager
         );
+    }
+
+    public static StageScalingPolicy createDefaultStageScalingPolicy() {
+        return createDefaultStageScalingPolicy(0);
     }
 }

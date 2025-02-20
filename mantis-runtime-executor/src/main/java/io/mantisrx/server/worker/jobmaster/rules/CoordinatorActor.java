@@ -114,8 +114,11 @@ public class CoordinatorActor extends AbstractActor {
             .collect(Collectors.toSet());
 
         Set<String> removedRuleIds = this.ruleActors.keySet().stream()
-            .filter(ruleId -> !newRuleIds.contains(ruleId)).collect(Collectors.toSet());
+            .filter(ruleId -> !newRuleIds.contains(ruleId) &&
+                (defaultRule == null || !ruleId.equals(defaultRule.getRuleId())))
+            .collect(Collectors.toSet());
 
+        // remove rule actors no longer present. Ignore default rule.
         for (String ruleId : removedRuleIds) {
             ActorRef ruleActor = this.ruleActors.remove(ruleId);
             log.info("Stopping rule actor: {}", ruleActor);
@@ -186,6 +189,7 @@ public class CoordinatorActor extends AbstractActor {
         ActorRef ruleActor = getContext().actorOf(newActorProps, actorName + "-" + System.currentTimeMillis());
         getContext().watch(ruleActor);
         this.ruleActors.put(rule.getRuleId(), ruleActor);
+        log.info("{} rule actor created", rule.getRuleId());
     }
 
     private void initState() {
