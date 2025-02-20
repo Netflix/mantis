@@ -16,6 +16,9 @@ import java.util.Map;
 @Value
 public class JobScalingRule implements Serializable {
     private static final long serialVersionUID = 1L;
+    public static final String TRIGGER_TYPE_SCHEDULE = "schedule";
+    public static final String TRIGGER_TYPE_PERPETUAL = "perpetual";
+    public static final String TRIGGER_TYPE_CUSTOM = "custom";
 
     String ruleId;
     ScalerConfig scalerConfig;
@@ -72,7 +75,7 @@ public class JobScalingRule implements Serializable {
         @JsonCreator
         @JsonIgnoreProperties(ignoreUnknown = true)
         public TriggerConfig(
-            @JsonProperty("type") String triggerType,
+            @JsonProperty("triggerType") String triggerType,
             @JsonProperty("scalingPolicy") String scheduleCron,
             @JsonProperty("scalingPolicy") String scheduleDuration,
             @JsonProperty("desireSize") String customTrigger) {
