@@ -32,6 +32,7 @@ dependencies {
     implementation libraries.httpClient
     implementation "com.yahoo.datasketches:sketches-core:0.9.1"
     implementation libraries.spectatorApi
+    implementation 'org.quartz-scheduler:quartz:2.2.+' // need to stay on jdk 8 compatible version
 
     testImplementation libraries.akkaTest
     testImplementation libraries.junit4
