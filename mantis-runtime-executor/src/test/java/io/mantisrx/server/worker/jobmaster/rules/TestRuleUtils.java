@@ -45,16 +45,16 @@ public class TestRuleUtils {
             .build();
     }
 
-    public static JobScalingRule createNonPerpetualRule(String ruleId, String jobId) {
+    public static JobScalingRule createScheduleRule(String ruleId, String cronSpec, String duration) {
         JobScalingRule.ScalerConfig scalerConfig = JobScalingRule.ScalerConfig.builder()
-            .type("standard")
+            .type("schedule")
             .scalingPolicy(createDefaultStageScalingPolicy())
             .build();
 
         JobScalingRule.TriggerConfig triggerConfig = JobScalingRule.TriggerConfig.builder()
             .triggerType(JobScalingRule.TRIGGER_TYPE_SCHEDULE)
-            .scheduleCron("0 0 * * *") // Example cron expression for daily execution
-            .scheduleDuration("PT1H") // Example duration of 1 hour
+            .scheduleCron(cronSpec)
+            .scheduleDuration(duration)
             .build();
 
         return JobScalingRule.builder()
