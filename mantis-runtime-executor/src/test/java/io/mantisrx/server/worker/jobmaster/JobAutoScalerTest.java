@@ -337,13 +337,17 @@ public class JobAutoScalerTest {
             .scalerConfig(JobScalingRule.ScalerConfig.builder()
                 .scalingPolicies(ImmutableList.of(stageScalingPolicy)).build())
             .build();
+
+        JobScalerContext ctx = JobScalerContext.builder()
+            .jobId(jobId)
+            .masterClientApi(mockMasterClientApi)
+            .schedInfo(new SchedulingInfo(schedulingInfoMap))
+            .context(context)
+            .jobAutoscalerManager(JobAutoscalerManager.DEFAULT)
+            .build();
         final JobAutoScaler jobAutoScaler = new JobAutoScaler(
-            jobId,
-            new SchedulingInfo(schedulingInfoMap),
-            scalingRule,
-            mockMasterClientApi,
-            context,
-            JobAutoscalerManager.DEFAULT);
+            ctx,
+            scalingRule);
         jobAutoScaler.start();
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 

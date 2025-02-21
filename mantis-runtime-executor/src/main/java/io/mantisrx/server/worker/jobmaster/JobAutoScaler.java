@@ -115,13 +115,12 @@ public class JobAutoScaler {
                                 .build()));
     }
 
-    JobAutoScaler(String jobId, SchedulingInfo schedulingInfo, JobScalingRule jobScalerRule, MantisMasterGateway masterClientApi,
-                  Context context, JobAutoscalerManager jobAutoscalerManager) {
-        this.jobId = jobId;
-        this.masterClientApi = masterClientApi;
+    JobAutoScaler(JobScalerContext scalerContext, JobScalingRule jobScalerRule) {
+        this.jobId = scalerContext.getJobId();
+        this.masterClientApi = scalerContext.getMasterClientApi();
         this.subject = PublishSubject.create();
-        this.context = context;
-        this.jobAutoscalerManager = jobAutoscalerManager;
+        this.context = scalerContext.getContext();
+        this.jobAutoscalerManager = scalerContext.getJobAutoscalerManager();
 
         this.stagePolicyMap = jobScalerRule.getScalerConfig().getScalingPolicies().stream()
             .collect(Collectors.toMap(
@@ -131,9 +130,9 @@ public class JobAutoScaler {
                         jobScalerRule.getScalerConfig().getStageDesireSize()
                             .getOrDefault(
                                 stagePolicy.getStage(),
-                                schedulingInfo.forStage(stagePolicy.getStage()).getNumberOfInstances()))
+                                scalerContext.getSchedInfo().forStage(stagePolicy.getStage()).getNumberOfInstances()))
                     .scalingPolicy(stagePolicy)
-                    .stageMachineDefinition(schedulingInfo.forStage(stagePolicy.getStage()).getMachineDefinition())
+                    .stageMachineDefinition(scalerContext.getSchedInfo().forStage(stagePolicy.getStage()).getMachineDefinition())
                     .build()));
     }
 
@@ -146,7 +145,7 @@ public class JobAutoScaler {
         return new io.mantisrx.control.clutch.Event(metricMap.get(event.type), event.getEffectiveValue());
     }
 
-    void start() {
+    public void start() {
         subject
                 .onBackpressureBuffer(100, () -> {
                     logger.info("onOverflow triggered, dropping old events");

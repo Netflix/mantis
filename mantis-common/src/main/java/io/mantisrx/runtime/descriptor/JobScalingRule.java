@@ -20,6 +20,10 @@ public class JobScalingRule implements Serializable {
     public static final String TRIGGER_TYPE_PERPETUAL = "perpetual";
     public static final String TRIGGER_TYPE_CUSTOM = "custom";
 
+    /**
+     * Unique identifier for this rule. By default, this is an int value starting from 0.
+     * -1 is reserved for default rule.
+     */
     String ruleId;
     ScalerConfig scalerConfig;
     TriggerConfig triggerConfig;
