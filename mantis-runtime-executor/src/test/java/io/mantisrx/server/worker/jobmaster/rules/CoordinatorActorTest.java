@@ -8,12 +8,14 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.server.worker.jobmaster.JobAutoScalerService;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.*;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 import rx.subjects.BehaviorSubject;
 
 
@@ -40,6 +42,9 @@ public class CoordinatorActorTest {
     @Mock
     private MantisMasterGateway masterClientApi;
 
+    @Mock
+    private JobAutoScalerService jobAutoScalerService;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
@@ -48,12 +53,23 @@ public class CoordinatorActorTest {
         jobScalerContext = JobScalerContext.builder()
             .jobId(JOB_ID)
             .masterClientApi(masterClientApi)
+            .jobAutoScalerServiceFactory((context, rule) -> jobAutoScalerService)
             .schedInfo(new SchedulingInfo.Builder()
                 .addStage(StageSchedulingInfo.builder()
                     .scalingPolicy(TestRuleUtils.createDefaultStageScalingPolicy(1)).build())
                 .numberOfStages(1)
                 .build())
             .build();
+
+        doAnswer((Answer<Void>) invocation -> {
+            log.info("Test: start job auto scaler service");
+            return null;
+        }).when(jobAutoScalerService).start();
+
+        doAnswer((Answer<Void>) invocation -> {
+            log.info("Test: shutdown job auto scaler service");
+            return null;
+        }).when(jobAutoScalerService).shutdown();
     }
 
     @After
@@ -69,6 +85,7 @@ public class CoordinatorActorTest {
         this.jobScalerContext = JobScalerContext.builder()
             .jobId(JOB_ID)
             .masterClientApi(masterClientApi)
+            .jobAutoScalerServiceFactory((context, rule) -> jobAutoScalerService)
             .build();
 
         JobScalingRule perpetualRule = TestRuleUtils.createPerpetualRule(RULE_ID_1, JOB_ID);
