@@ -27,6 +27,9 @@ public final class SystemParameters {
     public static final String JOB_WORKER_HEARTBEAT_INTERVAL_SECS = "mantis.job.worker.heartbeat.interval.secs";
     public static final String JOB_WORKER_TIMEOUT_SECS = "mantis.job.worker.timeout.secs";
 
+    public static final String JOB_AUTOSCALE_V2_ENABLED_PARAM = "mantis.job.autoscale.v2.enabled";
+
+
     @Deprecated
     public static final String MANTIS_WORKER_JVM_OPTS_STAGE_PREFIX = "MANTIS_WORKER_JVM_OPTS_STAGE";
 

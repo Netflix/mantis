@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.worker;
 
+import static io.mantisrx.common.SystemParameters.JOB_AUTOSCALE_V2_ENABLED_PARAM;
 import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
 import static io.mantisrx.server.core.utils.StatusConstants.STATUS_MESSAGE_FORMAT;
 
@@ -44,21 +45,12 @@ import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.parameter.ParameterUtils;
 import io.mantisrx.runtime.parameter.Parameters;
-import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.core.JobSchedulingInfo;
-import io.mantisrx.server.core.ServiceRegistry;
-import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.Status.TYPE;
-import io.mantisrx.server.core.StatusPayloads;
-import io.mantisrx.server.core.WorkerAssignments;
-import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
-import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
-import io.mantisrx.server.worker.jobmaster.JobAutoscalerManager;
-import io.mantisrx.server.worker.jobmaster.JobMasterService;
-import io.mantisrx.server.worker.jobmaster.JobMasterStageConfig;
+import io.mantisrx.server.worker.jobmaster.*;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
@@ -414,10 +406,33 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 }
 
                 JobAutoscalerManager jobAutoscalerManager = getJobAutoscalerManagerInstance(serviceLocator);
-                JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
+
+                // switch to v2 scaler control only when parameter is set to true for now
+                final String useV2ScalerService = (String) parameters.get(JOB_AUTOSCALE_V2_ENABLED_PARAM, "false");
+                if (Boolean.parseBoolean(useV2ScalerService)) {
+                    logger.info("Using V2 JobAutoScalerService: JobMasterServiceV2");
+                    Service jobMasterServiceV2 = new JobMasterServiceV2(
+                        JobScalerContext.builder()
+                            .jobId(rw.getJobId())
+                            .schedInfo(rw.getSchedulingInfo())
+                            .workerMetricsClient(workerMetricsClient)
+                            .autoScaleMetricsConfig(autoScaleMetricsConfig)
+                            .masterClientApi(mantisMasterApi)
+                            .context(rw.getContext())
+                            .observableOnCompleteCallback(rw.getOnCompleteCallback())
+                            .observableOnErrorCallback(rw.getOnErrorCallback())
+                            .observableOnTerminateCallback(rw.getOnTerminateCallback())
+                            .jobAutoscalerManager(jobAutoscalerManager)
+                            .build());
+                    jobMasterServiceV2.start();
+                    closeables.add(jobMasterServiceV2::shutdown);
+                } else {
+                    logger.info("Using V1 JobMasterService");
+                    JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
                         workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback(), jobAutoscalerManager);
-                jobMasterService.start();
-                closeables.add(jobMasterService::shutdown);
+                    jobMasterService.start();
+                    closeables.add(jobMasterService::shutdown);
+                }
 
                 signalStarted(rw);
                 // block until worker terminates
