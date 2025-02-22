@@ -7,7 +7,6 @@ import akka.actor.Props;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
-import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import lombok.Builder;
