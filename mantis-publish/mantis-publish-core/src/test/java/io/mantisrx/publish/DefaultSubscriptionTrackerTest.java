@@ -356,7 +356,7 @@ public class DefaultSubscriptionTrackerTest {
 
         assertTrue(getCurrentSubIds(streamName).isEmpty());
         verify(mockStreamManager, times(1)).getRegisteredStreams();
-        verifyZeroInteractions(mockJobDiscovery);
+        verifyNoInteractions(mockJobDiscovery);
     }
 
     private static class SubscriptionsHelper {

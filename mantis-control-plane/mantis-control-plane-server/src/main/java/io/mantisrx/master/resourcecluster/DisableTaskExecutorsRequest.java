@@ -23,11 +23,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
-import javax.xml.bind.DatatypeConverter;
 import lombok.Value;
 
 @Value
@@ -66,7 +66,7 @@ public class DisableTaskExecutorsRequest {
                 messageDigest.update(key.getBytes(StandardCharsets.UTF_8));
                 messageDigest.update(value.getBytes(StandardCharsets.UTF_8));
             });
-            return DatatypeConverter.printHexBinary(messageDigest.digest());
+            return Base64.getEncoder().encodeToString(messageDigest.digest());
         } catch (NoSuchAlgorithmException exception) {
             // don't expect this to happen
             // let's just throw a runtime exception in this case

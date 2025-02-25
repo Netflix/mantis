@@ -22,8 +22,8 @@ import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_MET
 import static io.reactivex.mantis.network.push.PushServerSse.PROCESSED_COUNTER_METRIC_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
