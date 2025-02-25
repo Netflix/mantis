@@ -66,7 +66,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.util.Precision;
 
 @Slf4j
-class ExecutorStateManagerImpl implements ExecutorStateManager {
+public class ExecutorStateManagerImpl implements ExecutorStateManager {
     private final Map<TaskExecutorID, TaskExecutorState> taskExecutorStateMap = new HashMap<>();
     Cache<String, JobRequirements> pendingJobRequests = CacheBuilder.newBuilder()
         .maximumSize(1000)
