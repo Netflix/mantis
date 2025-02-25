@@ -32,9 +32,4 @@ public class PerpetualRuleActor extends AbstractActor {
         // trigger message to coordinator to activate rule
         getContext().getParent().tell(activateRuleRequest, getSelf());
     }
-
-    @Override
-    public void preStart() {
-        log.info("[preStart] {} PerpetualRule actor started", getSelf());
-    }
 }

@@ -45,16 +45,18 @@ public class ScheduleRuleActor extends AbstractActorWithTimers {
     }
 
     @Override
-    public void preStart() {
+    public void preStart() throws Exception {
+        super.preStart();
         log.info("ScheduleRuleActor started");
         handleScheduleMessage();
     }
 
     @Override
-    public void postStop() {
+    public void postStop() throws Exception {
         log.info("ScheduleRuleActor stopped, cancelling timers");
         getTimers().cancel(TICK_TIMER_KEY);
         getTimers().cancel(STOP_TIMER_KEY);
+        super.postStop();
     }
 
     private void handleScheduleMessage() {
@@ -151,7 +153,9 @@ public class ScheduleRuleActor extends AbstractActorWithTimers {
     private void handleStop(Stop stop) {
         log.info("Deactivate rule as schedule duration finish: {}", this.rule.getRuleId());
         ActorRef parent = getContext().getParent();
-        parent.tell(CoordinatorActor.DeactivateRuleRequest.of(this.rule.getRuleId()), getSelf());
+        parent.tell(
+            CoordinatorActor.DeactivateRuleRequest.of(this.jobScalerContext.getJobId(), this.rule.getRuleId()),
+            getSelf());
 
         Date now = new Date();
         Date nextValidTime = currentCron.getNextValidTimeAfter(now);

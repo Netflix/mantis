@@ -32,6 +32,11 @@ public class LifecycleNoOp extends Lifecycle {
             public <T> T service(Class<T> key) {
                 throw new UnsupportedOperationException("NoOp lifecycle does not support service lookup");
             }
+
+            @Override
+            public <T> T service(String name, Class<T> requiredType) {
+                throw new UnsupportedOperationException("NoOp lifecycle does not support service lookup");
+            }
         };
     }
 }

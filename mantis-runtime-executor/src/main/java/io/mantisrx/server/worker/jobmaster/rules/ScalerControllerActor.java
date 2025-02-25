@@ -3,14 +3,12 @@ package io.mantisrx.server.worker.jobmaster.rules;
 import akka.actor.AbstractActor;
 import akka.actor.Props;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
-import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
 import io.mantisrx.server.worker.jobmaster.JobAutoScalerService;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
 import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
-import rx.Subscription;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.Future;
 
