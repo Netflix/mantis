@@ -27,12 +27,14 @@ import io.mantisrx.runtime.ScalarToGroup;
 import io.mantisrx.runtime.ScalarToKey;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.StageConfig;
+import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.reactivex.mantis.network.push.HashFunctions;
 import io.reactivex.mantis.network.push.KeyValuePair;
 import io.reactivex.mantis.network.push.LegacyTcpPushServer;
 import io.reactivex.mantis.network.push.PushServers;
+import io.reactivex.mantis.network.push.Router;
 import io.reactivex.mantis.network.push.Routers;
 import io.reactivex.mantis.network.push.ServerConfig;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
@@ -58,14 +60,22 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
     private RemoteRxServer server;
     private final MantisPropertiesLoader propService;
     private String jobName;
+    private final WorkerConfiguration config;
 
     public WorkerPublisherRemoteObservable(int serverPort,
                                            String name, Observable<Integer> minConnectionsToSubscribe,
                                            String jobName) {
+        this(serverPort, name, minConnectionsToSubscribe, jobName, null);
+    }
+
+    public WorkerPublisherRemoteObservable(int serverPort,
+                                           String name, Observable<Integer> minConnectionsToSubscribe,
+                                           String jobName, WorkerConfiguration config) {
         this.name = name;
         this.serverPort = serverPort;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
         this.jobName = jobName;
+        this.config = config;
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -82,12 +92,16 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
                 logger.info("Modern server setup for name: " + name + " type: Scalarstage");
 
                 Func1<T, byte[]> encoder = t1 -> stage.getOutputCodec().encode(t1);
+                Router router = Routers.createRouterInstance(
+                        this.config.getScalarStageToStageRouterClassName(),
+                        name,
+                        encoder);
 
                 ServerConfig<T> config = new ServerConfig.Builder<T>()
                         .name(name)
                         .port(serverPort)
                         .metricsRegistry(MetricsRegistry.getInstance())
-                        .router(Routers.roundRobinLegacyTcpProtocol(name, encoder))
+                        .router(router)
                         .build();
                 final LegacyTcpPushServer<T> modernServer =
                         PushServers.infiniteStreamLegacyTcpNested(config, toServe);

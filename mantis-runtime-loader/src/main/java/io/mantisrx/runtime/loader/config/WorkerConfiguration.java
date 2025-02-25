@@ -192,4 +192,11 @@ public interface WorkerConfiguration extends CoreConfiguration {
             .filter(entry -> !entry.getValue().matches("\\$\\{.*\\}"))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
+
+    // ------------------------------------------------------------------------
+    //  Routing related configurations
+    // ------------------------------------------------------------------------
+    @Config("mantis.taskexecutor.router.scalar-stage-to-stage")
+    @Default("io.reactivex.mantis.network.push.RoundRobinRouter")
+    String getScalarStageToStageRouterClassName();
 }

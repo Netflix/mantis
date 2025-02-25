@@ -448,11 +448,10 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     // execute source stage
                     String remoteObservableName = rw.getJobId() + "_" + rw.getStageNum();
 
-                    StageSchedulingInfo currentStageSchedulingInfo = rw.getSchedulingInfo().forStage(1);
                     WorkerPublisherRemoteObservable publisher
                             = new WorkerPublisherRemoteObservable<>(rw.getPorts().next(),
                             remoteObservableName, numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1),
-                            rw.getJobName());
+                            rw.getJobName(), this.config);
 
                     closeables.add(StageExecutors.executeSource(rw.getWorkerIndex(), rw.getJob().getSource(),
                             rw.getStage(), publisher, rw.getContext(), rw.getSourceStageTotalWorkersObservable()));
@@ -561,14 +560,13 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 // intermediate stage
                 logger.info("JobId: " + rw.getJobId() + ", executing intermediate stage: " + rw.getStageNum());
 
-
                 int stageNumToExecute = rw.getStageNum();
                 String jobId = rw.getJobId();
                 String remoteObservableName = jobId + "_" + stageNumToExecute;
 
                 WorkerPublisherRemoteObservable publisher
                         = new WorkerPublisherRemoteObservable<>(workerPort, remoteObservableName,
-                        numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1), rw.getJobName());
+                        numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1), rw.getJobName(), this.config);
                 closeables.add(StageExecutors.executeIntermediate(consumer, rw.getStage(), publisher,
                         rw.getContext()));
                 RemoteRxServer server = publisher.getServer();

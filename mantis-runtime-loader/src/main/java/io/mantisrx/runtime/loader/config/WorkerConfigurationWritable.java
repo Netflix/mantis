@@ -79,6 +79,7 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     String leaderMonitorFactory;
     String metricsCollectorClass;
     String jobAutoscalerManagerClassName;
+    String scalarStageToStageRouterClassName;
 
     @JsonIgnore
     MetricsPublisher metricsPublisher;
@@ -286,6 +287,11 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     @Override
     public String taskExecutorAttributes() {
         return this.taskExecutorAttributesStr;
+    }
+
+    @Override
+    public String getScalarStageToStageRouterClassName() {
+        return this.scalarStageToStageRouterClassName;
     }
 
     @Override

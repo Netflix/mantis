@@ -180,9 +180,9 @@ public abstract class PushServer<T, R> {
                                                 final Subscription heartbeatSubscription, boolean applySampling, long samplingRateMSec,
                                                 Func1<T, Boolean> predicate, final Action0 connectionClosedCallback,
                                                 final Counter legacyMsgProcessedCounter, final Counter legacyDroppedWrites,
-                                                final Action0 connectionSubscribeCallback) {
+                                                final Action0 connectionSubscribeCallback, final String availabilityZone) {
         return manageConnection(writer, host, port, groupId, slotId, id, lastWriteTime, applicationHeartbeats, heartbeatSubscription,
-            applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback);
+            applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback, availabilityZone);
     }
 
     protected Observable<Void> manageConnection(final DefaultChannelWriter<R> writer, String host, int port,
@@ -191,9 +191,9 @@ public abstract class PushServer<T, R> {
                                                 final SerializedSubject<String, String> metaMsgSubject, final Subscription metaMsgSubscription,
                                                 Func1<T, Boolean> predicate, final Action0 connectionClosedCallback,
                                                 final Counter legacyMsgProcessedCounter, final Counter legacyDroppedWrites,
-                                                final Action0 connectionSubscribeCallback) {
+                                                final Action0 connectionSubscribeCallback, final String availabilityZone) {
         return manageConnectionWithCompression(writer, host, port, groupId, slotId, id, lastWriteTime, applicationHeartbeats, heartbeatSubscription,
-            applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback, false, false, null, null);
+            applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback, false, false, null, availabilityZone);
 
     }
 
