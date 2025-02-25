@@ -67,8 +67,9 @@ public class CoordinatorActor extends AbstractActor {
     }
 
     @Override
-    public void preStart() {
+    public void preStart() throws Exception {
         // rely on default strategy to restart actor on error
+        super.preStart();
         log.info("[preStart] {} Coordinator Actor started", getSelf());
         try {
             // startup sequence
@@ -85,11 +86,13 @@ public class CoordinatorActor extends AbstractActor {
     }
 
     @Override
-    public void postStop() {
+    public void postStop() throws Exception {
         log.info("[postStop] {} Actor stopped", getSelf());
         if (this.subscription != null && !this.subscription.isUnsubscribed()) {
             this.subscription.unsubscribe();
         }
+
+        super.postStop();
     }
 
     @Override
@@ -124,7 +127,7 @@ public class CoordinatorActor extends AbstractActor {
             getContext().stop(ruleActor);
 
             // notify controller to deactivate rule if active
-            this.controllerActor.tell(DeactivateRuleRequest.of(ruleId), self());
+            this.controllerActor.tell(DeactivateRuleRequest.of(this.jobScalerContext.getJobId(), ruleId), self());
         }
 
         // create new rule actors
@@ -271,10 +274,11 @@ public class CoordinatorActor extends AbstractActor {
 
     @Value
     public static class DeactivateRuleRequest {
+        String jobId;
         String ruleId;
 
-        public static DeactivateRuleRequest of(String ruleId) {
-            return new DeactivateRuleRequest(ruleId);
+        public static DeactivateRuleRequest of(String jobId, String ruleId) {
+            return new DeactivateRuleRequest(jobId, ruleId);
         }
     }
 

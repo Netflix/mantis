@@ -110,13 +110,13 @@ public class ScalerControllerActorTest {
         assertEquals(perpetualRule2, response.getRule());
 
         // test ignore deactivate rule
-        controllerActor.tell(CoordinatorActor.DeactivateRuleRequest.of(perpetualRule.getRuleId()), probe.getRef());
+        controllerActor.tell(CoordinatorActor.DeactivateRuleRequest.of(JOB_ID, perpetualRule.getRuleId()), probe.getRef());
         controllerActor.tell(new ScalerControllerActor.GetActiveRuleRequest(), probe.getRef());
         response = probe.expectMsgClass(ScalerControllerActor.GetActiveRuleResponse.class);
         assertEquals(perpetualRule2, response.getRule());
 
         // test deactivate active rule
-        controllerActor.tell(CoordinatorActor.DeactivateRuleRequest.of(perpetualRule2.getRuleId()), probe.getRef());
+        controllerActor.tell(CoordinatorActor.DeactivateRuleRequest.of(JOB_ID, perpetualRule2.getRuleId()), probe.getRef());
         controllerActor.tell(new ScalerControllerActor.GetActiveRuleRequest(), probe.getRef());
         response = probe.expectMsgClass(ScalerControllerActor.GetActiveRuleResponse.class);
         assertNull(response.getRule());

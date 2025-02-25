@@ -1,28 +1,19 @@
 package io.mantisrx.server.worker.jobmaster.rules;
 
-import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.Props;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
-import io.mantisrx.server.master.client.MantisMasterGateway;
-import io.mantisrx.server.worker.jobmaster.JobAutoScalerService;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
-import lombok.Builder;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -38,12 +29,6 @@ public class ScheduleRuleActorTest {
     private TestKit testKit;
 
     private JobScalerContext jobScalerContext;
-
-    @Mock
-    private MantisMasterGateway masterClientApi;
-
-    @Mock
-    private JobAutoScalerService jobAutoScalerService;
 
     @Before
     public void setUp() {
@@ -69,15 +54,15 @@ public class ScheduleRuleActorTest {
             RULE_ID_1, "0/1 * * * * ?", null);
 
         ActorRef parentActor = system.actorOf(
-            ScheduleTestParentActor.Props(jobScalerContext, scheduleRule), "scheduleRuleActorParent");
+            TestRuleUtils.TestParentActor.Props(jobScalerContext, scheduleRule), "scheduleRuleActorParent");
         final TestKit probe = new TestKit(system);
         testKit.awaitAssert(Max_Duration, Interval_Duration,
             () -> {
-                parentActor.tell(new ScheduleTestParentActor.GetStateRequest(), probe.getRef());
-                ScheduleTestParentActor.GetStateResponse response =
-                    probe.expectMsgClass(ScheduleTestParentActor.GetStateResponse.class);
-                assertTrue(response.ruleActivated.get());
-                assertEquals(1, response.ruleActivateCnt.get());
+                parentActor.tell(new TestRuleUtils.TestParentActor.GetStateRequest(), probe.getRef());
+                TestRuleUtils.TestParentActor.GetStateResponse response =
+                    probe.expectMsgClass(TestRuleUtils.TestParentActor.GetStateResponse.class);
+                assertTrue(response.getRuleActivated().get());
+                assertEquals(1, response.getRuleActivateCnt().get());
                 return null;
             });
     }
@@ -89,25 +74,25 @@ public class ScheduleRuleActorTest {
             RULE_ID_1, buildCron(1), "PT2S");
 
         ActorRef parentActor = system.actorOf(
-            ScheduleTestParentActor.Props(jobScalerContext, scheduleRule), "scheduleRuleActorParent");
+            TestRuleUtils.TestParentActor.Props(jobScalerContext, scheduleRule), "scheduleRuleActorParent");
         final TestKit probe = new TestKit(system);
         testKit.awaitAssert(Max_Duration, Interval_Duration,
             () -> {
-                parentActor.tell(new ScheduleTestParentActor.GetStateRequest(), probe.getRef());
-                ScheduleTestParentActor.GetStateResponse response =
-                    probe.expectMsgClass(ScheduleTestParentActor.GetStateResponse.class);
-                assertTrue(response.ruleActivated.get());
-                assertEquals(1, response.ruleActivateCnt.get());
+                parentActor.tell(new TestRuleUtils.TestParentActor.GetStateRequest(), probe.getRef());
+                TestRuleUtils.TestParentActor.GetStateResponse response =
+                    probe.expectMsgClass(TestRuleUtils.TestParentActor.GetStateResponse.class);
+                assertTrue(response.getRuleActivated().get());
+                assertEquals(1, response.getRuleActivateCnt().get());
                 return null;
             });
 
         testKit.awaitAssert(Max_Duration, Interval_Duration,
             () -> {
-                parentActor.tell(new ScheduleTestParentActor.GetStateRequest(), probe.getRef());
-                ScheduleTestParentActor.GetStateResponse response =
-                    probe.expectMsgClass(ScheduleTestParentActor.GetStateResponse.class);
-                assertFalse(response.ruleActivated.get());
-                assertEquals(1, response.ruleDeactivateCnt.get());
+                parentActor.tell(new TestRuleUtils.TestParentActor.GetStateRequest(), probe.getRef());
+                TestRuleUtils.TestParentActor.GetStateResponse response =
+                    probe.expectMsgClass(TestRuleUtils.TestParentActor.GetStateResponse.class);
+                assertFalse(response.getRuleActivated().get());
+                assertEquals(1, response.getRuleDeactivateCnt().get());
                 return null;
             });
     }
@@ -119,102 +104,30 @@ public class ScheduleRuleActorTest {
             RULE_ID_1, "0/3 * * * * ?", "PT1S");
 
         ActorRef parentActor = system.actorOf(
-            ScheduleTestParentActor.Props(jobScalerContext, scheduleRule), "scheduleRuleActorParent");
+            TestRuleUtils.TestParentActor.Props(jobScalerContext, scheduleRule), "scheduleRuleActorParent");
         final TestKit probe = new TestKit(system);
         for (int i = 0; i < 2; i ++) {
             final int cnt = i;
             testKit.awaitAssert(Max_Duration, Interval_Duration,
                 () -> {
-                    parentActor.tell(new ScheduleTestParentActor.GetStateRequest(), probe.getRef());
-                    ScheduleTestParentActor.GetStateResponse response =
-                        probe.expectMsgClass(ScheduleTestParentActor.GetStateResponse.class);
-                    assertTrue(response.ruleActivated.get());
-                    assertEquals(cnt + 1, response.ruleActivateCnt.get());
+                    parentActor.tell(new TestRuleUtils.TestParentActor.GetStateRequest(), probe.getRef());
+                    TestRuleUtils.TestParentActor.GetStateResponse response =
+                        probe.expectMsgClass(TestRuleUtils.TestParentActor.GetStateResponse.class);
+                    assertTrue(response.getRuleActivated().get());
+                    assertEquals(cnt + 1, response.getRuleActivateCnt().get());
                     return null;
                 });
 
             testKit.awaitAssert(Max_Duration, Interval_Duration,
                 () -> {
-                    parentActor.tell(new ScheduleTestParentActor.GetStateRequest(), probe.getRef());
-                    ScheduleTestParentActor.GetStateResponse response =
-                        probe.expectMsgClass(ScheduleTestParentActor.GetStateResponse.class);
-                    assertFalse(response.ruleActivated.get());
-                    assertEquals(cnt + 1, response.ruleActivateCnt.get());
+                    parentActor.tell(new TestRuleUtils.TestParentActor.GetStateRequest(), probe.getRef());
+                    TestRuleUtils.TestParentActor.GetStateResponse response =
+                        probe.expectMsgClass(TestRuleUtils.TestParentActor.GetStateResponse.class);
+                    assertFalse(response.getRuleActivated().get());
+                    assertEquals(cnt + 1, response.getRuleActivateCnt().get());
                     return null;
                 });
         }
-    }
-
-    public static class ScheduleTestParentActor extends AbstractActor {
-        public final JobScalerContext jobScalerContext;
-        public final JobScalingRule rule;
-        public ActorRef schedulerRuleActor;
-        public AtomicBoolean ruleActivated = new AtomicBoolean(false);
-        public AtomicInteger ruleActivateCnt = new AtomicInteger(0);
-        public AtomicInteger ruleDeactivateCnt = new AtomicInteger(0);
-
-        public static Props Props(JobScalerContext context, JobScalingRule rule) {
-            return Props.create(ScheduleTestParentActor.class, context, rule);
-        }
-
-        public ScheduleTestParentActor(JobScalerContext context, JobScalingRule rule) {
-            this.jobScalerContext = context;
-            this.rule = rule;
-        }
-
-        @Override
-        public AbstractActor.Receive createReceive() {
-            return receiveBuilder()
-                .match(GetStateRequest.class, req -> {
-                    getSender().tell(
-                        GetStateResponse.builder()
-                            .schedulerRuleActor(schedulerRuleActor)
-                            .ruleActivated(ruleActivated)
-                            .ruleActivateCnt(ruleActivateCnt)
-                            .ruleDeactivateCnt(ruleDeactivateCnt)
-                            .build(),
-                        getSelf());
-                })
-                .match(CoordinatorActor.ActivateRuleRequest.class,
-                    req -> {
-                    this.ruleActivated.set(true);
-                    this.ruleActivateCnt.incrementAndGet();
-                })
-                .match(CoordinatorActor.DeactivateRuleRequest.class,
-                    req -> {
-                        this.ruleActivated.set(false);
-                        this.ruleDeactivateCnt.incrementAndGet();
-                    })
-                .match(KillScheduleActorRequest.class, req -> {
-                    getContext().stop(schedulerRuleActor);
-                })
-                .matchAny(this::unhandled)
-                .build();
-        }
-
-        @Override
-        public void preStart() {
-            schedulerRuleActor = getContext().actorOf(
-                ScheduleRuleActor.Props(jobScalerContext, rule), "testScheduleRuleActor");
-        }
-
-        @Value
-        public static class GetStateRequest {
-        }
-
-        @Value
-        public static class KillScheduleActorRequest {
-        }
-
-        @Builder
-        @Value
-        public static class GetStateResponse {
-            ActorRef schedulerRuleActor;
-            AtomicBoolean ruleActivated;
-            AtomicInteger ruleActivateCnt;
-            AtomicInteger ruleDeactivateCnt;
-        }
-
     }
 
     private String buildCron(int secondsInFuture) {
