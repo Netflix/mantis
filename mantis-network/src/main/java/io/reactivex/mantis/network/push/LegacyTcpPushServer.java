@@ -123,7 +123,7 @@ public class LegacyTcpPushServer<T> extends PushServer<T, RemoteRxEvent> {
                                                     }
                                                     enableSampling = true;
                                                 }
-                                                if (params.containsKey("availabilityZone")) {
+                                                if (params.containsKey("availabilityZone") && !params.get("availabilityZone").isEmpty()) {
                                                     availabilityZone = params.get("availabilityZone");
                                                 }
                                             }

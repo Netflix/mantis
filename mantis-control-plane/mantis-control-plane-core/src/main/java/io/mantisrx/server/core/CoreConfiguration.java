@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.core;
 
+import com.mantisrx.common.utils.AvailabilityZoneUtils;
 import io.mantisrx.common.metrics.MetricsPublisher;
 import org.skife.config.Config;
 import org.skife.config.Default;
@@ -85,4 +86,8 @@ public interface CoreConfiguration {
     @Config("mantis.leader.monitor.factory")
     @Default("io.mantisrx.server.core.master.LocalLeaderFactory")
     String getLeaderMonitorFactoryName();
+
+    @Config("mantis.availabilityZoneUtils.class")
+    @Default("com.mantisrx.common.utils.DefaultAvailabilityZoneUtils")
+    AvailabilityZoneUtils getAvailabilityZoneUtils();
 }

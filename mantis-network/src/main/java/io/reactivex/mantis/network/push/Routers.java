@@ -61,32 +61,6 @@ public class Routers {
         return buffer.array();
     }
 
-    public static <T> Router<T> createRouterInstance(String routerClassName, String name, final Func1<T, byte[]> toBytes) {
-        try {
-            // Load the class by its name
-            Class<?> clazz = Class.forName(routerClassName);
-            // Check if the class actually implements the desired interface
-            if (!Router.class.isAssignableFrom(clazz)) {
-                throw new IllegalArgumentException(routerClassName + " does not implement " + Router.class.getName());
-            }
-            // Find the constructor of the class
-            Constructor<?> constructor = clazz.getDeclaredConstructor(String.class, Func1.class);
-            // Create a new instance using the constructor
-            Object instance = constructor.newInstance(name, toBytes);
-
-            @SuppressWarnings("unchecked")
-            Router<T> routerInstance = (Router<T>) instance;
-
-            return routerInstance;
-        } catch (Exception e) {
-            // Handle any exceptions (ClassNotFoundException, NoSuchMethodException, etc.)
-            final String msg = "failed to create instance of " + routerClassName;
-            logger.error(msg, e);
-            // Fall back to round robin router
-            return roundRobinLegacyTcpProtocol(name, toBytes);
-        }
-    }
-
     public static <T> Router<T> roundRobinLegacyTcpProtocol(String name, final Func1<T, byte[]> toBytes) {
         return new RoundRobinRouter<>(name, new Func1<T, byte[]>() {
             @Override
@@ -114,6 +88,32 @@ public class Routers {
                 //				return buffer.array();
             }
         });
+    }
+
+    public static <T> Router<T> createRouterInstance(String routerClassName, String name, final Func1<T, byte[]> toBytes) {
+        try {
+            // Load the class by its name
+            Class<?> clazz = Class.forName(routerClassName);
+            // Check if the class is a Router
+            if (!Router.class.isAssignableFrom(clazz)) {
+                throw new IllegalArgumentException(routerClassName + " does not implement " + Router.class.getName());
+            }
+            // Find the constructor of the class
+            Constructor<?> constructor = clazz.getDeclaredConstructor(String.class, Func1.class);
+            // Create a new instance using the constructor
+            Object instance = constructor.newInstance(name, toBytes);
+
+            @SuppressWarnings("unchecked")
+            Router<T> routerInstance = (Router<T>) instance;
+
+            return routerInstance;
+        } catch (Exception e) {
+            // Handle any exceptions (ClassNotFoundException, NoSuchMethodException, etc.)
+            final String msg = "failed to create instance of " + routerClassName;
+            logger.error(msg, e);
+            // Fall back to RoundRobinRouter
+            return roundRobinLegacyTcpProtocol(name, toBytes);
+        }
     }
 
     private static Func1<String, byte[]> stringWithEncoding(String encoding) {

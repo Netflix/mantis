@@ -92,7 +92,8 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
                 logger.info("Modern server setup for name: " + name + " type: Scalarstage");
 
                 Func1<T, byte[]> encoder = t1 -> stage.getOutputCodec().encode(t1);
-                Router router = Routers.createRouterInstance(
+                Router router = this.config == null ? Routers.roundRobinLegacyTcpProtocol(name, encoder) :
+                    Routers.createRouterInstance(
                         this.config.getScalarStageToStageRouterClassName(),
                         name,
                         encoder);
