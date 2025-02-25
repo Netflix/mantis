@@ -16,7 +16,7 @@
 
 package io.mantisrx.runtime.loader.config;
 
-import com.mantisrx.common.utils.AvailabilityZoneUtils;
+import io.mantisrx.common.util.AvailabilityZoneUtils;
 import io.mantisrx.common.metrics.MetricsPublisher;
 import io.mantisrx.server.core.ILeaderMonitorFactory;
 import io.mantisrx.server.core.utils.ConfigUtils;

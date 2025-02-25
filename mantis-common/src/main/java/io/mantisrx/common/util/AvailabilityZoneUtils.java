@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package com.mantisrx.common.utils;
+package io.mantisrx.common.util;
 
-public class DefaultAvailabilityZoneUtils implements AvailabilityZoneUtils {
-
-    @Override
-    public String getAvailabilityZone() {
-        return "";
-    }
+public interface AvailabilityZoneUtils {
+    String getAvailabilityZone();
 }

@@ -16,8 +16,6 @@
 
 package io.mantisrx.runtime.executor;
 
-import com.mantisrx.common.utils.AvailabilityZoneUtils;
-import com.mantisrx.common.utils.DefaultAvailabilityZoneUtils;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.*;

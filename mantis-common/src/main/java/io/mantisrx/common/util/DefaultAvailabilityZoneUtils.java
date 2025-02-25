@@ -14,8 +14,18 @@
  * limitations under the License.
  */
 
-package com.mantisrx.common.utils;
+package io.mantisrx.common.util;
 
-public interface AvailabilityZoneUtils {
-    String getAvailabilityZone();
+import java.util.Properties;
+
+public class DefaultAvailabilityZoneUtils implements AvailabilityZoneUtils {
+
+    public static DefaultAvailabilityZoneUtils valueOf(Properties properties) {
+        return new DefaultAvailabilityZoneUtils();
+    }
+
+    @Override
+    public String getAvailabilityZone() {
+        return "";
+    }
 }

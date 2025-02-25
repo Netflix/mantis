@@ -22,7 +22,6 @@ import java.util.Properties;
 
 
 public class StaticPropertiesConfigurationFactory implements ConfigurationFactory {
-
     private final WorkerConfiguration config;
 
     public StaticPropertiesConfigurationFactory(Properties props) {
