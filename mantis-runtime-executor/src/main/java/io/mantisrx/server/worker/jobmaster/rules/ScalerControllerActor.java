@@ -134,6 +134,11 @@ public class ScalerControllerActor extends AbstractActor {
         final JobAutoScalerService newService = this.activeJobAutoScalerService;
         final JobScalingRule newRule = this.activeRule;
 
+        log.info("closing current service {} for rule: {}, starting new service {} for rule {}",
+            currentService,
+            Optional.ofNullable(currentRule).map(JobScalingRule::getRuleId),
+            newService,
+            newRule.getRuleId());
         // Run start service in scaler executor,
         // DO NOT mutate actor state in scaler executor!
         Future<String> startServiceFuture = future(() -> {
@@ -144,6 +149,7 @@ public class ScalerControllerActor extends AbstractActor {
                     currentService.shutdown();
                 } catch (Exception ex) {
                     log.error("failed to stop current job auto scaler service", ex);
+                    throw new RuntimeException(ex);
                 }
             }
 
@@ -188,7 +194,9 @@ public class ScalerControllerActor extends AbstractActor {
                     log.error("reset controller actor due to failed rule: {}", this.activeRule.getRuleId());
                     this.activeRule = null;
                     this.activeJobAutoScalerService = null;
-                    getContext().getParent().tell(CoordinatorActor.RefreshRuleRequest.of(this.jobScalerContext.getJobId()), self());
+
+                    throw new RuntimeException("failed to start job scaler", result.failed().get());
+                    // getContext().getParent().tell(CoordinatorActor.RefreshRuleRequest.of(this.jobScalerContext.getJobId()), self());
                 } else {
                     log.warn("Ignore non-active rule service start failure: {}, current rule: {}",
                         newRule.getRuleId(), this.activeRule.getRuleId());

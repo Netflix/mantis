@@ -1,0 +1,16 @@
+{
+    "jobClusterName": "hello-sine-testcontainers",
+    "scalerConfig": {
+        "type": "standard",
+        "scalingPolicies": [],
+        "stageDesireSize": {
+            "1": 2
+        }
+    },
+    "triggerConfig": {
+        "triggerType": "perpetual"
+    },
+    "metadata": {
+        "key1": "value1"
+    }
+}

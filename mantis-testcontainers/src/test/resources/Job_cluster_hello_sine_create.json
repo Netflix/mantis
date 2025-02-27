@@ -43,8 +43,8 @@
                                 "scaleDownBelowPct": 0.3,
                                 "scaleUpAbovePct": 0.7,
                                 "rollingCount": {
-                                    "count": 3,
-                                    "of": 5
+                                    "count": 99,
+                                    "of": 100
                                 }
                             }
                         }

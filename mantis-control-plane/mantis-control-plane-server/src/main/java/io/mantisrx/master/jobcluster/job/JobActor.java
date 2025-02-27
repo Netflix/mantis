@@ -25,6 +25,8 @@ import static io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
@@ -78,6 +80,7 @@ import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.MigrationStrategy;
 import io.mantisrx.runtime.WorkerMigrationConfig;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
@@ -113,16 +116,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -1012,7 +1006,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     public void onScaleStage(ScaleStageRequest scaleStage) {
         LOGGER.info("In Scale stage {} for Job {}", scaleStage, this.jobId);
         ActorRef sender = getSender();
-        Optional<IMantisStageMetadata> stageMeta = this.mantisJobMetaData.getStageMetadata(scaleStage.getStageNum());
+        int stageNum = scaleStage.getStageNum();
+        Optional<IMantisStageMetadata> stageMeta = this.mantisJobMetaData.getStageMetadata(stageNum);
 
         // Make sure stage is valid
         if (!stageMeta.isPresent()) {
@@ -1036,7 +1031,21 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         try {
-            int actualScaleup = this.workerManager.scaleStage(stageMetaData, scaleStage.getNumWorkers(),
+            // take global max/min from rules as guardrails
+            List<StageScalingPolicy> policies = Optional.ofNullable(this.scalerRuleInfoBehaviorSubject.getValue())
+                .map(JobScalerRuleInfo::getRules)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(r -> r.getScalerConfig() != null)
+                .flatMap(r -> r.getScalerConfig().getScalingPolicies().stream())
+                .filter(p -> p.getStage() == stageNum)
+                .collect(Collectors.toList());
+            int ruleMax = policies.stream().max(Comparator.comparingInt(StageScalingPolicy::getMax))
+                .map(StageScalingPolicy::getMax).orElse(Integer.MAX_VALUE);
+            int ruleMin = policies.stream().min(Comparator.comparingInt(StageScalingPolicy::getMin))
+                .map(StageScalingPolicy::getMin).orElse(0);
+
+            int actualScaleup = this.workerManager.scaleStage(stageMetaData, ruleMax, ruleMin, scaleStage.getNumWorkers(),
                     scaleStage.getReason());
 
             LOGGER.info("Scaled stage {} to {} workers for Job {}", scaleStage.getStageNum(), actualScaleup,
@@ -2408,17 +2417,25 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          * forward with others. Heartbeat check should kick in and resubmit any workers that didn't get scheduled
          */
         @Override
-        public int scaleStage(MantisStageMetadataImpl stageMetaData, int numWorkers, String reason) {
+        public int scaleStage(
+            MantisStageMetadataImpl stageMetaData,
+            int ruleMax,
+            int ruleMin,
+            int numWorkers,
+            String reason) {
             LOGGER.info("Scaling stage {} to {} workers", stageMetaData.getStageNum(), numWorkers);
             final int oldNumWorkers = stageMetaData.getNumWorkers();
-            int max = ConfigurationProvider.getConfig().getMaxWorkersPerStage();
-            int min = 0;
+
+            int max = max(ConfigurationProvider.getConfig().getMaxWorkersPerStage(), ruleMax);
+            int min = ruleMin;
+
             if (stageMetaData.getScalingPolicy() != null) {
-                max = stageMetaData.getScalingPolicy().getMax();
-                min = stageMetaData.getScalingPolicy().getMin();
+                max = max(max, stageMetaData.getScalingPolicy().getMax());
+                min = min(min, stageMetaData.getScalingPolicy().getMin());
             }
+
             // sanitize input worker count to be between min and max
-            int newNumWorkerCount = Math.max(Math.min(numWorkers, max), min);
+            int newNumWorkerCount = max(min(numWorkers, max), min);
             if (newNumWorkerCount != oldNumWorkers) {
                 try {
                     stageMetaData.unsafeSetNumWorkers(newNumWorkerCount, jobStore);

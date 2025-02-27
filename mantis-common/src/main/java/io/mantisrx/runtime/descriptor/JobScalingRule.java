@@ -77,6 +77,9 @@ public class JobScalingRule implements Serializable {
     @Builder
     @Value
     public static class TriggerConfig {
+        /**
+         * Supported values are "schedule", "perpetual", "custom" defined in JobScalingRule constants.
+         */
         String triggerType;
         String scheduleCron;
         String scheduleDuration;

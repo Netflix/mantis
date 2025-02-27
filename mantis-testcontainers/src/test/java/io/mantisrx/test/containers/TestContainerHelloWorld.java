@@ -21,12 +21,12 @@ import static org.junit.Assert.fail;
 import io.mantisrx.common.metrics.LoggingMetricsPublisher;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
 import io.mantisrx.shaded.org.apache.curator.retry.RetryOneTime;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,7 +42,9 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -50,6 +52,11 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.utility.Base58;
 import org.testcontainers.utility.MountableFile;
 
+/**
+ * FixMethodOrder this is applied to ensure test run ordering as the quick submit test needs to run first to use
+ * proper default config settings!
+ */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Slf4j
 public class TestContainerHelloWorld {
 
@@ -77,6 +84,13 @@ public class TestContainerHelloWorld {
 
     private static final String JOB_CLUSTER_SCALING_RULE_1_CREATE =
         Utils.getStringFromResource("Job_cluster_hello_sine_scaling_rule_create_1.json");
+    private static final String JOB_CLUSTER_SCALING_RULE_2_CREATE =
+        Utils.getStringFromResource("Job_cluster_hello_sine_scaling_rule_create_2.json");
+
+    private static final List<String> JOB_CLUSTER_SCALING_RULES = Arrays.asList(
+        JOB_CLUSTER_SCALING_RULE_1_CREATE,
+        JOB_CLUSTER_SCALING_RULE_2_CREATE
+    );
 
     private static final String QUICK_SUBMIT =
         "{\"name\":\"hello-sine-testcontainers\",\"user\":\"mantisoss\",\"jobSla\":{\"durationType\":\"Perpetual\","
@@ -165,6 +179,9 @@ public class TestContainerHelloWorld {
             "Failed to get job cluster", getJobCluster(controlPlaneHost, controlPlanePort).isPresent());
     }
 
+    /**
+     * [Note] testQuickSubmitJob must run before testRegularSubmitJob to ensure using correct default config settings.
+     */
     @Test
     public void testQuickSubmitJob() throws IOException, InterruptedException {
         Request request = new Request.Builder()
@@ -195,7 +212,8 @@ public class TestContainerHelloWorld {
             agents.put(agentId, agent);
         }
 
-        quickSubmitJobCluster(controlPlaneHost, controlPlanePort);
+        Optional<String> jobIdO = quickSubmitJobCluster(controlPlaneHost, controlPlanePort);
+        assertTrue(jobIdO.isPresent());
 
         if (!ensureJobWorkerStarted(
             controlPlaneHost,
@@ -204,8 +222,6 @@ public class TestContainerHelloWorld {
             Duration.ofSeconds(3).toMillis())) {
             fail("Failed to start job worker.");
         }
-
-
 
         testInvalidTEStates(controlPlaneHost, controlPlanePort);
         for (String agentId : agents.keySet()) {
@@ -224,18 +240,37 @@ public class TestContainerHelloWorld {
         }
 
         // add scaling rule.
-        Optional<String> scalingRuleResO = createScalingRule(controlPlaneHost, controlPlanePort);
+        Optional<String> scalingRuleResO = createScalingRule(controlPlaneHost, controlPlanePort, 1);
         assertTrue(scalingRuleResO.isPresent());
+        assertEquals("1", scalingRuleResO.get());
 
-        Thread.sleep(Duration.ofSeconds(15).toMillis());
+        // verify scaling rule applied
+        assertTrue(ensureJobWorkerSize(
+            controlPlaneHost, controlPlanePort, 2, jobIdO.get(), 5, Duration.ofSeconds(3).toMillis()));
+
+        Optional<String> scalingRuleRes2O = createScalingRule(controlPlaneHost, controlPlanePort, 0);
+        assertTrue(scalingRuleRes2O.isPresent());
+        assertEquals("2", scalingRuleRes2O.get());
+        assertTrue(ensureJobWorkerSize(
+            controlPlaneHost, controlPlanePort, 5, jobIdO.get(), 5, Duration.ofSeconds(3).toMillis()));
+
+
+        Thread.sleep(Duration.ofSeconds(5).toMillis());
         // delete scaling rule.
-        deleteScalingRule(controlPlaneHost, controlPlanePort);
+        Optional<String> deleteRuleResO = deleteScalingRule(controlPlaneHost, controlPlanePort, scalingRuleRes2O.get());
+        assertTrue(deleteRuleResO.isPresent());
+
+        // todo update response format to proper json
+        // todo test scale job without rules
+
+        assertTrue(ensureJobWorkerSize(
+            controlPlaneHost, controlPlanePort, 2, jobIdO.get(), 5, Duration.ofSeconds(3).toMillis()));
 
         /*
         Uncomment following lines to keep the containers running.
          */
-         log.warn("Waiting for exit test.");
-         Thread.sleep(Duration.ofSeconds(3600).toMillis());
+        // log.warn("Waiting for exit test.");
+        // Thread.sleep(Duration.ofSeconds(3600).toMillis());
     }
 
     @Test
@@ -383,7 +418,6 @@ public class TestContainerHelloWorld {
         int controlPlanePort,
         int retries,
         long sleepMillis) throws InterruptedException {
-        log.info("waiting for job worker to start.");
         HttpUrl reqUrl = new Builder()
             .scheme("http")
             .host(controlPlaneHost)
@@ -406,6 +440,54 @@ public class TestContainerHelloWorld {
             }
         }
         return false;
+    }
+
+    private boolean ensureJobWorkerSize(
+        String controlPlaneHost,
+        int controlPlanePort,
+        int targetSize,
+        String jobId,
+        int retries,
+        long sleepMillis) throws InterruptedException {
+
+        for(int i = 0; i < retries; i++) {
+            Thread.sleep(sleepMillis);
+            Optional<Integer> resO = getJobStageWorkerSize(controlPlaneHost, controlPlanePort, jobId);
+            if (resO.isPresent() && resO.get().equals(targetSize)) {
+                log.info("Job worker size matched {}.", targetSize);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Optional<Integer> getJobStageWorkerSize(
+        String controlPlaneHost,
+        int controlPlanePort,
+        String jobId) throws InterruptedException {
+        HttpUrl reqUrl = new Builder()
+            .scheme("http")
+            .host(controlPlaneHost)
+            .port(controlPlanePort)
+            .addPathSegments("api/v1/jobs")
+            .addPathSegment(jobId)
+            .build();
+
+        Request request = new Request.Builder()
+            .url(reqUrl)
+            .build();
+
+        Optional<String> resO = invokeRequest(request, "getJobStageWorkerSize");
+        return resO.map(res -> {
+            try {
+                JsonNode rootNode = mapper.readTree(res);
+                JsonNode stageMetadataList = rootNode.path("stageMetadataList");
+                return stageMetadataList.get(1).path("numWorkers").asInt();
+            } catch (Exception e) {
+                log.error("Failed to get stage worker size", e);
+                return null;
+            }
+        });
     }
 
     private static Optional<String> createJobCluster(
@@ -519,7 +601,8 @@ public class TestContainerHelloWorld {
 
     private Optional<String> createScalingRule(
         String controlPlaneHost,
-        int controlPlanePort) {
+        int controlPlanePort,
+        int ruleIndex) {
         HttpUrl reqUrl = new Builder()
             .scheme("http")
             .host(controlPlaneHost)
@@ -530,7 +613,7 @@ public class TestContainerHelloWorld {
             .build();
 
         RequestBody body = RequestBody.create(
-            JOB_CLUSTER_SCALING_RULE_1_CREATE, MediaType.parse("application/json; charset=utf-8"));
+            JOB_CLUSTER_SCALING_RULES.get(ruleIndex), MediaType.parse("application/json; charset=utf-8"));
 
         Request request = new Request.Builder()
             .url(reqUrl)
@@ -542,7 +625,8 @@ public class TestContainerHelloWorld {
 
     private Optional<String> deleteScalingRule(
         String controlPlaneHost,
-        int controlPlanePort) {
+        int controlPlanePort,
+        String ruleId) {
         HttpUrl reqUrl = new Builder()
             .scheme("http")
             .host(controlPlaneHost)
@@ -550,7 +634,7 @@ public class TestContainerHelloWorld {
             .addPathSegments("api/v1/jobClusters")
             .addPathSegment(JOB_CLUSTER_NAME)
             .addPathSegment("scalerRules")
-            .addPathSegment("1") // rule id 1
+            .addPathSegment(ruleId) // rule id 1
             .build();
 
         Request request = new Request.Builder()
@@ -625,6 +709,11 @@ public class TestContainerHelloWorld {
         String responseBody = null;
         try (Response response = HTTP_CLIENT.newCall(request).execute()) {
             responseBody = response.body().string();
+            // Check if the response is a JSON string and strip quotes
+            if (responseBody.startsWith("\"") && responseBody.endsWith("\"")) {
+                responseBody = responseBody.substring(1, responseBody.length() - 1);
+            }
+
             log.info("{} response: {}.", opsName, responseBody);
         } catch (Exception e) {
             log.warn("{}} call error", opsName, e);
