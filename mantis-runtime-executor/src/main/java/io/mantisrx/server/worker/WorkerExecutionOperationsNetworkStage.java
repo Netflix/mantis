@@ -365,7 +365,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             // setup heartbeats
             heartbeatRef.set(new Heartbeat(rw.getJobId(),
                     rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum(), config.getTaskExecutorHostName()));
-            final double networkMbps = executionRequest.getSchedulingInfo().forStage(rw.getStageNum()).getMachineDefinition().getNetworkMbps();
             Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(),
                 executionRequest.getHeartbeatIntervalSecs());
             closeables.add(heartbeatCloseable);
@@ -408,9 +407,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 JobAutoscalerManager jobAutoscalerManager = getJobAutoscalerManagerInstance(serviceLocator);
 
                 // switch to v2 scaler control only when parameter is set to true for now
-                final String useV2ScalerService = (String) parameters.get(JOB_AUTOSCALE_V2_ENABLED_PARAM, "false");
-                if (Boolean.parseBoolean(useV2ScalerService)) {
-                    logger.info("Using V2 JobAutoScalerService: JobMasterServiceV2");
+                final Boolean useV2ScalerService = (Boolean) parameters.get(JOB_AUTOSCALE_V2_ENABLED_PARAM, false);
+                if (useV2ScalerService) {
+                    logger.info("[V2 AUTO-SCALER ENABLED] Using V2 JobAutoScalerService: JobMasterServiceV2");
                     Service jobMasterServiceV2 = new JobMasterServiceV2(
                         JobScalerContext.builder()
                             .jobId(rw.getJobId())
@@ -494,9 +493,15 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
     }
 
+    // todo: migrate JobAutoscalerManager to a custom scaling rule.
     private JobAutoscalerManager getJobAutoscalerManagerInstance(ServiceLocator serviceLocator) {
-        final JobAutoscalerManager autoscalerManager = serviceLocator.service(JobAutoscalerManager.class);
-        return Optional.ofNullable(autoscalerManager).orElse(JobAutoscalerManager.DEFAULT);
+        try {
+            final JobAutoscalerManager autoscalerManager = serviceLocator.service(JobAutoscalerManager.class);
+            return Optional.ofNullable(autoscalerManager).orElse(JobAutoscalerManager.DEFAULT);
+        } catch (Exception e) {
+            logger.warn("Failed to inject JobAutoscalerManager from service locator, using default instance", e);
+            return JobAutoscalerManager.DEFAULT;
+        }
     }
 
     private void setupSubscriptionStateHandler(ExecuteStageRequest executeStageRequest) {

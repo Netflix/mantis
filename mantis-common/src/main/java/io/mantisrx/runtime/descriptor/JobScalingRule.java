@@ -68,6 +68,7 @@ public class JobScalingRule implements Serializable {
 
     }
 
+    //todo: add json UTs
     @Builder
     @Value
     public static class TriggerConfig {
@@ -80,9 +81,9 @@ public class JobScalingRule implements Serializable {
         @JsonIgnoreProperties(ignoreUnknown = true)
         public TriggerConfig(
             @JsonProperty("triggerType") String triggerType,
-            @JsonProperty("scalingPolicy") String scheduleCron,
-            @JsonProperty("scalingPolicy") String scheduleDuration,
-            @JsonProperty("desireSize") String customTrigger) {
+            @JsonProperty("scheduleCron") String scheduleCron,
+            @JsonProperty("scheduleDuration") String scheduleDuration,
+            @JsonProperty("customTrigger") String customTrigger) {
             this.triggerType = triggerType;
             this.scheduleCron = scheduleCron;
             this.scheduleDuration = scheduleDuration;

@@ -503,9 +503,11 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                 items = kvStore.getAll(ARCHIVED_WORKERS_NS, pkey);
                 for (Map.Entry<String, String> entry : items.entrySet()) {
                     try {
-                        final JobWorker jobWorker = DataFormatAdapter.convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(
-                            mapper.readValue(entry.getValue(), MantisWorkerMetadataWritable.class),
-                            eventPublisher);
+                        final JobWorker jobWorker =
+                            DataFormatAdapter.convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(
+                                mapper.readValue(entry.getValue(), MantisWorkerMetadataWritable.class),
+                                eventPublisher,
+                                true);
                         archivedWorkers.add(jobWorker.getMetadata());
                     } catch (Exception e) {
                         logger.warn("Exception converting worker for jobId {} ({}, {})", jobId, pkey, entry.getKey(), e);

@@ -2,18 +2,18 @@ package io.mantisrx.server.worker.jobmaster.rules;
 
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
+import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.functions.Func2;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class RuleUtils {
     public static JobScalingRule getDefaultScalingRule(SchedulingInfo schedulingInfo) {
         if (schedulingInfo == null ||
@@ -22,17 +22,22 @@ public class RuleUtils {
             return null;
         }
 
+        List<StageScalingPolicy> policies = schedulingInfo.getStages().entrySet().stream()
+            .filter(entry -> entry.getKey() != 0)
+            .map(entry -> entry.getValue().getScalingPolicy())
+            .filter(p -> p != null && p.getStage() != 0)
+            .collect(Collectors.toList());
+
+        if (policies.isEmpty()) {
+            log.warn("No scaling policy found in scheduling info: {}", schedulingInfo);
+            return null;
+        }
+
+        // do not set desire size for default rule to avoid unwanted scaling target during rule switch.
         return JobScalingRule.builder()
             .ruleId(String.valueOf(-1)) // set default rule id to -1
             .scalerConfig(JobScalingRule.ScalerConfig.builder()
-                .scalingPolicies(schedulingInfo.getStages().values().stream()
-                    .map(StageSchedulingInfo::getScalingPolicy)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList()))
-                .stageDesireSize(schedulingInfo.getStages().entrySet().stream()
-                    .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> e.getValue().getNumberOfInstances())))
+                .scalingPolicies(policies)
                 .build())
             .build();
     }

@@ -105,7 +105,7 @@ public class TestRuleUtils {
         ));
 
         return new StageScalingPolicy(
-            0, // stage
+            1, // stage
             1, // min
             10, // max
             1, // increment
