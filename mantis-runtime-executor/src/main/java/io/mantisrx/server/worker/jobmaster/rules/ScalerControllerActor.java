@@ -120,8 +120,16 @@ public class ScalerControllerActor extends AbstractActor {
         final JobScalingRule currentRule = this.activeRule;
 
         this.activeRule = activateScalerRequest.getRule();
-        this.activeJobAutoScalerService = this.jobScalerContext.getJobAutoScalerServiceFactory()
-            .apply(this.jobScalerContext, activateScalerRequest.getRule());
+
+        if (!this.activeRule.getScalerConfig().getScalingPolicies().isEmpty()) {
+            log.info("Creating Job Auto Scaler service for rule: {}", activateScalerRequest.getRule().getRuleId());
+            this.activeJobAutoScalerService = this.jobScalerContext.getJobAutoScalerServiceFactory()
+                .apply(this.jobScalerContext, activateScalerRequest.getRule());
+        } else {
+            // the rule only requested desire size but no scaling policy, no need to create service.
+            log.info("No Job Auto Scaler service required for rule: {}", activateScalerRequest.getRule().getRuleId());
+            this.activeJobAutoScalerService = null;
+        }
 
         final JobAutoScalerService newService = this.activeJobAutoScalerService;
         final JobScalingRule newRule = this.activeRule;
@@ -159,8 +167,12 @@ public class ScalerControllerActor extends AbstractActor {
                 log.info("Finish scaling stage {} to desire size {}", kv.getKey(), kv.getValue());
             }
 
-            log.info("start activeJobAutoScalerService for {}", this.activeRule.getRuleId());
-            newService.start();
+            if (newService == null) {
+                log.info("[No Scaler Required] Job Auto Scaler service is null for rule: {}", newRule.getRuleId());
+            } else {
+                log.info("start activeJobAutoScalerService for {}", this.activeRule.getRuleId());
+                newService.start();
+            }
             return newRule.getRuleId();
         }, executionContext);
 

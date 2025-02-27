@@ -54,6 +54,24 @@ public class TestRuleUtils {
             .build();
     }
 
+    public static JobScalingRule createPerpetualRuleWithDesireSizeOnly(String ruleId, String jobId) {
+        JobScalingRule.ScalerConfig scalerConfig = JobScalingRule.ScalerConfig.builder()
+            .type("standard")
+            .stageDesireSize(Collections.singletonMap(1, 10))
+            .build();
+
+        JobScalingRule.TriggerConfig triggerConfig = JobScalingRule.TriggerConfig.builder()
+            .triggerType(JobScalingRule.TRIGGER_TYPE_PERPETUAL)
+            .build();
+
+        return JobScalingRule.builder()
+            .ruleId(ruleId)
+            .scalerConfig(scalerConfig)
+            .triggerConfig(triggerConfig)
+            .metadata(Collections.emptyMap())
+            .build();
+    }
+
     public static JobScalingRule createScheduleRule(String ruleId, String cronSpec, String duration) {
         JobScalingRule.ScalerConfig scalerConfig = JobScalingRule.ScalerConfig.builder()
             .type("schedule")

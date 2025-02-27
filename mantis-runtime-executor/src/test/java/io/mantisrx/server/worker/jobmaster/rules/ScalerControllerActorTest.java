@@ -150,6 +150,27 @@ public class ScalerControllerActorTest {
     }
 
     @Test
+    public void testOnRuleRefreshWithDesireSizeOnly() {
+        JobScalingRule perpetualRule = TestRuleUtils.createPerpetualRuleWithDesireSizeOnly(RULE_ID_1, JOB_ID);
+
+        ActorRef controllerActor = system.actorOf(ScalerControllerActor.Props(jobScalerContext), "controllerActor");
+        final TestKit probe = new TestKit(system);
+
+        controllerActor.tell(CoordinatorActor.ActivateRuleRequest.of(JOB_ID, perpetualRule), probe.getRef());
+        controllerActor.tell(new ScalerControllerActor.GetActiveRuleRequest(), probe.getRef());
+        ScalerControllerActor.GetActiveRuleResponse response =
+            probe.expectMsgClass(ScalerControllerActor.GetActiveRuleResponse.class);
+        assertEquals(perpetualRule, response.getRule());
+
+        testKit.awaitAssert(Max_Duration, Interval_Duration,
+            () -> {
+                // no service should be stared since no scaling policy is defined
+                verify(jobAutoScalerService, times(0)).start();
+                return null;
+            });
+    }
+
+    @Test
     public void testOnRuleRefreshFailedStart() {
         JobScalingRule perpetualRule = TestRuleUtils.createPerpetualRule(RULE_ID_1, JOB_ID);
         JobScalingRule perpetualRule2 = TestRuleUtils.createPerpetualRule(RULE_ID_2, JOB_ID);
