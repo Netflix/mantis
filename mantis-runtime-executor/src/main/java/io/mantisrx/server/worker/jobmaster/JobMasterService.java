@@ -187,6 +187,8 @@ public class JobMasterService implements JobAutoScalerService {
         if (subscription != null) {
             subscription.unsubscribe();
         }
+        this.jobAutoScaler.shutdown();
+        this.metricObserver.onCompleted();
     }
 
     @Override
