@@ -46,6 +46,11 @@ public class JobScalingRule implements Serializable {
     @Value
     public static class ScalerConfig {
         String type; // only support standard scaling policy for now
+
+        /**
+         * List of scaling policies to be applied when this config is triggered.
+         * If this is empty, pin each stage to the desire size only.
+         */
         @Singular
         List<StageScalingPolicy> scalingPolicies;
 
