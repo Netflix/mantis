@@ -98,7 +98,8 @@ public class HttpRequestMetrics {
                 JOB_STATUS_STREAM,
                 JOB_DISCOVERY_STREAM,
                 LAST_SUBMITTED_JOB_ID_STREAM,
-                RESOURCE_CLUSTERS
+                RESOURCE_CLUSTERS,
+                JOB_CLUSTER_SCALER_RULES
         };
 
         private static Set<String> endpointSet = Sets.newHashSet(endpoints);

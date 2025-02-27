@@ -52,16 +52,6 @@ public class ScalerControllerActor extends AbstractActor {
             .build();
     }
 
-    @Override
-    public void postStop() {
-        log.info("ScalerControllerActor stopped");
-    }
-
-    @Override
-    public void preStart() {
-        log.info("[preStart] {} Controller actor started", getSelf());
-    }
-
     private void activateScaler(CoordinatorActor.ActivateRuleRequest activateScalerRequest) {
         log.info("Activating scaler for rule: {}", activateScalerRequest.getRule());
         if (activateScalerRequest.getRule() == null) {
@@ -77,13 +67,13 @@ public class ScalerControllerActor extends AbstractActor {
             startScalerService(activateScalerRequest);
         } else {
             log.warn("ActivateRuleRequest has lower ranking, ignore: {}, current rule: {}",
-                activateScalerRequest.getRule().getRuleId(), this.activeRule);
+                activateScalerRequest.getRule().getRuleId(), this.activeRule.getRuleId());
         }
     }
 
     private void deactivateScaler(CoordinatorActor.DeactivateRuleRequest deactivateRequest) {
         if (this.activeRule != null && deactivateRequest.getRuleId().equals(this.activeRule.getRuleId())) {
-            log.info("Deactivating scaler rule: {}", deactivateRequest.getRuleId());
+            log.info("[EVENT DEACTIVATE RULE] scaler rule: {}", deactivateRequest.getRuleId());
             stopScalerService();
             getContext().getParent().tell(
                 CoordinatorActor.RefreshRuleRequest.of(this.jobScalerContext.getJobId()), self());
@@ -106,7 +96,7 @@ public class ScalerControllerActor extends AbstractActor {
 
                 stopServiceFuture.onComplete(result -> {
                     if (result.isSuccess()) {
-                        log.info("Job Auto Scaler shutdown successfully");
+                        log.info("[Job Auto Scaler Shutdown] for rule {} successfully", currentRule.getRuleId());
                     } else {
                         log.error("failed to shutdown job auto scaler service in rule: {}, reset and request refresh",
                             currentRule, result.failed().get());
@@ -123,7 +113,8 @@ public class ScalerControllerActor extends AbstractActor {
     }
 
     private void startScalerService(CoordinatorActor.ActivateRuleRequest activateScalerRequest) {
-        log.info("ActivateRuleRequest has higher ranking, activating rule: {}",
+        log.info("[EVENT ACTIVATE RULE] req is higher ranking from current: {}, activating rule: {}",
+            Optional.ofNullable(this.activeRule).map(JobScalingRule::getRuleId).orElse("null"),
             activateScalerRequest.getRule().getRuleId());
         final JobAutoScalerService currentService = this.activeJobAutoScalerService;
         final JobScalingRule currentRule = this.activeRule;
@@ -155,7 +146,7 @@ public class ScalerControllerActor extends AbstractActor {
                         this.jobScalerContext.getJobId(),
                         kv.getKey(),
                         kv.getValue(),
-                        "Desire size from scaling rule: " + newRule.getRuleId())
+                        "Desire size from scaling ruleID: " + newRule.getRuleId())
                     .retryWhen(RuleUtils.LimitTenRetryLogic)
                     .doOnCompleted(() -> log.info("Scaled stage {} to desire size {}", kv.getKey(), kv.getValue()))
                     .onErrorResumeNext(throwable -> {
@@ -176,7 +167,7 @@ public class ScalerControllerActor extends AbstractActor {
         // handle scaler service error back in dispatcher thread.
         startServiceFuture.onComplete(result -> {
             if (result.isSuccess()) {
-                log.info("Job Auto Scaler started successfully {}", result.get());
+                log.info("Job Auto Scaler started successfully for ruleID: {}", result.get());
             } else {
                 log.error("failed to setup job auto scaler service in rule: {}",
                     newRule, result.failed().get());

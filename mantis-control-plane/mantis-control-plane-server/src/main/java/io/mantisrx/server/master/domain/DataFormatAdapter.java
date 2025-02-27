@@ -342,6 +342,10 @@ public class DataFormatAdapter {
         writable.setReason(workerMeta.getReason());
     }
 
+    public static JobWorker convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(
+        MantisWorkerMetadata writeable, LifecycleEventPublisher eventPublisher) {
+        return convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(writeable, eventPublisher, false);
+    }
     /**
      * Convert/Deserialize metadata into a {@link JobWorker}.
      *
@@ -360,23 +364,27 @@ public class DataFormatAdapter {
      *
      * @return a valid converted job worker.
      */
-    public static JobWorker convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(MantisWorkerMetadata writeable, LifecycleEventPublisher eventPublisher) {
+    public static JobWorker convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(
+        MantisWorkerMetadata writeable, LifecycleEventPublisher eventPublisher, boolean isArchived) {
         if(logger.isDebugEnabled()) { logger.debug("DataFormatAdatper:converting worker {}", writeable); }
         String jobId = writeable.getJobId();
-        List<Integer> ports = new ArrayList<>(writeable.getNumberOfPorts());
-        ports.add(writeable.getMetricsPort());
-        ports.add(writeable.getDebugPort());
-        ports.add(writeable.getConsolePort());
-        ports.add(writeable.getCustomPort());
-        if(writeable.getPorts().size() > 0) {
-            ports.add(writeable.getPorts().get(0));
-        }
 
+        List<Integer> ports = new ArrayList<>(writeable.getNumberOfPorts());
         WorkerPorts workerPorts = null;
-        try {
-            workerPorts = new WorkerPorts(ports);
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            logger.warn("problem loading worker {} for Job ID {}", writeable.getWorkerId(), jobId, e);
+        if (!isArchived) {
+            ports.add(writeable.getMetricsPort());
+            ports.add(writeable.getDebugPort());
+            ports.add(writeable.getConsolePort());
+            ports.add(writeable.getCustomPort());
+            if(!writeable.getPorts().isEmpty()) {
+                ports.add(writeable.getPorts().get(0));
+            }
+
+            try {
+                workerPorts = new WorkerPorts(ports);
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                logger.warn("problem loading worker ports {} for Job ID {}", writeable.getWorkerId(), jobId, e);
+            }
         }
 
         JobWorker.Builder builder = new JobWorker.Builder()

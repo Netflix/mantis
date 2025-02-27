@@ -4,6 +4,7 @@ package io.mantisrx.server.worker.jobmaster.rules;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Terminated;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
@@ -48,6 +49,8 @@ public class CoordinatorActor extends AbstractActor {
             // onRuleRefresh: trigger latest perpetual rule to controller
             .match(RefreshRuleRequest.class, this::onRuleRefresh)
             .match(ActivateRuleRequest.class, ar -> this.controllerActor.tell(ar, self()))
+            .match(DeactivateRuleRequest.class, dr -> this.controllerActor.tell(dr, self()))
+            .match(Terminated.class, terminated -> { log.info("Actor {} terminated.", terminated.actor());})
             // [for testing] dump state
             .match(GetStateRequest.class, this::onGetStateRequest)
             .matchAny(any -> log.warn("Unknown message: {}", any))
@@ -55,7 +58,7 @@ public class CoordinatorActor extends AbstractActor {
     }
 
     private void onGetStateRequest(GetStateRequest getStateRequest) {
-        log.info("[Testing Only] Received get state request: {}", getStateRequest);
+        log.info("[Use In Testing Only] Received get state request: {}", getStateRequest);
         getSender().tell(
             GetStateResponse.builder()
                 .currentRuleInfo(this.currentRuleInfo)
@@ -196,8 +199,7 @@ public class CoordinatorActor extends AbstractActor {
 
     private void initState() {
         // create controller actor
-        log.info("{} [Coordinator Init] Initializing actor with request", getSelf());
-        log.info("create controller actor {}", this.jobScalerContext.getJobId());
+        log.info("[Coordinator initState]: {} on {}", this.jobScalerContext.getJobId(), getSelf());
         this.controllerActor = getContext().actorOf(ScalerControllerActor.Props(this.jobScalerContext));
         getContext().watch(this.controllerActor);
 
@@ -212,8 +214,6 @@ public class CoordinatorActor extends AbstractActor {
 
         // trigger refresh rule. Note this refresh action might happen before rule stream fetch the first event.
         self().tell(RefreshRuleRequest.of(this.jobScalerContext.getJobId()), self());
-
-        // getSender().tell(InitResponse.of(this.jobScalerContext.getJobId()), self());
     }
 
     private void setupRuleChangeStream() {
@@ -233,24 +233,6 @@ public class CoordinatorActor extends AbstractActor {
                 throwable -> log.error("fail to process stream rule", throwable)
             );
     }
-
-//    @Value
-//    public static class InitRequest {
-//        String jobId;
-//
-//        public static InitRequest of(String jobId) {
-//            return new InitRequest(jobId);
-//        }
-//    }
-//
-//    @Value
-//    public static class InitResponse {
-//        String jobId;
-//
-//        public static InitResponse of(String jobId) {
-//            return new InitResponse(jobId);
-//        }
-//    }
 
     @Value
     public static class RefreshRuleRequest {

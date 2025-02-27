@@ -70,6 +70,7 @@ import akka.testkit.javadsl.TestKit;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.Label;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
@@ -130,6 +131,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -2296,6 +2298,18 @@ public class JobClusterAkkaTest {
             // 1. Create the first rule.
             JobClusterScalerRuleProto.CreateScalerRuleRequest createRule1 =
                 JobTestHelper.createDummyCreateRuleRequest(clusterName, 10);
+            JsonSerializer serializer = new JsonSerializer();
+            try {
+                String jsonStr = serializer.toJson(createRule1);
+                JobClusterScalerRuleProto.CreateScalerRuleRequest deserReq = serializer.fromJSON(
+                    jsonStr, JobClusterScalerRuleProto.CreateScalerRuleRequest.class);
+                assertEquals(createRule1.getScalerConfig(), deserReq.getScalerConfig());
+                assertEquals(createRule1.getJobClusterName(), deserReq.getJobClusterName());
+                assertEquals(createRule1.getTriggerConfig(), deserReq.getTriggerConfig());
+                assertEquals(createRule1.getMetadata(), deserReq.getMetadata());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             jobClusterActor.tell(createRule1, probe.getRef());
             JobClusterScalerRuleProto.CreateScalerRuleResponse createResp1 =
                 probe.expectMsgClass(JobClusterScalerRuleProto.CreateScalerRuleResponse.class);

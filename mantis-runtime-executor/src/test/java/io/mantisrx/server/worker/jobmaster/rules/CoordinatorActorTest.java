@@ -3,8 +3,10 @@ package io.mantisrx.server.worker.jobmaster.rules;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.master.client.MantisMasterGateway;
@@ -19,6 +21,7 @@ import org.mockito.stubbing.Answer;
 import rx.subjects.BehaviorSubject;
 
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -38,6 +41,7 @@ public class CoordinatorActorTest {
     private TestKit testKit;
 
     private JobScalerContext jobScalerContext;
+    private StageScalingPolicy defaultStageScalingPolicy;
 
     @Mock
     private MantisMasterGateway masterClientApi;
@@ -50,13 +54,14 @@ public class CoordinatorActorTest {
         MockitoAnnotations.initMocks(this);
         system = ActorSystem.create();
         testKit = new TestKit(system);
+        defaultStageScalingPolicy = TestRuleUtils.createDefaultStageScalingPolicy(1);
         jobScalerContext = JobScalerContext.builder()
             .jobId(JOB_ID)
             .masterClientApi(masterClientApi)
             .jobAutoScalerServiceFactory((context, rule) -> jobAutoScalerService)
             .schedInfo(new SchedulingInfo.Builder()
                 .addStage(StageSchedulingInfo.builder()
-                    .scalingPolicy(TestRuleUtils.createDefaultStageScalingPolicy(1)).build())
+                    .scalingPolicy(defaultStageScalingPolicy).build())
                 .numberOfStages(1)
                 .build())
             .build();
@@ -89,6 +94,14 @@ public class CoordinatorActorTest {
             .build();
 
         JobScalingRule perpetualRule = TestRuleUtils.createPerpetualRule(RULE_ID_1, JOB_ID);
+        JsonSerializer serializer = new JsonSerializer();
+        try {
+            String jsonStr = serializer.toJson(perpetualRule);
+            log.info("Test: perpetual rule json: \n{}", jsonStr);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         JobScalerRuleInfo ruleInfo = new JobScalerRuleInfo(
             JOB_ID, false, Collections.singletonList(perpetualRule));
 
@@ -183,6 +196,14 @@ public class CoordinatorActorTest {
                 // check active controller rule state again
                 log.info("Test: check active controller rule state: expect default rule.");
                 checkActiveControllerRule(state2, probe, state2.getDefaultRule());
+                assertEquals(
+                    1, state2.getDefaultRule().getScalerConfig().getScalingPolicies().size());
+                assertEquals(
+                    this.defaultStageScalingPolicy,
+                    state2.getDefaultRule().getScalerConfig().getScalingPolicies().get(0));
+                assertNull(state2.getDefaultRule().getTriggerConfig());
+
+                assertEquals(0, state2.getDefaultRule().getScalerConfig().getStageDesireSize().size());
                 return null;
             });
 

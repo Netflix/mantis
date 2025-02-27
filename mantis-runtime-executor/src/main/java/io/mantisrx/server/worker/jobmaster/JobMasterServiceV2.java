@@ -22,7 +22,9 @@ public class JobMasterServiceV2 implements Service {
         log.info("Starting JobMasterServiceV2");
         system = ActorSystem.create("MantisJobMasterV2");
         // log the configuration of the actor system
-        system.logConfiguration();
+        if (log.isDebugEnabled()) {
+            system.logConfiguration();
+        }
 
         // log dead letter messages
         final ActorRef actor = system.actorOf(Props.create(DeadLetterActor.class), "MantisDeadLetter");
