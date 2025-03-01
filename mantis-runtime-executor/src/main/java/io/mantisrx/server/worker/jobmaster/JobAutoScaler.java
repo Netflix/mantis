@@ -295,7 +295,7 @@ public class JobAutoScaler implements Service {
 
     @Override
     public void shutdown() {
-        if (this.subscription != null) {
+        if (this.subscription != null && !this.subscription.isUnsubscribed()) {
             this.subscription.unsubscribe();
         }
         this.subject.onCompleted();

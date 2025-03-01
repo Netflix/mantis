@@ -23,8 +23,8 @@ import java.util.stream.Stream;
 
 @Slf4j
 public class CoordinatorActor extends AbstractActor {
-    final JobScalerContext jobScalerContext;
-    final ExecutionContextExecutor ec = getContext().getSystem().dispatcher();
+    private final JobScalerContext jobScalerContext;
+    private final ExecutionContextExecutor ec = getContext().getSystem().dispatcher();
     private Subscription subscription;
     private JobScalerRuleInfo currentRuleInfo;
     private JobScalingRule defaultRule;
@@ -43,7 +43,6 @@ public class CoordinatorActor extends AbstractActor {
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-            //.match(InitRequest.class, this::initState)
             // onRuleChange: update local rule state, create new actor if needed
             .match(JobScalerRuleInfo.class, this::onRuleChange)
             // onRuleRefresh: trigger latest perpetual rule to controller
@@ -51,7 +50,7 @@ public class CoordinatorActor extends AbstractActor {
             .match(ActivateRuleRequest.class, ar -> this.controllerActor.tell(ar, self()))
             .match(DeactivateRuleRequest.class, dr -> this.controllerActor.tell(dr, self()))
             .match(Terminated.class, terminated -> { log.info("Actor {} terminated.", terminated.actor());})
-            // [for testing] dump state
+            // [for testing only] dump state
             .match(GetStateRequest.class, this::onGetStateRequest)
             .matchAny(any -> log.warn("Unknown message: {}", any))
             .build();
@@ -166,9 +165,7 @@ public class CoordinatorActor extends AbstractActor {
         JobScalingRule finalRule = activeRule.orElse(defaultRule);
         if (finalRule != null) {
             this.ruleActors.get(finalRule.getRuleId())
-                .tell(
-                    ActivateRuleRequest.of(jobScalerContext.getJobId(), finalRule),
-                    self());
+                .tell(ActivateRuleRequest.of(jobScalerContext.getJobId(), finalRule), self());
         } else {
             log.warn("{} No active rule found", getSelf());
         }
@@ -264,7 +261,7 @@ public class CoordinatorActor extends AbstractActor {
         }
     }
 
-    /// for testing purpose
+    /// this message type is for testing purpose only.
     @Value
     public static class GetStateRequest {
         String jobId;
