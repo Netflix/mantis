@@ -45,7 +45,10 @@ public class JobScalingRule implements Serializable {
     @Builder
     @Value
     public static class ScalerConfig {
-        String type; // only support standard scaling policy for now
+        /**
+         * Only support standard scaling policy for now
+         */
+        String type;
 
         /**
          * List of scaling policies to be applied when this config is triggered.
@@ -58,7 +61,7 @@ public class JobScalingRule implements Serializable {
          * Desired size when this config is triggered.
          */
         @Builder.Default
-        Map<Integer, Integer> stageDesireSize = Collections.emptyMap();;
+        Map<Integer, Integer> stageDesireSize = Collections.emptyMap();
 
         @JsonCreator
         @JsonIgnoreProperties(ignoreUnknown = true)
@@ -73,7 +76,6 @@ public class JobScalingRule implements Serializable {
 
     }
 
-    //todo: add json UTs
     @Builder
     @Value
     public static class TriggerConfig {
