@@ -57,6 +57,7 @@ import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.runtime.NamedJobDefinition;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
@@ -75,6 +76,7 @@ import org.slf4j.LoggerFactory;
  *  api/v1/jobsClusters                               (GET, POST)
  *  api/v1/jobClusters/{}/latestJobDiscoveryInfo      (GET)
  *  api/v1/jobClusters/{}                             (GET, POST, PUT, DELETE)
+ *  api/v1/jobClusters/{}/scalerRules                 (GET, POST, DELETE)
  *  api/v1/jobClusters/{}/actions/updateArtifact      (POST)
  *  api/v1/jobClusters/{}/actions/updateSla           (POST)
  *  api/v1/jobClusters/{}/actions/updateMigrationStrategy       (POST)
@@ -207,7 +209,28 @@ public class JobClustersRoute extends BaseRoute {
                                         // POST
                                         post(() -> updateJobClusterStateDisableRoute(clusterName))
                                 ))
+                        ),
+
+                    // api/v1/jobClusters/{}/scalerRules
+                    path(
+                        PathMatchers.segment().slash("scalerRules"),
+                        (clusterName) -> concat(
+                            // POST
+                            post(() -> createScalerRuleRoute(clusterName)),
+
+                            // GET
+                            get(() -> getScalerRulesRoute(clusterName))
                         )
+                    ),
+
+                    // api/v1/jobClusters/{}/scalerRules/{}
+                    path(
+                        PathMatchers.segment().slash("scalerRules").slash(PathMatchers.segment()),
+                        (clusterName, ruleId) -> pathEndOrSingleSlash(() -> concat(
+                            // DELETE
+                            delete(() -> deleteScalerRuleRoute(clusterName, ruleId))
+                        ))
+                    )
                 )
         );
     }
@@ -707,5 +730,48 @@ public class JobClustersRoute extends BaseRoute {
                     HttpRequestMetrics.HttpVerb.POST
             );
         });
+    }
+
+    private Route createScalerRuleRoute(String clusterName) {
+        return entity(
+            Jackson.unmarshaller(JobClusterScalerRuleProto.CreateScalerRuleRequest.class),
+            request -> {
+                logger.info("POST /api/v1/jobClusters/{}/scalerRules called {}", clusterName, request);
+                if (!clusterName.equals(request.getJobClusterName())) {
+                    return complete(StatusCodes.BAD_REQUEST, "Cluster name does not match request payload");
+                }
+
+                CompletionStage<JobClusterScalerRuleProto.CreateScalerRuleResponse> createResponse =
+                    jobClusterRouteHandler.createScalerRule(clusterName, request);
+
+                return completeAsync(
+                    createResponse,
+                    resp -> complete(StatusCodes.OK, resp.getRuleId(), Jackson.marshaller()),
+                    HttpRequestMetrics.Endpoints.JOB_CLUSTER_SCALER_RULES,
+                    HttpRequestMetrics.HttpVerb.POST
+                );
+            });
+    }
+
+    private Route getScalerRulesRoute(String clusterName) {
+        logger.trace("GET /api/v1/jobClusters/{}/scalerRules called", clusterName);
+
+        return completeAsync(
+            jobClusterRouteHandler.getScalerRules(new JobClusterScalerRuleProto.GetScalerRulesRequest(clusterName)),
+            resp -> complete(StatusCodes.OK, resp.getRules(), Jackson.marshaller()),
+            HttpRequestMetrics.Endpoints.JOB_CLUSTER_SCALER_RULES,
+            HttpRequestMetrics.HttpVerb.GET
+        );
+    }
+
+    private Route deleteScalerRuleRoute(String clusterName, String ruleId) {
+        logger.info("DELETE /api/v1/jobClusters/{}/scalerRules/{} called", clusterName, ruleId);
+
+        return completeAsync(
+            jobClusterRouteHandler.deleteScalerRule(new JobClusterScalerRuleProto.DeleteScalerRuleRequest(clusterName, ruleId)),
+            resp -> complete(StatusCodes.NO_CONTENT, ""),
+            HttpRequestMetrics.Endpoints.JOB_CLUSTER_SCALER_RULES,
+            HttpRequestMetrics.HttpVerb.DELETE
+        );
     }
 }

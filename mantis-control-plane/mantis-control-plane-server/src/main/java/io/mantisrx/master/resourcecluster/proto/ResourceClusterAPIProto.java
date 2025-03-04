@@ -21,13 +21,14 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import lombok.Builder;
-import lombok.Singular;
-import lombok.Value;
+
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 public class ResourceClusterAPIProto {
 
-    // TODO: @Value generated equals doesn't include base class fields.
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder
     @Value
     public static class ListResourceClustersResponse extends BaseResponse {
 
@@ -37,7 +38,6 @@ public class ResourceClusterAPIProto {
         /** [Note] The @JsonCreator + @JasonProperty is needed when using this class with mixed shaded/non-shaded Jackson.
          * The new @Jacksonized annotation is currently not usable with shaded Jackson here.
          */
-        @Builder
         @JsonCreator
         public ListResourceClustersResponse(
                 @JsonProperty("requestId") final long requestId,
@@ -50,6 +50,7 @@ public class ResourceClusterAPIProto {
 
         @Value
         @Builder
+        @EqualsAndHashCode
         public static class RegisteredResourceCluster {
             ClusterID id;
             String version;
@@ -64,12 +65,13 @@ public class ResourceClusterAPIProto {
         }
     }
 
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder
     @Value
     public static class GetResourceClusterResponse extends BaseResponse {
 
         MantisResourceClusterSpec clusterSpec;
 
-        @Builder
         @JsonCreator
         public GetResourceClusterResponse(
             @JsonProperty("requestId") final long requestId,
@@ -81,9 +83,10 @@ public class ResourceClusterAPIProto {
         }
     }
 
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder
     @Value
     public static class DeleteResourceClusterResponse extends BaseResponse {
-        @Builder
         @JsonCreator
         public DeleteResourceClusterResponse(
             @JsonProperty("requestId") final long requestId,

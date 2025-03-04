@@ -17,6 +17,7 @@
 package io.mantisrx.master.api.akka.route.v0;
 
 import io.mantisrx.master.api.akka.route.Jackson;
+import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.core.master.MasterDescription;
@@ -117,6 +118,33 @@ public class TestMantisClient {
         return schedulingChanges(jobId, retryLogic, repeatLogic);
     }
 
+    public Observable<JobScalerRuleInfo> ruleInfoStream(final String jobId) {
+        return Observable.just(
+            new MasterDescription("localhost", "127.0.0.1", serverPort, serverPort, serverPort, "/api/postjobstatus", serverPort, System.currentTimeMillis()))
+            .retryWhen(retryLogic)
+            .switchMap((Func1<MasterDescription, Observable<JobScalerRuleInfo>>) masterDescription ->
+                getRxnettySseClient(masterDescription.getHostname(), masterDescription.getSchedInfoPort())
+                .submit(HttpClientRequest.createGet("/jobScalerRules/" + jobId + "?sendHB=true"))
+                .flatMap((Func1<HttpClientResponse<ServerSentEvent>, Observable<JobScalerRuleInfo>>) response -> {
+                    if (!HttpResponseStatus.OK.equals(response.getStatus())) {
+                        return Observable.error(new Exception(response.getStatus().reasonPhrase()));
+                    }
+                    return response.getContent()
+                        .map(event -> {
+                            try {
+                                return Jackson.fromJSON(event.contentAsString(), JobScalerRuleInfo.class);
+                            } catch (IOException e) {
+                                throw new RuntimeException("Invalid scaler rule json: " + e.getMessage(), e);
+                            }
+                        })
+                        .timeout(3 * 60, TimeUnit.SECONDS)
+                        .filter(scalerRuleInfo ->
+                            scalerRuleInfo != null && !JobScalerRuleInfo.HB_JobId.equals(scalerRuleInfo.getJobId()));
+                }))
+            .repeatWhen(repeatLogic)
+            .retryWhen(retryLogic)
+            ;
+    }
 
     public Observable<NamedJobInfo> namedJobInfo(final String jobName, final Func1<Observable<? extends Throwable>, Observable<?>> retryFn,
                                                  final Func1<Observable<? extends Void>, Observable<?>> repeatFn) {

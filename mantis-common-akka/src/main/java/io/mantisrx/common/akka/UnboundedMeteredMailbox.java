@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master.akka;
+package io.mantisrx.common.akka;
 
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;

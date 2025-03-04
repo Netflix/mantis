@@ -24,6 +24,7 @@ import io.mantisrx.control.clutch.Clutch;
 import io.mantisrx.control.clutch.ClutchConfiguration;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
+import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.vavr.Tuple;
 import io.vavr.control.Option;
@@ -51,7 +52,12 @@ public class RpsClutchConfigurationSelectorTest {
                 .machineDefinition(null)
                 .scalable(true)
                 .build();
-        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, customConfig);
+
+        JobAutoScaler.StageScalingInfo stageScalingInfo = JobAutoScaler.StageScalingInfo.builder()
+                .stageMachineDefinition(schedulingInfo.getMachineDefinition())
+                .desireSize(3)
+                .build();
+        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, stageScalingInfo, customConfig);
 
         ClutchConfiguration config = selector.apply(sketches);
 
@@ -77,7 +83,13 @@ public class RpsClutchConfigurationSelectorTest {
                 .scalingPolicy(scalingPolicy)
                 .scalable(true)
                 .build();
-        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, null);
+
+        JobAutoScaler.StageScalingInfo stageScalingInfo = JobAutoScaler.StageScalingInfo.builder()
+            .scalingPolicy(scalingPolicy)
+            .desireSize(3)
+            .stageMachineDefinition(schedulingInfo.getMachineDefinition())
+            .build();
+        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, stageScalingInfo, null);
 
         ClutchConfiguration config = selector.apply(sketches);
 
@@ -106,7 +118,12 @@ public class RpsClutchConfigurationSelectorTest {
                 .scalingPolicy(scalingPolicy)
                 .scalable(true)
                 .build();
-        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, null);
+        JobAutoScaler.StageScalingInfo stageScalingInfo = JobAutoScaler.StageScalingInfo.builder()
+            .scalingPolicy(scalingPolicy)
+            .desireSize(3)
+            .stageMachineDefinition(schedulingInfo.getMachineDefinition())
+            .build();
+        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, stageScalingInfo, null);
 
         ClutchConfiguration config = selector.apply(sketches);
 
@@ -130,7 +147,12 @@ public class RpsClutchConfigurationSelectorTest {
                 .scalingPolicy(scalingPolicy)
                 .scalable(true)
                 .build();
-        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, null);
+        JobAutoScaler.StageScalingInfo stageScalingInfo = JobAutoScaler.StageScalingInfo.builder()
+            .scalingPolicy(scalingPolicy)
+            .desireSize(3)
+            .stageMachineDefinition(schedulingInfo.getMachineDefinition())
+            .build();
+        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, stageScalingInfo, null);
 
         ClutchConfiguration config = selector.apply(sketches);
 
@@ -169,7 +191,12 @@ public class RpsClutchConfigurationSelectorTest {
                 .scalingPolicy(scalingPolicy)
                 .scalable(true)
                 .build();
-        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, null);
+        JobAutoScaler.StageScalingInfo stageScalingInfo = JobAutoScaler.StageScalingInfo.builder()
+            .scalingPolicy(scalingPolicy)
+            .desireSize(3)
+            .stageMachineDefinition(schedulingInfo.getMachineDefinition())
+            .build();
+        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, stageScalingInfo, null);
 
         ClutchConfiguration config = selector.apply(sketches);
 

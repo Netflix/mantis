@@ -23,7 +23,10 @@ import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
 import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
+import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import io.mantisrx.server.core.JobScalerRuleInfo;
+import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
@@ -136,5 +139,9 @@ public final class JobHelper {
 
         }
         return terminateJobInSecs;
+    }
+
+    public static JobScalerRuleInfo convertToJobScalerRuleInfo(JobId jobId, IJobClusterScalerRuleData ruleData) {
+        return new JobScalerRuleInfo(jobId.getId(), false, ruleData.getProtoRules());
     }
 }

@@ -1,4 +1,4 @@
-/*
+package io.mantisrx.test.containers;/*
  * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,19 +21,18 @@ import static org.junit.Assert.fail;
 import io.mantisrx.common.metrics.LoggingMetricsPublisher;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
 import io.mantisrx.shaded.org.apache.curator.retry.RetryOneTime;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
+
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
 import okhttp3.HttpUrl.Builder;
@@ -43,7 +42,9 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -51,6 +52,11 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.utility.Base58;
 import org.testcontainers.utility.MountableFile;
 
+/**
+ * FixMethodOrder this is applied to ensure test run ordering as the quick submit test needs to run first to use
+ * proper default config settings!
+ */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Slf4j
 public class TestContainerHelloWorld {
 
@@ -73,22 +79,18 @@ public class TestContainerHelloWorld {
 
     private static final String LOGGING_ENABLED_METRICS_GROUP =
             "MasterApiMetrics;DeadLetterActor;JobDiscoveryRoute";
-    private static final String JOB_CLUSTER_CREATE = "{\"jobDefinition\":{\"name\":\"hello-sine-testcontainers\","
-        + "\"user\":\"mantisoss\",\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-%s"
-        + ".zip\"," +
-        "\"version\":\"0.2.9 2018-05-29 16:12:56\",\"schedulingInfo\":{\"stages\":{" +
-        "\"1\":{\"numberOfInstances\":\"1\",\"machineDefinition\":{\"cpuCores\":\"1\",\"memoryMB\":\"1024\",\"diskMB\":\"1024\",\"networkMbps\":\"128\",\"numPorts\":\"1\"},\"scalable\":true," +
-        "\"scalingPolicy\":{" +
-        "},\"softConstraints\":[],\"hardConstraints\":[]}}}," +
-        "\"parameters\":[{\"name\":\"useRandom\",\"value\":\"false\"}],\"labels\":[{\"name\":\"_mantis"
-        + ".resourceCluster\",\"value\":\"testcluster1\"},"
-        + "{\"name\":\"_mantis.user\",\"value\":\"mantisoss\"},{\"name\":\"_mantis"
-        + ".ownerEmail\",\"value\":\"mantisoss@netflix.com\"},{\"name\":\"_mantis.jobType\",\"value\":\"other\"},"
-        + "{\"name\":\"_mantis.criticality\",\"value\":\"low\"},{\"name\":\"_mantis.artifact.version\",\"value\":\"0.2.9\"}]," +
-        "\"migrationConfig\":{\"strategy\":\"PERCENTAGE\",\"configString\":\"{\\\"percentToMove\\\":25,\\\"intervalMs\\\":60000}\"},\"slaMin\":\"0\",\"slaMax\":\"0\",\"cronSpec\":null,\"cronPolicy\":\"KEEP_EXISTING\",\"isReadyForJobMaster\":true}," +
-        "\"owner\":{\"contactEmail\":\"mantisoss@netflix.com\",\"description\":\"\",\"name\":\"Mantis OSS\","
-        + "\"repo\":\"\",\"teamName\":\"\"}}";
+    private static final String JOB_CLUSTER_CREATE =
+        Utils.getStringFromResource("Job_cluster_hello_sine_create.json");
 
+    private static final String JOB_CLUSTER_SCALING_RULE_1_CREATE =
+        Utils.getStringFromResource("Job_cluster_hello_sine_scaling_rule_create_1.json");
+    private static final String JOB_CLUSTER_SCALING_RULE_2_CREATE =
+        Utils.getStringFromResource("Job_cluster_hello_sine_scaling_rule_create_2.json");
+
+    private static final List<String> JOB_CLUSTER_SCALING_RULES = Arrays.asList(
+        JOB_CLUSTER_SCALING_RULE_1_CREATE,
+        JOB_CLUSTER_SCALING_RULE_2_CREATE
+    );
 
     private static final String QUICK_SUBMIT =
         "{\"name\":\"hello-sine-testcontainers\",\"user\":\"mantisoss\",\"jobSla\":{\"durationType\":\"Perpetual\","
@@ -103,21 +105,6 @@ public class TestContainerHelloWorld {
         + "\"memoryMB\":1024,\"diskMB\":1024,\"networkMbps\":128,\"numPorts\":\"1\"},\"scalable\":true,"
         + "\"softConstraints\":[],\"hardConstraints\":[]}}},\"parameters\":[{\"name\":\"useRandom\",\"value\":\"false\"}],"
         + "\"isReadyForJobMaster\":false}";
-
-    public static String getBuildVersion() {
-        try (InputStream input = TestContainerHelloWorld.class.getClassLoader().getResourceAsStream(
-            "version.properties")) {
-            if (input == null) {
-                throw new RuntimeException("failed to get build version file.");
-            }
-            Properties prop = new Properties();
-            prop.load(input);
-            return prop.getProperty("version");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("failed to get build version in test: ", ex);
-        }
-    }
 
     private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -145,7 +132,7 @@ public class TestContainerHelloWorld {
                 .withDockerfile(path);
 
         zookeeper =
-            new GenericContainer<>("zookeeper:3.8.0")
+            new GenericContainer<>("zookeeper:3.8.4")
                 .withNetwork(network)
                 .withNetworkAliases(ZOOKEEPER_ALIAS)
                 .withExposedPorts(ZOOKEEPER_PORT);
@@ -186,55 +173,98 @@ public class TestContainerHelloWorld {
             new ImageFromDockerfile("localhost/testcontainers/mantis_agent_" + Base58.randomString(4).toLowerCase())
                 .withDockerfile(agentDockerFilePath);
 
-        assertTrue("Failed to create job cluster", createJobCluster(controlPlaneHost, controlPlanePort));
-        assertTrue("Failed to get job cluster", getJobCluster(controlPlaneHost, controlPlanePort));
+        assertTrue(
+            "Failed to create job cluster", createJobCluster(controlPlaneHost, controlPlanePort).isPresent());
+        assertTrue(
+            "Failed to get job cluster", getJobCluster(controlPlaneHost, controlPlanePort).isPresent());
     }
 
+    /**
+     * [Note] testQuickSubmitJob must run before testRegularSubmitJob to ensure using correct default config settings.
+     */
     @Test
     public void testQuickSubmitJob() throws IOException, InterruptedException {
         Request request = new Request.Builder()
             .url(controlPlaneLeaderUrl + "v1/resourceClusters/list")
             .build();
-        Response response = client.newCall(request).execute();
-        log.info(response.body().string());
+        Optional<String> listResourceClustersO = invokeRequest(request, "listResourceClusters");
+        assertTrue(listResourceClustersO.isPresent());
+        log.info(listResourceClustersO.get());
 
         // Create agent(s)
-        final String agentId0 = "agentquicksubmit";
-        final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
-        GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, agentDockerFile, network);
-        agent0.withLogConsumer(out -> log.info("[Agent log] {}", out.getUtf8String()));
+        Map<String, GenericContainer<?>> agents = new HashMap<>();
+        for (int i = 0; i < 2; i ++) {
+            final String agentId = "agentquicksubmit" + i;
+            final String agentHostname = String.format("%s%shostname", agentId, CLUSTER_ID);
+            GenericContainer<?> agent = createAgent(agentId, CLUSTER_ID, agentHostname, agentDockerFile, network);
+            agent.withLogConsumer(out -> log.info("[Agent {} log] {}", agentId, out.getUtf8String()));
 
-        if (!ensureAgentStarted(
-            controlPlaneHost,
-            controlPlanePort,
-            CLUSTER_ID,
-            agentId0,
-            agent0,
-            5,
-            Duration.ofSeconds(10).toMillis())) {
-            fail("Failed to register agent: " + agent0.getContainerId());
+            if (!ensureAgentStarted(
+                controlPlaneHost,
+                controlPlanePort,
+                CLUSTER_ID,
+                agentId,
+                agent,
+                10,
+                Duration.ofSeconds(2).toMillis())) {
+                fail("Failed to register agent: " + agent.getContainerId());
+            }
+            agents.put(agentId, agent);
         }
 
-        quickSubmitJobCluster(controlPlaneHost, controlPlanePort);
+        Optional<String> jobIdO = quickSubmitJobCluster(controlPlaneHost, controlPlanePort);
+        assertTrue(jobIdO.isPresent());
 
         if (!ensureJobWorkerStarted(
             controlPlaneHost,
             controlPlanePort,
             10,
-            Duration.ofSeconds(10).toMillis())) {
+            Duration.ofSeconds(3).toMillis())) {
             fail("Failed to start job worker.");
         }
 
-        // test sse
+        testInvalidTEStates(controlPlaneHost, controlPlanePort);
+        for (String agentId : agents.keySet()) {
+            Optional<String> workerIdO = testTEStates(controlPlaneHost, controlPlanePort, agentId);
+            if (workerIdO.isPresent() && workerIdO.get().equals("hello-sine-testcontainers-1-0-2")) {
+                log.info("Worker {} on {} is running. Test SSE.", workerIdO.get(), agentId);
+                // test sse
+                Thread.sleep(Duration.ofSeconds(5).toMillis());
+                String cmd = "curl -N -H \"Accept: text/event-stream\"  \"localhost:5055\" & sleep 3; kill $!";
+                Container.ExecResult lsResult = agents.get(agentId).execInContainer("bash", "-c", cmd);
+                String stdout = lsResult.getStdout();
+
+                log.info("SSE stdout: {}", stdout);
+                assertTrue(stdout.contains("data: {\"x\":"));
+            }
+        }
+
+        // add scaling rule.
+        Optional<String> scalingRuleResO = createScalingRule(controlPlaneHost, controlPlanePort, 1);
+        assertTrue(scalingRuleResO.isPresent());
+        assertEquals("1", scalingRuleResO.get());
+
+        // verify scaling rule applied
+        assertTrue(ensureJobWorkerSize(
+            controlPlaneHost, controlPlanePort, 2, jobIdO.get(), 5, Duration.ofSeconds(3).toMillis()));
+
+        Optional<String> scalingRuleRes2O = createScalingRule(controlPlaneHost, controlPlanePort, 0);
+        assertTrue(scalingRuleRes2O.isPresent());
+        assertEquals("2", scalingRuleRes2O.get());
+        assertTrue(ensureJobWorkerSize(
+            controlPlaneHost, controlPlanePort, 5, jobIdO.get(), 5, Duration.ofSeconds(3).toMillis()));
+
+
         Thread.sleep(Duration.ofSeconds(5).toMillis());
-        String cmd = "curl -N -H \"Accept: text/event-stream\"  \"localhost:5055\" & sleep 3; kill $!";
-        Container.ExecResult lsResult = agent0.execInContainer("bash", "-c", cmd);
-        String stdout = lsResult.getStdout();
+        // delete scaling rule.
+        Optional<String> deleteRuleResO = deleteScalingRule(controlPlaneHost, controlPlanePort, scalingRuleRes2O.get());
+        assertTrue(deleteRuleResO.isPresent());
 
-        log.info("stdout: {}", stdout);
-        assertTrue(stdout.contains("data: {\"x\":"));
+        // todo update response format to proper json
+        // todo test scale job without rules
 
-        testTEStates(controlPlaneHost, controlPlanePort, agentId0);
+        assertTrue(ensureJobWorkerSize(
+            controlPlaneHost, controlPlanePort, 2, jobIdO.get(), 5, Duration.ofSeconds(3).toMillis()));
 
         /*
         Uncomment following lines to keep the containers running.
@@ -245,12 +275,6 @@ public class TestContainerHelloWorld {
 
     @Test
     public void testRegularSubmitJob() throws IOException, InterruptedException {
-        Request request = new Request.Builder()
-            .url(controlPlaneLeaderUrl + "v1/resourceClusters/list")
-            .build();
-        Response response = client.newCall(request).execute();
-        log.info(response.body().string());
-
         // Create agent(s)
         final String agentId0 = "agentregularsubmit";
         final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
@@ -290,8 +314,8 @@ public class TestContainerHelloWorld {
         /*
         Uncomment following lines to keep the containers running.
          */
-        // log.warn("Waiting for exit test.");
-        // Thread.sleep(Duration.ofSeconds(3600).toMillis());
+         // log.warn("Waiting for exit test.");
+         // Thread.sleep(Duration.ofSeconds(3600).toMillis());
     }
 
     private static void zkCheck(GenericContainer<?> zookeeper) throws Exception {
@@ -311,7 +335,7 @@ public class TestContainerHelloWorld {
         byte[] bytes = curatorFramework.getData().forPath(path);
         curatorFramework.close();
 
-        assertEquals(new String(bytes, StandardCharsets.UTF_8), content);
+        assertEquals(content, new String(bytes, StandardCharsets.UTF_8));
         System.out.println("ZK check pass!");
     }
 
@@ -321,7 +345,7 @@ public class TestContainerHelloWorld {
         MountableFile sampleArtifact = MountableFile.forHostPath(
             Paths.get(String.format(
                 "../mantis-examples/mantis-examples-sine-function/build/distributions/mantis-examples-sine-function-%s.zip",
-                getBuildVersion())));
+                Utils.getBuildVersion())));
 
         return USE_LOCAL_BUILT_IMAGE ?
             new GenericContainer<>(dockerFile)
@@ -361,7 +385,6 @@ public class TestContainerHelloWorld {
             .addPathSegment(resourceClusterId)
             .addPathSegment("getRegisteredTaskExecutors")
             .build();
-        log.info("Req: {}", reqUrl);
 
         for(int i = 0; i < retries; i++) {
             Request request = new Request.Builder()
@@ -369,23 +392,22 @@ public class TestContainerHelloWorld {
                 .build();
 
             try {
-                Response response = HTTP_CLIENT.newCall(request).execute();
-                String responseBody = response.body().string();
-                log.info("Registered agents: {}.", responseBody);
+                Optional<String> resO = invokeRequest(request, "ensureAgentStarted");
+                log.info("Registered agents: {}.", resO);
+                if (resO.isPresent()) {
+                    List<TaskExecutorID> listResponses =
+                        mapper.readValue(resO.get(), new TypeReference<List<TaskExecutorID>>() {});
 
-                List<TaskExecutorID> listResponses =
-                    mapper.readValue(responseBody, new TypeReference<List<TaskExecutorID>>() {});
-
-                for (TaskExecutorID taskExecutorID : listResponses) {
-                    if (taskExecutorID.getResourceId().equals(agentId)) {
-                        log.info("Agent {} has registered to {}.", agentId, resourceClusterId);
-                        return true;
+                    for (TaskExecutorID taskExecutorID : listResponses) {
+                        if (taskExecutorID.getResourceId().equals(agentId)) {
+                            log.info("Agent {} has registered to {}.", agentId, resourceClusterId);
+                            return true;
+                        }
                     }
                 }
-
                 Thread.sleep(sleepMillis);
             } catch (Exception e) {
-                log.warn("Get registred agent call error", e);
+                log.warn("Get registered agent call error", e);
             }
         }
         return false;
@@ -395,8 +417,7 @@ public class TestContainerHelloWorld {
         String controlPlaneHost,
         int controlPlanePort,
         int retries,
-        long sleepMillis) {
-        log.info("waiting for job worker to start.");
+        long sleepMillis) throws InterruptedException {
         HttpUrl reqUrl = new Builder()
             .scheme("http")
             .host(controlPlaneHost)
@@ -405,32 +426,71 @@ public class TestContainerHelloWorld {
             .addPathSegment(JOB_CLUSTER_NAME)
             .addPathSegment("latestJobDiscoveryInfo")
             .build();
-        log.info("Req: {}", reqUrl);
 
         for(int i = 0; i < retries; i++) {
+            Thread.sleep(sleepMillis);
             Request request = new Request.Builder()
                 .url(reqUrl)
                 .build();
 
-            try {
-                Response response = HTTP_CLIENT.newCall(request).execute();
-                String responseBody = response.body().string();
-                log.info("Job cluster state: {}.", responseBody);
-
-                if (responseBody.contains("\"state\":\"Started\"")) {
-                    log.info("Job worker started.");
-                    return true;
-                }
-
-                Thread.sleep(sleepMillis);
-            } catch (Exception e) {
-                log.warn("Get registered agent call error", e);
+            Optional<String> resO = invokeRequest(request, "ensureJobWorkerStarted");
+            if (resO.isPresent() && resO.get().contains("\"state\":\"Started\"")) {
+                log.info("Job worker started.");
+                return true;
             }
         }
         return false;
     }
 
-    private static boolean createJobCluster(
+    private boolean ensureJobWorkerSize(
+        String controlPlaneHost,
+        int controlPlanePort,
+        int targetSize,
+        String jobId,
+        int retries,
+        long sleepMillis) throws InterruptedException {
+
+        for(int i = 0; i < retries; i++) {
+            Thread.sleep(sleepMillis);
+            Optional<Integer> resO = getJobStageWorkerSize(controlPlaneHost, controlPlanePort, jobId);
+            if (resO.isPresent() && resO.get().equals(targetSize)) {
+                log.info("Job worker size matched {}.", targetSize);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Optional<Integer> getJobStageWorkerSize(
+        String controlPlaneHost,
+        int controlPlanePort,
+        String jobId) throws InterruptedException {
+        HttpUrl reqUrl = new Builder()
+            .scheme("http")
+            .host(controlPlaneHost)
+            .port(controlPlanePort)
+            .addPathSegments("api/v1/jobs")
+            .addPathSegment(jobId)
+            .build();
+
+        Request request = new Request.Builder()
+            .url(reqUrl)
+            .build();
+
+        Optional<String> resO = invokeRequest(request, "getJobStageWorkerSize");
+        return resO.map(res -> {
+            try {
+                JsonNode rootNode = mapper.readTree(res);
+                JsonNode stageMetadataList = rootNode.path("stageMetadataList");
+                return stageMetadataList.get(1).path("numWorkers").asInt();
+            } catch (Exception e) {
+                log.error("Failed to get stage worker size", e);
+                return null;
+            }
+        });
+    }
+
+    private static Optional<String> createJobCluster(
         String controlPlaneHost,
         int controlPlanePort) {
         HttpUrl reqUrl = new Builder()
@@ -439,8 +499,7 @@ public class TestContainerHelloWorld {
             .port(controlPlanePort)
             .addPathSegments("api/v1/jobClusters")
             .build();
-        log.info("Req: {}", reqUrl);
-        String payload = String.format(JOB_CLUSTER_CREATE, getBuildVersion());
+        String payload = String.format(JOB_CLUSTER_CREATE, Utils.getBuildVersion());
         log.info("using payload: {}", payload);
         RequestBody body = RequestBody.create(
             payload, MediaType.parse("application/json; charset=utf-8"));
@@ -450,19 +509,25 @@ public class TestContainerHelloWorld {
             .post(body)
             .build();
 
-        try {
-            Response response = HTTP_CLIENT.newCall(request).execute();
-            String responseBody = response.body().string();
-            log.info("Created job cluster response: {}.", responseBody);
-
-        } catch (Exception e) {
-            log.warn("Create cluster call error", e);
-            return false;
-        }
-        return true;
+        return invokeRequest(request, "createJobCluster");
     }
 
-    private void testTEStates(
+    private void testInvalidTEStates(
+        String controlPlaneHost,
+        int controlPlanePort) {
+        try
+        {
+            Optional<Response> responseO = checkTeState(controlPlaneHost, controlPlanePort, "invalid");
+            assertTrue(responseO.isPresent());
+            assertEquals(404, responseO.get().code());
+        }
+        catch (Exception ioe) {
+            log.error("failed to check TE state", ioe);
+            fail("failed to check TE state " + ioe);
+        }
+    }
+
+    private Optional<String> testTEStates(
         String controlPlaneHost,
         int controlPlanePort,
         String agentId) {
@@ -474,14 +539,12 @@ public class TestContainerHelloWorld {
             String resBody = responseO.get().body().string();
             log.info("agent {}: {}", agentId, resBody);
             assertTrue(resBody.contains("\"registered\":true,\"runningTask\":true"));
-
-            responseO = checkTeState(controlPlaneHost, controlPlanePort, "invalid");
-            assertTrue(responseO.isPresent());
-            assertEquals(404, responseO.get().code());
+            return Utils.getWorkerId(resBody);
         }
         catch (IOException ioe) {
             log.error("failed to check TE state", ioe);
             fail("failed to check TE state " + ioe);
+            return Optional.empty();
         }
     }
 
@@ -514,7 +577,7 @@ public class TestContainerHelloWorld {
         }
     }
 
-    private boolean quickSubmitJobCluster(
+    private Optional<String> quickSubmitJobCluster(
         String controlPlaneHost,
         int controlPlanePort) {
         HttpUrl reqUrl = new Builder()
@@ -533,18 +596,56 @@ public class TestContainerHelloWorld {
             .post(body)
             .build();
 
-        try {
-            Response response = HTTP_CLIENT.newCall(request).execute();
-            String responseBody = response.body().string();
-            log.info("Quick submit job response: {}.", responseBody);
-
-        } catch (Exception e) {
-            log.warn("Quick submit job call error", e);
-        }
-        return true;
+        return invokeRequest(request, "quickSubmitJobCluster");
     }
 
-    private boolean submitJobCluster(
+    private Optional<String> createScalingRule(
+        String controlPlaneHost,
+        int controlPlanePort,
+        int ruleIndex) {
+        HttpUrl reqUrl = new Builder()
+            .scheme("http")
+            .host(controlPlaneHost)
+            .port(controlPlanePort)
+            .addPathSegments("api/v1/jobClusters")
+            .addPathSegment(JOB_CLUSTER_NAME)
+            .addPathSegment("scalerRules")
+            .build();
+
+        RequestBody body = RequestBody.create(
+            JOB_CLUSTER_SCALING_RULES.get(ruleIndex), MediaType.parse("application/json; charset=utf-8"));
+
+        Request request = new Request.Builder()
+            .url(reqUrl)
+            .post(body)
+            .build();
+
+        return invokeRequest(request, "createScalingRule");
+    }
+
+    private Optional<String> deleteScalingRule(
+        String controlPlaneHost,
+        int controlPlanePort,
+        String ruleId) {
+        HttpUrl reqUrl = new Builder()
+            .scheme("http")
+            .host(controlPlaneHost)
+            .port(controlPlanePort)
+            .addPathSegments("api/v1/jobClusters")
+            .addPathSegment(JOB_CLUSTER_NAME)
+            .addPathSegment("scalerRules")
+            .addPathSegment(ruleId) // rule id 1
+            .build();
+
+        Request request = new Request.Builder()
+            .url(reqUrl)
+            .delete()
+            .build();
+
+        return invokeRequest(request, "deleteScalingRule");
+    }
+
+    private Optional<String> submitJobCluster(
         String controlPlaneHost,
         int controlPlanePort) {
         HttpUrl reqUrl = new Builder()
@@ -555,9 +656,9 @@ public class TestContainerHelloWorld {
             .build();
         log.info("Req: {}", reqUrl);
 
-        String buildVersion = getBuildVersion();
+        String buildVersion = Utils.getBuildVersion();
         log.info("using artifact version: {}", buildVersion);
-        String payload = String.format(REGULAR_SUBMIT, getBuildVersion());
+        String payload = String.format(REGULAR_SUBMIT, Utils.getBuildVersion());
         log.info("Submit payload: {}", payload);
         RequestBody body = RequestBody.create(
             payload, MediaType.parse("application/json; charset=utf-8"));
@@ -566,19 +667,10 @@ public class TestContainerHelloWorld {
             .url(reqUrl)
             .post(body)
             .build();
-
-        try {
-            Response response = HTTP_CLIENT.newCall(request).execute();
-            String responseBody = response.body().string();
-            log.info("Regular submit job response: {}.", responseBody);
-
-        } catch (Exception e) {
-            log.warn("Regular submit job call error", e);
-        }
-        return true;
+        return invokeRequest(request, "submitJobCluster");
     }
 
-    private static boolean getJobCluster(
+    private static Optional<String> getJobCluster(
         String controlPlaneHost,
         int controlPlanePort) {
         HttpUrl reqUrl = new Builder()
@@ -588,24 +680,15 @@ public class TestContainerHelloWorld {
             .addPathSegments("api/v1/jobClusters")
             .addPathSegment(JOB_CLUSTER_NAME)
             .build();
-        log.info("Req: {}", reqUrl);
 
         Request request = new Request.Builder()
             .url(reqUrl)
             .build();
 
-        try {
-            Response response = HTTP_CLIENT.newCall(request).execute();
-            String responseBody = response.body().string();
-            log.info("Get job cluster response: {}.", responseBody);
-
-        } catch (Exception e) {
-            log.warn("GET job cluster call error", e);
-        }
-        return true;
+        return invokeRequest(request, "getJobCluster");
     }
 
-    private boolean getJobSink(
+    private Optional<String> getJobSink(
         GenericContainer<?> agent) {
         HttpUrl reqUrl = new Builder()
             .scheme("http")
@@ -618,14 +701,23 @@ public class TestContainerHelloWorld {
             .url(reqUrl)
             .build();
 
-        try {
-            Response response = HTTP_CLIENT.newCall(request).execute();
-            String responseBody = response.body().string();
-            log.info("Get job sink response: {}.", responseBody);
+        return invokeRequest(request, "getJobSink");
+    }
 
+    private static Optional<String> invokeRequest(Request request, String opsName) {
+        log.info("{} request: {}.", opsName, request);
+        String responseBody = null;
+        try (Response response = HTTP_CLIENT.newCall(request).execute()) {
+            responseBody = response.body().string();
+            // Check if the response is a JSON string and strip quotes
+            if (responseBody.startsWith("\"") && responseBody.endsWith("\"")) {
+                responseBody = responseBody.substring(1, responseBody.length() - 1);
+            }
+
+            log.info("{} response: {}.", opsName, responseBody);
         } catch (Exception e) {
-            log.warn("GET job sink call error", e);
+            log.warn("{}} call error", opsName, e);
         }
-        return true;
+        return Optional.ofNullable(responseBody);
     }
 }

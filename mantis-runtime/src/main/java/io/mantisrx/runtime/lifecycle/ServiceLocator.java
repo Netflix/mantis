@@ -19,5 +19,5 @@ package io.mantisrx.runtime.lifecycle;
 public interface ServiceLocator {
 
     public <T> T service(Class<T> key);
-
+    public <T> T service(String name, Class<T> requiredType);
 }

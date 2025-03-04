@@ -21,12 +21,14 @@ import io.mantisrx.common.SystemParameters;
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import io.mantisrx.common.metrics.measurement.Measurements;
 import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.SourceJobParameters;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
+import io.mantisrx.server.worker.jobmaster.rules.ScalerControllerActor;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,9 +42,12 @@ import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
 
-// job master service is the one responsible for autoscaling
-// it represents stage 0.
-public class JobMasterService implements Service {
+/**
+ * job master service is the one responsible for autoscaling.
+ * it represents stage 0.
+ * In v2 (job scaling rule enabled) this is wrapped inside {@link ScalerControllerActor}.
+ */
+public class JobMasterService implements JobAutoScalerService {
 
     private static final Logger logger = LoggerFactory.getLogger(JobMasterService.class);
 
@@ -80,6 +85,29 @@ public class JobMasterService implements Service {
         this.observableOnErrorCallback = observableOnErrorCallback;
         this.observableOnTerminateCallback = observableOnTerminateCallback;
         this.context = context;
+    }
+
+    /**
+     * V2 entry point used by rule controller.
+     */
+    public JobMasterService(final JobScalerContext jobScalerContext,
+                            final JobScalingRule activeRule) {
+        this.jobId = jobScalerContext.getJobId();
+        this.workerMetricsClient = jobScalerContext.getWorkerMetricsClient();
+        this.autoScaleMetricsConfig = jobScalerContext.getAutoScaleMetricsConfig();
+        this.masterClientApi = jobScalerContext.getMasterClientApi();
+        this.jobAutoScaler = new JobAutoScaler(jobScalerContext, activeRule);
+        this.metricObserver = new WorkerMetricHandler(
+            jobId,
+            jobAutoScaler.getObserver(),
+            masterClientApi,
+            autoScaleMetricsConfig,
+            jobScalerContext.getJobAutoscalerManager())
+            .initAndGetMetricDataObserver();
+        this.observableOnCompleteCallback = jobScalerContext.getObservableOnCompleteCallback();
+        this.observableOnErrorCallback = jobScalerContext.getObservableOnErrorCallback();
+        this.observableOnTerminateCallback = jobScalerContext.getObservableOnTerminateCallback();
+        this.context = jobScalerContext.getContext();
     }
 
     private Measurements handleMetricEvent(final String ev) {
@@ -159,6 +187,8 @@ public class JobMasterService implements Service {
         if (subscription != null) {
             subscription.unsubscribe();
         }
+        this.jobAutoScaler.shutdown();
+        this.metricObserver.onCompleted();
     }
 
     @Override

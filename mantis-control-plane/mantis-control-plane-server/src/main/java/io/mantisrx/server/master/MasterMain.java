@@ -30,7 +30,7 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
-import io.mantisrx.master.DeadLetterActor;
+import io.mantisrx.common.akka.DeadLetterActor;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.JobClustersManagerService;
 import io.mantisrx.master.api.akka.MasterApiAkkaService;
