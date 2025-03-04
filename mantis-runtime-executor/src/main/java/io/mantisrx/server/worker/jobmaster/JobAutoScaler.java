@@ -92,6 +92,7 @@ public class JobAutoScaler implements Service {
     private final String jobId;
     private final MantisMasterGateway masterClientApi;
     private final Map<Integer, StageScalingInfo> stagePolicyMap;
+    private final String clutchCustomConfigurationFromRule;
     private final PublishSubject<Event> subject;
     private final Context context;
     private final JobAutoscalerManager jobAutoscalerManager;
@@ -116,6 +117,7 @@ public class JobAutoScaler implements Service {
                                 .scalingPolicy(kv.getValue().getScalingPolicy())
                                 .stageMachineDefinition(kv.getValue().getMachineDefinition())
                                 .build()));
+        this.clutchCustomConfigurationFromRule = null;
     }
 
     JobAutoScaler(JobScalerContext scalerContext, JobScalingRule jobScalerRule) {
@@ -137,6 +139,11 @@ public class JobAutoScaler implements Service {
                     .scalingPolicy(stagePolicy)
                     .stageMachineDefinition(scalerContext.getSchedInfo().forStage(stagePolicy.getStage()).getMachineDefinition())
                     .build()));
+        this.clutchCustomConfigurationFromRule = Optional.ofNullable(jobScalerRule.getMetadata())
+            .map(m -> m.getOrDefault(
+                SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM, null))
+            .orElse(null);
+
     }
 
     Observer<Event> getObserver() {
@@ -165,8 +172,9 @@ public class JobAutoScaler implements Service {
                 });
 
                 Optional<String> clutchCustomConfiguration =
-                    Optional.ofNullable(
-                        MantisProperties.getProperty("JOB_PARAM_" + SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM));
+                    this.clutchCustomConfigurationFromRule != null ?
+                        Optional.of(this.clutchCustomConfigurationFromRule) :
+                        Optional.ofNullable(MantisProperties.getProperty("JOB_PARAM_" + SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM));
 
                 if (this.stagePolicyMap.containsKey(stage) && (this.stagePolicyMap.get(stage) != null ||
                     clutchCustomConfiguration.isPresent())) {
