@@ -2,6 +2,11 @@ package io.mantisrx.server.worker.jobmaster.rules;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Gauge;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.worker.jobmaster.JobAutoScalerService;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
@@ -26,6 +31,10 @@ public class ScalerControllerActor extends AbstractActor {
     volatile JobScalingRule activeRule;
     volatile JobAutoScalerService activeJobAutoScalerService;
 
+    private final Gauge activeRuleGauge;
+    private final Counter activateCount;
+    private final Counter deactivateCount;
+
     private final ExecutorService executorService = Executors.newCachedThreadPool(
         new ThreadFactoryBuilder()
             .setNameFormat("JobAutoScalerServiceExecutorPool-%d")
@@ -39,6 +48,22 @@ public class ScalerControllerActor extends AbstractActor {
 
     public ScalerControllerActor(JobScalerContext context) {
         this.jobScalerContext = context;
+
+        // setup metrics
+        Metrics m =
+            new Metrics.Builder()
+                .name("JobScalerRule")
+                .addCounter("activateCount")
+                .addCounter("deactivateCount")
+                .addGauge("activeRule")
+                .build();
+        m = Optional.ofNullable(this.jobScalerContext.getContext()).map(Context::getMetricsRegistry)
+            .orElse(MetricsRegistry.getInstance())
+            .registerAndGet(m);
+        // default is -1 and -2 is no active rule.
+        this.activeRuleGauge = m.getGauge("activeRule");
+        this.activateCount = m.getCounter("activateCount");
+        this.deactivateCount = m.getCounter("deactivateCount");
     }
 
     @Override
@@ -104,6 +129,8 @@ public class ScalerControllerActor extends AbstractActor {
                     return null;
                 }, getContext().dispatcher());
             }
+            this.activeRuleGauge.set(-2L);
+            this.deactivateCount.increment();
         } catch (Exception ex) {
             log.error("failed to stop job auto scaler service", ex);
         } finally {
@@ -205,6 +232,12 @@ public class ScalerControllerActor extends AbstractActor {
             return null;
         }, getContext().dispatcher());
 
+        this.activateCount.increment();
+        try {
+            this.activeRuleGauge.set(Long.parseLong(activateScalerRequest.getRule().getRuleId()));
+        } catch (NumberFormatException e) {
+            log.error("Unexpected non-number rule id: {}", activateScalerRequest.getRule().getRuleId(), e);
+        }
         log.info("Activated scaler rule: {}", activateScalerRequest.getRule().getRuleId());
     }
 

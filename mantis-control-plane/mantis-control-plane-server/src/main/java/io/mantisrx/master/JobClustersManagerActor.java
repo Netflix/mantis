@@ -318,6 +318,8 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(JobClusterScalerRuleProto.CreateScalerRuleRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.CreateScalerRuleResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), state)).build(), getSelf()))
                 .match(JobClusterScalerRuleProto.DeleteScalerRuleRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.DeleteScalerRuleResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), state)).build(), getSelf()))
                 .match(JobClusterScalerRuleProto.GetScalerRulesRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.GetScalerRulesResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), state)).build(), getSelf()))
+                .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.GetJobScalerRuleStreamResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), state)).build(), getSelf()))
+
                 // everything else
                 .matchAny(x -> logger.warn("unexpected message {} received by Job Cluster Manager actor. It needs to be initialized first ", x))
                 // UNEXPECTED MESSAGES BEGIN
@@ -620,7 +622,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         } else {
             logger.warn("error fwd to jobClusterActor {}", request.getJobId());
             sender.tell(
-                JobClusterScalerRuleProto.GetScalerRulesResponse.builder()
+                JobClusterScalerRuleProto.GetJobScalerRuleStreamResponse.builder()
                     .requestId(request.requestId)
                     .responseCode(CLIENT_ERROR_NOT_FOUND)
                     .message(String.format("JobCluster %s doesn't exist", request.getJobId().getCluster()))
