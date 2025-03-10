@@ -97,7 +97,7 @@ import org.apache.flink.runtime.rpc.RpcService;
  */
 @ToString(of = {"clusterID"})
 @Slf4j
-class ResourceClusterActor extends AbstractActorWithTimers {
+public class ResourceClusterActor extends AbstractActorWithTimers {
     /**
      * For ResourceClusterActor instances, we need to ensure they are always running after encountering error so that
      * TaskExecutors can still remain connected. If there is a fatal error that needs to be escalated to terminate the
@@ -154,6 +154,43 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
+        FitnessCalculator fitnessCalculator,
+        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook
+    ) {
+        return Props.create(
+            ResourceClusterActor.class,
+            clusterID,
+            heartbeatTimeout,
+            assignmentTimeout,
+            disabledTaskExecutorsCheckInterval,
+            schedulerLeaseExpirationDuration,
+            clock,
+            rpcService,
+            mantisJobStore,
+            jobMessageRouter,
+            maxJobArtifactsToCache,
+            jobClustersWithArtifactCachingEnabled,
+            isJobArtifactCachingEnabled,
+            schedulingAttributes,
+            fitnessCalculator,
+            availableTaskExecutorMutatorHook
+        ).withMailbox("akka.actor.metered-mailbox");
+    }
+
+    static Props props(
+        final ClusterID clusterID,
+        final Duration heartbeatTimeout,
+        Duration assignmentTimeout,
+        Duration disabledTaskExecutorsCheckInterval,
+        Duration schedulerLeaseExpirationDuration,
+        Clock clock,
+        RpcService rpcService,
+        MantisJobStore mantisJobStore,
+        JobMessageRouter jobMessageRouter,
+        int maxJobArtifactsToCache,
+        String jobClustersWithArtifactCachingEnabled,
+        boolean isJobArtifactCachingEnabled,
+        Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator
     ) {
         return Props.create(
@@ -171,7 +208,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             jobClustersWithArtifactCachingEnabled,
             isJobArtifactCachingEnabled,
             schedulingAttributes,
-            fitnessCalculator
+            fitnessCalculator,
+            null
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -189,7 +227,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
-        FitnessCalculator fitnessCalculator) {
+        FitnessCalculator fitnessCalculator,
+        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -207,7 +246,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
 
         this.executorStateManager = new ExecutorStateManagerImpl(
-            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration);
+            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration, availableTaskExecutorMutatorHook);
 
         this.metrics = new ResourceClusterActorMetrics();
     }
@@ -957,7 +996,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     @Value
-    static class TaskExecutorBatchAssignmentRequest {
+    public static class TaskExecutorBatchAssignmentRequest {
         Set<TaskExecutorAllocationRequest> allocationRequests;
         ClusterID clusterID;
 

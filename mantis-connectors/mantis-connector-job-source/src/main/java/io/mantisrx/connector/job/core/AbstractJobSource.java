@@ -76,7 +76,7 @@ public abstract class AbstractJobSource implements Source<MantisServerSentEvent>
             }
             if (additionalParams != null) {
                 for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
-                    defaultParamBuilder.withParameter(entry.getKey(), entry.getValue());
+                    defaultParamBuilder = defaultParamBuilder.withParameter(entry.getKey(), entry.getValue());
                 }
             }
         } catch (UnsupportedEncodingException e) {

@@ -17,6 +17,7 @@
 package io.mantisrx.server.master.config;
 
 import io.mantisrx.master.jobcluster.job.CostsCalculator;
+import io.mantisrx.master.resourcecluster.AvailableTaskExecutorMutatorHook;
 import io.mantisrx.master.scheduler.FitnessCalculator;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.IKeyValueStore;
@@ -162,6 +163,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.scheduler.fitnessCalculator.class")
     @Default("io.mantisrx.master.scheduler.CpuWeightedFitnessCalculator")
     FitnessCalculator getFitnessCalculator();
+
+    @Config("mantis.master.scheduler.availabletaskexecutormutatorhook.class")
+    @Default("io.mantisrx.master.resourcecluster.PassthroughAvailableTaskExecutorMutatorHook")
+    AvailableTaskExecutorMutatorHook getAvailableTaskExecutorMutatorHook();
 
     default Duration getSchedulerIntervalBetweenRetries() {
         return Duration.ofMillis(getSchedulerIntervalBetweenRetriesInMs());
