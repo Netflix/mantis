@@ -320,9 +320,7 @@ public class SseWorkerConnection {
                     .subscribe();
         }
         return response.getContent()
-                .lift(new DropOperator<ServerSentEvent>(metricGroupId))
-                .rebatchRequests(this.bufferSize <= 0 ? 1 : this.bufferSize)
-                .flatMap((ServerSentEvent t1) -> {
+                .map((ServerSentEvent t1) -> {
                     lastDataReceived.set(System.currentTimeMillis());
                     if (isConnected.get() && isReceivingData.compareAndSet(false, true))
                         if (updateDataRecvngStatus != null)
@@ -331,10 +329,12 @@ public class SseWorkerConnection {
                             }
 
                     if (t1.hasEventType() && t1.getEventTypeAsString().startsWith("error:")) {
-                        return Observable.error(new SseException(ErrorType.Retryable, "Got error SSE event: " + t1.contentAsString()));
+                        throw new SseException(ErrorType.Retryable, "Got error SSE event: " + t1.contentAsString());
                     }
-                    return Observable.just(t1.contentAsString());
-                }, 1)
+                    return t1.contentAsString();
+                })
+                .lift(new DropOperator<String>(metricGroupId))
+                .rebatchRequests(this.bufferSize <= 0 ? 1 : this.bufferSize)
                 .filter(data -> {
                     if (data.startsWith("ping")) {
                         pingCounter.increment();
