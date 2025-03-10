@@ -6,6 +6,9 @@ import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import java.util.*;
 
 import io.mantisrx.runtime.descriptor.JobScalingRule;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import org.junit.Test;
@@ -16,6 +19,7 @@ public class JobClusterScalerRuleDataImplWritableTest {
 
     static Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
     static StageScalingPolicy scalingPolicy;
+    static ObjectMapper mapper = new ObjectMapper();
 
     private JobClusterScalerRuleProto.CreateScalerRuleRequest createDummyRequest(String jobClusterName, int desireSize) {
         smap.put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
@@ -50,7 +54,7 @@ public class JobClusterScalerRuleDataImplWritableTest {
     }
 
     @Test
-    public void testMergeAddsNewRuleAndIncrementsRuleId() {
+    public void testMergeAddsNewRuleAndIncrementsRuleId() throws JsonProcessingException {
         // Create an initial data instance using the provided "of" method.
         String clusterName = "testCluster";
         IJobClusterScalerRuleData data = JobClusterScalerRuleDataImplWritable.of(clusterName);
@@ -65,6 +69,12 @@ public class JobClusterScalerRuleDataImplWritableTest {
 
         // Merge the new rule.
         IJobClusterScalerRuleData mergedData = data.merge(req);
+
+        String jsonMergedData = mapper.writeValueAsString(mergedData);
+        assertFalse(Strings.isNullOrEmpty(jsonMergedData));
+        JobClusterScalerRuleDataImplWritable deserRules = mapper.readValue(
+            jsonMergedData, JobClusterScalerRuleDataImplWritable.class);
+        assertEquals(mergedData, deserRules);
 
         // Validate that the new instance has lastRuleIdNumber incremented.
         assertTrue(mergedData instanceof JobClusterScalerRuleDataImplWritable);

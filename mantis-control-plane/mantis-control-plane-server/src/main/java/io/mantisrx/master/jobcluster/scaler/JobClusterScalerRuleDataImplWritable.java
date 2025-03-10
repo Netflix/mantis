@@ -3,6 +3,7 @@ package io.mantisrx.master.jobcluster.scaler;
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
@@ -14,6 +15,8 @@ import java.util.List;
 /**
  * This is the data contract for job cluster level scaling rules. For simplicity the entity is immutable and share
  * the same class with persistence writer.
+ *
+ * [Note] Make sure to add @JsonIgnore annotation to any getter method not mean to be serialized.
  */
 @Value
 public class JobClusterScalerRuleDataImplWritable implements IJobClusterScalerRuleData {
@@ -33,7 +36,7 @@ public class JobClusterScalerRuleDataImplWritable implements IJobClusterScalerRu
         this.jobClusterName = jobClusterName;
         this.lastRuleIdNumber = lastRuleIdNumber;
         this.disabled = disabled;
-        this.scalerRules = scalerRules;
+        this.scalerRules = scalerRules == null ? ImmutableList.of() : scalerRules;
     }
 
     public static IJobClusterScalerRuleData of(String jobClusterName) {
@@ -71,6 +74,7 @@ public class JobClusterScalerRuleDataImplWritable implements IJobClusterScalerRu
         }
     }
 
+    @JsonIgnore
     @Override
     public List<JobScalingRule> getProtoRules() {
         return this.scalerRules.stream().map(JobClusterScalerRule::toProto).collect(ImmutableList.toImmutableList());
