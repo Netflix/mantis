@@ -741,6 +741,11 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 ;
     }
 
+    /**
+     * Returns an observable that emits JobScalerRuleInfo updates (full snapshot) for the given jobId.
+     * @param jobId target jobId.
+     * @return Observable of JobScalerRuleInfo.
+     */
     public Observable<JobScalerRuleInfo> jobScalerRulesStream(final String jobId) {
         final ConditionalRetry retryObject = new ConditionalRetry(null, "jobsScalerRules_" + jobId);
         return masterMonitor.getMasterObservable()
