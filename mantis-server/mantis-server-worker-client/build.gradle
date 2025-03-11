@@ -21,7 +21,7 @@ dependencies {
     implementation libraries.spectatorApi
 
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoAll
+    testImplementation libraries.mockitoCore
     testImplementation libraries.spectatorApi
     testImplementation 'org.hamcrest:hamcrest-all:1.3'
 }

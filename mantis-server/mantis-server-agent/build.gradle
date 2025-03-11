@@ -35,7 +35,7 @@ dependencies {
     implementation "io.github.resilience4j:resilience4j-retry:1.5.0"
 
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoAll
+    testImplementation libraries.mockitoCore
     testImplementation project(":mantis-runtime-executor")
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
 }
@@ -90,3 +90,10 @@ dockerSyncBuildContext.dependsOn(installDist)
 dockerSyncBuildContext.dependsOn(project.tasks.processTestResources)
 
 mainClassName = "io.mantisrx.server.agent.AgentV2Main"
+
+tasks.withType(Test) {
+    jvmArgs += [
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED'
+    ]
+}
