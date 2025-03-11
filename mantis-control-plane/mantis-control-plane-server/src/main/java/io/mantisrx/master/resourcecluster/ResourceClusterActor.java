@@ -97,7 +97,7 @@ import org.apache.flink.runtime.rpc.RpcService;
  */
 @ToString(of = {"clusterID"})
 @Slf4j
-class ResourceClusterActor extends AbstractActorWithTimers {
+public class ResourceClusterActor extends AbstractActorWithTimers {
     /**
      * For ResourceClusterActor instances, we need to ensure they are always running after encountering error so that
      * TaskExecutors can still remain connected. If there is a fatal error that needs to be escalated to terminate the
