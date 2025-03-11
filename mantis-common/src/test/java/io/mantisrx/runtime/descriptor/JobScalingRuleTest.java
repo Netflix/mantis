@@ -6,8 +6,8 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.util.Collections;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+
+import static org.junit.Assert.*;
 
 
 public class JobScalingRuleTest {
@@ -19,8 +19,8 @@ public class JobScalingRuleTest {
     public void jobScalingRuleSerialization() throws Exception {
         JobScalingRule.ScalerConfig scalerConfig = JobScalingRule.ScalerConfig.builder()
                 .type("standard")
-                .scalingPolicies(Collections.emptyList())
-                .stageDesireSize(Collections.singletonMap(1, 10))
+                .stageConfigMap(
+                    Collections.singletonMap("1", JobScalingRule.StageScalerConfig.builder().desireSize(10).build()))
                 .build();
 
         JobScalingRule.TriggerConfig triggerConfig = JobScalingRule.TriggerConfig.builder()
@@ -73,8 +73,8 @@ public class JobScalingRuleTest {
     public void jobScalingRuleSerializationWithEmptyScalingPolicies() throws Exception {
         JobScalingRule.ScalerConfig scalerConfig = JobScalingRule.ScalerConfig.builder()
                 .type("standard")
-                .scalingPolicies(Collections.emptyList())
-                .stageDesireSize(Collections.singletonMap(1, 10))
+                .stageConfigMap(
+                    Collections.singletonMap("1", JobScalingRule.StageScalerConfig.builder().desireSize(10).build()))
                 .build();
 
         JobScalingRule.TriggerConfig triggerConfig = JobScalingRule.TriggerConfig.builder()
@@ -98,8 +98,13 @@ public class JobScalingRuleTest {
         assertNotNull(deserializedJobScalingRule);
         assertEquals("1", deserializedJobScalingRule.getRuleId());
         assertEquals("standard", deserializedJobScalingRule.getScalerConfig().getType());
-        assertEquals(0, deserializedJobScalingRule.getScalerConfig().getScalingPolicies().size());
-        assertEquals(JobScalingRule.TRIGGER_TYPE_SCHEDULE, deserializedJobScalingRule.getTriggerConfig().getTriggerType());
+        assertEquals(1, deserializedJobScalingRule.getScalerConfig().getStageConfigMap().size());
+        assertEquals((Integer)10,
+            deserializedJobScalingRule.getScalerConfig().getStageConfigMap().get("1").getDesireSize());
+        assertNull(deserializedJobScalingRule.getScalerConfig().getStageConfigMap().get("1").getScalingPolicy());
+
+        assertEquals(JobScalingRule.TRIGGER_TYPE_SCHEDULE,
+            deserializedJobScalingRule.getTriggerConfig().getTriggerType());
         assertEquals("0 0 * * *", deserializedJobScalingRule.getTriggerConfig().getScheduleCron());
         assertEquals("1h", deserializedJobScalingRule.getTriggerConfig().getScheduleDuration());
         assertEquals("value", deserializedJobScalingRule.getMetadata().get("key"));

@@ -1,16 +1,17 @@
 package io.mantisrx.runtime.descriptor;
 
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Builder
 @Value
@@ -51,29 +52,47 @@ public class JobScalingRule implements Serializable {
         String type;
 
         /**
-         * List of scaling policies to be applied when this config is triggered.
-         * If this is empty, pin each stage to the desire size only.
-         */
-        @Singular
-        List<StageScalingPolicy> scalingPolicies;
-
-        /**
-         * Desired size when this config is triggered.
+         * Stage specific scaling policy. The key should be stage num in int.
          */
         @Builder.Default
-        Map<Integer, Integer> stageDesireSize = Collections.emptyMap();
+        Map<String, StageScalerConfig> stageConfigMap = Collections.emptyMap();
 
         @JsonCreator
         @JsonIgnoreProperties(ignoreUnknown = true)
         public ScalerConfig(
             @JsonProperty("type") String type,
-            @JsonProperty("scalingPolicies") List<StageScalingPolicy> scalingPolicies,
-            @JsonProperty("stageDesireSize") Map<Integer, Integer> stageDesireSize) {
+            @JsonProperty("stageConfigMap") Map<String, StageScalerConfig> stageConfigMap) {
             this.type = type;
-            this.scalingPolicies = scalingPolicies;
-            this.stageDesireSize = stageDesireSize;
+            this.stageConfigMap = stageConfigMap;
         }
 
+        @JsonIgnore
+        public Optional<StageScalerConfig> getScalerConfigByStageNum(int stageNum) {
+            return Optional.ofNullable(stageConfigMap.getOrDefault(String.valueOf(stageNum), null));
+        }
+    }
+
+    @Builder
+    @Value
+    public static class StageScalerConfig {
+        @Nullable
+        StageScalingPolicy scalingPolicy;
+
+        /**
+         * Desired size when this config is triggered.
+         * If no desire size is needed, set it to null.
+         */
+        @Nullable
+        Integer desireSize;
+
+        @JsonCreator
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public StageScalerConfig(
+            @JsonProperty("scalingPolicy") StageScalingPolicy scalingPolicy,
+            @JsonProperty("desireSize") Integer desireSize) {
+            this.scalingPolicy = scalingPolicy;
+            this.desireSize = desireSize;
+        }
     }
 
     @Builder

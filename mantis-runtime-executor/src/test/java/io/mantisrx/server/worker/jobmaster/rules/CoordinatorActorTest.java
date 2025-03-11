@@ -197,13 +197,14 @@ public class CoordinatorActorTest {
                 log.info("Test: check active controller rule state: expect default rule.");
                 checkActiveControllerRule(state2, probe, state2.getDefaultRule());
                 assertEquals(
-                    1, state2.getDefaultRule().getScalerConfig().getScalingPolicies().size());
+                    1, state2.getDefaultRule().getScalerConfig().getStageConfigMap().size());
                 assertEquals(
                     this.defaultStageScalingPolicy,
-                    state2.getDefaultRule().getScalerConfig().getScalingPolicies().get(0));
+                    state2.getDefaultRule().getScalerConfig().getScalerConfigByStageNum(1).get().getScalingPolicy());
                 assertNull(state2.getDefaultRule().getTriggerConfig());
 
-                assertEquals(0, state2.getDefaultRule().getScalerConfig().getStageDesireSize().size());
+                assertNull(state2.getDefaultRule().getScalerConfig().getScalerConfigByStageNum(1)
+                    .get().getDesireSize());
                 return null;
             });
 

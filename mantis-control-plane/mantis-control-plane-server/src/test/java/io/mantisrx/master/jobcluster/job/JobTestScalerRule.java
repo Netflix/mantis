@@ -18,7 +18,6 @@ import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
-import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
@@ -68,8 +67,10 @@ public class JobTestScalerRule {
         JobScalingRule.ScalerConfig scalerConfig =
             JobScalingRule.ScalerConfig.builder()
                 .type("standard")
-                .stageDesireSize(ImmutableMap.of(1, desireSize))
-                .scalingPolicies(ImmutableList.of(scalingPolicy))
+                .stageConfigMap(ImmutableMap.of("1", JobScalingRule.StageScalerConfig.builder()
+                    .desireSize(desireSize)
+                    .scalingPolicy(scalingPolicy)
+                    .build()))
                 .build();
 
         JobScalingRule.TriggerConfig triggerConfig =

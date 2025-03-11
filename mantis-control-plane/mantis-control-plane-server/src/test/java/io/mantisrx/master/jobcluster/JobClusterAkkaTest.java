@@ -2409,15 +2409,17 @@ public class JobClusterAkkaTest {
             JobScalingRule.ScalerConfig scalerConfig =
                 JobScalingRule.ScalerConfig.builder()
                     .type("standard")
-                    .stageDesireSize(ImmutableMap.of(1, 19))
-                    .scalingPolicies(ImmutableList.of(new StageScalingPolicy(
-                        1, 1, 2, 1, 1, 60,
-                        new HashMap<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy>() {{
-                            put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
-                            put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
-                        }},
-                        false
-                    )))
+                    .stageConfigMap(ImmutableMap.of("1", JobScalingRule.StageScalerConfig.builder()
+                        .desireSize(19)
+                            .scalingPolicy(new StageScalingPolicy(
+                                1, 1, 2, 1, 1, 60,
+                                new HashMap<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy>() {{
+                                    put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
+                                    put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
+                                }},
+                                false
+                            ))
+                        .build()))
                     .build();
 
             // Build a dummy trigger config.

@@ -35,6 +35,7 @@ import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration;
 import io.mantisrx.server.worker.jobmaster.clutch.rps.ClutchRpsPIDConfig;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.vavr.Tuple;
 import io.vavr.control.Option;
 import java.util.Arrays;
@@ -335,7 +336,10 @@ public class JobAutoScalerTest {
         JobScalingRule scalingRule = JobScalingRule.builder()
             .ruleId("1")
             .scalerConfig(JobScalingRule.ScalerConfig.builder()
-                .scalingPolicies(ImmutableList.of(stageScalingPolicy)).build())
+                .stageConfigMap(ImmutableMap.of(
+                    "1",
+                    JobScalingRule.StageScalerConfig.builder().scalingPolicy(stageScalingPolicy).build()))
+                .build())
             .build();
 
         JobScalerContext ctx = JobScalerContext.builder()

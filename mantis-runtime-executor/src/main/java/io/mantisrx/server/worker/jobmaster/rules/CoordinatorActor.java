@@ -104,7 +104,7 @@ public class CoordinatorActor extends AbstractActor {
     }
 
     private void onRuleChange(JobScalerRuleInfo scalerRuleInfo) {
-        log.info("{} Received rule change: {}", getSelf(), scalerRuleInfo);
+        log.info("Received rule change: {}", scalerRuleInfo);
         if (scalerRuleInfo == null || !this.jobScalerContext.getJobId().equals(scalerRuleInfo.getJobId())) {
             log.warn("Received invalid rules: {}", scalerRuleInfo);
             return;
@@ -146,7 +146,7 @@ public class CoordinatorActor extends AbstractActor {
     }
 
     private void onRuleRefresh(RefreshRuleRequest refreshRuleRequest) {
-        log.info("{} Refreshing current rule: {}", getSelf(), refreshRuleRequest);
+        log.info("Refreshing current rule: {}", refreshRuleRequest);
         if (!refreshRuleRequest.getJobId().equals(this.jobScalerContext.getJobId())) {
             log.error("Invalid job id from request: {}, current job id {}",
                 refreshRuleRequest, this.jobScalerContext.getJobId());
@@ -167,7 +167,7 @@ public class CoordinatorActor extends AbstractActor {
             this.ruleActors.get(finalRule.getRuleId())
                 .tell(ActivateRuleRequest.of(jobScalerContext.getJobId(), finalRule), self());
         } else {
-            log.warn("{} No active rule found", getSelf());
+            log.warn("No active rule found {}", getSelf());
         }
     }
 
@@ -223,7 +223,7 @@ public class CoordinatorActor extends AbstractActor {
             .doOnError(throwable -> log.error("Rule stream error", throwable))
             .subscribe(
                 ruleInfo -> {
-                    log.info("{} [Subscription action] new ruleInfo: {}", getSelf(), ruleInfo);
+                    log.info("[Subscription action] new ruleInfo: {}", ruleInfo);
                     self().tell(ruleInfo, ActorRef.noSender());
 
                 },

@@ -316,7 +316,6 @@ public class JobTestHelper {
         int desireSize) {
         Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
         StageScalingPolicy scalingPolicy;
-        ImmutableMap<Integer, Integer> desireSizeMap = ImmutableMap.of(1, desireSize);
 
         smap.put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
         smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
@@ -325,8 +324,10 @@ public class JobTestHelper {
         JobScalingRule.ScalerConfig scalerConfig =
             JobScalingRule.ScalerConfig.builder()
                 .type("standard")
-                .stageDesireSize(desireSizeMap)
-                .scalingPolicies(ImmutableList.of(scalingPolicy))
+                .stageConfigMap(ImmutableMap.of("1", JobScalingRule.StageScalerConfig.builder()
+                    .desireSize(desireSize)
+                    .scalingPolicy(scalingPolicy)
+                    .build()))
                 .build();
 
         JobScalingRule.TriggerConfig triggerConfig =
@@ -361,8 +362,10 @@ public class JobTestHelper {
         JobScalingRule.ScalerConfig scalerConfig =
             JobScalingRule.ScalerConfig.builder()
                 .type("standard")
-                .stageDesireSize(ImmutableMap.of(1, desireSize))
-                .scalingPolicies(ImmutableList.of(scalingPolicy))
+                .stageConfigMap(ImmutableMap.of("1", JobScalingRule.StageScalerConfig.builder()
+                    .desireSize(desireSize)
+                    .scalingPolicy(scalingPolicy)
+                    .build()))
                 .build();
 
         JobScalingRule.TriggerConfig triggerConfig =

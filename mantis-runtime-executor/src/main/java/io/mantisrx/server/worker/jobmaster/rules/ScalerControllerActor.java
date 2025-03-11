@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import static akka.dispatch.Futures.future;
 
@@ -89,7 +90,12 @@ public class ScalerControllerActor extends AbstractActor {
             Optional.ofNullable(this.activeRule)
                 .map(JobScalingRule::getRuleId).orElse(String.valueOf(Integer.MIN_VALUE)));
         if (compareRes > 0) {
-            startScalerService(activateScalerRequest);
+            try {
+                startScalerService(activateScalerRequest);
+            } catch (Exception e) {
+                log.error("Failed to start scaler service: {}", activateScalerRequest.getRule(), e);
+                throw new RuntimeException("failed to start job scaler service", e);
+            }
         } else {
             log.warn("ActivateRuleRequest has lower ranking, ignore: {}, current rule: {}",
                 activateScalerRequest.getRule().getRuleId(), this.activeRule.getRuleId());
@@ -148,7 +154,9 @@ public class ScalerControllerActor extends AbstractActor {
 
         this.activeRule = activateScalerRequest.getRule();
 
-        if (!this.activeRule.getScalerConfig().getScalingPolicies().isEmpty()) {
+        if (this.activeRule.getScalerConfig().getStageConfigMap().entrySet().stream()
+            .anyMatch(entry ->
+                entry.getValue() != null && entry.getValue().getScalingPolicy() != null)) {
             log.info("Creating Job Auto Scaler service for rule: {}", activateScalerRequest.getRule().getRuleId());
             this.activeJobAutoScalerService = this.jobScalerContext.getJobAutoScalerServiceFactory()
                 .apply(this.jobScalerContext, activateScalerRequest.getRule());
@@ -181,12 +189,18 @@ public class ScalerControllerActor extends AbstractActor {
             }
 
             // first handle stage desire size
-            for (Map.Entry<Integer, Integer> kv : newRule.getScalerConfig().getStageDesireSize().entrySet()) {
+            for (Map.Entry<String, JobScalingRule.StageScalerConfig> kv :
+                newRule.getScalerConfig().getStageConfigMap().entrySet()) {
+                if (kv.getValue() == null || kv.getValue().getDesireSize() == null || kv.getValue().getDesireSize() < 0) {
+                    log.info("No valid desire size for stage: {}, ignore", kv.getKey());
+                    continue;
+                }
+
                 log.info("Start scaling stage {} to desire size {}", kv.getKey(), kv.getValue());
                 this.jobScalerContext.getMasterClientApi().scaleJobStage(
                         this.jobScalerContext.getJobId(),
-                        kv.getKey(),
-                        kv.getValue(),
+                        Integer.parseInt(kv.getKey()),
+                        kv.getValue().getDesireSize(),
                         "Desire size from scaling ruleID: " + newRule.getRuleId())
                     .retryWhen(RuleUtils.LimitTenRetryLogic)
                     .doOnCompleted(() -> log.info("Scaled stage {} to desire size {}", kv.getKey(), kv.getValue()))

@@ -6,6 +6,7 @@ import akka.actor.Props;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,11 @@ public class TestRuleUtils {
     public static JobScalingRule createPerpetualRule(String ruleId, String jobId) {
         JobScalingRule.ScalerConfig scalerConfig = JobScalingRule.ScalerConfig.builder()
             .type("standard")
-            .scalingPolicy(createDefaultStageScalingPolicy())
+            .stageConfigMap(ImmutableMap.of(
+                "1",
+                JobScalingRule.StageScalerConfig.builder()
+                    .scalingPolicy(createDefaultStageScalingPolicy())
+                    .build()))
             .build();
 
         JobScalingRule.TriggerConfig triggerConfig = JobScalingRule.TriggerConfig.builder()
@@ -38,8 +43,12 @@ public class TestRuleUtils {
     public static JobScalingRule createPerpetualRuleWithDesireSize(String ruleId, String jobId) {
         JobScalingRule.ScalerConfig scalerConfig = JobScalingRule.ScalerConfig.builder()
             .type("standard")
-            .scalingPolicy(createDefaultStageScalingPolicy())
-            .stageDesireSize(Collections.singletonMap(1, 10))
+            .stageConfigMap(ImmutableMap.of(
+                "1",
+                JobScalingRule.StageScalerConfig.builder()
+                    .scalingPolicy(createDefaultStageScalingPolicy())
+                    .desireSize(10)
+                    .build()))
             .build();
 
         JobScalingRule.TriggerConfig triggerConfig = JobScalingRule.TriggerConfig.builder()
@@ -57,7 +66,11 @@ public class TestRuleUtils {
     public static JobScalingRule createPerpetualRuleWithDesireSizeOnly(String ruleId, String jobId) {
         JobScalingRule.ScalerConfig scalerConfig = JobScalingRule.ScalerConfig.builder()
             .type("standard")
-            .stageDesireSize(Collections.singletonMap(1, 10))
+            .stageConfigMap(ImmutableMap.of(
+                "1",
+                JobScalingRule.StageScalerConfig.builder()
+                    .desireSize(10)
+                    .build()))
             .build();
 
         JobScalingRule.TriggerConfig triggerConfig = JobScalingRule.TriggerConfig.builder()
@@ -75,7 +88,11 @@ public class TestRuleUtils {
     public static JobScalingRule createScheduleRule(String ruleId, String cronSpec, String duration) {
         JobScalingRule.ScalerConfig scalerConfig = JobScalingRule.ScalerConfig.builder()
             .type("schedule")
-            .scalingPolicy(createDefaultStageScalingPolicy())
+            .stageConfigMap(ImmutableMap.of(
+                "1",
+                JobScalingRule.StageScalerConfig.builder()
+                    .scalingPolicy(createDefaultStageScalingPolicy())
+                    .build()))
             .build();
 
         JobScalingRule.TriggerConfig triggerConfig = JobScalingRule.TriggerConfig.builder()
@@ -95,7 +112,11 @@ public class TestRuleUtils {
     public static JobScalingRule createCustomTestRule(String ruleId, String customeRuleClassName) {
         JobScalingRule.ScalerConfig scalerConfig = JobScalingRule.ScalerConfig.builder()
             .type("custom")
-            .scalingPolicy(createDefaultStageScalingPolicy())
+            .stageConfigMap(ImmutableMap.of(
+                "1",
+                JobScalingRule.StageScalerConfig.builder()
+                    .scalingPolicy(createDefaultStageScalingPolicy())
+                    .build()))
             .build();
 
         JobScalingRule.TriggerConfig triggerConfig = JobScalingRule.TriggerConfig.builder()

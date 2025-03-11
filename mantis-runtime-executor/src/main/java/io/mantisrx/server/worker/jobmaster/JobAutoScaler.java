@@ -127,17 +127,16 @@ public class JobAutoScaler implements Service {
         this.context = scalerContext.getContext();
         this.jobAutoscalerManager = scalerContext.getJobAutoscalerManager();
 
-        this.stagePolicyMap = jobScalerRule.getScalerConfig().getScalingPolicies().stream()
+        this.stagePolicyMap = jobScalerRule.getScalerConfig().getStageConfigMap().entrySet().stream()
+            .filter(kv -> kv.getValue() != null)
             .collect(Collectors.toMap(
-                StageScalingPolicy::getStage,
-                stagePolicy -> StageScalingInfo.builder()
-                    .desireSize(
-                        jobScalerRule.getScalerConfig().getStageDesireSize()
-                            .getOrDefault(
-                                stagePolicy.getStage(),
-                                scalerContext.getSchedInfo().forStage(stagePolicy.getStage()).getNumberOfInstances()))
-                    .scalingPolicy(stagePolicy)
-                    .stageMachineDefinition(scalerContext.getSchedInfo().forStage(stagePolicy.getStage()).getMachineDefinition())
+                entry -> Integer.parseInt(entry.getKey()),
+                entry -> StageScalingInfo.builder()
+                    .desireSize(Optional.ofNullable(entry.getValue().getDesireSize())
+                        .orElse(scalerContext.getSchedInfo()
+                            .forStage(Integer.parseInt(entry.getKey())).getNumberOfInstances()))
+                    .scalingPolicy(entry.getValue().getScalingPolicy())
+                    .stageMachineDefinition(scalerContext.getSchedInfo().forStage(Integer.parseInt(entry.getKey())).getMachineDefinition())
                     .build()));
         this.clutchCustomConfigurationFromRule = Optional.ofNullable(jobScalerRule.getMetadata())
             .map(m -> m.getOrDefault(

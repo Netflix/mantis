@@ -2,9 +2,10 @@
     "jobClusterName": "hello-sine-testcontainers",
     "scalerConfig": {
         "type": "standard",
-        "scalingPolicies": [],
-        "stageDesireSize": {
-            "1": 2
+        "stageConfigMap": {
+            "1": {
+                "desireSize": 2
+            }
         }
     },
     "triggerConfig": {

@@ -80,6 +80,7 @@ import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.MigrationStrategy;
 import io.mantisrx.runtime.WorkerMigrationConfig;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
@@ -1035,9 +1036,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .map(JobScalerRuleInfo::getRules)
                 .orElse(Collections.emptyList())
                 .stream()
-                .filter(r -> r.getScalerConfig() != null)
-                .flatMap(r -> r.getScalerConfig().getScalingPolicies().stream())
-                .filter(p -> p.getStage() == stageNum)
+                .filter(r ->
+                    r.getScalerConfig() != null && r.getScalerConfig().getStageConfigMap() != null)
+                .map(r -> r.getScalerConfig().getScalerConfigByStageNum(stageNum))
+                .filter(Optional::isPresent)
+                .map(jo -> jo.get().getScalingPolicy())
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
             int ruleMax = policies.stream().max(Comparator.comparingInt(StageScalingPolicy::getMax))
                 .map(StageScalingPolicy::getMax).orElse(Integer.MAX_VALUE);

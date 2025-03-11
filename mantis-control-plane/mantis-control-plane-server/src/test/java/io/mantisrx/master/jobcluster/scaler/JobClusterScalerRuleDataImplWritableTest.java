@@ -30,8 +30,10 @@ public class JobClusterScalerRuleDataImplWritableTest {
         JobScalingRule.ScalerConfig scalerConfig =
             JobScalingRule.ScalerConfig.builder()
                 .type("standard")
-                .stageDesireSize(ImmutableMap.of(1, desireSize))
-                .scalingPolicies(ImmutableList.of(scalingPolicy))
+                .stageConfigMap(ImmutableMap.of("1", JobScalingRule.StageScalerConfig.builder()
+                        .desireSize(desireSize)
+                        .scalingPolicy(scalingPolicy)
+                        .build()))
                 .build();
 
         JobScalingRule.TriggerConfig triggerConfig =
@@ -141,8 +143,8 @@ public class JobClusterScalerRuleDataImplWritableTest {
         // Validate that the protoRule contains the expected fields (scalerConfig, triggerConfig, metadata)
         assertNotNull(protoRule.getScalerConfig());
         assertEquals("standard", protoRule.getScalerConfig().getType());
-        assertEquals(15, protoRule.getScalerConfig().getStageDesireSize().get(1).intValue());
-        assertEquals(scalingPolicy, protoRule.getScalerConfig().getScalingPolicies().get(0));
+        assertEquals((Integer)15, protoRule.getScalerConfig().getStageConfigMap().get("1").getDesireSize());
+        assertEquals(scalingPolicy, protoRule.getScalerConfig().getStageConfigMap().get("1").getScalingPolicy());
 
         assertNotNull(protoRule.getTriggerConfig());
         assertEquals("cron", protoRule.getTriggerConfig().getTriggerType());

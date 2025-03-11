@@ -37,7 +37,9 @@ public class RuleUtils {
         return JobScalingRule.builder()
             .ruleId(String.valueOf(-1)) // set default rule id to -1
             .scalerConfig(JobScalingRule.ScalerConfig.builder()
-                .scalingPolicies(policies)
+                .stageConfigMap(policies.stream().collect(Collectors.toMap(
+                    kv -> String.valueOf(kv.getStage()),
+                        p -> JobScalingRule.StageScalerConfig.builder().scalingPolicy(p).build())))
                 .build())
             .build();
     }
