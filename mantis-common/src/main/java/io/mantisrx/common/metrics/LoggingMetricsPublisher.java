@@ -60,6 +60,6 @@ public class LoggingMetricsPublisher extends MetricsPublisher {
                 .filter(ms -> this.loggingEnabledMetricsGroupId.contains(ms.getMetricGroupId().id().toLowerCase()))
                 .map(ms -> ms.counters().entrySet())
                 .flatMap(Collection::stream)
-                .forEach(m -> log.info("[METRICS] {} : {}", m.getKey(), m.getValue().value()));
+                .forEach(m -> log.debug("[METRICS] {} : {}", m.getKey(), m.getValue().value()));
     }
 }

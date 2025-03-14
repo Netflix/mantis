@@ -19,26 +19,25 @@ apply plugin: 'application'
 apply plugin: 'com.bmuschko.docker-java-application'
 
 ext {
-    akkaVersion = '2.6.15'
     akkaHttpVersion = '10.2.7'
     fenzoVersion = '0.13.8'
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
     rxJavaReactiveStreamsVersion = '1.+'
     testngVersion = '6.+'
-    scalaBinaryVersion = '2.12'
 }
 
 dependencies {
+    api project(':mantis-common-akka')
     api project(':mantis-control-plane:mantis-control-plane-core')
     api project(':mantis-control-plane:mantis-control-plane-dynamodb')
 
-    api "com.typesafe.akka:akka-http_$scalaBinaryVersion:$akkaHttpVersion"
-    api "com.typesafe.akka:akka-http-jackson_$scalaBinaryVersion:$akkaHttpVersion"
-    api "com.typesafe.akka:akka-http-caching_$scalaBinaryVersion:$akkaHttpVersion"
-    api "com.typesafe.akka:akka-stream_$scalaBinaryVersion:$akkaVersion"
-    api "com.typesafe.akka:akka-slf4j_$scalaBinaryVersion:$akkaVersion"
-    api "com.typesafe.akka:akka-actor_$scalaBinaryVersion:$akkaVersion"
+    api libraries.akkaHttp
+    api libraries.akkaHttpJackson
+    api libraries.akkaHttpCaching
+    api libraries.akkaStream
+    api libraries.akkaSlf4j
+    api libraries.akkaActor
 
     api "io.reactivex:rxjava-reactive-streams:$rxJavaReactiveStreamsVersion"
     api "com.netflix.fenzo:fenzo-triggers:$fenzoVersion"
@@ -52,8 +51,8 @@ dependencies {
     // todo: separate worker entrypoint and move this to testImplementation instead.
     implementation libraries.spectatorApi
 
-    testImplementation "com.typesafe.akka:akka-testkit_$scalaBinaryVersion:$akkaVersion"
-    testImplementation "com.typesafe.akka:akka-http-testkit_$scalaBinaryVersion:$akkaHttpVersion"
+    testImplementation libraries.akkaHttpTest
+    testImplementation libraries.akkaTest
     testImplementation libraries.junit4
     testImplementation libraries.mockitoCore3
     testImplementation "org.testng:testng:$testngVersion"

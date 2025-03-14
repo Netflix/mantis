@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master.akka;
+package io.mantisrx.common.akka;
 
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
