@@ -24,6 +24,8 @@ import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIE
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_NOT_FOUND;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
+import static io.mantisrx.runtime.descriptor.JobScalingRule.TRIGGER_TYPE_CUSTOM;
+import static io.mantisrx.runtime.descriptor.JobScalingRule.TRIGGER_TYPE_SCHEDULE;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
@@ -133,6 +135,7 @@ import io.mantisrx.server.master.persistence.exceptions.JobClusterAlreadyExistsE
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
@@ -2471,6 +2474,20 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         ActorRef sender = getSender();
         try {
+            Optional<String> errMsgO = validateRuleCreationRequest(req);
+            if (errMsgO.isPresent()) {
+                logger.warn("rule validation failed: {} on {}", errMsgO.get(), req.getJobClusterName());
+                sender.tell(
+                    JobClusterScalerRuleProto.CreateScalerRuleResponse.builder()
+                        .requestId(req.requestId)
+                        .responseCode(CLIENT_ERROR)
+                        .message(errMsgO.get())
+                        .build(),
+                    getSelf()
+                );
+                return;
+            }
+
             // update local state + persist rules
             updateAndSaveScalerRules(req);
 
@@ -2501,6 +2518,23 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if (logger.isTraceEnabled()) {
             logger.trace("Exit JCA:onScalerRuleCreate {}", req);
         }
+    }
+
+    private static Optional<String> validateRuleCreationRequest(JobClusterScalerRuleProto.CreateScalerRuleRequest req) {
+        String errMsg = null;
+        if (req.getTriggerConfig() == null ||
+            Strings.isNullOrEmpty(req.getTriggerConfig().getTriggerType())) {
+            errMsg = "Invalid trigger config or trigger type";
+        }
+        else if (req.getTriggerConfig().getTriggerType().equals(TRIGGER_TYPE_CUSTOM) &&
+            Strings.isNullOrEmpty(req.getTriggerConfig().getCustomTrigger())) {
+            errMsg = "Invalid custom trigger value";
+        }
+        else if (req.getTriggerConfig().getTriggerType().equals(TRIGGER_TYPE_SCHEDULE) &&
+            Strings.isNullOrEmpty(req.getTriggerConfig().getScheduleCron())) {
+            errMsg = "Invalid cron schedule value";
+        }
+        return Optional.ofNullable(errMsg);
     }
 
     public void onScalerRuleDelete(JobClusterScalerRuleProto.DeleteScalerRuleRequest req) {

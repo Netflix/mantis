@@ -26,6 +26,7 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
+import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.stats.UsageDataStats;
 import io.mantisrx.server.master.client.MantisMasterGateway;
@@ -132,9 +133,11 @@ public class JobAutoScaler implements Service {
             .collect(Collectors.toMap(
                 entry -> Integer.parseInt(entry.getKey()),
                 entry -> StageScalingInfo.builder()
-                    .desireSize(Optional.ofNullable(entry.getValue().getDesireSize())
-                        .orElse(scalerContext.getSchedInfo()
-                            .forStage(Integer.parseInt(entry.getKey())).getNumberOfInstances()))
+                    .desireSize(
+                        Optional.ofNullable(entry.getValue().getDesireSize())
+                        .orElse(
+                            Optional.ofNullable(scalerContext.getSchedInfo().forStage(Integer.parseInt(entry.getKey())))
+                                .map(StageSchedulingInfo::getNumberOfInstances).orElse(0)))
                     .scalingPolicy(entry.getValue().getScalingPolicy())
                     .stageMachineDefinition(scalerContext.getSchedInfo().forStage(Integer.parseInt(entry.getKey())).getMachineDefinition())
                     .build()));
@@ -175,8 +178,8 @@ public class JobAutoScaler implements Service {
                         Optional.of(this.clutchCustomConfigurationFromRule) :
                         Optional.ofNullable(MantisProperties.getProperty("JOB_PARAM_" + SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM));
 
-                if (this.stagePolicyMap.containsKey(stage) && (this.stagePolicyMap.get(stage) != null ||
-                    clutchCustomConfiguration.isPresent())) {
+                if (this.stagePolicyMap.containsKey(stage) &&
+                    (this.stagePolicyMap.get(stage) != null || clutchCustomConfiguration.isPresent())) {
 
                     ClutchConfiguration config = null;
                     int minSize = 0;
