@@ -16,8 +16,13 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
+import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.MantisProperties;
 import io.mantisrx.common.SystemParameters;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Gauge;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.control.clutch.Clutch;
 import io.mantisrx.control.clutch.ClutchExperimental;
 import io.mantisrx.runtime.Context;
@@ -91,6 +96,7 @@ public class JobAutoScaler implements Service {
     }
 
     private final String jobId;
+    private final String scalerId;
     private final MantisMasterGateway masterClientApi;
     private final Map<Integer, StageScalingInfo> stagePolicyMap;
     private final String clutchCustomConfigurationFromRule;
@@ -100,9 +106,12 @@ public class JobAutoScaler implements Service {
 
     private Subscription subscription;
 
+    private Counter requestMetricsCount;
+
     JobAutoScaler(String jobId, SchedulingInfo schedulingInfo, MantisMasterGateway masterClientApi,
                   Context context, JobAutoscalerManager jobAutoscalerManager) {
         this.jobId = jobId;
+        this.scalerId = String.format("%s-%s", this.jobId, "default");
         this.masterClientApi = masterClientApi;
         this.subject = PublishSubject.create();
         this.context = context;
@@ -119,10 +128,12 @@ public class JobAutoScaler implements Service {
                                 .stageMachineDefinition(kv.getValue().getMachineDefinition())
                                 .build()));
         this.clutchCustomConfigurationFromRule = null;
+        setupSystemMetrics();
     }
 
     JobAutoScaler(JobScalerContext scalerContext, JobScalingRule jobScalerRule) {
         this.jobId = scalerContext.getJobId();
+        this.scalerId = String.format("%s-%s", this.jobId, jobScalerRule.getRuleId());
         this.masterClientApi = scalerContext.getMasterClientApi();
         this.subject = PublishSubject.create();
         this.context = scalerContext.getContext();
@@ -145,7 +156,21 @@ public class JobAutoScaler implements Service {
             .map(m -> m.getOrDefault(
                 SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM, null))
             .orElse(null);
+        setupSystemMetrics();
+    }
 
+    private void setupSystemMetrics() {
+        Metrics m =
+            new Metrics.Builder()
+                .id("JobAutoScaler",
+                    Tag.of("jobAutoScalerId", this.scalerId))
+                .addCounter("requestMetricsCount")
+                .build();
+        m = Optional.ofNullable(this.context).map(Context::getMetricsRegistry)
+            .orElse(MetricsRegistry.getInstance())
+            .registerAndGet(m);
+
+        this.requestMetricsCount = m.getCounter("requestMetricsCount");
     }
 
     Observer<Event> getObserver() {
@@ -163,7 +188,10 @@ public class JobAutoScaler implements Service {
             .onBackpressureBuffer(100, () -> {
                 logger.info("onOverflow triggered, dropping old events");
             }, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
-            .doOnRequest(x -> logger.info("Scaler requested {} metrics.", x))
+            .doOnRequest(x -> {
+                logger.debug("Scaler requested {} metrics.", x);
+                this.requestMetricsCount.increment();
+            })
             .groupBy(Event::getStage)
             .flatMap(go -> {
                 Integer stage = Optional.ofNullable(go.getKey()).orElse(-1);
@@ -234,7 +262,7 @@ public class JobAutoScaler implements Service {
 
                     final StageScalingInfo stageScalingInfo = this.stagePolicyMap.get(stage);
                     int initialSize = stageScalingInfo.getDesireSize();
-                    StageScaler scaler = new StageScaler(stage, scalingPolicy);
+                    StageScaler scaler = new StageScaler(stage, scalingPolicy, this.scalerId, this.context);
                     MantisStageActuator actuator = new MantisStageActuator(initialSize, scaler);
 
                     Observable.Transformer<Event, io.mantisrx.control.clutch.Event> transformToClutchEvent =
@@ -289,7 +317,8 @@ public class JobAutoScaler implements Service {
                                 new MantisClutchConfigurationSelector(stage, stageScalingInfo)));
                     } else {
                         logger.info("Using rule based scaler, job: {}, stage: {} ", jobId, stage);
-                        return go.compose(new TransformerWrapper<>(new StageScaleOperator<>(stage, scalingPolicy)));
+                        return go.compose(new TransformerWrapper<>(
+                            new StageScaleOperator<>(stage, scalingPolicy, this.scalerId, this.context)));
                     }
                 } else {
                     return go;
@@ -369,6 +398,7 @@ public class JobAutoScaler implements Service {
       private final StageScalingPolicy scalingPolicy;
       private final AtomicReference<Subscription> inProgressScalingSubscription = new AtomicReference<>(null);
 
+      private final Gauge desireWorkerSizeGauge;
 
       private final Func1<Observable<? extends Throwable>, Observable<?>> retryLogic = attempts -> attempts
         .zipWith(Observable.range(1, Integer.MAX_VALUE), (Func2<Throwable, Integer, Integer>) (t1, integer) -> integer)
@@ -378,9 +408,18 @@ public class JobAutoScaler implements Service {
           return Observable.timer(delay, TimeUnit.SECONDS);
         });
 
-      public StageScaler(int stage, StageScalingPolicy scalingPolicy) {
+      public StageScaler(int stage, StageScalingPolicy scalingPolicy, String scalerId, Context context) {
         this.stage = stage;
         this.scalingPolicy = scalingPolicy;
+        Metrics m = new Metrics.Builder()
+            .id("JobAutoScaler", Tag.of("jobAutoScalerId", scalerId), Tag.of("stage", String.valueOf(stage)))
+            .addGauge("desireWorkerSize")
+          .build();
+        m = Optional.ofNullable(context).map(Context::getMetricsRegistry)
+            .orElse(MetricsRegistry.getInstance())
+            .registerAndGet(m);
+
+        this.desireWorkerSizeGauge = m.getGauge("desireWorkerSize");
       }
 
       private void cancelOutstandingScalingRequest() {
@@ -425,7 +464,10 @@ public class JobAutoScaler implements Service {
       }
 
       public void scaleUpStage(final int numCurrentWorkers, final int desiredWorkers, final String reason) {
-        logger.info("scaleUpStage incrementing number of workers from {} to {}", numCurrentWorkers, desiredWorkers);
+        logger.info(
+            "scaleUpStage incrementing number of workers from {} to {} due to {}",
+            numCurrentWorkers, desiredWorkers, reason);
+        this.desireWorkerSizeGauge.set(desiredWorkers);
         cancelOutstandingScalingRequest();
         if (this.scalingPolicy != null && this.scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleUpEnabled()) {
           logger.warn("Scaleup is disabled for all autoscaling strategy, not scaling up stage {} of job {}", stage, jobId);
@@ -464,7 +506,10 @@ public class JobAutoScaler implements Service {
       }
 
       public boolean scaleDownStage(final int numCurrentWorkers, final int desiredWorkers, final String reason) {
-        logger.info("scaleDownStage decrementing number of workers from {} to {}", numCurrentWorkers, desiredWorkers);
+        logger.info(
+            "scaleDownStage decrementing number of workers from {} to {} due to {}",
+            numCurrentWorkers, desiredWorkers, reason);
+        this.desireWorkerSizeGauge.set(desiredWorkers);
         cancelOutstandingScalingRequest();
         if (scalingPolicy != null && scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleDownEnabled()) {
             logger.warn("Scaledown is disabled for all autoscaling strategy. For stage {} of job {}", stage, jobId);
@@ -493,10 +538,10 @@ public class JobAutoScaler implements Service {
       private final StageScaler scaler;
       private volatile long lastScaledAt = 0L;
 
-      private StageScaleOperator(int stage, StageScalingPolicy stageScalingPolicy) {
+      private StageScaleOperator(int stage, StageScalingPolicy stageScalingPolicy, String scalerId, Context context) {
         this.stage = stage;
         this.scalingPolicy = stageScalingPolicy;
-        this.scaler = new StageScaler(stage, this.scalingPolicy);
+        this.scaler = new StageScaler(stage, this.scalingPolicy, scalerId, context);
         logger.info("cooldownSecs set to {}", stageScalingPolicy.getCoolDownSecs());
       }
 
