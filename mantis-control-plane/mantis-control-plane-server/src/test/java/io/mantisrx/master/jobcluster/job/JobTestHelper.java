@@ -17,9 +17,7 @@
 package io.mantisrx.master.jobcluster.job;
 
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -32,12 +30,9 @@ import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
 import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
-import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.master.jobcluster.proto.*;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.SubmitJobRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterProto;
-import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
@@ -46,7 +41,10 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.core.JobCompletedReason;
+import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -59,13 +57,19 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import javax.annotation.Nullable;
 import org.junit.Test;
+import rx.subjects.BehaviorSubject;
 
 
 public class JobTestHelper {
@@ -305,6 +309,112 @@ public class JobTestHelper {
         } else {
             assertEquals(jobId, submitResponse.getJobId().get().getId());
         }
+    }
+
+    public static JobClusterScalerRuleProto.CreateScalerRuleRequest createDummyCreateRuleRequest(
+        String jobClusterName,
+        int desireSize) {
+        Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
+        StageScalingPolicy scalingPolicy;
+
+        smap.put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
+        smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
+        scalingPolicy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
+
+        JobScalingRule.ScalerConfig scalerConfig =
+            JobScalingRule.ScalerConfig.builder()
+                .type("standard")
+                .stageConfigMap(ImmutableMap.of("1", JobScalingRule.StageScalerConfig.builder()
+                    .desireSize(desireSize)
+                    .scalingPolicy(scalingPolicy)
+                    .build()))
+                .build();
+
+        JobScalingRule.TriggerConfig triggerConfig =
+            JobScalingRule.TriggerConfig.builder()
+                .triggerType("cron")
+                .scheduleCron("0 0 * * *")
+                .scheduleDuration("PT1H")
+                .customTrigger("none")
+                .build();
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key", "value");
+
+        return JobClusterScalerRuleProto.CreateScalerRuleRequest.builder()
+            .jobClusterName(jobClusterName)
+            .scalerConfig(scalerConfig)
+            .triggerConfig(triggerConfig)
+            .metadata(metadata)
+            .build();
+    }
+
+    public static void createJobClusterScalerRuleAndVerifySuccess(
+        final TestKit probe, String clusterName, ActorRef jobClusterActor, final String jobId) throws InterruptedException {
+        Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
+        StageScalingPolicy scalingPolicy;
+
+        smap.put(StageScalingPolicy.ScalingReason.CPU, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.CPU, 0.5, 0.75, null));
+        smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
+        scalingPolicy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap, false);
+        int desireSize = 19;
+
+        JobScalingRule.ScalerConfig scalerConfig =
+            JobScalingRule.ScalerConfig.builder()
+                .type("standard")
+                .stageConfigMap(ImmutableMap.of("1", JobScalingRule.StageScalerConfig.builder()
+                    .desireSize(desireSize)
+                    .scalingPolicy(scalingPolicy)
+                    .build()))
+                .build();
+
+        JobScalingRule.TriggerConfig triggerConfig =
+            JobScalingRule.TriggerConfig.builder()
+                .triggerType("cron")
+                .scheduleCron("0 0 * * *")
+                .scheduleDuration("PT1H")
+                .customTrigger("none")
+                .build();
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key", "value");
+
+        JobClusterScalerRuleProto.CreateScalerRuleRequest ruleRequest = JobClusterScalerRuleProto.CreateScalerRuleRequest.builder()
+            .jobClusterName(clusterName)
+            .scalerConfig(scalerConfig)
+            .triggerConfig(triggerConfig)
+            .metadata(metadata)
+            .build();
+
+        jobClusterActor.tell(ruleRequest, probe.getRef());
+        JobClusterScalerRuleProto.CreateScalerRuleResponse scaleResponse =
+            probe.expectMsgClass(JobClusterScalerRuleProto.CreateScalerRuleResponse.class);
+        assertEquals(SUCCESS, scaleResponse.responseCode);
+
+        JobClusterScalerRuleProto.GetScalerRulesRequest getRuleRequest =
+            new JobClusterScalerRuleProto.GetScalerRulesRequest(clusterName);
+        jobClusterActor.tell(getRuleRequest, probe.getRef());
+        JobClusterScalerRuleProto.GetScalerRulesResponse getScalerRulesResponse =
+            probe.expectMsgClass(JobClusterScalerRuleProto.GetScalerRulesResponse.class);
+        assertEquals(SUCCESS, getScalerRulesResponse.responseCode);
+        assertEquals(1, getScalerRulesResponse.getRules().size());
+        assertEquals("1", getScalerRulesResponse.getRules().get(0).getRuleId());
+
+        jobClusterActor.tell(
+            new JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest(JobId.fromId(jobId).get()),
+            probe.getRef());
+        JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse ruleStreamResp =
+            probe.expectMsgClass(JobClusterScalerRuleProto.GetJobScalerRuleStreamSubjectResponse.class);
+        BehaviorSubject<JobScalerRuleInfo> ruleStreamSubject = ruleStreamResp.getJobScalerRuleStreamBehaviorSubject();
+        assertNotNull(ruleStreamSubject);
+        CountDownLatch latch = new CountDownLatch(1);
+        ruleStreamSubject.subscribe(ruleInfo -> {
+            latch.countDown();
+            assertEquals(1, ruleInfo.getRules().size());
+            assertEquals("1", ruleInfo.getRules().get(0).getRuleId());
+        });
+        assertTrue(latch.await(10, java.util.concurrent.TimeUnit.SECONDS));
+
     }
 
     public static void scaleStageAndVerify(final TestKit probe, ActorRef jobClusterActor,

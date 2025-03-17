@@ -31,11 +31,7 @@ import io.mantisrx.runtime.codec.JsonCodec;
 import io.mantisrx.runtime.descriptor.DeploymentStrategy;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
-import io.mantisrx.server.core.JobAssignmentResult;
-import io.mantisrx.server.core.JobSchedulingInfo;
-import io.mantisrx.server.core.NamedJobInfo;
-import io.mantisrx.server.core.PostJobStatusRequest;
-import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
@@ -743,6 +739,57 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 .repeatWhen(repeatLogic)
                 .retryWhen(retryObject.getRetryLogic())
                 ;
+    }
+
+    /**
+     * Returns an observable that emits JobScalerRuleInfo updates (full snapshot) for the given jobId.
+     * @param jobId target jobId.
+     * @return Observable of JobScalerRuleInfo.
+     */
+    public Observable<JobScalerRuleInfo> jobScalerRulesStream(final String jobId) {
+        final ConditionalRetry retryObject = new ConditionalRetry(null, "jobsScalerRules_" + jobId);
+        return masterMonitor.getMasterObservable()
+            .filter(masterDescription -> masterDescription != null)
+            .retryWhen(retryLogic)
+            .switchMap((Func1<MasterDescription,
+                Observable<JobScalerRuleInfo>>) masterDescription -> getRxnettySseClient(
+                masterDescription.getHostname(), masterDescription.getSchedInfoPort())
+                .submit(
+                    HttpClientRequest.createGet("/jobScalerRules/" + jobId + "?sendHB=true"))
+                .flatMap((Func1<HttpClientResponse<ServerSentEvent>,
+                    Observable<JobScalerRuleInfo>>) response -> {
+                    if (HttpResponseStatus.NOT_FOUND.equals(response.getStatus())) {
+                        logger.error("GET jobScalerRules not found: {}", response.getStatus());
+                        JobIdNotFoundException notFoundException = new JobIdNotFoundException(jobId);
+                        retryObject.setErrorRef(notFoundException);
+                        return Observable.error(notFoundException);
+                    } else if (HttpResponseStatus.BAD_REQUEST.equals(response.getStatus())) {
+                        logger.error("GET jobScalerRules bad request: {}", response.getStatus());
+                        Exception ex = new Exception(response.getStatus().reasonPhrase());
+                        retryObject.setErrorRef(ex);
+                        return Observable.error(ex);
+                    } else if (!HttpResponseStatus.OK.equals(response.getStatus())) {
+                        logger.error("GET jobScalerRules failed: {}", response.getStatus());
+                        return Observable.error(new Exception(response.getStatus().reasonPhrase()));
+                    }
+                    return response.getContent()
+                        .map(event -> {
+                            try {
+                                return objectMapper.readValue(event.contentAsString(), JobScalerRuleInfo.class);
+                            } catch (IOException e) {
+                                logger.warn("Invalid scalerRules json: {}", e.getMessage());
+                                throw new RuntimeException("Invalid scalerRules json: " + e.getMessage(), e);
+                            }
+                        })
+                        .timeout(3 * MASTER_SCHED_INFO_HEARTBEAT_INTERVAL_SECS, TimeUnit.SECONDS)
+                        .filter(scalerRuleInfo -> scalerRuleInfo != null
+                            && !JobScalerRuleInfo.HB_JobId.equals(scalerRuleInfo.getJobId()))
+                        .distinctUntilChanged()
+                        ;
+                }))
+            .repeatWhen(repeatLogic)
+            .retryWhen(retryObject.getRetryLogic())
+            ;
     }
 
     /**

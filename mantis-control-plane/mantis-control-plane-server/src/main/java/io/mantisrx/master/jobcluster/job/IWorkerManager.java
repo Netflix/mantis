@@ -17,6 +17,7 @@
 package io.mantisrx.master.jobcluster.job;
 
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import java.time.Instant;
@@ -61,12 +62,14 @@ public interface IWorkerManager {
      * Increase or decrease the number of workers associated with the given stage.
      *
      * @param stageMetaData
+     * @param ruleMax
+     * @param ruleMin
      * @param numWorkers
      * @param reason
      *
      * @return
      */
-    int scaleStage(MantisStageMetadataImpl stageMetaData, int numWorkers, String reason);
+    int scaleStage(MantisStageMetadataImpl stageMetaData, int ruleMax, int ruleMin, int numWorkers, String reason);
 
     /**
      * Explicitly kill and resubmit worker associated with the given workerNumber.

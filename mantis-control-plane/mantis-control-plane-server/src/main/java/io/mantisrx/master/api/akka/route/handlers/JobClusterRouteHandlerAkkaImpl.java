@@ -26,6 +26,7 @@ import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import java.time.Duration;
 import java.util.Optional;
@@ -150,8 +151,30 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     }
 
     @Override
+    public CompletionStage<JobClusterScalerRuleProto.CreateScalerRuleResponse> createScalerRule(String clusterName, JobClusterScalerRuleProto.CreateScalerRuleRequest request) {
+        CompletionStage<JobClusterScalerRuleProto.CreateScalerRuleResponse> response = ask(jobClustersManagerActor, request, timeout)
+            .thenApply(JobClusterScalerRuleProto.CreateScalerRuleResponse.class::cast);
+        return response;
+    }
+
+    @Override
+    public CompletionStage<JobClusterScalerRuleProto.GetScalerRulesResponse> getScalerRules(JobClusterScalerRuleProto.GetScalerRulesRequest request) {
+        CompletionStage<JobClusterScalerRuleProto.GetScalerRulesResponse> response = ask(jobClustersManagerActor, request, timeout)
+            .thenApply(JobClusterScalerRuleProto.GetScalerRulesResponse.class::cast);
+        return response;
+    }
+
+    @Override
+    public CompletionStage<JobClusterScalerRuleProto.DeleteScalerRuleResponse> deleteScalerRule(JobClusterScalerRuleProto.DeleteScalerRuleRequest request) {
+        CompletionStage<JobClusterScalerRuleProto.DeleteScalerRuleResponse> response = ask(jobClustersManagerActor, request, timeout)
+            .thenApply(JobClusterScalerRuleProto.DeleteScalerRuleResponse.class::cast);
+        return response;
+    }
+
+    @Override
     public CompletionStage<JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse> getLatestJobDiscoveryInfo(JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest request) {
         CompletionStage<JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse> response = ask(jobClustersManagerActor, request, timeout)
             .thenApply(JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse.class::cast);
-        return response;    }
+        return response;
+    }
 }

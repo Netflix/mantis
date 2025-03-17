@@ -78,6 +78,8 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
+import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.core.WorkerAssignments;
@@ -660,6 +662,35 @@ public class JobRouteTest {
     }
 
     @Test(dependsOnMethods = {"testSchedulingInfo"})
+    public void testScalerRuleInfo() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final String jobId = "sine-function-1";
+        Observable<JobScalerRuleInfo> jobScalerRuleInfoObservable = mantisClient.ruleInfoStream(jobId);
+        jobScalerRuleInfoObservable
+            .map(scalerRuleInfo -> {
+                logger.info("scalerRuleInfo {}", scalerRuleInfo);
+                try {
+                    assertEquals(jobId, scalerRuleInfo.getJobId());
+                    List<JobScalingRule> rules = scalerRuleInfo.getRules();
+                    assertEquals(0, rules.size());
+                } catch (Exception e) {
+                    logger.error("caught exception", e);
+                    org.testng.Assert.fail(
+                        "testScalerRuleInfo test failed with exception " + e.getMessage(),
+                        e);
+                }
+                latch.countDown();
+                return scalerRuleInfo;
+            })
+            .take(1)
+            .doOnError(t -> logger.warn("onError", t))
+            .doOnCompleted(() -> logger.info("onCompleted"))
+            .doAfterTerminate(() -> latch.countDown())
+            .subscribe();
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test(dependsOnMethods = {"testScalerRuleInfo"})
     public void testJobResubmitWorker() throws InterruptedException {
         Thread.sleep(3000);
         final CountDownLatch latch = new CountDownLatch(1);

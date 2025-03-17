@@ -16,11 +16,9 @@
 
 package io.mantisrx.master.api.akka.route.utils;
 
-import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.JOB_CLUSTER_INFO_HB_INSTANCE;
-import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.SCHED_INFO_HB_INSTANCE;
-
 import akka.http.javadsl.model.sse.ServerSentEvent;
 import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
+import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
@@ -29,6 +27,8 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.*;
+
 public class StreamingUtils {
     private static final Logger logger = LoggerFactory.getLogger(StreamingUtils.class);
     private static final ObjectMapper mapper = new ObjectMapper().configure(
@@ -36,7 +36,7 @@ public class StreamingUtils {
 
     private static volatile Optional<ServerSentEvent> cachedSchedInfoHbEvent = Optional.empty();
     private static volatile Optional<ServerSentEvent> cachedJobClusterInfoHbEvent = Optional.empty();
-
+    private static volatile Optional<ServerSentEvent> cachedJobScalerRulesInfoHbEvent = Optional.empty();
 
     static {
         try {
@@ -44,6 +44,8 @@ public class StreamingUtils {
                     JOB_CLUSTER_INFO_HB_INSTANCE)));
             cachedSchedInfoHbEvent = Optional.of(ServerSentEvent.create(mapper.writeValueAsString(
                     SCHED_INFO_HB_INSTANCE)));
+            cachedJobScalerRulesInfoHbEvent = Optional.of(ServerSentEvent.create(mapper.writeValueAsString(
+                JOB_SCALER_RULES_INFO_HB_INSTANCE)));
         } catch (JsonProcessingException e) {
             logger.error("Failed to cache serialized Heartbeat event", e);
         }
@@ -57,6 +59,18 @@ public class StreamingUtils {
             return Optional.ofNullable(ServerSentEvent.create(mapper.writeValueAsString(jsi)));
         } catch (JsonProcessingException e) {
             logger.warn("failed to serialize Job Scheduling Info {}", jsi);
+        }
+        return Optional.empty();
+    }
+
+    public static Optional<ServerSentEvent> from(final JobScalerRuleInfo jsi) {
+        try {
+            if (jsi.getJobId().equals(JobSchedulingInfo.HB_JobId) && cachedJobScalerRulesInfoHbEvent.isPresent()) {
+                return cachedJobScalerRulesInfoHbEvent;
+            }
+            return Optional.of(ServerSentEvent.create(mapper.writeValueAsString(jsi)));
+        } catch (JsonProcessingException e) {
+            logger.warn("failed to serialize Job Scaler Rules Info {}", jsi);
         }
         return Optional.empty();
     }

@@ -15,6 +15,7 @@
  */
 package io.mantisrx.server.master.resourcecluster;
 
+import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
@@ -22,6 +23,7 @@ import lombok.Value;
  * Represents the cluster that the task executor belongs to.
  */
 @RequiredArgsConstructor(staticName="of")
+@EqualsAndHashCode(callSuper = false)
 @Value
 public class ClusterID {
   String resourceID;

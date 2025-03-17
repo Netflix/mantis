@@ -27,12 +27,15 @@ import static org.mockito.Mockito.*;
 
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration;
 import io.mantisrx.server.worker.jobmaster.clutch.rps.ClutchRpsPIDConfig;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.vavr.Tuple;
 import io.vavr.control.Option;
 import java.util.Arrays;
@@ -315,11 +318,11 @@ public class JobAutoScalerTest {
         final double scaleDownBelowPct = 15.0;
         final double workerMemoryMB = 512.0;
 
+        StageScalingPolicy stageScalingPolicy = new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
+            Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
+                new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2))), false);
         final StageSchedulingInfo stage1SchedInfo = StageSchedulingInfo.builder()
                 .numberOfInstances(numStage1Workers).machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
-                .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
-                    Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
-                        new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2))), false))
                 .scalable(true)
                 .build();
 
@@ -330,7 +333,25 @@ public class JobAutoScalerTest {
         Context context = mock(Context.class);
         when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context, JobAutoscalerManager.DEFAULT);
+        JobScalingRule scalingRule = JobScalingRule.builder()
+            .ruleId("1")
+            .scalerConfig(JobScalingRule.ScalerConfig.builder()
+                .stageConfigMap(ImmutableMap.of(
+                    "1",
+                    JobScalingRule.StageScalerConfig.builder().scalingPolicy(stageScalingPolicy).build()))
+                .build())
+            .build();
+
+        JobScalerContext ctx = JobScalerContext.builder()
+            .jobId(jobId)
+            .masterClientApi(mockMasterClientApi)
+            .schedInfo(new SchedulingInfo(schedulingInfoMap))
+            .context(context)
+            .jobAutoscalerManager(JobAutoscalerManager.DEFAULT)
+            .build();
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler(
+            ctx,
+            scalingRule);
         jobAutoScaler.start();
         final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
 
@@ -421,7 +442,7 @@ public class JobAutoScalerTest {
                 "    \"scaleUpMultiplier\": 1.5" +
                 "  }" +
                 "}";
-        final JobAutoScaler jobAutoScaler = new JobAutoScaler("jobId", null, null, null, JobAutoscalerManager.DEFAULT);
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler("jobId", new SchedulingInfo(new HashMap<>()), null, null, JobAutoscalerManager.DEFAULT);
         ClutchConfiguration config = jobAutoScaler.getClutchConfiguration(json).get(1);
 
         ClutchRpsPIDConfig expected = new ClutchRpsPIDConfig(0.0, Tuple.of(30.0, 0.0), 0.0, 0.0, Option.of(75.0), Option.of(30.0), Option.of(0.0), Option.of(1.5), Option.of(1.0));

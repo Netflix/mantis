@@ -21,10 +21,13 @@ import io.mantisrx.common.SystemParameters;
 import io.mantisrx.control.clutch.Clutch;
 import io.mantisrx.control.clutch.ClutchExperimental;
 import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason;
+import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
+import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.stats.UsageDataStats;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.jobmaster.clutch.ClutchAutoScaler;
@@ -48,6 +51,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import org.slf4j.Logger;
@@ -63,7 +68,7 @@ import rx.observers.SerializedObserver;
 import rx.subjects.PublishSubject;
 
 
-public class JobAutoScaler {
+public class JobAutoScaler implements Service {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(JobAutoScaler.class);
@@ -87,19 +92,60 @@ public class JobAutoScaler {
 
     private final String jobId;
     private final MantisMasterGateway masterClientApi;
-    private final SchedulingInfo schedulingInfo;
+    private final Map<Integer, StageScalingInfo> stagePolicyMap;
+    private final String clutchCustomConfigurationFromRule;
     private final PublishSubject<Event> subject;
     private final Context context;
     private final JobAutoscalerManager jobAutoscalerManager;
+
+    private Subscription subscription;
 
     JobAutoScaler(String jobId, SchedulingInfo schedulingInfo, MantisMasterGateway masterClientApi,
                   Context context, JobAutoscalerManager jobAutoscalerManager) {
         this.jobId = jobId;
         this.masterClientApi = masterClientApi;
-        this.schedulingInfo = schedulingInfo;
         this.subject = PublishSubject.create();
         this.context = context;
         this.jobAutoscalerManager = jobAutoscalerManager;
+
+        this.stagePolicyMap = schedulingInfo.getStages().entrySet().stream()
+                    .filter(ev -> ev.getValue().getScalingPolicy() != null)
+                    .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        kv ->
+                            StageScalingInfo.builder()
+                                .desireSize(kv.getValue().getNumberOfInstances())
+                                .scalingPolicy(kv.getValue().getScalingPolicy())
+                                .stageMachineDefinition(kv.getValue().getMachineDefinition())
+                                .build()));
+        this.clutchCustomConfigurationFromRule = null;
+    }
+
+    JobAutoScaler(JobScalerContext scalerContext, JobScalingRule jobScalerRule) {
+        this.jobId = scalerContext.getJobId();
+        this.masterClientApi = scalerContext.getMasterClientApi();
+        this.subject = PublishSubject.create();
+        this.context = scalerContext.getContext();
+        this.jobAutoscalerManager = scalerContext.getJobAutoscalerManager();
+
+        this.stagePolicyMap = jobScalerRule.getScalerConfig().getStageConfigMap().entrySet().stream()
+            .filter(kv -> kv.getValue() != null)
+            .collect(Collectors.toMap(
+                entry -> Integer.parseInt(entry.getKey()),
+                entry -> StageScalingInfo.builder()
+                    .desireSize(
+                        Optional.ofNullable(entry.getValue().getDesireSize())
+                        .orElse(
+                            Optional.ofNullable(scalerContext.getSchedInfo().forStage(Integer.parseInt(entry.getKey())))
+                                .map(StageSchedulingInfo::getNumberOfInstances).orElse(0)))
+                    .scalingPolicy(entry.getValue().getScalingPolicy())
+                    .stageMachineDefinition(scalerContext.getSchedInfo().forStage(Integer.parseInt(entry.getKey())).getMachineDefinition())
+                    .build()));
+        this.clutchCustomConfigurationFromRule = Optional.ofNullable(jobScalerRule.getMetadata())
+            .map(m -> m.getOrDefault(
+                SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM, null))
+            .orElse(null);
+
     }
 
     Observer<Event> getObserver() {
@@ -111,148 +157,162 @@ public class JobAutoScaler {
         return new io.mantisrx.control.clutch.Event(metricMap.get(event.type), event.getEffectiveValue());
     }
 
-    void start() {
-        subject
-                .onBackpressureBuffer(100, () -> {
-                    logger.info("onOverflow triggered, dropping old events");
-                }, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
-                .doOnRequest(x -> logger.info("Scaler requested {} metrics.", x))
-                .groupBy(Event::getStage)
-                .flatMap(go -> {
-                    Integer stage = Optional.ofNullable(go.getKey()).orElse(-1);
+    @Override
+    public void start() {
+         this.subscription = subject
+            .onBackpressureBuffer(100, () -> {
+                logger.info("onOverflow triggered, dropping old events");
+            }, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
+            .doOnRequest(x -> logger.info("Scaler requested {} metrics.", x))
+            .groupBy(Event::getStage)
+            .flatMap(go -> {
+                Integer stage = Optional.ofNullable(go.getKey()).orElse(-1);
 
-                    final StageSchedulingInfo stageSchedulingInfo = schedulingInfo.forStage(stage);
-                    logger.debug("System Environment:");
-                    System.getenv().forEach((key, value) -> {
-                        logger.debug("{} = {}", key, value);
-                    });
+                logger.debug("System Environment:");
+                System.getenv().forEach((key, value) -> {
+                    logger.debug("{} = {}", key, value);
+                });
 
-                    Optional<String> clutchCustomConfiguration =
-                            Optional.ofNullable(
-                                MantisProperties.getProperty("JOB_PARAM_" + SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM));
+                Optional<String> clutchCustomConfiguration =
+                    this.clutchCustomConfigurationFromRule != null ?
+                        Optional.of(this.clutchCustomConfigurationFromRule) :
+                        Optional.ofNullable(MantisProperties.getProperty("JOB_PARAM_" + SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM));
 
-                    if (stageSchedulingInfo != null && (stageSchedulingInfo.getScalingPolicy() != null ||
-                            clutchCustomConfiguration.isPresent())) {
+                if (this.stagePolicyMap.containsKey(stage) &&
+                    (this.stagePolicyMap.get(stage) != null || clutchCustomConfiguration.isPresent())) {
 
-                        ClutchConfiguration config = null;
-                        int minSize = 0;
-                        int maxSize = 0;
-                        boolean useJsonConfigBased = false;
-                        boolean useClutch = false;
-                        boolean useClutchRps = false;
-                        boolean useClutchExperimental = false;
+                    ClutchConfiguration config = null;
+                    int minSize = 0;
+                    int maxSize = 0;
+                    boolean useJsonConfigBased = false;
+                    boolean useClutch = false;
+                    boolean useClutchRps = false;
+                    boolean useClutchExperimental = false;
 
-                        final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
-                        // Determine which type of scaler to use.
-                        if (scalingPolicy != null) {
-                            minSize = scalingPolicy.getMin();
-                            maxSize = scalingPolicy.getMax();
-                            if (scalingPolicy.getStrategies() != null) {
-                                Set<StageScalingPolicy.ScalingReason> reasons = scalingPolicy.getStrategies()
-                                        .values()
-                                        .stream()
-                                        .map(StageScalingPolicy.Strategy::getReason)
-                                        .collect(Collectors.toSet());
-                                if (reasons.contains(StageScalingPolicy.ScalingReason.Clutch)) {
-                                    useClutch = true;
-                                } else if (reasons.contains(StageScalingPolicy.ScalingReason.ClutchExperimental)) {
-                                    useClutchExperimental = true;
-                                } else if (reasons.contains(StageScalingPolicy.ScalingReason.ClutchRps)) {
-                                    useClutchRps = true;
-                                }
+                    final StageScalingPolicy scalingPolicy = this.stagePolicyMap.get(stage).getScalingPolicy();
+                    // Determine which type of scaler to use.
+                    if (scalingPolicy != null) {
+                        minSize = scalingPolicy.getMin();
+                        maxSize = scalingPolicy.getMax();
+                        if (scalingPolicy.getStrategies() != null) {
+                            Set<ScalingReason> reasons = scalingPolicy.getStrategies()
+                                .values()
+                                .stream()
+                                .map(StageScalingPolicy.Strategy::getReason)
+                                .collect(Collectors.toSet());
+                            if (reasons.contains(ScalingReason.Clutch)) {
+                                useClutch = true;
+                            } else if (reasons.contains(ScalingReason.ClutchExperimental)) {
+                                useClutchExperimental = true;
+                            } else if (reasons.contains(ScalingReason.ClutchRps)) {
+                                useClutchRps = true;
                             }
                         }
-                        if (clutchCustomConfiguration.isPresent()) {
-                            try {
-                                config = getClutchConfiguration(clutchCustomConfiguration.get()).get(stage);
-                            } catch (Exception ex) {
-                                logger.error("Error parsing json clutch config: {}", clutchCustomConfiguration.get(), ex);
-                            }
-                            if (config != null) {
-                                if (config.getRpsConfig().isDefined()) {
-                                    useClutchRps = true;
-                                } else if (config.getUseExperimental().getOrElse(false)) {
-                                    useClutch = true;
-                                } else {
-                                    useJsonConfigBased = true;
-                                }
-                                if (config.getMinSize() > 0) {
-                                    minSize = config.getMinSize();
-                                }
-                                if (config.getMaxSize() > 0) {
-                                    maxSize = config.getMaxSize();
-                                }
-                            }
-                        }
-
-                        int initialSize = stageSchedulingInfo.getNumberOfInstances();
-                        StageScaler scaler = new StageScaler(stage, stageSchedulingInfo);
-                        MantisStageActuator actuator = new MantisStageActuator(initialSize, scaler);
-
-                        Observable.Transformer<Event, io.mantisrx.control.clutch.Event> transformToClutchEvent =
-                                obs -> obs.map(this::mantisEventToClutchEvent)
-                                        .filter(event -> event.metric != null);
-                        Observable<Integer> workerCounts = context.getWorkerMapObservable()
-                                .map(x -> x.getWorkersForStage(go.getKey()).size())
-                                .distinctUntilChanged()
-                                .throttleLast(5, TimeUnit.SECONDS);
-
-                        if (useClutchRps) {
-                            logger.info("Using clutch rps scaler, job: {}, stage: {} ", jobId, stage);
-                            ClutchRpsPIDConfig rpsConfig = Option.of(config).flatMap(ClutchConfiguration::getRpsConfig).getOrNull();
-                            return go
-                                    .compose(transformToClutchEvent)
-                                    .compose(new ClutchExperimental(
-                                            actuator,
-                                            initialSize,
-                                            minSize,
-                                            maxSize,
-                                            workerCounts,
-                                            Observable.interval(1, TimeUnit.HOURS),
-                                            TimeUnit.MINUTES.toMillis(10),
-                                            new RpsClutchConfigurationSelector(stage, stageSchedulingInfo, config),
-                                            new RpsMetricComputer(),
-                                            new RpsScaleComputer(rpsConfig)));
-                        } else if (useJsonConfigBased) {
-                            logger.info("Using json config based scaler, job: {}, stage: {} ", jobId, stage);
-                            return go
-                                    .compose(new ClutchAutoScaler(stageSchedulingInfo, scaler, config, initialSize));
-                        } else if (useClutch) {
-                            logger.info("Using clutch scaler, job: {}, stage: {} ", jobId, stage);
-                            return go
-                                    .compose(transformToClutchEvent)
-                                    .compose(new Clutch(
-                                            actuator,
-                                            initialSize,
-                                            minSize,
-                                            maxSize));
-                        } else if (useClutchExperimental) {
-                            logger.info("Using clutch experimental scaler, job: {}, stage: {} ", jobId, stage);
-                            return go
-                                    .compose(transformToClutchEvent)
-                                    .compose(new ClutchExperimental(
-                                            actuator,
-                                            initialSize,
-                                            minSize,
-                                            maxSize,
-                                            workerCounts,
-                                            Observable.interval(1, TimeUnit.HOURS),
-                                            TimeUnit.MINUTES.toMillis(10),
-                                            new MantisClutchConfigurationSelector(stage, stageSchedulingInfo)));
-                        } else {
-                            logger.info("Using rule based scaler, job: {}, stage: {} ", jobId, stage);
-                            return go.compose(new TransformerWrapper<>(new StageScaleOperator<>(stage, stageSchedulingInfo)));
-                        }
-                    } else {
-                      return go;
                     }
-                })
-                .doOnCompleted(() -> logger.info("onComplete on JobAutoScaler subject"))
-                .doOnError(t -> logger.error("got onError in JobAutoScaler", t))
-                .doOnSubscribe(() -> logger.info("onSubscribe JobAutoScaler"))
-                .doOnUnsubscribe(() -> logger.info("Unsubscribing for JobAutoScaler of job {}", jobId))
-                .retry()
-                .subscribe();
+                    if (clutchCustomConfiguration.isPresent()) {
+                        try {
+                            config = getClutchConfiguration(clutchCustomConfiguration.get()).get(stage);
+                        } catch (Exception ex) {
+                            logger.error("Error parsing json clutch config: {}", clutchCustomConfiguration.get(), ex);
+                        }
+                        if (config != null) {
+                            if (config.getRpsConfig().isDefined()) {
+                                useClutchRps = true;
+                            } else if (config.getUseExperimental().getOrElse(false)) {
+                                useClutch = true;
+                            } else {
+                                useJsonConfigBased = true;
+                            }
+                            if (config.getMinSize() > 0) {
+                                minSize = config.getMinSize();
+                            }
+                            if (config.getMaxSize() > 0) {
+                                maxSize = config.getMaxSize();
+                            }
+                        }
+                    }
+
+                    final StageScalingInfo stageScalingInfo = this.stagePolicyMap.get(stage);
+                    int initialSize = stageScalingInfo.getDesireSize();
+                    StageScaler scaler = new StageScaler(stage, scalingPolicy);
+                    MantisStageActuator actuator = new MantisStageActuator(initialSize, scaler);
+
+                    Observable.Transformer<Event, io.mantisrx.control.clutch.Event> transformToClutchEvent =
+                        obs -> obs.map(this::mantisEventToClutchEvent)
+                            .filter(event -> event.metric != null);
+                    Observable<Integer> workerCounts = context.getWorkerMapObservable()
+                        .map(x -> x.getWorkersForStage(go.getKey()).size())
+                        .distinctUntilChanged()
+                        .throttleLast(5, TimeUnit.SECONDS);
+
+                    if (useClutchRps) {
+                        logger.info("Using clutch rps scaler, job: {}, stage: {} ", jobId, stage);
+                        ClutchRpsPIDConfig rpsConfig = Option.of(config).flatMap(ClutchConfiguration::getRpsConfig).getOrNull();
+                        return go
+                            .compose(transformToClutchEvent)
+                            .compose(new ClutchExperimental(
+                                actuator,
+                                initialSize,
+                                minSize,
+                                maxSize,
+                                workerCounts,
+                                Observable.interval(1, TimeUnit.HOURS),
+                                TimeUnit.MINUTES.toMillis(10),
+                                new RpsClutchConfigurationSelector(stage, stageScalingInfo, config),
+                                new RpsMetricComputer(),
+                                new RpsScaleComputer(rpsConfig)));
+                    } else if (useJsonConfigBased) {
+                        logger.info("Using json config based scaler, job: {}, stage: {} ", jobId, stage);
+                        return go
+                            .compose(new ClutchAutoScaler(scaler, config, initialSize));
+                    } else if (useClutch) {
+                        logger.info("Using clutch scaler, job: {}, stage: {} ", jobId, stage);
+                        return go
+                            .compose(transformToClutchEvent)
+                            .compose(new Clutch(
+                                actuator,
+                                initialSize,
+                                minSize,
+                                maxSize));
+                    } else if (useClutchExperimental) {
+                        logger.info("Using clutch experimental scaler, job: {}, stage: {} ", jobId, stage);
+                        return go
+                            .compose(transformToClutchEvent)
+                            .compose(new ClutchExperimental(
+                                actuator,
+                                initialSize,
+                                minSize,
+                                maxSize,
+                                workerCounts,
+                                Observable.interval(1, TimeUnit.HOURS),
+                                TimeUnit.MINUTES.toMillis(10),
+                                new MantisClutchConfigurationSelector(stage, stageScalingInfo)));
+                    } else {
+                        logger.info("Using rule based scaler, job: {}, stage: {} ", jobId, stage);
+                        return go.compose(new TransformerWrapper<>(new StageScaleOperator<>(stage, scalingPolicy)));
+                    }
+                } else {
+                    return go;
+                }
+            })
+            .doOnCompleted(() -> logger.info("onComplete on JobAutoScaler subject"))
+            .doOnError(t -> logger.error("got onError in JobAutoScaler", t))
+            .doOnSubscribe(() -> logger.info("onSubscribe JobAutoScaler"))
+            .doOnUnsubscribe(() -> logger.info("Unsubscribing for JobAutoScaler of job {}", jobId))
+            .retry()
+            .subscribe();
+    }
+
+    @Override
+    public void shutdown() {
+        if (this.subscription != null && !this.subscription.isUnsubscribed()) {
+            this.subscription.unsubscribe();
+        }
+        this.subject.onCompleted();
+    }
+
+    @Override
+    public void enterActiveMode() {
     }
 
     /**
@@ -272,6 +332,14 @@ public class JobAutoScaler {
           configs.put(1, config);
           return configs;
         }).get());
+    }
+
+    @Builder
+    @Value
+    public static class StageScalingInfo {
+        StageScalingPolicy scalingPolicy;
+        int desireSize;
+        MachineDefinition stageMachineDefinition;
     }
 
     @Value
@@ -298,7 +366,7 @@ public class JobAutoScaler {
     public class StageScaler {
 
       private final int stage;
-      private final StageSchedulingInfo stageSchedulingInfo;
+      private final StageScalingPolicy scalingPolicy;
       private final AtomicReference<Subscription> inProgressScalingSubscription = new AtomicReference<>(null);
 
 
@@ -310,9 +378,9 @@ public class JobAutoScaler {
           return Observable.timer(delay, TimeUnit.SECONDS);
         });
 
-      public StageScaler(int stage, StageSchedulingInfo stageSchedulingInfo) {
+      public StageScaler(int stage, StageScalingPolicy scalingPolicy) {
         this.stage = stage;
-        this.stageSchedulingInfo = stageSchedulingInfo;
+        this.scalingPolicy = scalingPolicy;
       }
 
       private void cancelOutstandingScalingRequest() {
@@ -334,8 +402,7 @@ public class JobAutoScaler {
 
       public int getDesiredWorkersForScaleUp(final int increment, final int numCurrentWorkers, Event event) {
         final int desiredWorkers;
-        final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
-        if (!scalingPolicy.isEnabled()) {
+        if (!this.scalingPolicy.isEnabled()) {
           logger.warn("Job {} stage {} is not scalable, can't increment #workers by {}", jobId, stage, increment);
           return numCurrentWorkers;
         }
@@ -360,8 +427,7 @@ public class JobAutoScaler {
       public void scaleUpStage(final int numCurrentWorkers, final int desiredWorkers, final String reason) {
         logger.info("scaleUpStage incrementing number of workers from {} to {}", numCurrentWorkers, desiredWorkers);
         cancelOutstandingScalingRequest();
-        StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
-        if (scalingPolicy != null && scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleUpEnabled()) {
+        if (this.scalingPolicy != null && this.scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleUpEnabled()) {
           logger.warn("Scaleup is disabled for all autoscaling strategy, not scaling up stage {} of job {}", stage, jobId);
           return;
         }
@@ -377,8 +443,7 @@ public class JobAutoScaler {
 
       public int getDesiredWorkersForScaleDown(final int decrement, final int numCurrentWorkers, Event event) {
         final int desiredWorkers;
-        final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
-        if (!scalingPolicy.isEnabled()) {
+        if (!this.scalingPolicy.isEnabled()) {
           logger.warn("Job {} stage {} is not scalable, can't decrement #workers by {}", jobId, stage, decrement);
           return numCurrentWorkers;
         }
@@ -401,7 +466,6 @@ public class JobAutoScaler {
       public boolean scaleDownStage(final int numCurrentWorkers, final int desiredWorkers, final String reason) {
         logger.info("scaleDownStage decrementing number of workers from {} to {}", numCurrentWorkers, desiredWorkers);
         cancelOutstandingScalingRequest();
-        final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
         if (scalingPolicy != null && scalingPolicy.isAllowAutoScaleManager() && !jobAutoscalerManager.isScaleDownEnabled()) {
             logger.warn("Scaledown is disabled for all autoscaling strategy. For stage {} of job {}", stage, jobId);
             return false;
@@ -425,16 +489,15 @@ public class JobAutoScaler {
     private class StageScaleOperator<T, R> implements Observable.Operator<Object, Event> {
 
       private final int stage;
-      private final StageSchedulingInfo stageSchedulingInfo;
+      private final StageScalingPolicy scalingPolicy;
       private final StageScaler scaler;
       private volatile long lastScaledAt = 0L;
 
-      private StageScaleOperator(int stage,
-          StageSchedulingInfo stageSchedulingInfo) {
+      private StageScaleOperator(int stage, StageScalingPolicy stageScalingPolicy) {
         this.stage = stage;
-        this.stageSchedulingInfo = stageSchedulingInfo;
-        this.scaler = new StageScaler(stage, this.stageSchedulingInfo);
-        logger.info("cooldownSecs set to {}", stageSchedulingInfo.getScalingPolicy().getCoolDownSecs());
+        this.scalingPolicy = stageScalingPolicy;
+        this.scaler = new StageScaler(stage, this.scalingPolicy);
+        logger.info("cooldownSecs set to {}", stageScalingPolicy.getCoolDownSecs());
       }
 
 
@@ -456,9 +519,8 @@ public class JobAutoScaler {
 
           @Override
           public void onNext(Event event) {
-            final StageScalingPolicy scalingPolicy = stageSchedulingInfo.getScalingPolicy();
-            long coolDownSecs = scalingPolicy == null ? Long.MAX_VALUE : scalingPolicy.getCoolDownSecs();
-            boolean scalable = stageSchedulingInfo.getScalable() && scalingPolicy != null && scalingPolicy.isEnabled();
+            long coolDownSecs = scalingPolicy.getCoolDownSecs();
+            boolean scalable = scalingPolicy.isEnabled();
             logger.debug("Will check for autoscaling job {} stage {} due to event: {}", jobId, stage, event);
             if (scalable) {
               final StageScalingPolicy.Strategy strategy = scalingPolicy.getStrategies().get(event.getType());

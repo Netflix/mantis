@@ -42,6 +42,8 @@ public class Index {
     }
 
     public int getTotalNumWorkers() {
+        //todo: fix totalNumWorkersObservable as calling this getTotalNumWorkers() cause the source observable
+        // (schedulingInfo stream) to be unsubscribed.
         return totalNumWorkersObservable.take(1).toBlocking().first();
     }
 

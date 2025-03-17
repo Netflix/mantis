@@ -33,6 +33,10 @@ import io.mantisrx.master.jobcluster.proto.JobClusterProto.DeleteJobClusterRespo
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.InitializeJobClusterResponse;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 
+/**
+ * [Deprecated] TODO: remove this interface
+ */
+@Deprecated
 public interface IJobClustersManager {
     // cluster related messages
 

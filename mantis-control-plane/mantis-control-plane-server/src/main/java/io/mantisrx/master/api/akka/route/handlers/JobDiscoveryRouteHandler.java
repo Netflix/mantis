@@ -20,6 +20,8 @@ import static io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto.Sch
 
 import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
+
 import java.util.concurrent.CompletionStage;
 
 public interface JobDiscoveryRouteHandler {
@@ -27,4 +29,8 @@ public interface JobDiscoveryRouteHandler {
                                                            final boolean sendHeartbeats);
     CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> lastSubmittedJobIdStream(final JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest request,
                                                                                             final boolean sendHeartbeats);
+
+    CompletionStage<JobClusterScalerRuleProto.GetJobScalerRuleStreamResponse> jobScalerRuleStream(
+        final JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest request,
+        final boolean sendHeartbeats);
 }

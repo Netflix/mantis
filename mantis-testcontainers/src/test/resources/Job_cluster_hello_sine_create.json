@@ -1,0 +1,108 @@
+{
+    "jobDefinition": {
+        "name": "hello-sine-testcontainers",
+        "user": "mantisoss",
+        "jobJarFileLocation": "file:///mantis-examples-sine-function-%s.zip",
+        "version": "0.2.9 2018-05-29 16:12:56",
+        "schedulingInfo": {
+            "stages": {
+                "0": {
+                    "numberOfInstances": "1",
+                    "machineDefinition": {
+                        "cpuCores": "1",
+                        "memoryMB": "1024",
+                        "diskMB": "1024",
+                        "networkMbps": "128",
+                        "numPorts": "1"
+                    },
+                    "scalable": true,
+                    "scalingPolicy": null,
+                    "softConstraints": [],
+                    "hardConstraints": []
+                },
+                "1": {
+                    "numberOfInstances": "1",
+                    "machineDefinition": {
+                        "cpuCores": "1",
+                        "memoryMB": "1024",
+                        "diskMB": "1024",
+                        "networkMbps": "128",
+                        "numPorts": "1"
+                    },
+                    "scalable": true,
+                    "scalingPolicy": {
+                        "stage": 1,
+                        "min": 1,
+                        "max": 2,
+                        "increment": 1,
+                        "decrement": 1,
+                        "coolDownSecs": 300,
+                        "strategies": {
+                            "CPU": {
+                                "reason": "CPU",
+                                "scaleDownBelowPct": 0.3,
+                                "scaleUpAbovePct": 0.7,
+                                "rollingCount": {
+                                    "count": 99,
+                                    "of": 100
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+            "parameters": [
+                {
+                    "name": "useRandom",
+                    "value": "false"
+                },
+                {
+                    "name": "mantis.job.autoscale.v2.enabled",
+                    "value": "true"
+                }
+            ],
+            "labels": [
+                {
+                    "name": "_mantis.resourceCluster",
+                    "value": "testcluster1"
+                },
+                {
+                    "name": "_mantis.user",
+                    "value": "mantisoss"
+                },
+                {
+                    "name": "_mantis.ownerEmail",
+                    "value": "mantisoss@netflix.com"
+                },
+                {
+                    "name": "_mantis.jobType",
+                    "value": "other"
+                },
+                {
+                    "name": "_mantis.criticality",
+                    "value": "low"
+                },
+                {
+                    "name": "_mantis.artifact.version",
+                    "value": "0.2.9"
+                }
+            ],
+            "migrationConfig": {
+                "strategy": "PERCENTAGE",
+                "configString": "{\"percentToMove\":25,\"intervalMs\":60000}"
+            },
+            "slaMin": "0",
+            "slaMax": "0",
+            "cronSpec": null,
+            "cronPolicy": "KEEP_EXISTING",
+            "isReadyForJobMaster": true
+    },
+    "owner": {
+        "contactEmail": "mantisoss@netflix.com",
+        "description": "",
+        "name": "Mantis OSS",
+        "repo": "",
+        "teamName": ""
+    }
+}
