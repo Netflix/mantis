@@ -18,6 +18,8 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
@@ -66,7 +68,7 @@ public class CustomRuleActorTest {
     }
 
     @Test
-    public void testBasic() {
+    public void testHappyRun() {
         // init the actor and verify the cron gets scheduled and triggered correctly
         JobScalingRule customRule = TestRuleUtils.createCustomTestRule(
             RULE_ID_1, "TestCustomRuleTrigger");
@@ -109,9 +111,57 @@ public class CustomRuleActorTest {
             });
     }
 
+    @Test
+    public void testRunError() throws InterruptedException {
+        // init the actor and verify the cron gets scheduled and triggered correctly
+        JobScalingRule customRule = TestRuleUtils.createCustomTestRule(
+            RULE_ID_1, "TestCustomRuleTrigger");
+
+        testCustomRuleTrigger.throwInRun.compareAndSet(false, true);
+        ActorRef parentActor = system.actorOf(
+            TestRuleUtils.TestParentActor.Props(jobScalerContext, customRule), "customRuleActorParent");
+        final TestKit probe = new TestKit(system);
+
+        parentActor.tell(new TestRuleUtils.TestParentActor.GetStateRequest(), probe.getRef());
+        TestRuleUtils.TestParentActor.GetStateResponse response =
+            probe.expectMsgClass(TestRuleUtils.TestParentActor.GetStateResponse.class);
+        assertFalse(response.getRuleActivated().get());
+        assertEquals(0, response.getRuleActivateCnt().get());
+        assertEquals(0, response.getRuleDeactivateCnt().get());
+
+        testKit.awaitAssert(Max_Duration, Interval_Duration,
+            () -> {
+                parentActor.tell(new TestRuleUtils.TestParentActor.GetStateRequest(), probe.getRef());
+                TestRuleUtils.TestParentActor.GetStateResponse response2 =
+                    probe.expectMsgClass(TestRuleUtils.TestParentActor.GetStateResponse.class);
+                assertFalse(response2.getRuleActivated().get());
+                assertEquals(0, response2.getRuleActivateCnt().get());
+                assertEquals(0, response2.getRuleDeactivateCnt().get());
+                assertEquals(1, testCustomRuleTrigger.runCnt.get());
+                return null;
+            });
+
+        // allow trigger to run correctly
+        assertTrue(testCustomRuleTrigger.throwInRun.compareAndSet(true, false));
+        Thread.sleep(300);
+
+        testKit.awaitAssert(Max_Duration, Interval_Duration,
+            () -> {
+                parentActor.tell(new TestRuleUtils.TestParentActor.GetStateRequest(), probe.getRef());
+                TestRuleUtils.TestParentActor.GetStateResponse response2 =
+                    probe.expectMsgClass(TestRuleUtils.TestParentActor.GetStateResponse.class);
+                assertFalse(response2.getRuleActivated().get());
+                assertEquals(1, testCustomRuleTrigger.runCnt.get());
+                return null;
+            });
+    }
+
     public static class TestCustomRuleTrigger implements JobScalingRuleCustomTrigger {
         public CountDownLatch activateLatch = new CountDownLatch(1);
         public CountDownLatch deactivateLatch = new CountDownLatch(1);
+
+        public final AtomicBoolean throwInRun = new AtomicBoolean(false);
+        public final AtomicInteger runCnt = new AtomicInteger(0);
 
         JobScalerContext context;
         JobScalingRule rule;
@@ -128,6 +178,11 @@ public class CustomRuleActorTest {
         @Override
         public void run() {
             log.info("TestCustomRuleTrigger.run");
+            this.runCnt.incrementAndGet();
+            if (this.throwInRun.get()) {
+                log.info("TestCustomRuleTrigger.run requested to throw");
+                throw new RuntimeException("TestCustomRuleTrigger.run");
+            }
             try {
                 boolean activateWait = activateLatch.await(3, TimeUnit.SECONDS);
                 if (activateWait) {
