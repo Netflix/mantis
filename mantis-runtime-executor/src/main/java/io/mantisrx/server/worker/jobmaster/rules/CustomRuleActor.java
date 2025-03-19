@@ -121,9 +121,8 @@ public class CustomRuleActor extends AbstractActor {
             if (result.isSuccess()) {
                 log.info("Custom trigger started successfully");
             } else {
-                log.error("failed to run custom rule: {}, restart rule actor",
+                log.error("failed to run custom rule: {}",
                     this.rule, result.failed().get());
-                throw new RuntimeException("CustomTrigger run failed, restart rule actor", result.failed().get());
             }
             return null;
         }, getContext().dispatcher());
