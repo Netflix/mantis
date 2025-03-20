@@ -19,6 +19,7 @@ package io.mantisrx.runtime.executor;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.*;
+import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.reactivex.mantis.remote.observable.ConnectToGroupedObservable;
 import io.reactivex.mantis.remote.observable.ConnectToObservable;
 import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
@@ -38,11 +39,18 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
 
     private DynamicConnectionSet<T> connectionSet;
     private Reconciliator<T> reconciliator;
+    private final WorkerConfiguration config;
 
     public WorkerConsumerRemoteObservable(String name,
                                           EndpointInjector endpointInjector) {
+        this(name, endpointInjector, null);
+    }
+
+    public WorkerConsumerRemoteObservable(String name,
+                                          EndpointInjector endpointInjector, WorkerConfiguration config) {
         this.name = name;
         this.injector = endpointInjector;
+        this.config = config;
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -67,6 +75,10 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
                     .name(name)
                     .decoder(stage.getInputCodec())
                     .subscribeAttempts(30); // max retry before failure
+
+            if (config != null) {
+                connectToBuilder.availabilityZone(config.getAvailabilityZoneUtils().getAvailabilityZone());
+            }
 
             connectionSet = DynamicConnectionSet.create(connectToBuilder);
         } else {

@@ -16,6 +16,7 @@
 
 package io.mantisrx.runtime.loader.config;
 
+import io.mantisrx.common.util.AvailabilityZoneUtils;
 import io.mantisrx.common.metrics.MetricsPublisher;
 import io.mantisrx.server.core.ILeaderMonitorFactory;
 import io.mantisrx.server.core.utils.ConfigUtils;
@@ -79,6 +80,10 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     String leaderMonitorFactory;
     String metricsCollectorClass;
     String jobAutoscalerManagerClassName;
+    String scalarStageToStageRouterClassName;
+
+    @JsonIgnore
+    AvailabilityZoneUtils availabilityZoneUtils;
 
     @JsonIgnore
     MetricsPublisher metricsPublisher;
@@ -138,6 +143,11 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
 
     @Override
     public String getLeaderMonitorFactoryName() {return this.leaderMonitorFactory;}
+
+    @Override
+    public AvailabilityZoneUtils getAvailabilityZoneUtils() {
+        return this.availabilityZoneUtils;
+    }
 
     public ILeaderMonitorFactory getLeaderMonitorFactoryImpl() {
         return ConfigUtils.createInstance(this.leaderMonitorFactory, ILeaderMonitorFactory.class);
@@ -286,6 +296,11 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     @Override
     public String taskExecutorAttributes() {
         return this.taskExecutorAttributesStr;
+    }
+
+    @Override
+    public String getScalarStageToStageRouterClassName() {
+        return this.scalarStageToStageRouterClassName;
     }
 
     @Override
