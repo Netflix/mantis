@@ -69,6 +69,7 @@ class DynamoDBMasterMonitorSingleton {
     private final Counter nullNextLeaderCounter;
     private final Counter leaderChangedCounter;
     private final Counter refreshedLeaderCounter;
+    private final Counter getCurrentLeaderCounter;
 
     private static volatile DynamoDBMasterMonitorSingleton instance = null;
 
@@ -115,6 +116,7 @@ class DynamoDBMasterMonitorSingleton {
             .addCounter("null_next_leader")
             .addCounter("refreshed_leader")
             .addCounter("leader_changed")
+            .addCounter("get_current_leader")
             .build();
         Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
 
@@ -123,6 +125,7 @@ class DynamoDBMasterMonitorSingleton {
         this.nullNextLeaderCounter = metrics.getCounter("null_next_leader");
         this.refreshedLeaderCounter = metrics.getCounter("refreshed_leader");
         this.leaderChangedCounter = metrics.getCounter("leader_changed");
+        this.getCurrentLeaderCounter = metrics.getCounter("get_current_leader");
     }
 
     public void start() {
@@ -155,6 +158,7 @@ class DynamoDBMasterMonitorSingleton {
     @SuppressWarnings("FutureReturnValueIgnored")
     private void getCurrentLeader() {
         logger.info("attempting leader lookup");
+        this.getCurrentLeaderCounter.increment();
         final Optional<LockItem> optionalLock = lockClient.getLock(partitionKey, Optional.empty());
         final MasterDescription nextDescription;
         if (optionalLock.isPresent()) {
