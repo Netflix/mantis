@@ -2035,7 +2035,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         // no heartbeat in a timely manner since launched or heartbeat too old
                         // note: the worker has been launched
                         boolean noTimelyHeartbeatSinceLaunched = !workerMeta.getLastHeartbeatAt().isPresent()
-                            && Duration.between(Instant.ofEpochSecond(workerMeta.getLaunchedAt()), currentTime).getSeconds() > missedHeartBeatToleranceSecs;
+                            && Duration.between(Instant.ofEpochMilli(workerMeta.getLaunchedAt()), currentTime)
+                                .getSeconds() > missedHeartBeatToleranceSecs;
                         boolean heartbeatTooOld = workerMeta.getLastHeartbeatAt().isPresent()
                             && Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds() > missedHeartBeatToleranceSecs;
                         if (noTimelyHeartbeatSinceLaunched || heartbeatTooOld) {

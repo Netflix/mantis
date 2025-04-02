@@ -19,6 +19,7 @@ package io.mantisrx.master.resourcecluster;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -217,7 +218,7 @@ public class ResourceClusterActorTest {
         resourceCluster =
             new ResourceClusterAkkaImpl(
                 resourceClusterActor,
-                Duration.ofSeconds(1),
+                Duration.ofSeconds(5),
                 CLUSTER_ID,
                 new LongDynamicProperty(propertiesLoader, "rate.limite.perSec", 10000L));
     }
@@ -742,7 +743,7 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testTaskExecutorIsDisabledEvenAfterRestart() throws Exception {
-        when(mantisJobStore.getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID))).thenReturn(TASK_EXECUTOR_REGISTRATION);
+        doReturn(TASK_EXECUTOR_REGISTRATION).when(mantisJobStore).getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID));
 
         resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get();
         resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
