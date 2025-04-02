@@ -38,6 +38,7 @@ import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.job.JobActor.WorkerNumberGenerator;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
+import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
@@ -796,20 +797,30 @@ public class JobTestLifecycle {
             GetJobDetailsResponse resp3 = probe.expectMsgClass(GetJobDetailsResponse.class);
             assertEquals(SUCCESS, resp3.responseCode);
 
-            // 2 worker have started so job should be started.
+            resp3.getJobMetadata().get().getStageMetadata(stageNo).get().getAllWorkers()
+                .forEach(jw -> assertEquals(WorkerState.Accepted, jw.getMetadata().getState()));
+
             assertEquals(JobState.Accepted, resp3.getJobMetadata().get().getState());
 
             Instant now = Instant.now();
             jobActor.tell(new JobProto.CheckHeartBeat(now.plusSeconds(240)), probe.getRef());
             Thread.sleep(1000);
 
-            // 1 original submissions and 0 resubmits because of worker not in launched state with HB timeouts
+            // 1 original submissions and 1 resubmit because worker in launched state without heartbeat
             verify(schedulerMock, times(1)).scheduleWorkers(any());
-            // 1 kills due to resubmits
+            // 0 kills due to resubmits
             verify(schedulerMock, times(0)).unscheduleAndTerminateWorker(any(), any());
 
             // launch worker but no HB yet
             JobTestHelper.sendWorkerLaunchedEvent(probe, jobActor, workerId2, stageNo);
+
+            jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
+            GetJobDetailsResponse resp4 = probe.expectMsgClass(GetJobDetailsResponse.class);
+            assertEquals(SUCCESS, resp4.responseCode);
+            resp4.getJobMetadata().get().getStageMetadata(stageNo).get().getAllWorkers()
+                .stream()
+                .filter(jw -> jw.getMetadata().getWorkerId().equals(workerId2))
+                .forEach(jw -> assertEquals(WorkerState.Launched, jw.getMetadata().getState()));
 
             // check hb status in the future where we expect all last HBs to be stale.
             now = Instant.now();
@@ -818,14 +829,14 @@ public class JobTestLifecycle {
 
             // job status remain as accepted
             jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
-            GetJobDetailsResponse resp4 = probe.expectMsgClass(GetJobDetailsResponse.class);
-            assertEquals(SUCCESS, resp4.responseCode);
-            assertEquals(JobState.Accepted, resp4.getJobMetadata().get().getState());
+            GetJobDetailsResponse resp5 = probe.expectMsgClass(GetJobDetailsResponse.class);
+            assertEquals(SUCCESS, resp5.responseCode);
+            assertEquals(JobState.Accepted, resp5.getJobMetadata().get().getState());
 
-            // 1 original submissions and 0 resubmits because of worker not in launched state with HB timeouts
-            verify(schedulerMock, times(1)).scheduleWorkers(any());
-            // 1 kills due to resubmits
-            verify(schedulerMock, times(0)).unscheduleAndTerminateWorker(eq(workerId2), any());
+            // 1 original submissions and 1 resubmits because of worker in launched state with HB timeouts
+            verify(schedulerMock, times(2)).scheduleWorkers(any());
+            // 1 kills due to resubmits from the launched worker
+            verify(schedulerMock, times(1)).unscheduleAndTerminateWorker(eq(workerId2), any());
         } catch (Exception e) {
             fail("unexpected exception " + e.getMessage());
         }
