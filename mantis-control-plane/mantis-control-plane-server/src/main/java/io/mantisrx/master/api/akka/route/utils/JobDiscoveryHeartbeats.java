@@ -17,9 +17,11 @@
 package io.mantisrx.master.api.akka.route.utils;
 
 import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
+import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 
 public class JobDiscoveryHeartbeats {
     public static final JobClusterInfo JOB_CLUSTER_INFO_HB_INSTANCE = new JobClusterInfo(JobSchedulingInfo.HB_JobId, null);
     public static final JobSchedulingInfo SCHED_INFO_HB_INSTANCE = new JobSchedulingInfo(JobSchedulingInfo.HB_JobId, null);
+    public static final JobScalerRuleInfo JOB_SCALER_RULES_INFO_HB_INSTANCE = new JobScalerRuleInfo(JobSchedulingInfo.HB_JobId, false, null);
 }

@@ -37,9 +37,12 @@ import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto;
 import io.mantisrx.master.api.akka.route.utils.StreamingUtils;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
+import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.domain.JobId;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -55,6 +58,7 @@ public class JobDiscoveryRoute extends BaseRoute {
     private final Metrics metrics;
     private final Counter schedulingInfoStreamGET;
     private final Counter jobClusterInfoStreamGET;
+    private final Counter jobScalerRulesStreamGET;
 
     public JobDiscoveryRoute(final JobDiscoveryRouteHandler jobDiscoveryRouteHandler) {
         this.jobDiscoveryRouteHandler = jobDiscoveryRouteHandler;
@@ -62,10 +66,12 @@ public class JobDiscoveryRoute extends BaseRoute {
                 .id("JobDiscoveryRoute")
                 .addCounter("schedulingInfoStreamGET")
                 .addCounter("jobClusterInfoStreamGET")
+                .addCounter("jobScalerRulesStreamGET")
                 .build();
         this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
         this.schedulingInfoStreamGET = metrics.getCounter("schedulingInfoStreamGET");
         this.jobClusterInfoStreamGET = metrics.getCounter("jobClusterInfoStreamGET");
+        this.jobScalerRulesStreamGET = metrics.getCounter("jobScalerRulesStreamGET");
     }
 
     private static final HttpHeader ACCESS_CONTROL_ALLOW_ORIGIN_HEADER =
@@ -184,6 +190,45 @@ public class JobDiscoveryRoute extends BaseRoute {
                                                         }
                                                     });
                                         })
+                        ),
+                        path(segment("jobScalerRules").slash(PathMatchers.segment()), (jobId) ->
+                            parameterOptional(
+                                StringUnmarshallers.BOOLEAN,
+                                "sendHB",
+                                (sendHeartbeats) -> {
+                                    logger.debug(
+                                        "/jobScalerRules/{} called",
+                                        jobId);
+                                    this.jobScalerRulesStreamGET.increment();
+                                    JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest req =
+                                        new JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest(
+                                            JobId.fromId(jobId).orElse(null));
+
+                                    CompletionStage<JobClusterScalerRuleProto.GetJobScalerRuleStreamResponse> jobScalerRulesRespCS =
+                                        jobDiscoveryRouteHandler.jobScalerRuleStream(
+                                            req,
+                                            sendHeartbeats.orElse(false));
+                                    return completeAsync(
+                                        jobScalerRulesRespCS,
+                                        r -> {
+                                            Observable<JobScalerRuleInfo> jobScalerRulesInfoObs = r.getScalerRuleObs();
+                                            if (jobScalerRulesInfoObs != null) {
+                                                Source<ServerSentEvent, NotUsed> source = Source
+                                                    .fromPublisher(RxReactiveStreams.toPublisher(jobScalerRulesInfoObs))
+                                                    .map(j -> StreamingUtils.from(j).orElse(null))
+                                                    .filter(Objects::nonNull);
+                                                return completeOK(
+                                                    source,
+                                                    EventStreamMarshalling.toEventStream());
+                                            } else {
+                                                logger.warn(
+                                                    "Failed to get job scaler rules stream for {}", jobId);
+                                                return complete(
+                                                    StatusCodes.INTERNAL_SERVER_ERROR,
+                                                    "Failed to get job scaler rules stream for " + jobId);
+                                            }
+                                        });
+                                })
                         )
                 ))
         );

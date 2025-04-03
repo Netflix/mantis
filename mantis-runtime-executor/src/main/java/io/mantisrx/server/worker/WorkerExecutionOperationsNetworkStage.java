@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.worker;
 
+import static io.mantisrx.common.SystemParameters.JOB_AUTOSCALE_V2_ENABLED_PARAM;
 import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
 import static io.mantisrx.server.core.utils.StatusConstants.STATUS_MESSAGE_FORMAT;
 
@@ -46,21 +47,12 @@ import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.parameter.ParameterUtils;
 import io.mantisrx.runtime.parameter.Parameters;
-import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.core.JobSchedulingInfo;
-import io.mantisrx.server.core.ServiceRegistry;
-import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.Status.TYPE;
-import io.mantisrx.server.core.StatusPayloads;
-import io.mantisrx.server.core.WorkerAssignments;
-import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
-import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
-import io.mantisrx.server.worker.jobmaster.JobAutoscalerManager;
-import io.mantisrx.server.worker.jobmaster.JobMasterService;
-import io.mantisrx.server.worker.jobmaster.JobMasterStageConfig;
+import io.mantisrx.server.worker.jobmaster.*;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.reactivex.mantis.network.push.RouterFactory;
@@ -377,7 +369,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             // setup heartbeats
             heartbeatRef.set(new Heartbeat(rw.getJobId(),
                     rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum(), config.getTaskExecutorHostName()));
-            final double networkMbps = executionRequest.getSchedulingInfo().forStage(rw.getStageNum()).getMachineDefinition().getNetworkMbps();
             Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(),
                 executionRequest.getHeartbeatIntervalSecs());
             closeables.add(heartbeatCloseable);
@@ -418,10 +409,33 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 }
 
                 JobAutoscalerManager jobAutoscalerManager = getJobAutoscalerManagerInstance(serviceLocator);
-                JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
+
+                // switch to v2 scaler control only when parameter is set to true for now
+                final Boolean useV2ScalerService = (Boolean) parameters.get(JOB_AUTOSCALE_V2_ENABLED_PARAM, false);
+                if (useV2ScalerService) {
+                    logger.info("[V2 AUTO-SCALER ENABLED] Using V2 JobAutoScalerService: JobMasterServiceV2");
+                    Service jobMasterServiceV2 = new JobMasterServiceV2(
+                        JobScalerContext.builder()
+                            .jobId(rw.getJobId())
+                            .schedInfo(rw.getSchedulingInfo())
+                            .workerMetricsClient(workerMetricsClient)
+                            .autoScaleMetricsConfig(autoScaleMetricsConfig)
+                            .masterClientApi(mantisMasterApi)
+                            .context(rw.getContext())
+                            .observableOnCompleteCallback(rw.getOnCompleteCallback())
+                            .observableOnErrorCallback(rw.getOnErrorCallback())
+                            .observableOnTerminateCallback(rw.getOnTerminateCallback())
+                            .jobAutoscalerManager(jobAutoscalerManager)
+                            .build());
+                    jobMasterServiceV2.start();
+                    closeables.add(jobMasterServiceV2::shutdown);
+                } else {
+                    logger.info("Using V1 JobMasterService");
+                    JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
                         workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback(), jobAutoscalerManager);
-                jobMasterService.start();
-                closeables.add(jobMasterService::shutdown);
+                    jobMasterService.start();
+                    closeables.add(jobMasterService::shutdown);
+                }
 
                 signalStarted(rw);
                 // block until worker terminates
@@ -482,9 +496,15 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
     }
 
+    // todo: migrate JobAutoscalerManager to a custom scaling rule.
     private JobAutoscalerManager getJobAutoscalerManagerInstance(ServiceLocator serviceLocator) {
-        final JobAutoscalerManager autoscalerManager = serviceLocator.service(JobAutoscalerManager.class);
-        return Optional.ofNullable(autoscalerManager).orElse(JobAutoscalerManager.DEFAULT);
+        try {
+            final JobAutoscalerManager autoscalerManager = serviceLocator.service(JobAutoscalerManager.class);
+            return Optional.ofNullable(autoscalerManager).orElse(JobAutoscalerManager.DEFAULT);
+        } catch (Exception e) {
+            logger.warn("Failed to inject JobAutoscalerManager from service locator, using default instance", e);
+            return JobAutoscalerManager.DEFAULT;
+        }
     }
 
     private RouterFactory getRouterFactoryInstance(ServiceLocator serviceLocator) {

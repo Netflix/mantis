@@ -82,7 +82,7 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
-import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
+import io.mantisrx.common.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.JobClusterActor;
@@ -99,6 +99,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClust
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -245,6 +246,12 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(ListJobIdsRequest.class, this::onJobIdList)
                 .match(ListWorkersRequest.class, this::onListActiveWorkers)
 
+                // job cluster scaler rules messages
+                .match(JobClusterScalerRuleProto.CreateScalerRuleRequest.class, this::onScalerRuleCreate)
+                .match(JobClusterScalerRuleProto.DeleteScalerRuleRequest.class, this::onScalerRuleDelete)
+                .match(JobClusterScalerRuleProto.GetScalerRulesRequest.class, this::onScalerRuleGet)
+                .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class, this::onGetJobScalerRuleStream)
+
                 //delegate to job
                 .match(SubmitJobRequest.class, this::onJobSubmit)
                 .match(KillJobRequest.class, this::onJobKillRequest)
@@ -308,6 +315,11 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(ScaleStageRequest.class, (x) -> getSender().tell(new ScaleStageResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), 0), getSelf()))
                 .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(WorkerEvent.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), state)))
+                .match(JobClusterScalerRuleProto.CreateScalerRuleRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.CreateScalerRuleResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), state)).build(), getSelf()))
+                .match(JobClusterScalerRuleProto.DeleteScalerRuleRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.DeleteScalerRuleResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), state)).build(), getSelf()))
+                .match(JobClusterScalerRuleProto.GetScalerRulesRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.GetScalerRulesResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), state)).build(), getSelf()))
+                .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class, (x) -> getSender().tell(JobClusterScalerRuleProto.GetJobScalerRuleStreamResponse.builder().requestId(x.requestId).responseCode(CLIENT_ERROR_NOT_FOUND).message(genUnexpectedMsg(x.toString(), state)).build(), getSelf()))
+
                 // everything else
                 .matchAny(x -> logger.warn("unexpected message {} received by Job Cluster Manager actor. It needs to be initialized first ", x))
                 // UNEXPECTED MESSAGES BEGIN
@@ -552,7 +564,72 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         }
     }
 
+    public void onScalerRuleCreate(final JobClusterScalerRuleProto.CreateScalerRuleRequest request) {
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getJobClusterName());
+        ActorRef sender = getSender();
+        if(jobClusterInfo.isPresent()) {
+            jobClusterInfo.get().jobClusterActor.forward(request, getContext());
+        } else {
+            sender.tell(
+                JobClusterScalerRuleProto.CreateScalerRuleResponse.builder()
+                    .requestId(request.requestId)
+                    .responseCode(CLIENT_ERROR_NOT_FOUND)
+                    .message(String.format("JobCluster %s doesn't exist", request.getJobClusterName()))
+                    .build(),
+                getSelf());
+        }
+    }
 
+    public void onScalerRuleDelete(final JobClusterScalerRuleProto.DeleteScalerRuleRequest request) {
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getJobClusterName());
+        ActorRef sender = getSender();
+        if(jobClusterInfo.isPresent()) {
+            jobClusterInfo.get().jobClusterActor.forward(request, getContext());
+        } else {
+            sender.tell(
+                JobClusterScalerRuleProto.DeleteScalerRuleResponse.builder()
+                    .requestId(request.requestId)
+                    .responseCode(CLIENT_ERROR_NOT_FOUND)
+                    .message(String.format("JobCluster %s doesn't exist", request.getJobClusterName()))
+                    .build(),
+                getSelf());
+        }
+    }
+
+    public void onScalerRuleGet(final JobClusterScalerRuleProto.GetScalerRulesRequest request) {
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getJobClusterName());
+        ActorRef sender = getSender();
+        if(jobClusterInfo.isPresent()) {
+            jobClusterInfo.get().jobClusterActor.forward(request, getContext());
+        } else {
+            sender.tell(
+                JobClusterScalerRuleProto.GetScalerRulesResponse.builder()
+                    .requestId(request.requestId)
+                    .responseCode(CLIENT_ERROR_NOT_FOUND)
+                    .message(String.format("JobCluster %s doesn't exist", request.getJobClusterName()))
+                    .build(),
+                getSelf());
+        }
+    }
+
+    public void onGetJobScalerRuleStream(final JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest request) {
+        logger.info("enter onGetJobScalerRuleStream {}", request);
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getJobId().getCluster());
+        ActorRef sender = getSender();
+        if(jobClusterInfo.isPresent()) {
+            logger.info("forwarding to jobClusterActor {}", request.getJobId());
+            jobClusterInfo.get().jobClusterActor.forward(request, getContext());
+        } else {
+            logger.warn("error fwd to jobClusterActor {}", request.getJobId());
+            sender.tell(
+                JobClusterScalerRuleProto.GetJobScalerRuleStreamResponse.builder()
+                    .requestId(request.requestId)
+                    .responseCode(CLIENT_ERROR_NOT_FOUND)
+                    .message(String.format("JobCluster %s doesn't exist", request.getJobId().getCluster()))
+                    .build(),
+                getSelf());
+        }
+    }
 
     private void onTerminated(final Terminated terminated) {
         logger.warn("onTerminated {}", terminated.actor());

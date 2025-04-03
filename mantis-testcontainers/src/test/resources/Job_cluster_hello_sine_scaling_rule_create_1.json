@@ -1,0 +1,41 @@
+{
+    "jobClusterName": "hello-sine-testcontainers",
+    "scalerConfig": {
+        "type": "standard",
+        "stageConfigMap": {
+            "1": {
+                "desireSize": 5,
+                "scalingPolicy": {
+                    "stage": 1,
+                    "min": 1,
+                    "max": 99,
+                    "increment": 1,
+                    "decrement": 1,
+                    "coolDownSecs": 300,
+                    "strategies": {
+                        "CPU": {
+                            "reason": "CPU",
+                            "scaleDownBelowPct": 0.3,
+                            "scaleUpAbovePct": 0.7,
+                            "rollingCount": {
+                                "count": 99,
+                                "of": 100
+                            }
+                        }
+                    },
+                    "allowAutoScaleManager": false,
+                    "enabled": true
+                }
+            }
+        }
+    },
+    "triggerConfig": {
+        "triggerType": "schedule",
+        "scheduleCron": "0/3 * * * * ?",
+        "scheduleDuration": "PT2M",
+        "customTrigger": "none"
+    },
+    "metadata": {
+        "key1": "value1"
+    }
+}

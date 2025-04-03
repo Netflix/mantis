@@ -21,7 +21,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.japi.pf.ReceiveBuilder;
-import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
+import io.mantisrx.common.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;

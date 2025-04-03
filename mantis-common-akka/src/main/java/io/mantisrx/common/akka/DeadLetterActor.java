@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master;
+package io.mantisrx.common.akka;
 
 import akka.actor.AbstractActor;
 import akka.actor.DeadLetter;

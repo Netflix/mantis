@@ -20,10 +20,15 @@ import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @Value
+@ToString(callSuper = true)
 public class UpgradeClusterContainersResponse extends BaseResponse {
     ClusterID clusterId;
 
@@ -33,7 +38,6 @@ public class UpgradeClusterContainersResponse extends BaseResponse {
 
     MantisResourceClusterEnvType optionalEnvType;
 
-    @Builder
     @JsonCreator
     public UpgradeClusterContainersResponse(
         @JsonProperty("requestId") final long requestId,

@@ -30,6 +30,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Singular;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
 
 public class ResourceClusterScaleRuleProto {
@@ -40,6 +41,8 @@ public class ResourceClusterScaleRuleProto {
         ClusterID clusterId;
     }
 
+    @EqualsAndHashCode(callSuper = true)
+    @SuperBuilder
     @Value
     public static class GetResourceClusterScaleRulesResponse extends BaseResponse {
         ClusterID clusterId;
@@ -47,7 +50,6 @@ public class ResourceClusterScaleRuleProto {
         @Singular
         List<ResourceClusterScaleRule> rules;
 
-        @Builder
         @JsonCreator
         public GetResourceClusterScaleRulesResponse(
             @JsonProperty("requestId") final long requestId,

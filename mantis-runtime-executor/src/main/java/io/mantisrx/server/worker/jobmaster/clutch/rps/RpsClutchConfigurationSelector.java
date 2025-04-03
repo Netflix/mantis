@@ -19,7 +19,7 @@ package io.mantisrx.server.worker.jobmaster.clutch.rps;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
 import io.mantisrx.control.clutch.Clutch;
 import io.mantisrx.control.clutch.ClutchConfiguration;
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
+import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
 import io.vavr.Function1;
 import io.vavr.Tuple2;
 import java.util.Map;
@@ -28,13 +28,13 @@ import java.util.concurrent.TimeUnit;
 public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> {
     private static final double DEFAULT_INTEGRAL_DECAY = 0.1;
     private final Integer stageNumber;
-    private final StageSchedulingInfo stageSchedulingInfo;
+    private final JobAutoScaler.StageScalingInfo stageScalingCtx;
     private final io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration customConfig;
     private ClutchConfiguration prevConfig;
 
-    public RpsClutchConfigurationSelector(Integer stageNumber, StageSchedulingInfo stageSchedulingInfo, io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration customConfig) {
+    public RpsClutchConfigurationSelector(Integer stageNumber, JobAutoScaler.StageScalingInfo stageScalingCtx, io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration customConfig) {
         this.stageNumber = stageNumber;
-        this.stageSchedulingInfo = stageSchedulingInfo;
+        this.stageScalingCtx = stageScalingCtx;
         this.customConfig = customConfig;
     }
 
@@ -103,28 +103,28 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
         if (customConfig != null && customConfig.getMinSize() > 0) {
             return customConfig.getMinSize();
         }
-        if (stageSchedulingInfo.getScalingPolicy() != null && stageSchedulingInfo.getScalingPolicy().getMin() > 0) {
-            return stageSchedulingInfo.getScalingPolicy().getMin();
+        if (stageScalingCtx.getScalingPolicy() != null && stageScalingCtx.getScalingPolicy().getMin() > 0) {
+            return stageScalingCtx.getScalingPolicy().getMin();
         }
-        return stageSchedulingInfo.getNumberOfInstances();
+        return stageScalingCtx.getDesireSize();
     }
 
     private int getMaxSize() {
         if (customConfig != null && customConfig.getMaxSize() > 0) {
             return customConfig.getMaxSize();
         }
-        if (stageSchedulingInfo.getScalingPolicy() != null && stageSchedulingInfo.getScalingPolicy().getMax() > 0) {
-            return stageSchedulingInfo.getScalingPolicy().getMax();
+        if (stageScalingCtx.getScalingPolicy() != null && stageScalingCtx.getScalingPolicy().getMax() > 0) {
+            return stageScalingCtx.getScalingPolicy().getMax();
         }
-        return stageSchedulingInfo.getNumberOfInstances();
+        return stageScalingCtx.getDesireSize();
     }
 
     private long getCooldownSecs() {
         if (customConfig != null && customConfig.getCooldownSeconds().isDefined()) {
             return customConfig.getCooldownSeconds().get();
         }
-        if (stageSchedulingInfo.getScalingPolicy() != null) {
-            return stageSchedulingInfo.getScalingPolicy().getCoolDownSecs();
+        if (stageScalingCtx.getScalingPolicy() != null) {
+            return stageScalingCtx.getScalingPolicy().getCoolDownSecs();
         }
         return 0;
     }
