@@ -27,6 +27,8 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.common.network.Endpoint;
+import io.mantisrx.common.util.AvailabilityZoneUtils;
+import io.mantisrx.common.util.DefaultAvailabilityZoneUtils;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
@@ -53,6 +55,8 @@ import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.jobmaster.*;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.base.Strings;
+import io.reactivex.mantis.network.push.RouterFactory;
+import io.reactivex.mantis.network.push.Routers;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
@@ -462,11 +466,10 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     // execute source stage
                     String remoteObservableName = rw.getJobId() + "_" + rw.getStageNum();
 
-                    StageSchedulingInfo currentStageSchedulingInfo = rw.getSchedulingInfo().forStage(1);
                     WorkerPublisherRemoteObservable publisher
                             = new WorkerPublisherRemoteObservable<>(rw.getPorts().next(),
                             remoteObservableName, numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1),
-                            rw.getJobName());
+                            rw.getJobName(), getRouterFactoryInstance(serviceLocator));
 
                     closeables.add(StageExecutors.executeSource(rw.getWorkerIndex(), rw.getJob().getSource(),
                             rw.getStage(), publisher, rw.getContext(), rw.getSourceStageTotalWorkersObservable()));
@@ -481,7 +484,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     server.blockUntilServerShutdown();
                 } else {
                     // execute intermediate stage or last stage plus sink
-                    executeNonSourceStage(selfSchedulingInfo, rw);
+                    executeNonSourceStage(selfSchedulingInfo, rw, serviceLocator);
                 }
             }
             logger.info("Calling lifecycle.shutdown()");
@@ -501,6 +504,26 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         } catch (Exception e) {
             logger.warn("Failed to inject JobAutoscalerManager from service locator, using default instance", e);
             return JobAutoscalerManager.DEFAULT;
+        }
+    }
+
+    private RouterFactory getRouterFactoryInstance(ServiceLocator serviceLocator) {
+        try {
+            final RouterFactory routerFactory = serviceLocator.service(RouterFactory.class);
+            return Optional.ofNullable(routerFactory).orElse(new Routers());
+        } catch (Throwable e) {
+            logger.warn("Failed to get RouterFactory instance from service locator, falling back to default", e);
+            return new Routers();
+        }
+    }
+
+    private AvailabilityZoneUtils getAvailabilityZoneUtilsInstance(ServiceLocator serviceLocator) {
+        try {
+            final AvailabilityZoneUtils availabilityZoneUtils = serviceLocator.service(AvailabilityZoneUtils.class);
+            return Optional.ofNullable(availabilityZoneUtils).orElse(new DefaultAvailabilityZoneUtils());
+        } catch (Throwable e) {
+            logger.warn("Failed to get AvailabilityZoneUtils instance from service locator, falling back to default", e);
+            return new DefaultAvailabilityZoneUtils();
         }
     }
 
@@ -528,7 +551,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    private void executeNonSourceStage(Observable<JobSchedulingInfo> selfSchedulingInfo, final RunningWorker rw) {
+    private void executeNonSourceStage(Observable<JobSchedulingInfo> selfSchedulingInfo, final RunningWorker rw, ServiceLocator serviceLocator) {
         {
             // execute either intermediate (middle) stage or last+sink
             StageConfig previousStageExecuting = (StageConfig) rw.getJob().getStages()
@@ -539,7 +562,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             AtomicBoolean acceptSchedulingChanges = new AtomicBoolean(true);
             WorkerConsumer consumer = connectToObservableAtPreviousStages(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() - 1,
                     numInstanceAtPreviousStage, previousStageExecuting, acceptSchedulingChanges,
-                    rw.getJobStatus(), rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum());
+                    rw.getJobStatus(), rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum(), serviceLocator);
             final int workerPort = rw.getPorts().next();
 
             if (rw.getStageNum() == rw.getTotalStagesNet()) {
@@ -581,14 +604,15 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 // intermediate stage
                 logger.info("JobId: " + rw.getJobId() + ", executing intermediate stage: " + rw.getStageNum());
 
-
                 int stageNumToExecute = rw.getStageNum();
                 String jobId = rw.getJobId();
                 String remoteObservableName = jobId + "_" + stageNumToExecute;
 
                 WorkerPublisherRemoteObservable publisher
                         = new WorkerPublisherRemoteObservable<>(workerPort, remoteObservableName,
-                        numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1), rw.getJobName());
+                        numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1), rw.getJobName(),
+                        getRouterFactoryInstance(serviceLocator)
+                    );
                 closeables.add(StageExecutors.executeIntermediate(consumer, rw.getStage(), publisher,
                         rw.getContext()));
                 RemoteRxServer server = publisher.getServer();
@@ -627,7 +651,8 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     @SuppressWarnings( {"rawtypes"})
     private WorkerConsumer connectToObservableAtPreviousStages(Observable<JobSchedulingInfo> selfSchedulingInfo, final String jobId, final int previousStageNum,
                                                                int numInstanceAtPreviousStage, final StageConfig previousStage, final AtomicBoolean acceptSchedulingChanges,
-                                                               final Observer<Status> jobStatusObserver, final int stageNumToExecute, final int workerIndex, final int workerNumber) {
+                                                               final Observer<Status> jobStatusObserver, final int stageNumToExecute, final int workerIndex, final int workerNumber,
+                                                               ServiceLocator serviceLocator) {
         logger.info("Watching for scheduling changes");
 
         //Observable<List<Endpoint>> schedulingUpdates = mantisMasterApi.schedulingChanges(jobId)
@@ -662,7 +687,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         String name = jobId + "_" + previousStageNum;
 
         return new WorkerConsumerRemoteObservable(name,
-                new ToDeltaEndpointInjector(schedulingUpdates));
+                new ToDeltaEndpointInjector(schedulingUpdates),
+                getAvailabilityZoneUtilsInstance(serviceLocator)
+            );
     }
 
     @Override

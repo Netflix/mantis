@@ -87,6 +87,7 @@ public class LegacyTcpPushServer<T> extends PushServer<T, RemoteRxEvent> {
                                             // sample state
                                             boolean enableSampling = false;
                                             long samplingTimeMsec = 0;
+                                            String availabilityZone = null;
 
                                             // predicate state
                                             Map<String, List<String>> predicateParams = null;
@@ -122,6 +123,9 @@ public class LegacyTcpPushServer<T> extends PushServer<T, RemoteRxEvent> {
                                                     }
                                                     enableSampling = true;
                                                 }
+                                                if (params.containsKey("availabilityZone") && !params.get("availabilityZone").isEmpty()) {
+                                                    availabilityZone = params.get("availabilityZone");
+                                                }
                                             }
                                             Func1<T, Boolean> predicateFunction = null;
                                             if (predicate != null) {
@@ -144,7 +148,7 @@ public class LegacyTcpPushServer<T> extends PushServer<T, RemoteRxEvent> {
                                                     groupId, slotId, id, null,
                                                     false, null, enableSampling, samplingTimeMsec,
                                                     predicateFunction, null, legacyMsgProcessedCounter, legacyDroppedWrites,
-                                                    null);
+                                                    null, availabilityZone);
                                         }
                                         return null;
                                     }

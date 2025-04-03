@@ -120,6 +120,11 @@ public class ConnectToObservable<T> extends ConnectToConfig {
             return this;
         }
 
+        public Builder<T> availabilityZone(String availabilityZone) {
+            this.subscribeParameters.put("availabilityZone", availabilityZone);
+            return this;
+        }
+
         public Builder<T> decoder(Decoder<T> decoder) {
             this.decoder = decoder;
             return this;
