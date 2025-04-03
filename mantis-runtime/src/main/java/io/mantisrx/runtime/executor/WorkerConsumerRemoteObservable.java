@@ -18,8 +18,9 @@ package io.mantisrx.runtime.executor;
 
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.util.AvailabilityZoneUtils;
+import io.mantisrx.common.util.DefaultAvailabilityZoneUtils;
 import io.mantisrx.runtime.*;
-import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.reactivex.mantis.remote.observable.ConnectToGroupedObservable;
 import io.reactivex.mantis.remote.observable.ConnectToObservable;
 import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
@@ -39,18 +40,19 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
 
     private DynamicConnectionSet<T> connectionSet;
     private Reconciliator<T> reconciliator;
-    private final WorkerConfiguration config;
+    private final AvailabilityZoneUtils availabilityZoneUtils;
 
     public WorkerConsumerRemoteObservable(String name,
                                           EndpointInjector endpointInjector) {
-        this(name, endpointInjector, null);
+        this(name, endpointInjector, new DefaultAvailabilityZoneUtils());
     }
 
     public WorkerConsumerRemoteObservable(String name,
-                                          EndpointInjector endpointInjector, WorkerConfiguration config) {
+                                          EndpointInjector endpointInjector,
+                                          AvailabilityZoneUtils availabilityZoneUtils) {
         this.name = name;
         this.injector = endpointInjector;
-        this.config = config;
+        this.availabilityZoneUtils = availabilityZoneUtils;
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -74,11 +76,8 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
             ConnectToObservable.Builder connectToBuilder = new ConnectToObservable.Builder()
                     .name(name)
                     .decoder(stage.getInputCodec())
-                    .subscribeAttempts(30); // max retry before failure
-
-            if (config != null) {
-                connectToBuilder.availabilityZone(config.getAvailabilityZoneUtils().getAvailabilityZone());
-            }
+                    .subscribeAttempts(30) // max retry before failure
+                    .availabilityZone(this.availabilityZoneUtils.getAvailabilityZone());
 
             connectionSet = DynamicConnectionSet.create(connectToBuilder);
         } else {

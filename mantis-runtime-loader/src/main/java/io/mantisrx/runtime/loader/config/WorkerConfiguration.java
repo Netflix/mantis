@@ -16,7 +16,6 @@
 
 package io.mantisrx.runtime.loader.config;
 
-import io.mantisrx.common.util.AvailabilityZoneUtils;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
@@ -193,16 +192,4 @@ public interface WorkerConfiguration extends CoreConfiguration {
             .filter(entry -> !entry.getValue().matches("\\$\\{.*\\}"))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
-
-    // ------------------------------------------------------------------------
-    //  Routing related configurations
-    // ------------------------------------------------------------------------
-    @Config("mantis.taskexecutor.router.scalar-stage-to-stage")
-    @Default("io.reactivex.mantis.network.push.RoundRobinRouter")
-    String getScalarStageToStageRouterClassName();
-
-
-    @Config("mantis.availabilityZoneUtils.class")
-    @Default("io.mantisrx.common.util.DefaultAvailabilityZoneUtils")
-    AvailabilityZoneUtils getAvailabilityZoneUtils();
 }

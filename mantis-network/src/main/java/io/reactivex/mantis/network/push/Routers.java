@@ -25,10 +25,10 @@ import org.slf4j.LoggerFactory;
 import rx.functions.Func1;
 
 
-public class Routers {
+public class Routers implements RouterFactory {
     private static final Logger logger = LoggerFactory.getLogger(Routers.class);
 
-    private Routers() {}
+    public Routers() {}
 
 
     public static <K, V> Router<KeyValuePair<K, V>> consistentHashingLegacyTcpProtocol(String name,
@@ -90,32 +90,6 @@ public class Routers {
         });
     }
 
-    public static <T> Router<T> createRouterInstance(String routerClassName, String name, final Func1<T, byte[]> toBytes) {
-        try {
-            // Load the class by its name
-            Class<?> clazz = Class.forName(routerClassName);
-            // Check if the class is a Router
-            if (!Router.class.isAssignableFrom(clazz)) {
-                throw new IllegalArgumentException(routerClassName + " does not implement " + Router.class.getName());
-            }
-            // Find the constructor of the class
-            Constructor<?> constructor = clazz.getDeclaredConstructor(String.class, Func1.class);
-            // Create a new instance using the constructor
-            Object instance = constructor.newInstance(name, toBytes);
-
-            @SuppressWarnings("unchecked")
-            Router<T> routerInstance = (Router<T>) instance;
-
-            return routerInstance;
-        } catch (Exception e) {
-            // Handle any exceptions (ClassNotFoundException, NoSuchMethodException, etc.)
-            final String msg = "failed to create instance of " + routerClassName;
-            logger.error(msg, e);
-            // Fall back to RoundRobinRouter
-            return roundRobinLegacyTcpProtocol(name, toBytes);
-        }
-    }
-
     private static Func1<String, byte[]> stringWithEncoding(String encoding) {
         final Charset charset = Charset.forName(encoding);
         return new Func1<String, byte[]>() {
@@ -144,5 +118,10 @@ public class Routers {
 
     public static Func1<String, byte[]> string() {
         return stringUtf8();
+    }
+
+    @Override
+    public <T> Router<T> scalarStageToStageRouter(String name, Func1<T, byte[]> toBytes) {
+        return roundRobinLegacyTcpProtocol(name, toBytes);
     }
 }
