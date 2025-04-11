@@ -245,11 +245,11 @@ public abstract class PushServer<T, R> {
             groupId = id;
         }
 
-        final BasicTag slotIdTag = new BasicTag("slotId", slotId);
+        final BasicTag clientIdTag = new BasicTag(CLIENT_ID_TAG_NAME, Optional.ofNullable(groupId).orElse("none"));
 
         SerializedSubject<List<byte[]>, List<byte[]>> subject
             = new SerializedSubject<>(PublishSubject.<List<byte[]>>create());
-        Observable<List<byte[]>> observable = subject.lift(new DropOperator<>("batch_writes", slotIdTag));
+        Observable<List<byte[]>> observable = subject.lift(new DropOperator<>("batch_writes", clientIdTag));
 
         if (applySampling) {
             observable =
@@ -266,7 +266,6 @@ public abstract class PushServer<T, R> {
                     );
         }
 
-        final BasicTag clientIdTag = new BasicTag(CLIENT_ID_TAG_NAME, Optional.ofNullable(groupId).orElse("none"));
         Metrics writableMetrics = new Metrics.Builder()
             .id("PushServer", clientIdTag)
             .addCounter("channelWritable")
