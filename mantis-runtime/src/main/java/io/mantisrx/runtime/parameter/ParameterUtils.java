@@ -214,7 +214,7 @@ public class ParameterUtils {
         ParameterDefinition<Boolean> autoscaleV2Enabled = new BooleanParameter()
             .name(JOB_AUTOSCALE_V2_ENABLED_PARAM)
             .validator(Validators.alwaysPass())
-            .defaultValue(false)
+            .defaultValue(true)
             .description("Enable v2 job master service.")
             .build();
         systemParams.put(autoscaleV2Enabled.getName(), autoscaleV2Enabled);
