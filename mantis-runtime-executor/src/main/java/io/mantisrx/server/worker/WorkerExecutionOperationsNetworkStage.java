@@ -411,7 +411,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 JobAutoscalerManager jobAutoscalerManager = getJobAutoscalerManagerInstance(serviceLocator);
 
                 // switch to v2 scaler control only when parameter is set to true for now
-                final Boolean useV2ScalerService = (Boolean) parameters.get(JOB_AUTOSCALE_V2_ENABLED_PARAM, false);
+                final Boolean useV2ScalerService = (Boolean) parameters.get(JOB_AUTOSCALE_V2_ENABLED_PARAM, true);
                 if (useV2ScalerService) {
                     logger.info("[V2 AUTO-SCALER ENABLED] Using V2 JobAutoScalerService: JobMasterServiceV2");
                     Service jobMasterServiceV2 = new JobMasterServiceV2(
