@@ -49,6 +49,7 @@ public class DynamoDBClientSingleton {
     private static DynamoDbClient instanceClient;
     private static String partitionKey;
     private static DynamoDBConfig conf;
+    private static long safeTimeWithoutHeartbeat;
 
     private DynamoDBClientSingleton() {
         // Private constructor to prevent instantiation
@@ -77,6 +78,17 @@ public class DynamoDBClientSingleton {
             }
         }
         return partitionKey;
+    }
+
+    public static synchronized long getSafeTimeWithoutHeartbeat() {
+        if (safeTimeWithoutHeartbeat == 0) {
+            safeTimeWithoutHeartbeat = getDynamoDBConf().getSafeTimeWithoutHeartbeat();
+            if (safeTimeWithoutHeartbeat == 0) {
+                throw new IllegalArgumentException("mantis.ext.dynamodb.safeTimeWithoutHeartbeat");
+            }
+        }
+
+        return safeTimeWithoutHeartbeat;
     }
 
     public static synchronized DynamoDbClient getDynamoDBClient() {
