@@ -80,7 +80,8 @@ public class DynamoDBLeaderElectorTest {
         final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
                 mockLeadershipManager,
                 lockSupport.getLockClient(),
-                "leader-key"
+                "leader-key",
+            5000L
             );
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
@@ -93,7 +94,8 @@ public class DynamoDBLeaderElectorTest {
         final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
             mockLeadershipManager,
             lockSupport.getLockClient(),
-            key
+            key,
+            5000L
         );
         lockSupport.takeLock(key);
         led.start();
@@ -110,7 +112,9 @@ public class DynamoDBLeaderElectorTest {
                 new DynamoDBLeaderElector(
                         mockLeadershipManager,
                         mockLockClient,
-                        LOCK_KEY);
+                        LOCK_KEY,
+                        5000L
+                    );
 
         when(mockLockClient.tryAcquireLock(any(AcquireLockOptions.class)))
                 .thenThrow(new RuntimeException("testing"))
@@ -137,7 +141,8 @@ public class DynamoDBLeaderElectorTest {
         final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
             mockLeadershipManager,
             lockSupport.getLockClient(),
-            key);
+            key,
+            5000L);
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
         verify(mockLeadershipManager, times(1)).becomeLeader();
@@ -163,7 +168,8 @@ public class DynamoDBLeaderElectorTest {
         final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
             mockLeadershipManager,
             lockSupport.getLockClient(),
-            key);
+            key,
+            5000L);
         lockSupport.takeLock(key);
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertTrue(led.isLeaderElectorRunning()));
