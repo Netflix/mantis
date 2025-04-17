@@ -132,7 +132,7 @@ public class DynamoDBLeaderElector extends BaseService {
                                     .withAcquireReleasedLocksConsistently(true)
                                     .withData(ByteBuffer.wrap(jsonMapper.writeValueAsBytes(me)))
                                     // @todo(andresgalindo) this should come from config
-                                    .withSessionMonitor(5000L, Optional.of(leadershipManager::stopBeingLeader))
+                                    .withSessionMonitor(5000L, Optional.of(this::giveUpLeadership))
                                     .build());
             if (optionalLock.isPresent()) {
                 leaderLock = optionalLock.get();
@@ -150,6 +150,29 @@ public class DynamoDBLeaderElector extends BaseService {
                 this.leaderElector.schedule(this::tryToBecomeLeader, 1L, TimeUnit.SECONDS);
             }
             log.info("finished leadership request, will restart election: {}", shouldLeaderElectorBeRunning.get());
+        }
+    }
+
+    /**
+     * this method is used by the session monitor is and should only ever be called if we've
+     * lost the lock but continue to run anyway.
+     */
+    protected void giveUpLeadership() {
+        boolean lockWasNull = false;
+        boolean lockWasReleased = false;
+
+        if(leaderLock == null) {
+            lockWasNull = true;
+        } else {
+            lockWasReleased = lockClient.releaseLock(leaderLock);
+        }
+
+        leadershipManager.stopBeingLeader();
+        log.info("leadership lock release, lock was null {}, lock was released {}", lockWasNull, lockWasReleased);
+
+        if(!isLeaderElectorRunning()) {
+            shouldLeaderElectorBeRunning.set(true);
+            leaderElector.submit(this::tryToBecomeLeader);
         }
     }
 }
