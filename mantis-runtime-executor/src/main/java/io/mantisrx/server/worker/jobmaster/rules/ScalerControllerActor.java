@@ -1,7 +1,7 @@
 package io.mantisrx.server.worker.jobmaster.rules;
 
-import akka.actor.AbstractActor;
-import akka.actor.Props;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.Props;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static akka.dispatch.Futures.future;
+import static org.apache.pekko.dispatch.Futures.future;
 
 @Slf4j
 public class ScalerControllerActor extends AbstractActor {

@@ -47,14 +47,14 @@ dependencies {
     testImplementation libraries.mockitoAll
 }
 
-// This task makes flink-rpc-akka.jar available in mantis-control-plane-core classpath,
-// to ensure that all the classes from flink-rpc-akka.jar (like scala and akka) are always
+// This task makes flink-rpc-pekko.jar available in mantis-control-plane-core classpath,
+// to ensure that all the classes from flink-rpc-pekko.jar (like scala and pekko) are always
 // loaded through a custom submodule classloader.
 task copyLibs(type: Copy) {
     from(sourceSets.main.compileClasspath) {
-        rename 'flink-rpc-akka(.*)', 'flink-rpc-akka.jar'
+        rename 'flink-rpc-pekko(.*)', 'flink-rpc-pekko.jar'
     }
-    include '*flink-rpc-akka*.jar'
+    include '*flink-rpc-pekko*.jar'
     into "$buildDir/classes/java/main"
 }
 

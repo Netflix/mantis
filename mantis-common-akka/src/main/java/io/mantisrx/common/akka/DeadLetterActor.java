@@ -16,8 +16,8 @@
 
 package io.mantisrx.common.akka;
 
-import akka.actor.AbstractActor;
-import akka.actor.DeadLetter;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.DeadLetter;
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;

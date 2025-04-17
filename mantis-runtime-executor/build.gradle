@@ -34,7 +34,7 @@ dependencies {
     implementation libraries.spectatorApi
     implementation 'org.quartz-scheduler:quartz:2.2.+' // need to stay on jdk 8 compatible version
 
-    testImplementation libraries.akkaTest
+    testImplementation libraries.pekkoTest
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
     testImplementation 'org.hamcrest:hamcrest-all:1.3'

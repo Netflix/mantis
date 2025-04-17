@@ -16,10 +16,10 @@
 
 package io.mantisrx.common.akka;
 
-import akka.actor.ActorRef;
-import akka.dispatch.Envelope;
-import akka.dispatch.MessageQueue;
-import akka.dispatch.UnboundedMessageQueueSemantics;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.dispatch.Envelope;
+import org.apache.pekko.dispatch.MessageQueue;
+import org.apache.pekko.dispatch.UnboundedMessageQueueSemantics;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Timer;
@@ -46,11 +46,11 @@ public class MeteredMessageQueue implements MessageQueue, UnboundedMessageQueueS
     public MeteredMessageQueue(final String path) {
         Registry registry = SpectatorRegistryFactory.getRegistry();
         this.path = path;
-        this.insertCounter = registry.counter("akka.queue.insert", "path", path);
-        this.waitTimer = registry.timer("akka.queue.wait", "path", path);
+        this.insertCounter = registry.counter("pekko.queue.insert", "path", path);
+        this.waitTimer = registry.timer("pekko.queue.wait", "path", path);
         PolledMeter
             .using(registry)
-            .withName("akka.queue.size")
+            .withName("pekko.queue.size")
             .withTag("path", path)
             .monitorSize(queue);
     }
@@ -61,7 +61,7 @@ public class MeteredMessageQueue implements MessageQueue, UnboundedMessageQueueS
     static final class Entry {
 
         /**
-         * The {@link Envelope} used by Akka around each enqueued message.
+         * The {@link Envelope} used by Pekko around each enqueued message.
          */
         private final Envelope v;
         /**
