@@ -81,7 +81,7 @@ public class DynamoDBLeaderElectorTest {
                 mockLeadershipManager,
                 lockSupport.getLockClient(),
                 "leader-key",
-            5000L
+            DynamoDBLockSupportRule.safeWithoutHeartbeatTime
             );
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
@@ -95,7 +95,7 @@ public class DynamoDBLeaderElectorTest {
             mockLeadershipManager,
             lockSupport.getLockClient(),
             key,
-            5000L
+            DynamoDBLockSupportRule.safeWithoutHeartbeatTime
         );
         lockSupport.takeLock(key);
         led.start();
@@ -113,7 +113,7 @@ public class DynamoDBLeaderElectorTest {
                         mockLeadershipManager,
                         mockLockClient,
                         LOCK_KEY,
-                        5000L
+                    DynamoDBLockSupportRule.safeWithoutHeartbeatTime
                     );
 
         when(mockLockClient.tryAcquireLock(any(AcquireLockOptions.class)))
@@ -142,7 +142,7 @@ public class DynamoDBLeaderElectorTest {
             mockLeadershipManager,
             lockSupport.getLockClient(),
             key,
-            5000L);
+            DynamoDBLockSupportRule.safeWithoutHeartbeatTime);
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
         verify(mockLeadershipManager, times(1)).becomeLeader();
@@ -169,7 +169,7 @@ public class DynamoDBLeaderElectorTest {
             mockLeadershipManager,
             lockSupport.getLockClient(),
             key,
-            5000L);
+            DynamoDBLockSupportRule.safeWithoutHeartbeatTime);
         lockSupport.takeLock(key);
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertTrue(led.isLeaderElectorRunning()));

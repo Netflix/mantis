@@ -135,7 +135,7 @@ public class DynamoDBLeaderElector extends BaseService {
                                     .withReplaceData(true)
                                     .withAcquireReleasedLocksConsistently(true)
                                     .withData(ByteBuffer.wrap(jsonMapper.writeValueAsBytes(me)))
-                                    // @todo(andresgalindo) this should come from config
+                                    .withTimeUnit(TimeUnit.MILLISECONDS)
                                     .withSessionMonitor(safeTimeWithoutHeartbeat, Optional.of(this::giveUpLeadership))
                                     .build());
             if (optionalLock.isPresent()) {
