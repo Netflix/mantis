@@ -34,6 +34,9 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Optional;
 import org.awaitility.core.ConditionFactory;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -80,11 +83,38 @@ public class DynamoDBLeaderElectorTest {
         final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
                 mockLeadershipManager,
                 lockSupport.getLockClient(),
-                "leader-key"
+                "leader-key",
+            DynamoDBLockSupportRule.safeWithoutHeartbeatTime
             );
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
         verify(mockLeadershipManager, times(1)).becomeLeader();
+    }
+
+    @Test
+    public void givesUpLeadership() {
+        AmazonDynamoDBLockClient lockClient = lockSupport.getLockClient();
+        String key = "give-up-leader";
+        final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
+            mockLeadershipManager,
+            lockClient,
+            key,
+            DynamoDBLockSupportRule.safeWithoutHeartbeatTime
+        );
+
+        // wait for leadership to be established
+        led.start();
+        awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
+        verify(mockLeadershipManager, times(1)).becomeLeader();
+
+
+        led.giveUpLeadership();
+        verify(mockLeadershipManager, times(1)).stopBeingLeader();
+
+
+        // we should resubmit trying to be a leader right after we stop being leader
+        awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
+        verify(mockLeadershipManager, times(2)).becomeLeader();
     }
 
     @Test
@@ -93,7 +123,8 @@ public class DynamoDBLeaderElectorTest {
         final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
             mockLeadershipManager,
             lockSupport.getLockClient(),
-            key
+            key,
+            DynamoDBLockSupportRule.safeWithoutHeartbeatTime
         );
         lockSupport.takeLock(key);
         led.start();
@@ -110,7 +141,9 @@ public class DynamoDBLeaderElectorTest {
                 new DynamoDBLeaderElector(
                         mockLeadershipManager,
                         mockLockClient,
-                        LOCK_KEY);
+                        LOCK_KEY,
+                    DynamoDBLockSupportRule.safeWithoutHeartbeatTime
+                    );
 
         when(mockLockClient.tryAcquireLock(any(AcquireLockOptions.class)))
                 .thenThrow(new RuntimeException("testing"))
@@ -137,7 +170,8 @@ public class DynamoDBLeaderElectorTest {
         final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
             mockLeadershipManager,
             lockSupport.getLockClient(),
-            key);
+            key,
+            DynamoDBLockSupportRule.safeWithoutHeartbeatTime);
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
         verify(mockLeadershipManager, times(1)).becomeLeader();
@@ -154,7 +188,6 @@ public class DynamoDBLeaderElectorTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Test
@@ -163,7 +196,8 @@ public class DynamoDBLeaderElectorTest {
         final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
             mockLeadershipManager,
             lockSupport.getLockClient(),
-            key);
+            key,
+            DynamoDBLockSupportRule.safeWithoutHeartbeatTime);
         lockSupport.takeLock(key);
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertTrue(led.isLeaderElectorRunning()));
