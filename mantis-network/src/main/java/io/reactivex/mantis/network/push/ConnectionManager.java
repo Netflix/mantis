@@ -127,7 +127,7 @@ public class ConnectionManager<T> {
                 }
             }
             current.addConnection(connection);
-            logger.info("Connection added to group: " + groupId + ", connection: " + connection + ", group: " + current);
+            logger.debug("Connection added to group: " + groupId + ", connection: " + connection + ", group: " + current);
         } finally {
             connectionState.unlock();
         }
@@ -146,7 +146,7 @@ public class ConnectionManager<T> {
             ConnectionGroup<T> current = managedConnections.get(groupId);
             if (current != null) {
                 current.removeConnection(connection);
-                logger.info("Connection removed from group: " + groupId + ", connection: " + connection + ", group: " + current);
+                logger.debug("Connection removed from group: " + groupId + ", connection: " + connection + ", group: " + current);
                 if (current.isEmpty()) {
                     logger.info("Removing group: " + groupId + ", zero connections");
                     // deregister metrics
