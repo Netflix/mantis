@@ -92,7 +92,7 @@ public class DynamoDBLeaderElectorTest {
     }
 
     @Test
-    public void givesUpLeadership() throws InterruptedException {
+    public void givesUpLeadership() {
         AmazonDynamoDBLockClient lockClient = lockSupport.getLockClient();
         String key = "give-up-leader";
         final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
@@ -101,22 +101,19 @@ public class DynamoDBLeaderElectorTest {
             key,
             DynamoDBLockSupportRule.safeWithoutHeartbeatTime
         );
+
+        // wait for leadership to be established
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
         verify(mockLeadershipManager, times(1)).becomeLeader();
-        lockClient.getLock(key, Optional.empty()).ifPresent(lockItem -> {
-            Class<?> clazz = lockItem.getClass();
-            try {
-                Method method = clazz.getDeclaredMethod("runSessionMonitor");
-                method.setAccessible(true);
-                method.invoke(lockItem);
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        Thread.sleep(100);
+
+
+        led.giveUpLeadership();
         verify(mockLeadershipManager, times(1)).stopBeingLeader();
+
+
         // we should resubmit trying to be a leader right after we stop being leader
+        awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
         verify(mockLeadershipManager, times(2)).becomeLeader();
     }
 
