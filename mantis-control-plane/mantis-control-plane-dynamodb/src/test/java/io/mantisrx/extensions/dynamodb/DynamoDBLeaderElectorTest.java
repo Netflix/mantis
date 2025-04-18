@@ -116,6 +116,8 @@ public class DynamoDBLeaderElectorTest {
         });
         Thread.sleep(100);
         verify(mockLeadershipManager, times(1)).stopBeingLeader();
+        // we should resubmit trying to be a leader right after we stop being leader
+        verify(mockLeadershipManager, times(2)).becomeLeader();
     }
 
     @Test
