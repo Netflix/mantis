@@ -72,6 +72,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -219,7 +220,8 @@ public class RuntimeTaskImplExecutorTest {
                 new WorkerPorts(2, 3, 4, 5, 6),
                 Optional.of(SineFunctionJobProvider.class.getName()),
                 "user",
-                "111")), Time.seconds(1));
+                "111")),
+            Duration.ofSeconds(1));
         wait.get();
         Assert.assertTrue(startedSignal.await(5, TimeUnit.SECONDS));
         Subscription subscription = HttpSources.source(HttpClientFactories.sseClientFactory(),
@@ -256,7 +258,7 @@ public class RuntimeTaskImplExecutorTest {
                 TaskExecutorReport.occupied(workerId)));
 
         CompletableFuture<Ack> cancelFuture =
-            taskExecutor.callInMainThread(() -> taskExecutor.cancelTask(workerId), Time.seconds(1));
+            taskExecutor.callInMainThread(() -> taskExecutor.cancelTask(workerId), Duration.ofSeconds(1));
         cancelFuture.get();
 
         Thread.sleep(5000);
@@ -332,7 +334,7 @@ public class RuntimeTaskImplExecutorTest {
         start();
         Thread.sleep(1000);
         verify(resourceManagerGateway, times(1)).registerTaskExecutor(any());
-        Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
+        Assert.assertTrue(taskExecutor.isRegistered(Duration.ofSeconds(1)).get());
     }
 
     @Test
@@ -356,7 +358,7 @@ public class RuntimeTaskImplExecutorTest {
         verify(newResourceClusterGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
         // check if the task executor is registered
-        Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
+        Assert.assertTrue(taskExecutor.isRegistered(Duration.ofSeconds(1)).get());
     }
 
     @Test
@@ -386,7 +388,7 @@ public class RuntimeTaskImplExecutorTest {
         verify(newResourceManagerGateway2, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
         // check if the task executor is registered
-        Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
+        Assert.assertTrue(taskExecutor.isRegistered(Duration.ofSeconds(1)).get());
     }
 
     private static ResourceClusterGateway getHealthyGateway(String name) {

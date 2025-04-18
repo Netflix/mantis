@@ -24,10 +24,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ServiceLoader;
 import java.util.UUID;
+
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.core.classloading.ComponentClassLoader;
 import org.apache.flink.runtime.rpc.RpcSystem;
 import org.apache.flink.runtime.rpc.RpcSystemLoader;
@@ -44,6 +45,11 @@ public class MantisPekkoRpcSystemLoader implements RpcSystemLoader {
 
     public static RpcSystem getInstance() {
         return INSTANCE;
+    }
+
+    @Override
+    public int getLoadPriority() {
+        return 0;
     }
 
     @Override
@@ -93,9 +99,10 @@ public class MantisPekkoRpcSystemLoader implements RpcSystemLoader {
                 flinkClassLoader,
                 // Dependencies which are needed by logic inside flink-rpc-akka (ie PekkoRpcService/System) which
                 // are external to flink-rpc-akka itself (like ExecuteStageRequest in mantis-control-plane).
-                CoreOptions.parseParentFirstLoaderPatterns(
-                    "org.slf4j;org.apache.log4j;org.apache.logging;org.apache.commons.logging;ch.qos.logback;io.mantisrx.server.worker;io.mantisrx.server.core;io.mantisrx", ""),
-                new String[] {"org.apache.flink"});
+                new String[] {"org.slf4j", "org.apache.log4j", "org.apache.logging", "org.apache.commons.logging",
+                             "ch.qos.logback", "io.mantisrx.server.worker", "io.mantisrx.server.core", "io.mantisrx"},
+                new String[] {"org.apache.flink"},
+                ImmutableMap.of());
 
             return new CleanupOnCloseRpcSystem(
                 ServiceLoader.load(RpcSystem.class, componentClassLoader).iterator().next(),

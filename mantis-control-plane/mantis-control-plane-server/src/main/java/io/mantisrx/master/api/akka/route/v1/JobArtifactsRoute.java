@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import static akka.http.javadsl.server.PathMatchers.segment;
+import static org.apache.pekko.http.javadsl.server.PathMatchers.segment;
 
 import org.apache.pekko.http.javadsl.model.StatusCodes;
 import org.apache.pekko.http.javadsl.server.PathMatcher0;

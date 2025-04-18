@@ -21,7 +21,7 @@ import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
-import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
+import io.mantisrx.server.core.MantisPekkoRpcSystemLoader;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -130,7 +130,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
 
         private RpcSystem getRpcSystem() {
             if (this.rpcSystem == null) {
-                return MantisAkkaRpcSystemLoader.getInstance();
+                return MantisPekkoRpcSystemLoader.getInstance();
             } else {
                 return this.rpcSystem;
             }

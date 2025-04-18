@@ -16,7 +16,7 @@
 
 package io.mantisrx.master;
 
-import static akka.pattern.PatternsCS.ask;
+import static org.apache.pekko.pattern.PatternsCS.ask;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 

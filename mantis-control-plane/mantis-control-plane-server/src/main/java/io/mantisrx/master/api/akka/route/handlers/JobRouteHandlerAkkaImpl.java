@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
-import static akka.pattern.PatternsCS.ask;
+import static org.apache.pekko.pattern.PatternsCS.ask;
 
 import org.apache.pekko.actor.ActorRef;
 import io.mantisrx.common.metrics.Counter;

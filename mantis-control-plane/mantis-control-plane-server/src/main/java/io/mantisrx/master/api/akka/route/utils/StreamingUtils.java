@@ -23,6 +23,7 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +32,9 @@ import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.*;
 
 public class StreamingUtils {
     private static final Logger logger = LoggerFactory.getLogger(StreamingUtils.class);
-    private static final ObjectMapper mapper = new ObjectMapper().configure(
-            DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final ObjectMapper mapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .registerModule(new JavaTimeModule());
 
     private static volatile Optional<ServerSentEvent> cachedSchedInfoHbEvent = Optional.empty();
     private static volatile Optional<ServerSentEvent> cachedJobClusterInfoHbEvent = Optional.empty();

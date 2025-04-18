@@ -22,6 +22,7 @@ import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.flink.api.common.time.Time;
@@ -116,12 +117,8 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @DefaultNull
     File getRegistrationStoreDir();
 
-    default Time getHeartbeatTimeout() {
-        return Time.milliseconds(heartbeatTimeoutMs());
-    }
-
-    default Time getHeartbeatInterval() {
-        return Time.milliseconds(heartbeatInternalInMs());
+    default Duration getHeartbeatInterval() {
+        return Duration.ofMillis(heartbeatInternalInMs());
     }
 
     // ------------------------------------------------------------------------

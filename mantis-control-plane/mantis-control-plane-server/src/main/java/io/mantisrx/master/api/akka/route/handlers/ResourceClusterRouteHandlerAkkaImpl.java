@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
-import static akka.pattern.Patterns.ask;
+import static org.apache.pekko.pattern.Patterns.ask;
 
 import org.apache.pekko.actor.ActorRef;
 import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;

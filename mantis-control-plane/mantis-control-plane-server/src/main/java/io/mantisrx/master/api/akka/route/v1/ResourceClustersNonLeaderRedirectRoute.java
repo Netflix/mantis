@@ -16,8 +16,8 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import static akka.http.javadsl.server.PathMatchers.segment;
-import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
+import static org.apache.pekko.http.javadsl.server.PathMatchers.segment;
+import static org.apache.pekko.http.javadsl.server.directives.CachingDirectives.alwaysCache;
 
 import org.apache.pekko.actor.ActorSystem;
 import org.apache.pekko.http.caching.javadsl.Cache;

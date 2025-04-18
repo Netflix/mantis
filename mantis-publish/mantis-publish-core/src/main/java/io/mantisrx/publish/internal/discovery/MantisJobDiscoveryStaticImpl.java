@@ -25,6 +25,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,7 +43,10 @@ public class MantisJobDiscoveryStaticImpl implements MantisJobDiscovery {
 
     private static final Logger logger = LoggerFactory.getLogger(MantisJobDiscoveryCachingImpl.class);
 
-    private static final ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final ObjectMapper mapper = new ObjectMapper()
+            .registerModule(new Jdk8Module())
+            .registerModule(new JavaTimeModule())
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static final String DEFAULT_JOB_CLUSTER = "SharedMrePublishEventSource";
     private static final String JOB_CLUSTER_LOOKUP_FAILED = "JobClusterLookupFailed";
 

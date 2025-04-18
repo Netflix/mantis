@@ -35,6 +35,7 @@ import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.flink.util.FlinkUserCodeClassLoader;
+import org.apache.flink.util.MutableURLClassLoader;
 import org.apache.flink.util.SimpleUserCodeClassLoader;
 import org.apache.flink.util.UserCodeClassLoader;
 
@@ -103,14 +104,24 @@ public class BlobStoreAwareClassLoaderHandle implements ClassLoaderHandle {
     }
 
     public static class ParentFirstClassLoader extends FlinkUserCodeClassLoader {
+        private final Consumer<Throwable> classLoadingExceptionHandler;
 
         ParentFirstClassLoader(
             URL[] urls, ClassLoader parent, Consumer<Throwable> classLoadingExceptionHandler) {
             super(urls, parent, classLoadingExceptionHandler);
+            this.classLoadingExceptionHandler = classLoadingExceptionHandler;
         }
 
         static {
             ClassLoader.registerAsParallelCapable();
+        }
+
+        @Override
+        public MutableURLClassLoader copy() {
+            return new ParentFirstClassLoader(
+                getURLs(),
+                getParent(),
+                classLoadingExceptionHandler);
         }
     }
 

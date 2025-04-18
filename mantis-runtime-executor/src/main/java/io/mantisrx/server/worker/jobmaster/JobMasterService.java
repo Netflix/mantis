@@ -32,6 +32,7 @@ import io.mantisrx.server.worker.jobmaster.rules.ScalerControllerActor;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -51,7 +52,9 @@ public class JobMasterService implements JobAutoScalerService {
 
     private static final Logger logger = LoggerFactory.getLogger(JobMasterService.class);
 
-    private final static ObjectMapper objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final static ObjectMapper objectMapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .registerModule(new JavaTimeModule());
     private final String jobId;
     private final WorkerMetricsClient workerMetricsClient;
     private final AutoScaleMetricsConfig autoScaleMetricsConfig;

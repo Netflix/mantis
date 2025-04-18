@@ -57,6 +57,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import java.io.File;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -355,12 +356,12 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             } else {
                 return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
             }
-        }, Time.milliseconds(this.rpcCallTimeoutMsDp.getValue()));
+        }, Duration.ofMillis(this.rpcCallTimeoutMsDp.getValue()));
     }
 
     @VisibleForTesting
     <T> CompletableFuture<T> callInMainThread(Callable<CompletableFuture<T>> tSupplier,
-                                              Time timeout) {
+                                              Duration timeout) {
         return this.callAsync(tSupplier, timeout).thenCompose(t -> t);
     }
 
@@ -569,10 +570,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @Override
     public CompletableFuture<Boolean> isRegistered() {
         return callAsync(() -> this.currentResourceManagerCxn != null && this.currentResourceManagerCxn.isRegistered(),
-            Time.milliseconds(this.rpcCallTimeoutMsDp.getValue()));
+            Duration.ofMillis(this.rpcCallTimeoutMsDp.getValue()));
     }
 
-    CompletableFuture<Boolean> isRegistered(Time timeout) {
+    CompletableFuture<Boolean> isRegistered(Duration timeout) {
         return callAsync(() -> this.currentResourceManagerCxn != null, timeout);
     }
 

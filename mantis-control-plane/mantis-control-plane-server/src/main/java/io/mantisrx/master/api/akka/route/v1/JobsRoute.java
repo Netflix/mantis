@@ -16,8 +16,8 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import static akka.http.javadsl.server.PathMatchers.segment;
-import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
+import static org.apache.pekko.http.javadsl.server.PathMatchers.segment;
+import static org.apache.pekko.http.javadsl.server.directives.CachingDirectives.alwaysCache;
 import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createListJobsRequest;
 import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createWorkerStatusRequest;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListArchivedWorkersRequest.DEFAULT_LIST_ARCHIVED_WORKERS_LIMIT;

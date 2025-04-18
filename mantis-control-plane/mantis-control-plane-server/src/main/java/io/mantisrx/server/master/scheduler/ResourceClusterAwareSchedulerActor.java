@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.master.scheduler;
 
-import static akka.pattern.Patterns.pipe;
+import static org.apache.pekko.pattern.Patterns.pipe;
 
 import org.apache.pekko.actor.AbstractActorWithTimers;
 import org.apache.pekko.actor.Props;

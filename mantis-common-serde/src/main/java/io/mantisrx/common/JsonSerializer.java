@@ -21,6 +21,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.SerializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.util.Map;
 
@@ -28,7 +29,8 @@ public class JsonSerializer {
     private static final ObjectMapper defaultObjectMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-            .registerModule(new Jdk8Module());
+            .registerModule(new Jdk8Module())
+            .registerModule(new JavaTimeModule());
     public static final SimpleFilterProvider DEFAULT_FILTER_PROVIDER;
 
     static {

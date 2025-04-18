@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import static akka.http.javadsl.server.PathMatchers.segment;
+import static org.apache.pekko.http.javadsl.server.PathMatchers.segment;
 
 import org.apache.pekko.http.javadsl.server.PathMatcher0;
 import org.apache.pekko.http.javadsl.server.Route;
@@ -34,6 +34,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -50,9 +51,9 @@ import org.slf4j.LoggerFactory;
 public class AdminMasterRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(AdminMasterRoute.class);
     private static final PathMatcher0 MASTER_API_PREFIX = segment("api").slash("v1");
-    private static final ObjectMapper mapper = new ObjectMapper().configure(
-            DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-            false);
+    private static final ObjectMapper mapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .registerModule(new JavaTimeModule());
     private final MasterDescription masterDesc;
     private final List<Configlet> configs = new ArrayList<>();
 

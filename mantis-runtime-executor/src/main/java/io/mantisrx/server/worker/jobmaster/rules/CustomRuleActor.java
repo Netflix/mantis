@@ -15,7 +15,7 @@ import scala.concurrent.Future;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static akka.dispatch.Futures.future;
+import static org.apache.pekko.dispatch.Futures.future;
 
 /**
  * Actor that implements a custom scaling rule.
