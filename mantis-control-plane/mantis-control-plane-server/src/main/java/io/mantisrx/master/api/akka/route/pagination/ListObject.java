@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.api.akka.route.pagination;
 
-import akka.http.javadsl.model.Uri;
+import org.apache.pekko.http.javadsl.model.Uri;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.api.akka.route.v1.ParamName;
 import io.mantisrx.shaded.com.google.common.base.Strings;

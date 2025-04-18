@@ -16,12 +16,12 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.actor.SupervisorStrategy;
-import akka.japi.pf.ReceiveBuilder;
-import io.mantisrx.common.akka.MantisActorSupervisorStrategy;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.SupervisorStrategy;
+import org.apache.pekko.japi.pf.ReceiveBuilder;
+import io.mantisrx.common.pekko.MantisActorSupervisorStrategy;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;

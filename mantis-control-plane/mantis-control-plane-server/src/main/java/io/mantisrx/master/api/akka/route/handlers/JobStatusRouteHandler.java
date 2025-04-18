@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
-import akka.NotUsed;
-import akka.http.javadsl.model.ws.Message;
-import akka.stream.javadsl.Flow;
+import org.apache.pekko.NotUsed;
+import org.apache.pekko.http.javadsl.model.ws.Message;
+import org.apache.pekko.stream.javadsl.Flow;
 
 public interface JobStatusRouteHandler {
     Flow<Message, Message, NotUsed> jobStatus(final String jobId);

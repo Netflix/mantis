@@ -18,8 +18,8 @@ package io.mantisrx.master.api.akka.route.v1;
 
 import static akka.http.javadsl.server.PathMatchers.segment;
 
-import akka.http.javadsl.server.PathMatcher0;
-import akka.http.javadsl.server.Route;
+import org.apache.pekko.http.javadsl.server.PathMatcher0;
+import org.apache.pekko.http.javadsl.server.Route;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.runtime.JobConstraints;

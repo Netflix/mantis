@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.jobcluster;
 
-import static akka.pattern.PatternsCS.ask;
+import static org.apache.pekko.pattern.PatternsCS.ask;
 import static io.mantisrx.common.SystemParameters.JOB_WORKER_HEARTBEAT_INTERVAL_SECS;
 import static io.mantisrx.common.SystemParameters.JOB_WORKER_TIMEOUT_SECS;
 import static io.mantisrx.master.StringConstants.MANTIS_MASTER_USER;
@@ -30,11 +30,11 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.actor.SupervisorStrategy;
-import akka.actor.Terminated;
+import org.apache.pekko.actor.AbstractActorWithTimers;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.SupervisorStrategy;
+import org.apache.pekko.actor.Terminated;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.fenzo.triggers.CronTrigger;
 import com.netflix.fenzo.triggers.TriggerOperator;

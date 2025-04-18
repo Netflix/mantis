@@ -1,7 +1,7 @@
 package io.mantisrx.server.worker.jobmaster.rules;
 
-import akka.actor.AbstractActor;
-import akka.actor.Props;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.Props;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
 import lombok.extern.slf4j.Slf4j;

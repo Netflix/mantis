@@ -24,9 +24,9 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.testkit.javadsl.TestKit;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;

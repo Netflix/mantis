@@ -39,7 +39,8 @@ buildscript {
 }
 
 ext.versions = [
-        pekko    : "1.1.2",
+        pekko    : "1.1.3",
+        pekkoHttp: "1.1.0",
         commons  : "3.5",
         flink    : "1.19.2",
         hadoop   : "2.7.7",
@@ -56,13 +57,13 @@ ext.versions = [
 
 ext.libraries = [
         pekkoActor      : "org.apache.pekko:pekko-actor_${versions.scala}:${versions.pekko}",
-        pekkoHttp       : "org.apache.pekko:pekko-http_${versions.scala}:${versions.pekko}",
-        pekkoHttpJackson: "org.apache.pekko:pekko-http-jackson_${versions.scala}:${versions.pekko}",
-        pekkoHttpCaching: "org.apache.pekko:pekko-http-caching_${versions.scala}:${versions.pekko}",
+        pekkoHttp       : "org.apache.pekko:pekko-http_${versions.scala}:${versions.pekkoHttp}",
+        pekkoHttpJackson: "org.apache.pekko:pekko-http-jackson_${versions.scala}:${versions.pekkoHttp}",
+        pekkoHttpCaching: "org.apache.pekko:pekko-http-caching_${versions.scala}:${versions.pekkoHttp}",
         pekkoStream     : "org.apache.pekko:pekko-stream_${versions.scala}:${versions.pekko}",
         pekkoSlf4j      : "org.apache.pekko:pekko-slf4j_${versions.scala}:${versions.pekko}",
         pekkoTest       : "org.apache.pekko:pekko-testkit_${versions.scala}:${versions.pekko}",
-        pekkoHttpTest   : "org.apache.pekko:pekko-http-testkit_${versions.scala}:${versions.pekko}",
+        pekkoHttpTest   : "org.apache.pekko:pekko-http-testkit_${versions.scala}:${versions.pekkoHttp}",
 
         // Keep old Akka references for backward compatibility during migration
         akkaActor      : "org.apache.pekko:pekko-actor_${versions.scala}:${versions.pekko}",
@@ -82,7 +83,7 @@ ext.libraries = [
                 "org.apache.flink:flink-rpc-core:${versions.flink}",
         ],
         flinkRpcImpl   : [
-                "org.apache.flink:flink-rpc-pekko:${versions.flink}",
+                "org.apache.flink:flink-rpc-akka:${versions.flink}",
         ],
         junit4         : [
                 "junit:junit:${versions.junit4}",

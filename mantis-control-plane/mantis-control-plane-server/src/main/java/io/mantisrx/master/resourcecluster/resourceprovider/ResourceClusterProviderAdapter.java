@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.resourcecluster.resourceprovider;
 
-import akka.actor.ActorSystem;
+import org.apache.pekko.actor.ActorSystem;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;

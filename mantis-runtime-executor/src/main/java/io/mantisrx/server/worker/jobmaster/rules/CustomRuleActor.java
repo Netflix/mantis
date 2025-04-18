@@ -1,8 +1,8 @@
 package io.mantisrx.server.worker.jobmaster.rules;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Props;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
 import io.mantisrx.shaded.com.google.common.base.Strings;

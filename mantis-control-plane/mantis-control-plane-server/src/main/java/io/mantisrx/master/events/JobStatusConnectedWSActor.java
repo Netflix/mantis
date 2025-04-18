@@ -16,11 +16,11 @@
 
 package io.mantisrx.master.events;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.PoisonPill;
-import akka.actor.Props;
-import akka.actor.Terminated;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.PoisonPill;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.Terminated;
 import io.mantisrx.master.api.akka.route.proto.JobStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

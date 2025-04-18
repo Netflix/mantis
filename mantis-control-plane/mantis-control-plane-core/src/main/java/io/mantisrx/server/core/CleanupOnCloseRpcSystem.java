@@ -44,7 +44,7 @@ class CleanupOnCloseRpcSystem implements RpcSystem {
 
     @Override
     public void close() {
-        log.info("Closing MantisAkkaRpcSystemLoader.");
+        log.info("Closing MantisPekkoRpcSystemLoader.");
         rpcSystem.close();
 
         try {

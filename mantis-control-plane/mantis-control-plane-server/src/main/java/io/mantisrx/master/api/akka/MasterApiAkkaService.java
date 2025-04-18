@@ -16,20 +16,20 @@
 
 package io.mantisrx.master.api.akka;
 
-import akka.NotUsed;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.http.javadsl.Http;
-import akka.http.javadsl.HttpsConnectionContext;
-import akka.http.javadsl.ServerBinding;
-import akka.http.javadsl.ServerBuilder;
-import akka.http.javadsl.model.HttpRequest;
-import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.settings.ServerSettings;
-import akka.http.javadsl.settings.WebSocketSettings;
-import akka.stream.Materializer;
-import akka.stream.javadsl.Flow;
-import akka.stream.javadsl.Sink;
+import org.apache.pekko.NotUsed;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.http.javadsl.Http;
+import org.apache.pekko.http.javadsl.HttpsConnectionContext;
+import org.apache.pekko.http.javadsl.ServerBinding;
+import org.apache.pekko.http.javadsl.ServerBuilder;
+import org.apache.pekko.http.javadsl.model.HttpRequest;
+import org.apache.pekko.http.javadsl.model.HttpResponse;
+import org.apache.pekko.http.javadsl.settings.ServerSettings;
+import org.apache.pekko.http.javadsl.settings.WebSocketSettings;
+import org.apache.pekko.stream.Materializer;
+import org.apache.pekko.stream.javadsl.Flow;
+import org.apache.pekko.stream.javadsl.Sink;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
 import io.mantisrx.master.api.akka.route.MasterApiMetrics;

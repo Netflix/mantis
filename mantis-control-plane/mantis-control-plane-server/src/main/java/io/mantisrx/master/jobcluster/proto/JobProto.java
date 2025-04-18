@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.jobcluster.proto;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import io.mantisrx.server.master.domain.JobId;
 import java.time.Instant;
 

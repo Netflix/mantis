@@ -19,7 +19,6 @@ apply plugin: 'application'
 apply plugin: 'com.bmuschko.docker-java-application'
 
 ext {
-    pekkoHttpVersion = '1.0.0'
     fenzoVersion = '0.13.8'
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'

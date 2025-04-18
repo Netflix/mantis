@@ -42,16 +42,16 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJ
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 
-import akka.actor.ActorSystem;
-import akka.http.caching.javadsl.Cache;
-import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.model.StatusCodes;
-import akka.http.javadsl.model.Uri;
-import akka.http.javadsl.server.PathMatcher0;
-import akka.http.javadsl.server.PathMatchers;
-import akka.http.javadsl.server.Route;
-import akka.http.javadsl.server.RouteResult;
-import akka.http.javadsl.unmarshalling.StringUnmarshallers;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.http.caching.javadsl.Cache;
+import org.apache.pekko.http.javadsl.model.HttpResponse;
+import org.apache.pekko.http.javadsl.model.StatusCodes;
+import org.apache.pekko.http.javadsl.model.Uri;
+import org.apache.pekko.http.javadsl.server.PathMatcher0;
+import org.apache.pekko.http.javadsl.server.PathMatchers;
+import org.apache.pekko.http.javadsl.server.Route;
+import org.apache.pekko.http.javadsl.server.RouteResult;
+import org.apache.pekko.http.javadsl.unmarshalling.StringUnmarshallers;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;

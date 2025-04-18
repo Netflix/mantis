@@ -35,10 +35,10 @@ import org.apache.flink.util.IOUtils;
 
 /**
  * RpcSystemLoader for mantis task executor and other services that need to expose an RPC API.
- * This particular implementation uses the akka RPC implementation under the hood.
+ * This particular implementation uses the pekko RPC implementation under the hood.
  */
 @Slf4j
-public class MantisAkkaRpcSystemLoader implements RpcSystemLoader {
+public class MantisPekkoRpcSystemLoader implements RpcSystemLoader {
 
     private static final RpcSystem INSTANCE = createRpcSystem();
 
@@ -72,8 +72,8 @@ public class MantisAkkaRpcSystemLoader implements RpcSystemLoader {
                 flinkClassLoader.getResourceAsStream("flink-rpc-akka.jar");
             if (resourceStream == null) {
                 throw new RuntimeException(
-                    "Akka RPC system could not be found. If this happened while running a test in the IDE,"
-                        + "run the process-resources phase on flink-rpc/flink-rpc-akka-loader via maven.");
+                    "Pekko RPC system could not be found. If this happened while running a test in the IDE,"
+                        + "run the process-resources phase on flink-rpc/flink-rpc-pekko-loader via maven.");
             }
 
             IOUtils.copyBytes(resourceStream, Files.newOutputStream(tempFile));
@@ -91,7 +91,7 @@ public class MantisAkkaRpcSystemLoader implements RpcSystemLoader {
             final ComponentClassLoader componentClassLoader = new ComponentClassLoader(
                 new URL[] {tempFile.toUri().toURL()},
                 flinkClassLoader,
-                // Dependencies which are needed by logic inside flink-rpc-akka (ie AkkaRpcService/System) which
+                // Dependencies which are needed by logic inside flink-rpc-akka (ie PekkoRpcService/System) which
                 // are external to flink-rpc-akka itself (like ExecuteStageRequest in mantis-control-plane).
                 CoreOptions.parseParentFirstLoaderPatterns(
                     "org.slf4j;org.apache.log4j;org.apache.logging;org.apache.commons.logging;ch.qos.logback;io.mantisrx.server.worker;io.mantisrx.server.core;io.mantisrx", ""),

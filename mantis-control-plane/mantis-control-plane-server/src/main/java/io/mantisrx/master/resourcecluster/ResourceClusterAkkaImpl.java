@@ -16,8 +16,8 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import akka.actor.ActorRef;
-import akka.pattern.Patterns;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.pattern.Patterns;
 import io.mantisrx.common.Ack;
 import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;

@@ -18,10 +18,10 @@ package io.mantisrx.server.master;
 
 import static org.apache.flink.configuration.GlobalConfiguration.loadConfiguration;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.DeadLetter;
-import akka.actor.Props;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.DeadLetter;
+import org.apache.pekko.actor.Props;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
@@ -55,7 +55,7 @@ import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ILeaderElectorFactory;
 import io.mantisrx.server.core.ILeaderMonitorFactory;
 import io.mantisrx.server.core.ILeadershipManager;
-import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
+import io.mantisrx.server.core.MantisPekkoRpcSystemLoader;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.master.LocalLeaderFactory;
 import io.mantisrx.server.core.master.MasterDescription;
@@ -166,7 +166,7 @@ public class MasterMain implements Service {
                 "ResourceClusterHostActor");
 
             final RpcSystem rpcSystem =
-                MantisAkkaRpcSystemLoader.getInstance();
+                MantisPekkoRpcSystemLoader.getInstance();
             // the RPCService implementation will only be used for communicating with task executors but not for running a server itself.
             // Thus, there's no need for any valid external and bind addresses.
             final RpcService rpcService =

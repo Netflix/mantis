@@ -16,7 +16,7 @@
 
 package io.mantisrx.master;
 
-import static akka.pattern.PatternsCS.ask;
+import static org.apache.pekko.pattern.PatternsCS.ask;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_CONFLICT;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_NOT_FOUND;
@@ -71,12 +71,12 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJ
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorPaths;
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.actor.SupervisorStrategy;
-import akka.actor.Terminated;
+import org.apache.pekko.actor.AbstractActorWithTimers;
+import org.apache.pekko.actor.ActorPaths;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.SupervisorStrategy;
+import org.apache.pekko.actor.Terminated;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -143,7 +143,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private Receive initializedBehavior;
     public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator, int slaHeadroomForAcceptedJobs) {
         return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, costsCalculator, slaHeadroomForAcceptedJobs)
-            .withMailbox("akka.actor.metered-mailbox");
+            .withMailbox("pekko.actor.metered-mailbox");
     }
 
     private final MantisJobStore jobStore;

@@ -19,12 +19,12 @@ package io.mantisrx.master.api.akka.route.v1;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import akka.http.javadsl.model.ContentTypes;
-import akka.http.javadsl.model.HttpEntities;
-import akka.http.javadsl.model.HttpRequest;
-import akka.http.javadsl.model.StatusCodes;
-import akka.http.javadsl.testkit.JUnitRouteTest;
-import akka.http.javadsl.testkit.TestRoute;
+import org.apache.pekko.http.javadsl.model.ContentTypes;
+import org.apache.pekko.http.javadsl.model.HttpEntities;
+import org.apache.pekko.http.javadsl.model.HttpRequest;
+import org.apache.pekko.http.javadsl.model.StatusCodes;
+import org.apache.pekko.http.javadsl.testkit.JUnitRouteTest;
+import org.apache.pekko.http.javadsl.testkit.TestRoute;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.JsonSerializer;

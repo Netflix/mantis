@@ -19,9 +19,9 @@ package io.mantisrx.master.jobcluster.job;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 import static org.junit.Assert.*;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.testkit.javadsl.TestKit;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.events.LifecycleEventPublisher;

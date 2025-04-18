@@ -17,9 +17,9 @@ package io.mantisrx.master.resourcecluster;
 
 import static akka.pattern.Patterns.pipe;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.Props;
-import akka.japi.pf.ReceiveBuilder;
+import org.apache.pekko.actor.AbstractActorWithTimers;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.japi.pf.ReceiveBuilder;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;

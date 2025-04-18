@@ -16,10 +16,10 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.japi.pf.ReceiveBuilder;
+import org.apache.pekko.actor.AbstractActorWithTimers;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.japi.pf.ReceiveBuilder;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.metrics.Counter;

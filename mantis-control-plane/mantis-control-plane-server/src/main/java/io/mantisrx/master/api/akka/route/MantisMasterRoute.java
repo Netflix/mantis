@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.api.akka.route;
 
-import akka.actor.ActorSystem;
-import akka.http.javadsl.server.AllDirectives;
-import akka.http.javadsl.server.Route;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.http.javadsl.server.AllDirectives;
+import org.apache.pekko.http.javadsl.server.Route;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;

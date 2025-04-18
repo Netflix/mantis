@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import akka.japi.pf.FI;
+import org.apache.pekko.japi.pf.FI;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Id;
 import com.netflix.spectator.api.Registry;

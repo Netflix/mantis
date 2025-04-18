@@ -16,10 +16,10 @@
 
 package io.mantisrx.master;
 
-import static akka.pattern.PatternsCS.ask;
+import static org.apache.pekko.pattern.PatternsCS.ask;
 
-import akka.actor.ActorRef;
-import akka.util.Timeout;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.util.Timeout;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.Timer;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;

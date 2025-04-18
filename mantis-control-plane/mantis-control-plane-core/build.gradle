@@ -52,8 +52,10 @@ dependencies {
 // loaded through a custom submodule classloader.
 task copyLibs(type: Copy) {
     from(sourceSets.main.compileClasspath) {
+        rename 'flink-rpc-akka(.*)', 'flink-rpc-akka.jar'
         rename 'flink-rpc-pekko(.*)', 'flink-rpc-pekko.jar'
     }
+    include '*flink-rpc-akka*.jar'
     include '*flink-rpc-pekko*.jar'
     into "$buildDir/classes/java/main"
 }

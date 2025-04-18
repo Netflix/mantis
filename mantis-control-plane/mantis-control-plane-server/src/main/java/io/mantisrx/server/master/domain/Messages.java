@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.master.domain;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 
 
 public class Messages {

@@ -36,7 +36,7 @@ public class TaskExecutorRegistrationTest {
                 + "    {\n"
                 + "        \"resourceID\": \"mantistaskexecutor\"\n"
                 + "    },\n"
-                + "    \"taskExecutorAddress\": \"akka.tcp://flink@100.118.114.30:5050/user/rpc/worker_0\",\n"
+                + "    \"taskExecutorAddress\": \"pekko.tcp://flink@100.118.114.30:5050/user/rpc/worker_0\",\n"
                 + "    \"hostname\": \"localhost\",\n"
                 + "    \"workerPorts\":\n"
                 + "    {\n"
@@ -86,7 +86,7 @@ public class TaskExecutorRegistrationTest {
             "    {\n" +
             "        \"resourceID\": \"mantistaskexecutor\"\n" +
             "    },\n" +
-            "    \"taskExecutorAddress\": \"akka.tcp://flink@100.118.114.30:5050/user/rpc/worker_0\",\n" +
+            "    \"taskExecutorAddress\": \"pekko.tcp://flink@100.118.114.30:5050/user/rpc/worker_0\",\n" +
             "    \"hostname\": \"localhost\",\n" +
             "    \"workerPorts\":\n" +
             "    {\n" +
@@ -145,7 +145,7 @@ public class TaskExecutorRegistrationTest {
             "    {\n" +
             "        \"resourceID\": \"mantistaskexecutor\"\n" +
             "    },\n" +
-            "    \"taskExecutorAddress\": \"akka.tcp://flink@100.118.114.30:5050/user/rpc/worker_0\",\n" +
+            "    \"taskExecutorAddress\": \"pekko.tcp://flink@100.118.114.30:5050/user/rpc/worker_0\",\n" +
             "    \"hostname\": \"localhost\",\n" +
             "    \"workerPorts\":\n" +
             "    {\n" +
@@ -186,7 +186,7 @@ public class TaskExecutorRegistrationTest {
             "    {\n" +
             "        \"resourceID\": \"mantistaskexecutor\"\n" +
             "    },\n" +
-            "    \"taskExecutorAddress\": \"akka.tcp://flink@100.118.114.30:5050/user/rpc/worker_0\",\n" +
+            "    \"taskExecutorAddress\": \"pekko.tcp://flink@100.118.114.30:5050/user/rpc/worker_0\",\n" +
             "    \"hostname\": \"localhost\",\n" +
             "    \"workerPorts\":\n" +
             "    {\n" +

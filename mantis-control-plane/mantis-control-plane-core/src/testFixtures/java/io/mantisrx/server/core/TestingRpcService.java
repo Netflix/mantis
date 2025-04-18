@@ -31,7 +31,7 @@ import org.apache.flink.runtime.rpc.RpcGateway;
 import org.apache.flink.runtime.rpc.RpcServer;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.apache.flink.runtime.rpc.RpcSystem;
-import org.apache.flink.runtime.rpc.akka.AkkaRpcSystem;
+import org.apache.flink.runtime.rpc.pekko.PekkoRpcSystem;
 import org.apache.flink.util.concurrent.FutureUtils;
 import org.apache.flink.util.concurrent.ScheduledExecutor;
 
@@ -61,7 +61,7 @@ public class TestingRpcService implements RpcService {
 
     // load RpcSystem once to save initialization costs
     // this is safe because it is state-less
-    private static final RpcSystem RPC_SYSTEM_SINGLETON = new AkkaRpcSystem();
+    private static final RpcSystem RPC_SYSTEM_SINGLETON = new PekkoRpcSystem();
 
     private static final Function<RpcGateway, CompletableFuture<RpcGateway>>
         DEFAULT_RPC_GATEWAY_FUTURE_FUNCTION = CompletableFuture::completedFuture;

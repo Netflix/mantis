@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.api.akka.route.utils;
 
-import akka.http.javadsl.model.sse.ServerSentEvent;
+import org.apache.pekko.http.javadsl.model.sse.ServerSentEvent;
 import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
 import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
