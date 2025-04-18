@@ -27,13 +27,20 @@ import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.dynamodbv2.AcquireLockOptions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClient;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClientOptions;
 import com.amazonaws.services.dynamodbv2.LockItem;
+import com.amazonaws.services.dynamodbv2.util.LockClientUtils;
 import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.vavr.collection.List;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.awaitility.core.ConditionFactory;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -43,6 +50,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DynamoDBLeaderElectorTest {
@@ -86,6 +94,33 @@ public class DynamoDBLeaderElectorTest {
         led.start();
         awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
         verify(mockLeadershipManager, times(1)).becomeLeader();
+    }
+
+    @Test
+    public void givesUpLeadership() throws InterruptedException {
+        AmazonDynamoDBLockClient lockClient = lockSupport.getLockClient();
+        String key = "give-up-leader";
+        final DynamoDBLeaderElector led = new DynamoDBLeaderElector(
+            mockLeadershipManager,
+            lockClient,
+            key,
+            DynamoDBLockSupportRule.safeWithoutHeartbeatTime
+        );
+        led.start();
+        awaitHeartbeat().untilAsserted(() -> assertFalse(led.isLeaderElectorRunning()));
+        verify(mockLeadershipManager, times(1)).becomeLeader();
+        lockClient.getLock(key, Optional.empty()).ifPresent(lockItem -> {
+            Class<?> clazz = lockItem.getClass();
+            try {
+                Method method = clazz.getDeclaredMethod("runSessionMonitor");
+                method.setAccessible(true);
+                method.invoke(lockItem);
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        Thread.sleep(100);
+        verify(mockLeadershipManager, times(1)).stopBeingLeader();
     }
 
     @Test
@@ -159,7 +194,6 @@ public class DynamoDBLeaderElectorTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Test
