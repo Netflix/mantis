@@ -176,7 +176,7 @@ public class MasterApiAkkaService extends BaseService {
         final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(masterDescription);
         final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, actorSystem);
 
-        java.time.Duration idleTimeout = actorSystem.settings().config().getDuration("akka.http.server.idle-timeout");
+        java.time.Duration idleTimeout = actorSystem.settings().config().getDuration("pekko.http.server.idle-timeout");
         logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
         final JobStatusRouteHandler jobStatusRouteHandler = new JobStatusRouteHandlerAkkaImpl(actorSystem, statusEventBrokerActor);
         final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, idleTimeout);
@@ -222,7 +222,7 @@ public class MasterApiAkkaService extends BaseService {
             this.mantisMasterRoute.createRoute().flow(system, materializer);
 
         ServerSettings defaultSettings = ServerSettings.create(system);
-        java.time.Duration idleTimeout = system.settings().config().getDuration("akka.http.server.idle-timeout");
+        java.time.Duration idleTimeout = system.settings().config().getDuration("pekko.http.server.idle-timeout");
         logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
         WebSocketSettings customWebsocketSettings = defaultSettings.getWebsocketSettings()
             .withPeriodicKeepAliveMaxIdle(Duration.create(idleTimeout.getSeconds() - 1, TimeUnit.SECONDS))

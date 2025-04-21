@@ -144,8 +144,8 @@ public class JobClusterManagerAkkaTest {
 
     @BeforeClass
     public static void setup() {
-        Config config = ConfigFactory.parseString("akka {\n" +
-            "  loggers = [\"akka.testkit.TestEventListener\"]\n" +
+        Config config = ConfigFactory.parseString("pekko {\n" +
+            "  loggers = [\"pekko.testkit.TestEventListener\"]\n" +
             "  loglevel = \"WARNING\"\n" +
             "  stdout-loglevel = \"WARNING\"\n" +
             "}\n");

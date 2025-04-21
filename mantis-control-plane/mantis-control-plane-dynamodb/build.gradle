@@ -16,8 +16,6 @@
 
 
 ext {
-    akkaVersion = '2.6.15'
-    akkaHttpVersion = '10.2.7'
     fenzoVersion = '0.13.8'
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'

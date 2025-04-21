@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
  * {@link io.mantisrx.server.master.config.MasterConfiguration}.
  * <p>
  *     This adapter requires the implementation of {@link ResourceClusterProvider} to have a ctor with
- *     {@link akka.actor.ActorSystem} param.
+ *     {@link pekko.actor.ActorSystem} param.
  * </p>
  */
 @Slf4j

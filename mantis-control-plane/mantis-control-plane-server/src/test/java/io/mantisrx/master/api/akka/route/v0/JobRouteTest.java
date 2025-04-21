@@ -230,7 +230,7 @@ public class JobRouteTest {
                         System.currentTimeMillis());
                 Duration idleTimeout = system.settings()
                                              .config()
-                                             .getDuration("akka.http.server.idle-timeout");
+                                             .getDuration("pekko.http.server.idle-timeout");
                 logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
 
                 final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(

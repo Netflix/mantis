@@ -99,7 +99,7 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
                 jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(fakeSchedulerFactory, false), ActorRef.noSender());
 
-                Duration idleTimeout = system.settings().config().getDuration("akka.http.server.idle-timeout");
+                Duration idleTimeout = system.settings().config().getDuration("pekko.http.server.idle-timeout");
                 logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
                 final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, idleTimeout);
 

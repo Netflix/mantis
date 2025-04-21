@@ -116,6 +116,7 @@ public class MasterMain implements Service {
                 .addCounter("masterInitError")
                 .build();
         Metrics m = MetricsRegistry.getInstance().registerAndGet(metrics);
+
         try {
             ConfigurationProvider.initialize(configFactory);
             this.config = ConfigurationProvider.getConfig();
@@ -226,6 +227,11 @@ public class MasterMain implements Service {
 
             m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {
+            System.out.println(e.getMessage());
+            for (StackTraceElement ste : e.getStackTrace()) {
+                System.out.println(ste.toString());
+            }
+            System.out.println(e.getCause());
             logger.error("caught exception on Mantis Master initialization", e);
             m.getCounter("masterInitError").increment();
             shutdown();

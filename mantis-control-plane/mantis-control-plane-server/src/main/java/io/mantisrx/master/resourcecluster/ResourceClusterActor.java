@@ -174,7 +174,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             schedulingAttributes,
             fitnessCalculator,
             availableTaskExecutorMutatorHook
-        ).withMailbox("akka.actor.metered-mailbox");
+        ).withMailbox("pekko.actor.metered-mailbox");
     }
 
     static Props props(
@@ -210,7 +210,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             schedulingAttributes,
             fitnessCalculator,
             null
-        ).withMailbox("akka.actor.metered-mailbox");
+        ).withMailbox("pekko.actor.metered-mailbox");
     }
 
     ResourceClusterActor(

@@ -65,7 +65,7 @@ public class ResourceClustersHostManagerActorTests {
     @BeforeClass
     public static void setup() {
         Config config = ConfigFactory.parseString("akka {\n" +
-                "  loggers = [\"akka.testkit.TestEventListener\"]\n" +
+                "  loggers = [\"pekko.testkit.TestEventListener\"]\n" +
                 "  loglevel = \"INFO\"\n" +
                 "  stdout-loglevel = \"INFO\"\n" +
                 "  test.single-expect-default = 300000 millis\n" +
