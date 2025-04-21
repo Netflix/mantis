@@ -16,10 +16,10 @@
 
 package io.mantisrx.master.events;
 
-import akka.actor.AbstractActor;
-import akka.actor.Props;
-import akka.dispatch.BoundedMessageQueueSemantics;
-import akka.dispatch.RequiresMessageQueue;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.dispatch.BoundedMessageQueueSemantics;
+import org.apache.pekko.dispatch.RequiresMessageQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

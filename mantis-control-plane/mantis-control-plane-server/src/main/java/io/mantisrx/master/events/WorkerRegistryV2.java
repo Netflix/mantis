@@ -18,7 +18,7 @@ package io.mantisrx.master.events;
 
 import static java.util.stream.Collectors.toMap;
 
-import akka.actor.Props;
+import org.apache.pekko.actor.Props;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;

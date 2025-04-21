@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.scheduler;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 

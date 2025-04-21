@@ -16,12 +16,12 @@
 
 package io.mantisrx.server.master.scheduler;
 
-import static akka.pattern.Patterns.pipe;
+import static org.apache.pekko.pattern.Patterns.pipe;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.Props;
-import akka.actor.Status.Failure;
-import akka.japi.pf.ReceiveBuilder;
+import org.apache.pekko.actor.AbstractActorWithTimers;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.Status.Failure;
+import org.apache.pekko.japi.pf.ReceiveBuilder;
 import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.metrics.Counter;

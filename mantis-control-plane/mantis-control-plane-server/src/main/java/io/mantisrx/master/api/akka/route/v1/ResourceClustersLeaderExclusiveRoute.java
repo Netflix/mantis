@@ -16,15 +16,15 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import static akka.http.javadsl.server.PathMatchers.segment;
+import static org.apache.pekko.http.javadsl.server.PathMatchers.segment;
 
-import akka.http.javadsl.model.HttpRequest;
-import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.server.PathMatcher0;
-import akka.http.javadsl.server.PathMatchers;
-import akka.http.javadsl.server.Rejection;
-import akka.http.javadsl.server.Route;
-import akka.http.javadsl.server.directives.LogEntry;
+import org.apache.pekko.http.javadsl.model.HttpRequest;
+import org.apache.pekko.http.javadsl.model.HttpResponse;
+import org.apache.pekko.http.javadsl.server.PathMatcher0;
+import org.apache.pekko.http.javadsl.server.PathMatchers;
+import org.apache.pekko.http.javadsl.server.Rejection;
+import org.apache.pekko.http.javadsl.server.Route;
+import org.apache.pekko.http.javadsl.server.directives.LogEntry;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;

@@ -16,10 +16,10 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
-import static akka.pattern.PatternsCS.ask;
+import static org.apache.pekko.pattern.PatternsCS.ask;
 import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.*;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.mantisrx.common.metrics.Counter;

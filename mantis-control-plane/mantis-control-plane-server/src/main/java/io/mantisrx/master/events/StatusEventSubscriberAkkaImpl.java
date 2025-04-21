@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.events;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

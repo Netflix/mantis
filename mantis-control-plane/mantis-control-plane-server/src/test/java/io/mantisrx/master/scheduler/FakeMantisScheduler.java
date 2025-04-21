@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.scheduler;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.scheduler.BatchScheduleRequest;
 import io.mantisrx.server.master.scheduler.MantisScheduler;

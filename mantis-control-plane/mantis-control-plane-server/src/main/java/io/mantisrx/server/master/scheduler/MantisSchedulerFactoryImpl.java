@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.master.scheduler;
 
-import akka.actor.ActorSystem;
+import org.apache.pekko.actor.ActorSystem;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.config.MasterConfiguration;

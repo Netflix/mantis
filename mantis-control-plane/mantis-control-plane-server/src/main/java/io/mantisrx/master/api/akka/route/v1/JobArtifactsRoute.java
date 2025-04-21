@@ -16,11 +16,11 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import static akka.http.javadsl.server.PathMatchers.segment;
+import static org.apache.pekko.http.javadsl.server.PathMatchers.segment;
 
-import akka.http.javadsl.model.StatusCodes;
-import akka.http.javadsl.server.PathMatcher0;
-import akka.http.javadsl.server.Route;
+import org.apache.pekko.http.javadsl.model.StatusCodes;
+import org.apache.pekko.http.javadsl.server.PathMatcher0;
+import org.apache.pekko.http.javadsl.server.Route;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandler;
 import io.mantisrx.master.jobcluster.proto.JobArtifactProto;

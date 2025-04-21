@@ -16,21 +16,21 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
-import akka.actor.ActorSystem;
-import akka.http.caching.LfuCache;
-import akka.http.caching.javadsl.Cache;
-import akka.http.caching.javadsl.CachingSettings;
-import akka.http.caching.javadsl.LfuCacheSettings;
-import akka.http.javadsl.model.ContentTypes;
-import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.model.StatusCodes;
-import akka.http.javadsl.model.Uri;
-import akka.http.javadsl.server.AllDirectives;
-import akka.http.javadsl.server.Route;
-import akka.http.javadsl.server.RouteResult;
-import akka.http.javadsl.server.directives.RouteAdapter;
-import akka.japi.pf.PFBuilder;
-import akka.pattern.AskTimeoutException;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.http.caching.LfuCache;
+import org.apache.pekko.http.caching.javadsl.Cache;
+import org.apache.pekko.http.caching.javadsl.CachingSettings;
+import org.apache.pekko.http.caching.javadsl.LfuCacheSettings;
+import org.apache.pekko.http.javadsl.model.ContentTypes;
+import org.apache.pekko.http.javadsl.model.HttpResponse;
+import org.apache.pekko.http.javadsl.model.StatusCodes;
+import org.apache.pekko.http.javadsl.model.Uri;
+import org.apache.pekko.http.javadsl.server.AllDirectives;
+import org.apache.pekko.http.javadsl.server.Route;
+import org.apache.pekko.http.javadsl.server.RouteResult;
+import org.apache.pekko.http.javadsl.server.directives.RouteAdapter;
+import org.apache.pekko.japi.pf.PFBuilder;
+import org.apache.pekko.pattern.AskTimeoutException;
 import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import java.util.concurrent.CompletionStage;

@@ -17,7 +17,7 @@
 package io.mantisrx.master.jobcluster.proto;
 
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;

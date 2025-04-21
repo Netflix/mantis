@@ -1,6 +1,6 @@
 package io.mantisrx.server.worker.jobmaster;
 
-import akka.actor.*;
+import org.apache.pekko.actor.*;
 import io.mantisrx.common.akka.DeadLetterActor;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.worker.jobmaster.rules.CoordinatorActor;

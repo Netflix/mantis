@@ -16,13 +16,13 @@
 
 package io.mantisrx.common.akka;
 
-import akka.actor.ActorInitializationException;
-import akka.actor.ActorKilledException;
-import akka.actor.DeathPactException;
-import akka.actor.OneForOneStrategy;
-import akka.actor.SupervisorStrategy;
-import akka.actor.SupervisorStrategyConfigurator;
-import akka.japi.pf.DeciderBuilder;
+import org.apache.pekko.actor.ActorInitializationException;
+import org.apache.pekko.actor.ActorKilledException;
+import org.apache.pekko.actor.DeathPactException;
+import org.apache.pekko.actor.OneForOneStrategy;
+import org.apache.pekko.actor.SupervisorStrategy;
+import org.apache.pekko.actor.SupervisorStrategyConfigurator;
+import org.apache.pekko.japi.pf.DeciderBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -16,12 +16,12 @@
 
 package io.mantisrx.common.akka;
 
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.dispatch.MailboxType;
-import akka.dispatch.MessageQueue;
-import akka.dispatch.ProducesMessageQueue;
+import org.apache.pekko.actor.ActorPath;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.dispatch.MailboxType;
+import org.apache.pekko.dispatch.MessageQueue;
+import org.apache.pekko.dispatch.ProducesMessageQueue;
 import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

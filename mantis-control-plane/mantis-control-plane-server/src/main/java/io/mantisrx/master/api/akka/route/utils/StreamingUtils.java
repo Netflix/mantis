@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.api.akka.route.utils;
 
-import akka.http.javadsl.model.sse.ServerSentEvent;
+import org.apache.pekko.http.javadsl.model.sse.ServerSentEvent;
 import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
 import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
@@ -31,8 +31,8 @@ import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.*;
 
 public class StreamingUtils {
     private static final Logger logger = LoggerFactory.getLogger(StreamingUtils.class);
-    private static final ObjectMapper mapper = new ObjectMapper().configure(
-            DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final ObjectMapper mapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private static volatile Optional<ServerSentEvent> cachedSchedInfoHbEvent = Optional.empty();
     private static volatile Optional<ServerSentEvent> cachedJobClusterInfoHbEvent = Optional.empty();

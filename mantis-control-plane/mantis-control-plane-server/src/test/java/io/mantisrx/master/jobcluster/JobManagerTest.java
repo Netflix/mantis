@@ -25,7 +25,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import akka.actor.AbstractActor;
+import org.apache.pekko.actor.AbstractActor;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.common.Label;
 import io.mantisrx.master.events.LifecycleEventPublisher;

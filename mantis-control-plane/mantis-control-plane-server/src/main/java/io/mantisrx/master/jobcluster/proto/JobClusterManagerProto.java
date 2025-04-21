@@ -16,8 +16,8 @@
 
 package io.mantisrx.master.jobcluster.proto;
 
-import akka.actor.ActorRef;
-import akka.http.javadsl.model.Uri;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.http.javadsl.model.Uri;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.Label;

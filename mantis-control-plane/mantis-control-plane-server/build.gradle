@@ -19,7 +19,6 @@ apply plugin: 'application'
 apply plugin: 'com.bmuschko.docker-java-application'
 
 ext {
-    akkaHttpVersion = '10.2.7'
     fenzoVersion = '0.13.8'
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
@@ -32,12 +31,12 @@ dependencies {
     api project(':mantis-control-plane:mantis-control-plane-core')
     api project(':mantis-control-plane:mantis-control-plane-dynamodb')
 
-    api libraries.akkaHttp
-    api libraries.akkaHttpJackson
-    api libraries.akkaHttpCaching
-    api libraries.akkaStream
-    api libraries.akkaSlf4j
-    api libraries.akkaActor
+    api libraries.pekkoHttp
+    api libraries.pekkoHttpJackson
+    api libraries.pekkoHttpCaching
+    api libraries.pekkoStream
+    api libraries.pekkoSlf4j
+    api libraries.pekkoActor
 
     api "io.reactivex:rxjava-reactive-streams:$rxJavaReactiveStreamsVersion"
     api "com.netflix.fenzo:fenzo-triggers:$fenzoVersion"
@@ -51,8 +50,8 @@ dependencies {
     // todo: separate worker entrypoint and move this to testImplementation instead.
     implementation libraries.spectatorApi
 
-    testImplementation libraries.akkaHttpTest
-    testImplementation libraries.akkaTest
+    testImplementation libraries.pekkoHttpTest
+    testImplementation libraries.pekkoTest
     testImplementation libraries.junit4
     testImplementation libraries.mockitoCore3
     testImplementation "org.testng:testng:$testngVersion"

@@ -16,16 +16,16 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
-import static akka.http.javadsl.server.PathMatchers.segment;
+import static org.apache.pekko.http.javadsl.server.PathMatchers.segment;
 
-import akka.NotUsed;
-import akka.http.javadsl.model.HttpHeader;
-import akka.http.javadsl.model.StatusCodes;
-import akka.http.javadsl.model.ws.Message;
-import akka.http.javadsl.server.ExceptionHandler;
-import akka.http.javadsl.server.PathMatchers;
-import akka.http.javadsl.server.Route;
-import akka.stream.javadsl.Flow;
+import org.apache.pekko.NotUsed;
+import org.apache.pekko.http.javadsl.model.HttpHeader;
+import org.apache.pekko.http.javadsl.model.StatusCodes;
+import org.apache.pekko.http.javadsl.model.ws.Message;
+import org.apache.pekko.http.javadsl.server.ExceptionHandler;
+import org.apache.pekko.http.javadsl.server.PathMatchers;
+import org.apache.pekko.http.javadsl.server.Route;
+import org.apache.pekko.stream.javadsl.Flow;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import java.io.IOException;
 import java.util.Arrays;

@@ -18,10 +18,10 @@ package io.mantisrx.server.master;
 
 import static org.apache.flink.configuration.GlobalConfiguration.loadConfiguration;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.DeadLetter;
-import akka.actor.Props;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.DeadLetter;
+import org.apache.pekko.actor.Props;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;

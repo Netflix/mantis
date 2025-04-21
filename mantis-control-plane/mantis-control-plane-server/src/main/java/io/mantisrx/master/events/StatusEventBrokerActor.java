@@ -16,12 +16,12 @@
 
 package io.mantisrx.master.events;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.actor.Terminated;
-import akka.dispatch.BoundedMessageQueueSemantics;
-import akka.dispatch.RequiresMessageQueue;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.Terminated;
+import org.apache.pekko.dispatch.BoundedMessageQueueSemantics;
+import org.apache.pekko.dispatch.RequiresMessageQueue;
 import io.mantisrx.master.api.akka.route.proto.JobStatus;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.server.core.Status;

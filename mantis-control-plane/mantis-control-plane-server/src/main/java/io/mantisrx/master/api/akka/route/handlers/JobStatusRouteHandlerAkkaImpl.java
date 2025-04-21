@@ -16,15 +16,15 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
-import akka.NotUsed;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.http.javadsl.model.ws.Message;
-import akka.http.scaladsl.model.ws.TextMessage;
-import akka.stream.OverflowStrategy;
-import akka.stream.javadsl.Flow;
-import akka.stream.javadsl.Sink;
-import akka.stream.javadsl.Source;
+import org.apache.pekko.NotUsed;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.http.javadsl.model.ws.Message;
+import org.apache.pekko.http.scaladsl.model.ws.TextMessage;
+import org.apache.pekko.stream.OverflowStrategy;
+import org.apache.pekko.stream.javadsl.Flow;
+import org.apache.pekko.stream.javadsl.Sink;
+import org.apache.pekko.stream.javadsl.Source;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.proto.JobStatus;
 import io.mantisrx.master.events.JobStatusConnectedWSActor;

@@ -27,8 +27,8 @@
 //
 //import com.google.common.collect.Lists;
 //
-//import akka.actor.ActorSystem;
-//import akka.testkit.javadsl.TestKit;
+//import org.apache.pekko.actor.ActorSystem;
+//import org.apache.pekko.testkit.javadsl.TestKit;
 //import io.mantisrx.master.jobcluster.job.JobActor.SubscriptionTracker;
 //import io.mantisrx.runtime.JobOwner;
 //import io.mantisrx.runtime.MachineDefinition;
