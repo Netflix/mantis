@@ -72,7 +72,7 @@ public interface DynamoDBConfig {
     @Default("true")
     boolean getEnableShutdownHook();
 
-    @Config("mantis.ext.dynamodb.safeTimeWithoutHeartbeat")
+    @Config("mantis.ext.dynamodb.safeTimeWithoutHeartbeatMs")
     @Default("5000")
-    long getSafeTimeWithoutHeartbeat();
+    long getSafeTimeWithoutHeartbeatMs();
 }

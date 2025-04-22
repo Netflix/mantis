@@ -56,7 +56,7 @@ public class DynamoDBLeaderElector extends BaseService {
     private final ILeadershipManager leadershipManager;
     private final AmazonDynamoDBLockClient lockClient;
     private final String partitionKey;
-    private final long safeTimeWithoutHeartbeat;
+    private final long safeTimeWithoutHeartbeatMs;
 
     @Nullable
     private LockItem leaderLock = null;
@@ -65,18 +65,18 @@ public class DynamoDBLeaderElector extends BaseService {
         this(leadershipManager,
             DynamoDBClientSingleton.getLockClient(),
             DynamoDBClientSingleton.getPartitionKey(),
-            DynamoDBClientSingleton.getSafeTimeWithoutHeartbeat());
+            DynamoDBClientSingleton.getSafeTimeWithoutHeartbeatMs());
 
     }
     public DynamoDBLeaderElector(
             ILeadershipManager leadershipManager,
             AmazonDynamoDBLockClient lockClient,
             String key,
-            long safeTimeWithoutHeartbeat) {
+            long safeTimeWithoutHeartbeatMs) {
         this.leadershipManager = leadershipManager;
         this.lockClient = lockClient;
         this.partitionKey = key;
-        this.safeTimeWithoutHeartbeat = safeTimeWithoutHeartbeat;
+        this.safeTimeWithoutHeartbeatMs = safeTimeWithoutHeartbeatMs;
     }
 
     @Override
@@ -136,7 +136,7 @@ public class DynamoDBLeaderElector extends BaseService {
                                     .withAcquireReleasedLocksConsistently(true)
                                     .withData(ByteBuffer.wrap(jsonMapper.writeValueAsBytes(me)))
                                     .withTimeUnit(TimeUnit.MILLISECONDS)
-                                    .withSessionMonitor(safeTimeWithoutHeartbeat, Optional.of(this::giveUpLeadership))
+                                    .withSessionMonitor(safeTimeWithoutHeartbeatMs, Optional.of(this::giveUpLeadership))
                                     .build());
             if (optionalLock.isPresent()) {
                 leaderLock = optionalLock.get();
