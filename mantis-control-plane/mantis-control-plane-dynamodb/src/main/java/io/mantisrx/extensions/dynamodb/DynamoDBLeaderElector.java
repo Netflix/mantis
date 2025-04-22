@@ -139,6 +139,7 @@ public class DynamoDBLeaderElector extends BaseService {
                                     .withSessionMonitor(safeTimeWithoutHeartbeatMs, Optional.of(this::giveUpLeadership))
                                     .build());
             if (optionalLock.isPresent()) {
+                log.info("became leader");
                 leaderLock = optionalLock.get();
                 shouldLeaderElectorBeRunning.set(false);
                 leadershipManager.becomeLeader();
