@@ -56,6 +56,7 @@ public class DynamoDBLeaderElector extends BaseService {
     private final ILeadershipManager leadershipManager;
     private final AmazonDynamoDBLockClient lockClient;
     private final String partitionKey;
+    private final long safeTimeWithoutHeartbeatMs;
 
     @Nullable
     private LockItem leaderLock = null;
@@ -63,16 +64,19 @@ public class DynamoDBLeaderElector extends BaseService {
     public DynamoDBLeaderElector(ILeadershipManager leadershipManager) {
         this(leadershipManager,
             DynamoDBClientSingleton.getLockClient(),
-            DynamoDBClientSingleton.getPartitionKey());
+            DynamoDBClientSingleton.getPartitionKey(),
+            DynamoDBClientSingleton.getSafeTimeWithoutHeartbeatMs());
 
     }
     public DynamoDBLeaderElector(
             ILeadershipManager leadershipManager,
             AmazonDynamoDBLockClient lockClient,
-            String key) {
+            String key,
+            long safeTimeWithoutHeartbeatMs) {
         this.leadershipManager = leadershipManager;
         this.lockClient = lockClient;
         this.partitionKey = key;
+        this.safeTimeWithoutHeartbeatMs = safeTimeWithoutHeartbeatMs;
     }
 
     @Override
@@ -131,6 +135,8 @@ public class DynamoDBLeaderElector extends BaseService {
                                     .withReplaceData(true)
                                     .withAcquireReleasedLocksConsistently(true)
                                     .withData(ByteBuffer.wrap(jsonMapper.writeValueAsBytes(me)))
+                                    .withTimeUnit(TimeUnit.MILLISECONDS)
+                                    .withSessionMonitor(safeTimeWithoutHeartbeatMs, Optional.of(this::giveUpLeadership))
                                     .build());
             if (optionalLock.isPresent()) {
                 leaderLock = optionalLock.get();
@@ -148,6 +154,29 @@ public class DynamoDBLeaderElector extends BaseService {
                 this.leaderElector.schedule(this::tryToBecomeLeader, 1L, TimeUnit.SECONDS);
             }
             log.info("finished leadership request, will restart election: {}", shouldLeaderElectorBeRunning.get());
+        }
+    }
+
+    /**
+     * this method is used by the session monitor is and should only ever be called if we've
+     * lost the lock but continue to run anyway.
+     */
+    protected void giveUpLeadership() {
+        boolean lockWasNull = false;
+        boolean lockWasReleased = false;
+
+        if(leaderLock == null) {
+            lockWasNull = true;
+        } else {
+            lockWasReleased = lockClient.releaseLock(leaderLock);
+        }
+
+        leadershipManager.stopBeingLeader();
+        log.info("leadership lock release, lock was null {}, lock was released {}", lockWasNull, lockWasReleased);
+
+        if(!isLeaderElectorRunning()) {
+            shouldLeaderElectorBeRunning.set(true);
+            leaderElector.submit(this::tryToBecomeLeader);
         }
     }
 }

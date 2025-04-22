@@ -39,6 +39,10 @@ public class DynamoDBLockSupportRule extends ExternalResource {
 
     public static final Duration heartbeatDuration = Duration.ofSeconds(1L);
 
+    // the time unit is in milliseconds and this value must greater than
+    // the heartbeat duration but less than the lease duration
+    public static final long safeWithoutHeartbeatTime = 2000;
+
     @Getter
     private final AmazonDynamoDBLockClient lockClient;
 

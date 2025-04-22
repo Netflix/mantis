@@ -92,6 +92,7 @@ public class DynamoDBClientSingletonTest {
         final Map<String, String> map = new HashMap<String, String>() {{
             put("mantis.ext.dynamodb.leader.table", LEADER_TABLE_NAME);
             put("mantis.ext.dynamodb.store.table", table);
+            put("mantis.ext.dynamodb.safeTimeWithoutHeartbeatMs", "2000");
             put(DynamoDBClientSingleton.DYNAMO_DB_PROPERTIES_KEY, "dynamodb-test.properties");
             put("mantis.ext.dynamodb.leader.key", lockKey);
             put("mantis.ext.dynamodb.endpointOverride", String.format("http://localhost:%d",dynamoDb.getDynamoDBLocalPort()));
