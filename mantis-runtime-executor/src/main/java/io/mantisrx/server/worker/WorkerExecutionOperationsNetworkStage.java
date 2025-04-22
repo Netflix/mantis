@@ -53,6 +53,7 @@ import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.jobmaster.*;
+import org.apache.flink.core.classloading.ComponentClassLoader;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.reactivex.mantis.network.push.RouterFactory;
@@ -414,19 +415,42 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 final Boolean useV2ScalerService = (Boolean) parameters.get(JOB_AUTOSCALE_V2_ENABLED_PARAM, true);
                 if (useV2ScalerService) {
                     logger.info("[V2 AUTO-SCALER ENABLED] Using V2 JobAutoScalerService: JobMasterServiceV2");
-                    Service jobMasterServiceV2 = new JobMasterServiceV2(
-                        JobScalerContext.builder()
-                            .jobId(rw.getJobId())
-                            .schedInfo(rw.getSchedulingInfo())
-                            .workerMetricsClient(workerMetricsClient)
-                            .autoScaleMetricsConfig(autoScaleMetricsConfig)
-                            .masterClientApi(mantisMasterApi)
-                            .context(rw.getContext())
-                            .observableOnCompleteCallback(rw.getOnCompleteCallback())
-                            .observableOnErrorCallback(rw.getOnErrorCallback())
-                            .observableOnTerminateCallback(rw.getOnTerminateCallback())
-                            .jobAutoscalerManager(jobAutoscalerManager)
-                            .build());
+                    // Build the JobScalerContext
+                    JobScalerContext jobScalerContext = JobScalerContext.builder()
+                        .jobId(rw.getJobId())
+                        .schedInfo(rw.getSchedulingInfo())
+                        .workerMetricsClient(workerMetricsClient)
+                        .autoScaleMetricsConfig(autoScaleMetricsConfig)
+                        .masterClientApi(mantisMasterApi)
+                        .context(rw.getContext())
+                        .observableOnCompleteCallback(rw.getOnCompleteCallback())
+                        .observableOnErrorCallback(rw.getOnErrorCallback())
+                        .observableOnTerminateCallback(rw.getOnTerminateCallback())
+                        .jobAutoscalerManager(jobAutoscalerManager)
+                        .build();
+
+                    Service jobMasterServiceV2 = null;
+
+//                    try {
+//                        logger.info("Creating JobMasterServiceV2 using ComponentClassLoader");
+//                        JobMasterComponentLoader jobMasterComponentLoader = JobMasterComponentLoader.fromAkkaRpc();
+//
+//                        jobMasterServiceV2 = jobMasterComponentLoader.createJobMasterServiceV2(jobScalerContext);
+//                        logger.info("Created JobMasterServiceV2 using ComponentClassLoader");
+//                    } catch (Exception e) {
+//                        logger.warn("Failed to create JobMasterServiceV2 using akka JobMasterComponentLoader", e);
+//                    }
+
+//                    if (null == jobMasterServiceV2) {
+//                        // Fall back to direct instantiation for backward compatibility
+//                        logger.warn("Creating JobMasterServiceV2 directly (no ComponentClassLoader provided)");
+//                        jobMasterServiceV2 = new JobMasterServiceV2(jobScalerContext);
+//                    }
+                    logger.info("Creating JobMasterServiceV2 using ComponentClassLoader");
+                    JobMasterComponentLoader jobMasterComponentLoader = JobMasterComponentLoader.fromAkkaRpc();
+
+                    jobMasterServiceV2 = jobMasterComponentLoader.createJobMasterServiceV2(jobScalerContext);
+                    logger.info("Created JobMasterServiceV2 using ComponentClassLoader");
                     jobMasterServiceV2.start();
                     closeables.add(jobMasterServiceV2::shutdown);
                 } else {

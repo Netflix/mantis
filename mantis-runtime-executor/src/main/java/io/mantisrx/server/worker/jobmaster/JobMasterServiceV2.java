@@ -4,9 +4,7 @@ import akka.actor.*;
 import io.mantisrx.common.akka.DeadLetterActor;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.worker.jobmaster.rules.CoordinatorActor;
-import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import scala.concurrent.Future;
 
 @Slf4j
 public class JobMasterServiceV2 implements Service {
