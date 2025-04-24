@@ -1,4 +1,4 @@
-package io.mantisrx.server.worker.jobmaster.rules;
+package io.mantisrx.server.worker.jobmaster.akka.rules;
 
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;

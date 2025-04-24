@@ -38,6 +38,10 @@ public class JobMasterComponentLoader {
 
     private final ComponentClassLoader componentLoader;
 
+    public ComponentClassLoader getComponentLoader() {
+        return componentLoader;
+    }
+
     /**
      * Creates a new JobMasterComponentLoader with the provided ComponentClassLoader.
      *
@@ -53,12 +57,18 @@ public class JobMasterComponentLoader {
             Path createRpcAkkaJarFromResource =
                 MantisAkkaRpcSystemLoader.createRpcAkkaJarFromResource(parentLoader);
 
+            Path createMantisJMAkkaJarFromResource =
+                MantisAkkaRpcSystemLoader.createTemporaryJarFromResource(
+                    parentLoader, "mantis-jm-akka.jar", "mantis-jm-akka-jar");
+            logger.info("using createMantisJMAkkaJarFromResource: {}", createMantisJMAkkaJarFromResource);
+
+            final String parentFirstPkg = "org.slf4j;org.apache.log4j;org.apache.logging;org.apache.commons.logging;ch.qos.logback";
+            final String jmPrefix = "io.mantisrx"; // "io.mantisrx.server.worker.jobmaster";
             ComponentClassLoader componentLoader = new ComponentClassLoader(
-                new URL[]{createRpcAkkaJarFromResource.toUri().toURL()},
+                new URL[]{createMantisJMAkkaJarFromResource.toUri().toURL(), createRpcAkkaJarFromResource.toUri().toURL()},
                 parentLoader,
-                CoreOptions.parseParentFirstLoaderPatterns(
-                    "org.slf4j;org.apache.log4j;org.apache.logging;org.apache.commons.logging;ch.qos.logback;io.mantisrx", ""),
-                new String[]{"io.mantisrx.server.worker.jobmaster", "akka", "scala"});
+                CoreOptions.parseParentFirstLoaderPatterns(parentFirstPkg + ";io.mantisrx;rx;org;com", ""),
+                new String[]{jmPrefix, "akka", "scala"});
             return new JobMasterComponentLoader(componentLoader);
         } catch (Exception e) {
             logger.error("Failed to create RpcAkkaJarFromResource", e);
@@ -74,22 +84,24 @@ public class JobMasterComponentLoader {
      * @throws RuntimeException if there's an error loading or instantiating JobMasterServiceV2
      */
     public Service createJobMasterServiceV2(JobScalerContext context) {
-        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+//        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             // Set the component class loader as the thread context class loader
             Thread.currentThread().setContextClassLoader(componentLoader);
 
             // Load the JobMasterServiceV2 class using the component class loader
-            Class<?> jobMasterServiceClass = componentLoader.loadClass("io.mantisrx.server.worker.jobmaster.JobMasterServiceV2");
+            Class<?> jobMasterServiceClass = componentLoader.loadClass(
+                "io.mantisrx.server.worker.jobmaster.akka.JobMasterServiceV2");
             logger.info("Successfully loaded JobMasterServiceV2 class using ComponentClassLoader");
 
-            // Get the constructor that takes a JobScalerContext
             Constructor<?> constructor = jobMasterServiceClass.getConstructor(JobScalerContext.class);
 
-            // Create a new instance using the constructor
             Object jobMasterServiceInstance = constructor.newInstance(context);
 
             logger.info("Successfully created JobMasterServiceV2 instance using ComponentClassLoader");
+
+            ((Service) jobMasterServiceInstance).start();
+            logger.info("JobMasterServiceV2 started");
 
             // Cast and return as Service
             return (Service) jobMasterServiceInstance;
@@ -104,7 +116,7 @@ public class JobMasterComponentLoader {
             throw new RuntimeException("Failed to instantiate JobMasterServiceV2", e);
         } finally {
             // Restore the original context class loader
-            Thread.currentThread().setContextClassLoader(originalClassLoader);
+            //Thread.currentThread().setContextClassLoader(originalClassLoader);
         }
     }
 }

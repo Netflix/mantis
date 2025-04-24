@@ -24,11 +24,9 @@ import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.SourceJobParameters;
-import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
-import io.mantisrx.server.worker.jobmaster.rules.ScalerControllerActor;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,7 +43,7 @@ import rx.functions.Action1;
 /**
  * job master service is the one responsible for autoscaling.
  * it represents stage 0.
- * In v2 (job scaling rule enabled) this is wrapped inside {@link ScalerControllerActor}.
+ * In v2 (job scaling rule enabled) this is wrapped inside ScalerControllerActor.
  */
 public class JobMasterService implements JobAutoScalerService {
 

@@ -22,7 +22,6 @@ import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.Ne
 
 import com.yahoo.labs.samoa.instances.Attribute;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
 import io.mantisrx.server.worker.jobmaster.control.actuators.ClutchMantisStageActuator;
 import io.mantisrx.server.worker.jobmaster.control.controllers.PIDController;

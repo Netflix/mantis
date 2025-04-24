@@ -23,6 +23,7 @@ rootProject.name = 'mantis'
 include 'mantis-client'
 include 'mantis-common'
 include 'mantis-common-akka'
+include 'mantis-jm-akka'
 include 'mantis-common-serde'
 
 include 'mantis-connectors:mantis-connector-iceberg'
@@ -57,6 +58,7 @@ include ':mantis-publish:mantis-publish-netty-guice'
 include 'mantis-remote-observable'
 include 'mantis-runtime'
 include 'mantis-runtime-loader'
+include 'mantis-runtime-autoscaler-api'
 include 'mantis-runtime-executor'
 include 'mantis-rxcontrol'
 
@@ -77,4 +79,3 @@ gradleEnterprise {
         termsOfServiceAgree = 'yes'
     }
 }
-

@@ -40,6 +40,7 @@ buildscript {
 
 ext.versions = [
         akka     : "2.6.15",
+        akkaHttp : "10.2.7",
         commons  : "3.5",
         flink    : "1.14.2",
         hadoop   : "2.7.7",
@@ -56,13 +57,13 @@ ext.versions = [
 
 ext.libraries = [
         akkaActor      : "com.typesafe.akka:akka-actor_${versions.scala}:${versions.akka}",
-        akkaHttp       : "com.typesafe.akka:akka-http_${versions.scala}:${versions.akka}",
-        akkaHttpJackson: "com.typesafe.akka:akka-http-jackson_${versions.scala}:${versions.akka}",
-        akkaHttpCaching: "com.typesafe.akka:akka-http-caching_${versions.scala}:${versions.akka}",
+        akkaHttp       : "com.typesafe.akka:akka-http_${versions.scala}:${versions.akkaHttp}",
+        akkaHttpJackson: "com.typesafe.akka:akka-http-jackson_${versions.scala}:${versions.akkaHttp}",
+        akkaHttpCaching: "com.typesafe.akka:akka-http-caching_${versions.scala}:${versions.akkaHttp}",
         akkaStream     : "com.typesafe.akka:akka-stream_${versions.scala}:${versions.akka}",
         akkaSlf4j      : "com.typesafe.akka:akka-slf4j_${versions.scala}:${versions.akka}",
         akkaTest       : "com.typesafe.akka:akka-testkit_${versions.scala}:${versions.akka}",
-        akkaHttpTest   : "com.typesafe.akka:akka-http-testkit_${versions.scala}:${versions.akka}",
+        akkaHttpTest   : "com.typesafe.akka:akka-http-testkit_${versions.scala}:${versions.akkaHttp}",
         asyncHttpClient: "org.asynchttpclient:async-http-client:2.12.3",
         commonsIo      : "commons-io:commons-io:2.11.0",
         commonsLang3   : "org.apache.commons:commons-lang3:${versions.commons}",

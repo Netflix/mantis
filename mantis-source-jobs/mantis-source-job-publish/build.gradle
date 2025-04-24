@@ -29,3 +29,7 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+// Add explicit dependency on copyLibs task from mantis-runtime-executor
+// This fixes the build error where compileJava uses output from copyLibs without declaring a dependency
+compileJava.dependsOn(":mantis-runtime-executor:copyLibs")

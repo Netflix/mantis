@@ -34,7 +34,6 @@ import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration;
 import io.mantisrx.server.worker.jobmaster.clutch.rps.ClutchRpsPIDConfig;
-import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.vavr.Tuple;
 import io.vavr.control.Option;

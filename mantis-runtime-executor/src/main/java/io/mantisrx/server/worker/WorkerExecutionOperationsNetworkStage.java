@@ -451,7 +451,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
                     jobMasterServiceV2 = jobMasterComponentLoader.createJobMasterServiceV2(jobScalerContext);
                     logger.info("Created JobMasterServiceV2 using ComponentClassLoader");
-                    jobMasterServiceV2.start();
+                    // jobMasterServiceV2.start();
                     closeables.add(jobMasterServiceV2::shutdown);
                 } else {
                     logger.info("Using V1 JobMasterService");

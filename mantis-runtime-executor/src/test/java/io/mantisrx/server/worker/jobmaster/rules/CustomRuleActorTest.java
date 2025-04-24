@@ -7,6 +7,8 @@ import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
+import io.mantisrx.server.worker.jobmaster.akka.rules.CustomRuleTriggerHandler;
+import io.mantisrx.server.worker.jobmaster.akka.rules.JobScalingRuleCustomTrigger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;

@@ -1,0 +1,49 @@
+/*
+ * Copyright 2024 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// apply plugin: 'com.github.johnrengelman.shadow'
+
+dependencies {
+    compileOnly project(":mantis-common")
+    compileOnly project(":mantis-runtime-autoscaler-api")  // Add this for JobScalerContext
+    compileOnly project(":mantis-runtime")
+    compileOnly project(":mantis-control-plane:mantis-control-plane-core")  // Add this for Service interface
+
+    compileOnly libraries.akkaActor
+    compileOnly libraries.slf4jApi
+    compileOnly libraries.vavr  // If used in the moved classes
+    compileOnly 'org.quartz-scheduler:quartz:2.2.+' // need to stay on jdk 8 compatible version
+
+    // spectatorApi should be packaged at entry point level to avoid version conflicts.
+    compileOnly libraries.spectatorApi
+
+    testImplementation libraries.akkaTest
+    testImplementation libraries.spectatorApi
+    testImplementation libraries.junit4
+    testImplementation libraries.mockitoCore
+}
+
+// shadowJar {
+//     // Include all runtime dependencies
+//     configurations = [project.configurations.runtimeClasspath]
+
+//     // Merge service files if needed
+//     mergeServiceFiles()
+// }
+
+// // Disable the regular jar task and make it depend on shadowJar
+// jar.enabled = false
+// jar.dependsOn shadowJar
