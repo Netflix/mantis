@@ -4,14 +4,6 @@
             "locked": "1.18.20"
         }
     },
-    "baseline-exact-dependencies-test": {
-        "junit:junit": {
-            "locked": "4.11"
-        },
-        "junit:junit-dep": {
-            "locked": "4.11"
-        }
-    },
     "compileClasspath": {
         "io.mantisrx:mantis-shaded": {
             "project": true

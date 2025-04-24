@@ -4,58 +4,12 @@
             "locked": "1.18.20"
         }
     },
-    "baseline-exact-dependencies-main": {
-        "com.netflix.archaius:archaius2-core": {
-            "locked": "2.7.9"
-        },
-        "com.netflix.spectator:spectator-ext-ipc": {
-            "locked": "0.134.0"
-        },
-        "io.mantisrx:mantis-common-serde": {
-            "project": true
-        },
-        "io.mantisrx:mantis-shaded": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common-serde"
-            ],
-            "project": true
-        },
-        "io.mantisrx:mql-jvm": {
-            "locked": "3.2.2"
-        },
-        "org.slf4j:slf4j-api": {
-            "locked": "1.7.0"
-        }
-    },
-    "baseline-exact-dependencies-test": {
-        "com.github.tomakehurst:wiremock-jre8": {
-            "locked": "2.21.0"
-        },
-        "commons-io:commons-io": {
-            "locked": "2.11.0"
-        },
-        "org.junit.jupiter:junit-jupiter-api": {
-            "locked": "5.4.2"
-        },
-        "org.junit.jupiter:junit-jupiter-engine": {
-            "locked": "5.4.2"
-        },
-        "org.junit.jupiter:junit-jupiter-params": {
-            "locked": "5.4.2"
-        },
-        "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
-        },
-        "org.slf4j:slf4j-log4j12": {
-            "locked": "1.7.0"
-        }
-    },
     "compileClasspath": {
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.7.9"
+            "locked": "2.8.5"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.7.9"
+            "locked": "2.8.5"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "0.134.0"
@@ -93,10 +47,10 @@
     },
     "runtimeClasspath": {
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.7.9"
+            "locked": "2.8.5"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.7.9"
+            "locked": "2.8.5"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "0.134.0"
@@ -140,10 +94,10 @@
             "locked": "2.21.0"
         },
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.7.9"
+            "locked": "2.8.5"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.7.9"
+            "locked": "2.8.5"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "0.134.0"
@@ -197,10 +151,10 @@
             "locked": "2.21.0"
         },
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.7.9"
+            "locked": "2.8.5"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.7.9"
+            "locked": "2.8.5"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "0.134.0"

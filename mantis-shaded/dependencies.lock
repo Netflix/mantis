@@ -4,11 +4,6 @@
             "locked": "1.18.20"
         }
     },
-    "baseline-exact-dependencies-main": {
-        "io.vavr:vavr": {
-            "locked": "0.9.2"
-        }
-    },
     "compileClasspath": {
         "io.vavr:vavr": {
             "locked": "0.9.2"
@@ -35,7 +30,7 @@
             "locked": "2.12.7"
         },
         "com.fasterxml.jackson.core:jackson-databind": {
-            "locked": "2.12.7.1"
+            "locked": "2.12.7.2"
         },
         "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor": {
             "locked": "2.12.7"
