@@ -23,19 +23,12 @@ dependencies {
 
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
-//    implementation libraries.vavr
-//    implementation('nz.ac.waikato.cms.moa:moa:2017.06') {
-//        exclude group: 'com.github.spullara.cli-parser', module: 'cli-parser'
-//        exclude group: 'org.pentaho.pentaho-commons', module: 'pentaho-package-manager'
-//    }
     implementation libraries.httpClient
-//    implementation "com.yahoo.datasketches:sketches-core:0.9.1"
     implementation libraries.spectatorApi
     implementation 'org.quartz-scheduler:quartz:2.2.+' // need to stay on jdk 8 compatible version
 
-    // setup jm akka module via copy
+    // setup jm akka module via copyLib
     compileOnly project(":mantis-jm-akka")
-
 
     testImplementation project(":mantis-jm-akka")
     testImplementation "com.yahoo.datasketches:sketches-core:0.9.1"
@@ -44,7 +37,6 @@ dependencies {
         exclude group: 'com.github.spullara.cli-parser', module: 'cli-parser'
         exclude group: 'org.pentaho.pentaho-commons', module: 'pentaho-package-manager'
     }
-
 
     testImplementation libraries.akkaTest
     testImplementation libraries.junit4
@@ -57,24 +49,11 @@ dependencies {
 
 // This task makes mantis-jm-akka.jar available to worker runtime without adding direct dependency
 task copyLibs(type: Copy) {
-
-//    from(sourceSets.main.compileClasspath) {
-//        rename 'mantis-jm-akka(.*)', 'mantis-jm-akka.jar'
-//    }
-//    include '*mantis-jm-akka*.jar'
-//    into "$buildDir/classes/java/main"
-
-    // Get the fat JAR file from the mantis-jm-akka project's build/libs directory
-    // from fileTree(dir: "${project(":mantis-jm-akka").buildDir}/libs", include: "*-all.jar")
     from project(":mantis-jm-akka").tasks.jar.archiveFile
-
-    // Rename the JAR file to mantis-jm-akka.jar
     rename { filename -> "mantis-jm-akka.jar" }
-    // Copy to the target directory
     into "$buildDir/classes/java/main"
 }
 
 jar.dependsOn copyLibs
-
 // Add dependency from compileTestJava to copyLibs
 compileTestJava.dependsOn copyLibs
