@@ -16,8 +16,7 @@
 
 package io.mantisrx.server.worker;
 
-import static io.mantisrx.common.SystemParameters.JOB_AUTOSCALE_V2_ENABLED_PARAM;
-import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
+import static io.mantisrx.common.SystemParameters.*;
 import static io.mantisrx.server.core.utils.StatusConstants.STATUS_MESSAGE_FORMAT;
 
 import com.mantisrx.common.utils.Closeables;
@@ -53,7 +52,6 @@ import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.jobmaster.*;
-import org.apache.flink.core.classloading.ComponentClassLoader;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.reactivex.mantis.network.push.RouterFactory;
@@ -429,29 +427,11 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         .jobAutoscalerManager(jobAutoscalerManager)
                         .build();
 
-                    Service jobMasterServiceV2 = null;
-
-//                    try {
-//                        logger.info("Creating JobMasterServiceV2 using ComponentClassLoader");
-//                        JobMasterComponentLoader jobMasterComponentLoader = JobMasterComponentLoader.fromAkkaRpc();
-//
-//                        jobMasterServiceV2 = jobMasterComponentLoader.createJobMasterServiceV2(jobScalerContext);
-//                        logger.info("Created JobMasterServiceV2 using ComponentClassLoader");
-//                    } catch (Exception e) {
-//                        logger.warn("Failed to create JobMasterServiceV2 using akka JobMasterComponentLoader", e);
-//                    }
-
-//                    if (null == jobMasterServiceV2) {
-//                        // Fall back to direct instantiation for backward compatibility
-//                        logger.warn("Creating JobMasterServiceV2 directly (no ComponentClassLoader provided)");
-//                        jobMasterServiceV2 = new JobMasterServiceV2(jobScalerContext);
-//                    }
                     logger.info("Creating JobMasterServiceV2 using ComponentClassLoader");
-                    JobMasterComponentLoader jobMasterComponentLoader = JobMasterComponentLoader.fromAkkaRpc();
-
-                    jobMasterServiceV2 = jobMasterComponentLoader.createJobMasterServiceV2(jobScalerContext);
+                    final String jmLoaderConfigString = (String) parameters.get(JOB_AUTOSCALE_V2_LOADER_CONFIG_PARAM, "");
+                    JobMasterComponentLoader jobMasterComponentLoader = JobMasterComponentLoader.fromAkkaRpc(jmLoaderConfigString);
+                    Service jobMasterServiceV2 = jobMasterComponentLoader.createAndStartJobMasterServiceV2(jobScalerContext);
                     logger.info("Created JobMasterServiceV2 using ComponentClassLoader");
-                    // jobMasterServiceV2.start();
                     closeables.add(jobMasterServiceV2::shutdown);
                 } else {
                     logger.info("Using V1 JobMasterService");

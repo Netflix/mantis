@@ -18,20 +18,19 @@ package io.mantisrx.server.worker.jobmaster;
 
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.core.classloading.ComponentClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Path;
 
 /**
  * A component loader for JobMasterServiceV2 that uses Flink's ComponentClassLoader
- * to load and instantiate JobMasterServiceV2 with proper class isolation.
+ * to load and instantiate JobMasterServiceV2 with proper class isolation on akka and scala.
  */
 public class JobMasterComponentLoader {
     private static final Logger logger = LoggerFactory.getLogger(JobMasterComponentLoader.class);
@@ -51,7 +50,7 @@ public class JobMasterComponentLoader {
         this.componentLoader = componentLoader;
     }
 
-    public static JobMasterComponentLoader fromAkkaRpc() {
+    public static JobMasterComponentLoader fromAkkaRpc(String jmLoaderConfigString) {
         try {
             final ClassLoader parentLoader = Thread.currentThread().getContextClassLoader();
             Path createRpcAkkaJarFromResource =
@@ -62,12 +61,25 @@ public class JobMasterComponentLoader {
                     parentLoader, "mantis-jm-akka.jar", "mantis-jm-akka-jar");
             logger.info("using createMantisJMAkkaJarFromResource: {}", createMantisJMAkkaJarFromResource);
 
-            final String parentFirstPkg = "org.slf4j;org.apache.log4j;org.apache.logging;org.apache.commons.logging;ch.qos.logback";
-            final String jmPrefix = "io.mantisrx"; // "io.mantisrx.server.worker.jobmaster";
+            // Child loader contains: mantis-jm-akka jar + flink-rpc-akka jar (this is a fat jar with akka + scala jars)
+            // Everything else from mantis runtime will be loaded from parent (default) loader.
+            String parentFirstPrefixList =
+                "org.slf4j;org.apache.log4j;org.apache.logging;org.apache.commons.logging;ch.qos.logback;io.mantisrx;rx;org;com";
+            String jmPrefix = "io.mantisrx";
+            if (!Strings.isNullOrEmpty(jmLoaderConfigString) && jmLoaderConfigString.contains("|") ) {
+                String[] configParts = jmLoaderConfigString.split("\\|");
+                parentFirstPrefixList = configParts[0];
+                jmPrefix = configParts[1];
+            }
+            logger.info("apply parentFirstPkg: {}, jmPrefix: {}", parentFirstPrefixList, jmPrefix);
+
             ComponentClassLoader componentLoader = new ComponentClassLoader(
-                new URL[]{createMantisJMAkkaJarFromResource.toUri().toURL(), createRpcAkkaJarFromResource.toUri().toURL()},
+                new URL[] {
+                    createMantisJMAkkaJarFromResource.toUri().toURL(),
+                    createRpcAkkaJarFromResource.toUri().toURL()
+                },
                 parentLoader,
-                CoreOptions.parseParentFirstLoaderPatterns(parentFirstPkg + ";io.mantisrx;rx;org;com", ""),
+                CoreOptions.parseParentFirstLoaderPatterns(parentFirstPrefixList, ""),
                 new String[]{jmPrefix, "akka", "scala"});
             return new JobMasterComponentLoader(componentLoader);
         } catch (Exception e) {
@@ -83,13 +95,10 @@ public class JobMasterComponentLoader {
      * @return A new instance of JobMasterServiceV2 as a Service
      * @throws RuntimeException if there's an error loading or instantiating JobMasterServiceV2
      */
-    public Service createJobMasterServiceV2(JobScalerContext context) {
-//        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+    public Service createAndStartJobMasterServiceV2(JobScalerContext context) {
         try {
-            // Set the component class loader as the thread context class loader
             Thread.currentThread().setContextClassLoader(componentLoader);
 
-            // Load the JobMasterServiceV2 class using the component class loader
             Class<?> jobMasterServiceClass = componentLoader.loadClass(
                 "io.mantisrx.server.worker.jobmaster.akka.JobMasterServiceV2");
             logger.info("Successfully loaded JobMasterServiceV2 class using ComponentClassLoader");
@@ -102,21 +111,10 @@ public class JobMasterComponentLoader {
 
             ((Service) jobMasterServiceInstance).start();
             logger.info("JobMasterServiceV2 started");
-
-            // Cast and return as Service
             return (Service) jobMasterServiceInstance;
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
             logger.error("Failed to load JobMasterServiceV2 class", e);
             throw new RuntimeException("Failed to load JobMasterServiceV2 class", e);
-        } catch (NoSuchMethodException e) {
-            logger.error("JobMasterServiceV2 constructor not found", e);
-            throw new RuntimeException("JobMasterServiceV2 constructor not found", e);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            logger.error("Failed to instantiate JobMasterServiceV2", e);
-            throw new RuntimeException("Failed to instantiate JobMasterServiceV2", e);
-        } finally {
-            // Restore the original context class loader
-            //Thread.currentThread().setContextClassLoader(originalClassLoader);
         }
     }
 }

@@ -43,7 +43,6 @@ public class JobMasterServiceV2 implements JobManagerService {
         if (log.isDebugEnabled()) {
             system.logConfiguration();
         }
-        system.logConfiguration();
 
         // no need to block and wait (done in root OperationExecution)
         system.actorOf(CoordinatorActor.Props(this.jobScalerContext), "JobScalerCoordinatorActor");
