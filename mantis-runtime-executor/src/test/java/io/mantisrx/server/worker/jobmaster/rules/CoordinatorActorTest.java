@@ -12,6 +12,8 @@ import io.mantisrx.server.core.JobScalerRuleInfo;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.jobmaster.JobAutoScalerService;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
+import io.mantisrx.server.worker.jobmaster.akka.rules.CoordinatorActor;
+import io.mantisrx.server.worker.jobmaster.akka.rules.ScalerControllerActor;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.*;

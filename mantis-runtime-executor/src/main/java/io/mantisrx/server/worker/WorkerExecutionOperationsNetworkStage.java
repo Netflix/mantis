@@ -16,8 +16,7 @@
 
 package io.mantisrx.server.worker;
 
-import static io.mantisrx.common.SystemParameters.JOB_AUTOSCALE_V2_ENABLED_PARAM;
-import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
+import static io.mantisrx.common.SystemParameters.*;
 import static io.mantisrx.server.core.utils.StatusConstants.STATUS_MESSAGE_FORMAT;
 
 import com.mantisrx.common.utils.Closeables;
@@ -414,20 +413,25 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 final Boolean useV2ScalerService = (Boolean) parameters.get(JOB_AUTOSCALE_V2_ENABLED_PARAM, true);
                 if (useV2ScalerService) {
                     logger.info("[V2 AUTO-SCALER ENABLED] Using V2 JobAutoScalerService: JobMasterServiceV2");
-                    Service jobMasterServiceV2 = new JobMasterServiceV2(
-                        JobScalerContext.builder()
-                            .jobId(rw.getJobId())
-                            .schedInfo(rw.getSchedulingInfo())
-                            .workerMetricsClient(workerMetricsClient)
-                            .autoScaleMetricsConfig(autoScaleMetricsConfig)
-                            .masterClientApi(mantisMasterApi)
-                            .context(rw.getContext())
-                            .observableOnCompleteCallback(rw.getOnCompleteCallback())
-                            .observableOnErrorCallback(rw.getOnErrorCallback())
-                            .observableOnTerminateCallback(rw.getOnTerminateCallback())
-                            .jobAutoscalerManager(jobAutoscalerManager)
-                            .build());
-                    jobMasterServiceV2.start();
+                    // Build the JobScalerContext
+                    JobScalerContext jobScalerContext = JobScalerContext.builder()
+                        .jobId(rw.getJobId())
+                        .schedInfo(rw.getSchedulingInfo())
+                        .workerMetricsClient(workerMetricsClient)
+                        .autoScaleMetricsConfig(autoScaleMetricsConfig)
+                        .masterClientApi(mantisMasterApi)
+                        .context(rw.getContext())
+                        .observableOnCompleteCallback(rw.getOnCompleteCallback())
+                        .observableOnErrorCallback(rw.getOnErrorCallback())
+                        .observableOnTerminateCallback(rw.getOnTerminateCallback())
+                        .jobAutoscalerManager(jobAutoscalerManager)
+                        .build();
+
+                    logger.info("Creating JobMasterServiceV2 using ComponentClassLoader");
+                    final String jmLoaderConfigString = (String) parameters.get(JOB_AUTOSCALE_V2_LOADER_CONFIG_PARAM, "");
+                    JobMasterComponentLoader jobMasterComponentLoader = JobMasterComponentLoader.fromAkkaRpc(jmLoaderConfigString);
+                    Service jobMasterServiceV2 = jobMasterComponentLoader.createAndStartJobMasterServiceV2(jobScalerContext);
+                    logger.info("Created JobMasterServiceV2 using ComponentClassLoader");
                     closeables.add(jobMasterServiceV2::shutdown);
                 } else {
                     logger.info("Using V1 JobMasterService");

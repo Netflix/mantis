@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-
 public class AutoScaleMetricsConfig {
 
     public static final String CLIENT_ID_TOKEN = "_CLIENT_ID_";
@@ -128,12 +127,12 @@ public class AutoScaleMetricsConfig {
 
         for (Map.Entry<String, Map<String, AggregationAlgo>> entry : defaultAutoScaleMetrics.entrySet()) {
             metrics.put(entry.getKey(),
-                    entry.getValue().keySet());
+                entry.getValue().keySet());
         }
 
         for (Map.Entry<String, Map<String, AggregationAlgo>> entry : userDefinedAutoScaleMetrics.entrySet()) {
             metrics.put(entry.getKey(),
-                    entry.getValue().keySet());
+                entry.getValue().keySet());
         }
         return metrics;
     }
@@ -194,8 +193,8 @@ public class AutoScaleMetricsConfig {
     @Override
     public String toString() {
         return "AutoScaleMetricsConfig{" +
-                "userDefinedAutoScaleMetrics=" + userDefinedAutoScaleMetrics +
-                '}';
+            "userDefinedAutoScaleMetrics=" + userDefinedAutoScaleMetrics +
+            '}';
     }
 
     public enum AggregationAlgo {

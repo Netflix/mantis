@@ -16,23 +16,27 @@
 
 
 dependencies {
-    api project(":mantis-common-akka")
     api project(":mantis-runtime")
     api project(":mantis-runtime-loader")
-    api project(":mantis-rxcontrol")
+    api project(":mantis-runtime-autoscaler-api")
     api project(":mantis-server:mantis-server-worker-client")
 
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
-    implementation libraries.vavr
-    implementation('nz.ac.waikato.cms.moa:moa:2017.06') {
+    implementation libraries.httpClient
+    implementation libraries.spectatorApi
+    implementation 'org.quartz-scheduler:quartz:2.2.+' // need to stay on jdk 8 compatible version
+
+    // setup jm akka module via copyLib
+    compileOnly project(":mantis-jm-akka")
+
+    testImplementation project(":mantis-jm-akka")
+    testImplementation "com.yahoo.datasketches:sketches-core:0.9.1"
+    testImplementation libraries.vavr
+    testImplementation('nz.ac.waikato.cms.moa:moa:2017.06') {
         exclude group: 'com.github.spullara.cli-parser', module: 'cli-parser'
         exclude group: 'org.pentaho.pentaho-commons', module: 'pentaho-package-manager'
     }
-    implementation libraries.httpClient
-    implementation "com.yahoo.datasketches:sketches-core:0.9.1"
-    implementation libraries.spectatorApi
-    implementation 'org.quartz-scheduler:quartz:2.2.+' // need to stay on jdk 8 compatible version
 
     testImplementation libraries.akkaTest
     testImplementation libraries.junit4
@@ -42,3 +46,14 @@ dependencies {
     testImplementation(testFixtures(project(":mantis-common")))
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
 }
+
+// This task makes mantis-jm-akka.jar available to worker runtime without adding direct dependency
+task copyLibs(type: Copy) {
+    from project(":mantis-jm-akka").tasks.jar.archiveFile
+    rename { filename -> "mantis-jm-akka.jar" }
+    into "$buildDir/classes/java/main"
+}
+
+jar.dependsOn copyLibs
+// Add dependency from compileTestJava to copyLibs
+compileTestJava.dependsOn copyLibs

@@ -51,32 +51,61 @@ public class MantisAkkaRpcSystemLoader implements RpcSystemLoader {
         return INSTANCE;
     }
 
+    /**
+     * Creates a temporary JAR file from a resource in a thread-safe manner.
+     * Each call creates a unique directory with a UUID to ensure isolation between threads.
+     *
+     * @param classLoader The ClassLoader to use for loading the resource
+     * @param resourceName The name of the resource to load
+     * @param baseDirectoryName The base name of the directory to create in the temp directory
+     * @return The Path to the created JAR file
+     * @throws IOException If an I/O error occurs
+     */
+    public static Path createTemporaryJarFromResource(
+        ClassLoader classLoader,
+        String resourceName,
+        String baseDirectoryName) throws IOException {
+
+        // Generate a UUID for this specific invocation
+        String uniqueId = UUID.randomUUID().toString();
+
+        // Create a unique directory path using the base name and the UUID
+        final Path uniqueTmpDirectory = Paths.get(
+            System.getProperty("java.io.tmpdir") + "/" + baseDirectoryName + "_" + uniqueId);
+
+        // Create the directory - no need to synchronize as each thread uses its own directory
+        Files.createDirectories(uniqueTmpDirectory);
+
+        // Create the file with a simple name (no need for UUID in filename since directory is unique)
+        final String simpleFileName = resourceName.replace(".jar", "") + ".jar";
+        final Path tempFile = uniqueTmpDirectory.resolve(simpleFileName);
+
+        // Load and copy the resource
+        final InputStream resourceStream = classLoader.getResourceAsStream(resourceName);
+        if (resourceStream == null) {
+            throw new RuntimeException(
+                "Resource " + resourceName + " could not be found. If this happened while running a test in the IDE,"
+                    + "run the process-resources phase on the appropriate module via maven/gradle.");
+        }
+
+        // Create the file and copy the content
+        Files.createFile(tempFile);
+        IOUtils.copyBytes(resourceStream, Files.newOutputStream(tempFile));
+
+        return tempFile;
+    }
+
+    public static Path createRpcAkkaJarFromResource(
+        ClassLoader classLoader) throws IOException {
+        return createTemporaryJarFromResource(classLoader, "flink-rpc-akka.jar", "flink-rpc-akka-jar");
+    }
+
     private static RpcSystem createRpcSystem() {
         try {
             final ClassLoader flinkClassLoader = RpcSystem.class.getClassLoader();
 
-            final Path tmpDirectory = Paths.get(System.getProperty("java.io.tmpdir") + "/flink-rpc-akka-jar");
-            Files.createDirectories(tmpDirectory);
-
-            try {
-                // Best-effort cleanup directory in case some other jobs has failed abruptly
-                FileUtils.cleanDirectory(tmpDirectory.toFile());
-            } catch (Exception e) {
-                log.warn("Could not cleanup flink-rpc-akka jar directory {}.", tmpDirectory, e);
-            }
-            final Path tempFile =
-                Files.createFile(
-                    tmpDirectory.resolve("flink-rpc-akka_" + UUID.randomUUID() + ".jar"));
-
-            final InputStream resourceStream =
-                flinkClassLoader.getResourceAsStream("flink-rpc-akka.jar");
-            if (resourceStream == null) {
-                throw new RuntimeException(
-                    "Akka RPC system could not be found. If this happened while running a test in the IDE,"
-                        + "run the process-resources phase on flink-rpc/flink-rpc-akka-loader via maven.");
-            }
-
-            IOUtils.copyBytes(resourceStream, Files.newOutputStream(tempFile));
+            final Path tempFile = createRpcAkkaJarFromResource(
+                flinkClassLoader);
 
             // The following classloader loads all classes from the submodule jar, except for explicitly white-listed packages.
             //

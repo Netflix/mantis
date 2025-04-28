@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Netflix, Inc.
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,6 @@ package io.mantisrx.server.worker.jobmaster;
 
 import java.util.Properties;
 
-/**
- * A manager to control autoscaling of a job. This allows a runtime control to autoscaling behavior
- * without necessitating a job redeployment.
- * An example use is disabling scale up or scale down during a maintenance window.
- * Yet another example is during region failovers when a failed over region shouldn't scale down
- */
 public interface JobAutoscalerManager {
 
     JobAutoscalerManager DEFAULT = new NoopJobAutoscalerManager();

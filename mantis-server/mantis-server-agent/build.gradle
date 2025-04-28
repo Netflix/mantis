@@ -90,3 +90,5 @@ dockerSyncBuildContext.dependsOn(installDist)
 dockerSyncBuildContext.dependsOn(project.tasks.processTestResources)
 
 mainClassName = "io.mantisrx.server.agent.AgentV2Main"
+
+compileTestJava.dependsOn(":mantis-runtime-executor:copyLibs")
