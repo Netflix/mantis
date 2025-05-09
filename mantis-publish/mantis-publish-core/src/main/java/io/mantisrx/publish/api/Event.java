@@ -141,7 +141,7 @@ public class Event {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(attributes);
+        return Objects.hash(attributes);
     }
 
     @Override
