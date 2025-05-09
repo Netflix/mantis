@@ -39,14 +39,10 @@ public class MQLSubscription implements Subscription, Comparable {
 
     private static final Logger LOG = LoggerFactory.getLogger(MQLSubscription.class);
     protected final Query query;
-    private AtomicBoolean matcherErrorLoggingEnabled;
-    private AtomicBoolean projectorErrorLoggingEnabled;
+    private final AtomicBoolean matcherErrorLoggingEnabled;
+    private final AtomicBoolean projectorErrorLoggingEnabled;
 
-    private ConcurrentHashMap<
-            HashSet<Query>,
-            Function<
-                    Map<String, Object>,
-                    Map<String, Object>>> superSetProjectorCache;
+    private final ConcurrentHashMap<HashSet<Query>, Function<Map<String, Object>, Map<String, Object>>> superSetProjectorCache;
 
     public MQLSubscription(String subId, String criterion) {
         this.superSetProjectorCache = new ConcurrentHashMap<>();
