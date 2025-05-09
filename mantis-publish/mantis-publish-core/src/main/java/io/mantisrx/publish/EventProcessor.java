@@ -70,8 +70,7 @@ class EventProcessor {
     public Event process(String stream, Event event) {
         LOG.debug("Entering EventProcessor#onNext: {}", event);
 
-        boolean isEnabled = config.isMREClientEnabled();
-        if (!isEnabled) {
+        if (!config.isMREClientEnabled()) {
             LOG.debug("Mantis Realtime Events Publisher is disabled."
                     + "Set the property defined in your MrePublishConfiguration object to true to enable.");
             return null;
@@ -114,14 +113,10 @@ class EventProcessor {
         if (!matchingSubscriptions.isEmpty()) {
             projectedEvent = projectSupersetEvent(stream, matchingSubscriptions, event);
         } else {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("no matching subscriptions");
-            }
+            LOG.trace("no matching subscriptions");
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Exit EventProcessor#onNext: {}", event);
-        }
+        LOG.debug("Exit EventProcessor#onNext: {}", event);
 
         return projectedEvent;
     }

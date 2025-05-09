@@ -75,7 +75,7 @@ public class DefaultMantisApiClient implements MantisApiClient {
                 int status = response.status();
                 if (status >= 200 && status < 300) {
                     AppJobClustersMap appJobClustersMap = serializer.fromJSON(response.entityAsString(), AppJobClustersMap.class);
-                    logger.debug(appJobClustersMap.toString());
+                    logger.debug("{}", appJobClustersMap);
                     return appJobClustersMap;
                 } else if (status >= 300 && status < 500) {
                     // TODO: handle redirects

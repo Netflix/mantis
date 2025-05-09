@@ -52,7 +52,7 @@ public class MantisServerSubscriptionEnvelope {
 
     @Override
     public int hashCode() {
-        return Objects.hash(getSubscriptionList());
+        return Objects.hashCode(getSubscriptionList());
     }
 
     @Override
