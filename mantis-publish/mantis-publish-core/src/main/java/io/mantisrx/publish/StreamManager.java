@@ -73,7 +73,7 @@ public class StreamManager {
         if (!streamQueuesMap.containsKey(streamName)) {
             cleanupInactiveStreamQueues();
 
-            if (streamQueuesMap.keySet().size() >= config.maxNumStreams()) {
+            if (streamQueuesMap.size() >= config.maxNumStreams()) {
                 LOG.debug("failed to create queue for stream {} (MAX_NUM_STREAMS {} exceeded)",
                         streamName,
                         config.maxNumStreams());
@@ -108,7 +108,7 @@ public class StreamManager {
 
     private void cleanupInactiveStreamQueues() {
         List<String> streamsToRemove = new ArrayList<>(5);
-        streamQueuesMap.keySet().stream()
+        streamQueuesMap.keySet()
                 .forEach(streamName ->
                         getStreamMetrics(streamName).ifPresent(m -> {
                             long lastEventTs = m.getLastEventOnStreamTimestamp();
@@ -118,7 +118,7 @@ public class StreamManager {
                         })
                 );
 
-        streamsToRemove.stream().forEach(stream -> {
+        streamsToRemove.forEach(stream -> {
             synchronized (streamQueuesMap) {
                 streamQueuesMap.remove(stream);
                 streamMetricsMap.remove(stream);
@@ -135,12 +135,11 @@ public class StreamManager {
     }
 
     boolean hasSubscriptions(final String streamName) {
-        return Optional.ofNullable(streamSubscriptionsMap.get(streamName))
-                .map(subs -> !subs.isEmpty())
-                .orElse(false);
+        ConcurrentSkipListSet<Subscription> streamSubscriptions = streamSubscriptionsMap.get(streamName);
+        return streamSubscriptions != null && !streamSubscriptions.isEmpty();
     }
 
-    private List<String> sanitizeStreamSubjects(final List<String> subjects) {
+    private static List<String> sanitizeStreamSubjects(final List<String> subjects) {
         return subjects.stream()
                 .map(s -> {
                     if (s.toLowerCase().equals("observable") ||
@@ -159,78 +158,77 @@ public class StreamManager {
                 .ifPresent(streams -> removeSubscriptionId(streams, subId));
     }
 
-    synchronized void addStreamSubscription(final Subscription sub) {
+    void addStreamSubscription(final Subscription sub) {
         List<String> streams = sanitizeStreamSubjects(sub.getSubjects());
         LOG.info("adding subscription {} with streams {}", sub, streams);
+        synchronized (this) {
+            handleDuplicateSubscriptionId(sub);
 
-        handleDuplicateSubscriptionId(sub);
+            for (String stream : streams) {
+                ConcurrentSkipListSet<Subscription> subs = streamSubscriptionsMap.computeIfAbsent(stream, ignored -> new ConcurrentSkipListSet<>());
+                int maxSubs = config.maxSubscriptions(stream);
 
-        for (String stream : streams) {
-            streamSubscriptionsMap.putIfAbsent(stream, new ConcurrentSkipListSet<>());
+                // Remove any existing subs with same subscriptionId (if any).
+                subs.removeIf(s -> s.getSubscriptionId().equals(sub.getSubscriptionId()));
 
-            ConcurrentSkipListSet<Subscription> subs = streamSubscriptionsMap.get(stream);
-            int maxSubs = config.maxSubscriptions(stream);
+                subs.add(sub);
+                int numSubs = subs.size();
 
-            // Remove any existing subs with same subscriptionId (if any).
-            subs.removeIf(s -> s.getSubscriptionId().equals(sub.getSubscriptionId()));
-
-            subs.add(sub);
-            int numSubs = subs.size();
-
-            if (numSubs > maxSubs) {
-                // Cleanup any subscriptions we might have added to another stream before hitting
-                // the limit on subs for this stream.
-                removeStreamSubscription(sub);
-                LOG.warn("QUERY SUBSCRIPTION REJECTED: Number of subscriptions for stream {} exceeded max {}. " +
-                                "Increase (default mre.publish.max.subscriptions.per.stream.default or " +
-                                " mre.publish.max.subscriptions.stream.<streamName>) to allow more queries. Removed {}",
-                         stream, maxSubs, sub);
-                getStreamMetrics(stream).ifPresent(m ->
+                if (numSubs > maxSubs) {
+                    // Cleanup any subscriptions we might have added to another stream before hitting
+                    // the limit on subs for this stream.
+                    removeStreamSubscription(sub);
+                    LOG.warn("QUERY SUBSCRIPTION REJECTED: Number of subscriptions for stream {} exceeded max {}. " +
+                            "Increase (default mre.publish.max.subscriptions.per.stream.default or " +
+                            " mre.publish.max.subscriptions.stream.<streamName>) to allow more queries. Removed {}",
+                        stream, maxSubs, sub);
+                    getStreamMetrics(stream).ifPresent(m ->
                         m.getMantisQueryRejectedCounter().increment());
+                }
+
+                getStreamMetrics(stream).ifPresent(m ->
+                    m.getMantisActiveQueryCountGauge().set((double) numSubs));
             }
 
-            getStreamMetrics(stream).ifPresent(m ->
-                    m.getMantisActiveQueryCountGauge().set((double) numSubs));
+            subscriptionIdToStreamsMap.put(sub.getSubscriptionId(), streams);
         }
-
-        subscriptionIdToStreamsMap.put(sub.getSubscriptionId(), streams);
     }
 
     private void removeSubscriptionId(final List<String> streams, final String subscriptionId) {
         for (String stream : streams) {
-            if (streamSubscriptionsMap.containsKey(stream)) {
-                final ConcurrentSkipListSet<Subscription> subs =
-                        streamSubscriptionsMap.get(stream);
+            ConcurrentSkipListSet<Subscription> subs = streamSubscriptionsMap.get(stream);
+            if (subs != null) {
+                subs.removeIf(sub -> sub.getSubscriptionId().equals(subscriptionId));
 
-                if (subs != null) {
-                    subs.removeIf(sub -> sub.getSubscriptionId().equals(subscriptionId));
+                getStreamMetrics(stream).ifPresent(m ->
+                    m.getMantisActiveQueryCountGauge().set((double) subs.size()));
 
-                    getStreamMetrics(stream).ifPresent(m ->
-                            m.getMantisActiveQueryCountGauge().set((double) subs.size()));
-
-                    if (subs.isEmpty()) {
-                        streamSubscriptionsMap.remove(stream);
-                    }
+                if (subs.isEmpty()) {
+                    streamSubscriptionsMap.remove(stream);
                 }
             }
         }
     }
 
-    synchronized boolean removeStreamSubscription(final String subscriptionId) {
+    boolean removeStreamSubscription(final String subscriptionId) {
         LOG.info("removing subscription {}", subscriptionId);
-        List<String> streams =
+        synchronized (this) {
+            List<String> streams =
                 subscriptionIdToStreamsMap.getOrDefault(subscriptionId, Collections.emptyList());
-        removeSubscriptionId(streams, subscriptionId);
-        subscriptionIdToStreamsMap.remove(subscriptionId);
+            removeSubscriptionId(streams, subscriptionId);
+            subscriptionIdToStreamsMap.remove(subscriptionId);
+        }
 
         return true;
     }
 
-    synchronized boolean removeStreamSubscription(final Subscription sub) {
+    boolean removeStreamSubscription(final Subscription sub) {
         LOG.info("removing subscription {}", sub);
         final List<String> streams = sanitizeStreamSubjects(sub.getSubjects());
-        removeSubscriptionId(streams, sub.getSubscriptionId());
-        subscriptionIdToStreamsMap.remove(sub.getSubscriptionId());
+        synchronized (this) {
+            removeSubscriptionId(streams, sub.getSubscriptionId());
+            subscriptionIdToStreamsMap.remove(sub.getSubscriptionId());
+        }
 
         return true;
     }
@@ -243,7 +241,8 @@ public class StreamManager {
      * @return
      */
     Set<Subscription> getStreamSubscriptions(final String streamName) {
-        return streamSubscriptionsMap.getOrDefault(streamName, new ConcurrentSkipListSet<>());
+        Set<Subscription> found = streamSubscriptionsMap.get(streamName);
+        return found != null ? found : Collections.emptySet();
     }
 
     /**

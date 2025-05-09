@@ -70,8 +70,7 @@ class EventProcessor {
     public Event process(String stream, Event event) {
         LOG.debug("Entering EventProcessor#onNext: {}", event);
 
-        boolean isEnabled = config.isMREClientEnabled();
-        if (!isEnabled) {
+        if (!config.isMREClientEnabled()) {
             LOG.debug("Mantis Realtime Events Publisher is disabled."
                     + "Set the property defined in your MrePublishConfiguration object to true to enable.");
             return null;
@@ -114,14 +113,10 @@ class EventProcessor {
         if (!matchingSubscriptions.isEmpty()) {
             projectedEvent = projectSupersetEvent(stream, matchingSubscriptions, event);
         } else {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("no matching subscriptions");
-            }
+            LOG.trace("no matching subscriptions");
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Exit EventProcessor#onNext: {}", event);
-        }
+        LOG.debug("Exit EventProcessor#onNext: {}", event);
 
         return projectedEvent;
     }
@@ -131,14 +126,10 @@ class EventProcessor {
      */
     void maskSensitiveFields(Event event) {
         String blacklistKeys = config.blackListedKeysCSV();
-        List<String> blacklist =
-                Arrays.stream(blacklistKeys.split(","))
-                        .map(String::trim)
-                        .collect(Collectors.toList());
-
-        blacklist.stream()
-                .filter(key -> event.get(key) != null)
-                .forEach(key -> event.set(key, "***"));
+        Arrays.stream(blacklistKeys.split(","))
+            .map(String::trim)
+            .filter(key -> event.get(key) != null)
+            .forEach(key -> event.set(key, "***"));
     }
 
     private void sendError(Subscription subscription, String errorMessage) {
@@ -163,9 +154,7 @@ class EventProcessor {
     private Event projectSupersetEvent(final String streamName,
                                              final List<Subscription> matchingSubscriptions,
                                              final Event event) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Enter EventProcessor#projectSupersetEvent {}  event: {}", matchingSubscriptions, event);
-        }
+        LOG.debug("Enter EventProcessor#projectSupersetEvent {}  event: {}", matchingSubscriptions, event);
 
         Event projectedEvent = null;
         try {
@@ -189,15 +178,13 @@ class EventProcessor {
         if (projectedEvent != null && !projectedEvent.isEmpty()) {
             augmentedEvent = enrich(projectedEvent, streamName, matchingSubscriptions);
         } else {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Projected event is empty. skipping");
-            }
+            LOG.debug("Projected event is empty. skipping");
         }
 
         return augmentedEvent;
     }
 
-    private Event enrich(Event projectedEvent,
+    private static Event enrich(Event projectedEvent,
                          String streamName,
                          List<Subscription> matchingSubscriptions) {
         projectedEvent.set("type", "EVENT");
@@ -209,9 +196,7 @@ class EventProcessor {
         }
         projectedEvent.set("matched-clients", subIdList);
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Generated event string: {}", projectedEvent);
-        }
+        LOG.debug("Generated event string: {}", projectedEvent);
 
         return projectedEvent;
     }

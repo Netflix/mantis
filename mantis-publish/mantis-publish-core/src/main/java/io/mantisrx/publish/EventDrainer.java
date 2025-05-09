@@ -102,10 +102,12 @@ class EventDrainer implements Runnable {
                                     }
                                 });
 
-                        streamEventList.stream()
-                                .map(e -> process(stream, e))
-                                .filter(Objects::nonNull)
-                                .forEach(e -> eventTransmitter.send(e, stream));
+                        for (Event streamEvent : streamEventList) {
+                            Event processedEvent = process(stream, streamEvent);
+                            if (processedEvent != null) {
+                                eventTransmitter.send(processedEvent, stream);
+                            }
+                        }
                         streamEventList.clear();
                     }
                 } catch (Exception e) {
