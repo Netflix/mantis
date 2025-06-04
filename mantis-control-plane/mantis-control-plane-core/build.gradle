@@ -60,3 +60,10 @@ task copyLibs(type: Copy) {
 
 jar.dependsOn copyLibs
 compileTestFixturesJava.dependsOn copyLibs
+
+tasks.withType(Test) {
+    jvmArgs += [
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED'
+    ]
+}
