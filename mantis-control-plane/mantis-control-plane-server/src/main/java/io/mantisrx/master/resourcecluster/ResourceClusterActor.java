@@ -586,7 +586,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onDisableTaskExecutorsRequestExpiry(ExpireDisableTaskExecutorsRequest request) {
         try {
-            log.info("Expiring Disable Task Executors Request {}", request.getRequest());
+            log.debug("Expiring Disable Task Executors Request {}", request.getRequest());
             getTimers().cancel(getExpiryKeyFor(request.getRequest()));
             if (activeDisableTaskExecutorsByAttributesRequests.remove(request.getRequest()) || (request.getRequest().getTaskExecutorID().isPresent() && disabledTaskExecutors.remove(request.getRequest().getTaskExecutorID().get()))) {
                 mantisJobStore.deleteExpiredDisableTaskExecutorsRequest(request.getRequest());

@@ -30,12 +30,11 @@ dependencies {
 
     api "com.netflix.archaius:archaius2-api:$archaiusVersion"
     implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
-
-    testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"
-    testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
-
     implementation libraries.slf4jApi
 
+    testImplementation libraries.junit4
+    testImplementation libraries.wiremockjre8
+    testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
     testImplementation libraries.slf4jLog4j12

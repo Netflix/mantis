@@ -44,7 +44,7 @@ dependencies {
 
     testFixturesImplementation libraries.flinkRpcImpl
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoAll
+    testImplementation libraries.mockitoCore
 }
 
 // This task makes flink-rpc-akka.jar available in mantis-control-plane-core classpath,
@@ -60,3 +60,10 @@ task copyLibs(type: Copy) {
 
 jar.dependsOn copyLibs
 compileTestFixturesJava.dependsOn copyLibs
+
+tasks.withType(Test) {
+    jvmArgs += [
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED'
+    ]
+}

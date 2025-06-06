@@ -117,6 +117,13 @@ test {
     }
 }
 
+tasks.withType(Test) {
+    jvmArgs += [
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED'
+    ]
+}
+
 tasks.named('compileJava') {
     dependsOn project(':mantis-control-plane:mantis-control-plane-core').tasks.named('jar')
 }

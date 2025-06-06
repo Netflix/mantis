@@ -40,7 +40,7 @@ dependencies {
 
     testImplementation libraries.akkaTest
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoAll
+    testImplementation libraries.mockitoCore
     testImplementation 'org.hamcrest:hamcrest-all:1.3'
     testImplementation libraries.vavrTest
     testImplementation(testFixtures(project(":mantis-common")))
@@ -57,3 +57,10 @@ task copyLibs(type: Copy) {
 jar.dependsOn copyLibs
 // Add dependency from compileTestJava to copyLibs
 compileTestJava.dependsOn copyLibs
+
+tasks.withType(Test) {
+    jvmArgs += [
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED'
+    ]
+}

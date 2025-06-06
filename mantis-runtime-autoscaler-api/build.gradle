@@ -32,7 +32,7 @@ dependencies {
     compileOnly libraries.spectatorApi
 
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoAll
+    testImplementation libraries.mockitoCore
     testImplementation libraries.vavrTest
     testImplementation(testFixtures(project(":mantis-common")))
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))

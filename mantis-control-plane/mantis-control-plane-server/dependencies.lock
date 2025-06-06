@@ -1,7 +1,7 @@
 {
     "annotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "compileClasspath": {
@@ -33,9 +33,6 @@
             "locked": "0.3.1"
         },
         "com.typesafe.akka:akka-actor_2.12": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common-akka"
-            ],
             "locked": "2.6.15"
         },
         "com.typesafe.akka:akka-http-caching_2.12": {
@@ -55,12 +52,8 @@
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common-akka",
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "project": true
-        },
-        "io.mantisrx:mantis-common-akka": {
             "project": true
         },
         "io.mantisrx:mantis-common-serde": {
@@ -116,7 +109,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "org.apache.commons:commons-math3": {
             "locked": "3.5"
@@ -152,7 +145,7 @@
             "locked": "20180813"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -181,7 +174,7 @@
     },
     "lombok": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "runtimeClasspath": {
@@ -222,9 +215,6 @@
             "locked": "0.3.1"
         },
         "com.typesafe.akka:akka-actor_2.12": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common-akka"
-            ],
             "locked": "2.6.15"
         },
         "com.typesafe.akka:akka-http-caching_2.12": {
@@ -251,12 +241,8 @@
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common-akka",
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "project": true
-        },
-        "io.mantisrx:mantis-common-akka": {
             "project": true
         },
         "io.mantisrx:mantis-common-serde": {
@@ -285,13 +271,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.118.Final"
+            "locked": "4.1.115.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.118.Final"
+            "locked": "4.1.115.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
@@ -320,7 +306,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -389,7 +375,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-dynamodb"
             ],
-            "locked": "2.31.28"
+            "locked": "2.29.38"
         },
         "software.amazon.awssdk:bom": {
             "firstLevelTransitive": [
@@ -407,12 +393,12 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-dynamodb"
             ],
-            "locked": "2.31.28"
+            "locked": "2.29.38"
         }
     },
     "testAnnotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testCompileClasspath": {
@@ -444,9 +430,6 @@
             "locked": "0.3.1"
         },
         "com.typesafe.akka:akka-actor_2.12": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common-akka"
-            ],
             "locked": "2.6.15"
         },
         "com.typesafe.akka:akka-http-caching_2.12": {
@@ -476,12 +459,8 @@
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common",
-                "io.mantisrx:mantis-common-akka",
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "project": true
-        },
-        "io.mantisrx:mantis-common-akka": {
             "project": true
         },
         "io.mantisrx:mantis-common-serde": {
@@ -540,7 +519,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -585,7 +564,7 @@
             "locked": "3.12.4"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -653,9 +632,6 @@
             "locked": "0.3.1"
         },
         "com.typesafe.akka:akka-actor_2.12": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common-akka"
-            ],
             "locked": "2.6.15"
         },
         "com.typesafe.akka:akka-http-caching_2.12": {
@@ -689,12 +665,8 @@
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common",
-                "io.mantisrx:mantis-common-akka",
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "project": true
-        },
-        "io.mantisrx:mantis-common-akka": {
             "project": true
         },
         "io.mantisrx:mantis-common-serde": {
@@ -724,13 +696,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.118.Final"
+            "locked": "4.1.115.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.118.Final"
+            "locked": "4.1.115.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
@@ -759,7 +731,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.14.0"
+            "locked": "2.13.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -846,7 +818,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-dynamodb"
             ],
-            "locked": "2.31.28"
+            "locked": "2.29.38"
         },
         "software.amazon.awssdk:bom": {
             "firstLevelTransitive": [
@@ -864,7 +836,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-dynamodb"
             ],
-            "locked": "2.31.28"
+            "locked": "2.29.38"
         }
     }
 }
