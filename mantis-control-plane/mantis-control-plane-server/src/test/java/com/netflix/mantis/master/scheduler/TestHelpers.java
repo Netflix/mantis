@@ -82,7 +82,36 @@ public class TestHelpers {
         }
     }
 
+    /**
+     * Set up master config with default test values.
+     * Uses immediate refresh (refresh interval = -1) for most tests.
+     */
     public static void setupMasterConfig() {
+        setupMasterConfig(null);
+    }
+
+    /**
+     * Set up master config with optional property overrides.
+     * 
+     * @param overrides Optional properties to override defaults. Can be null.
+     */
+    public static void setupMasterConfig(Properties overrides) {
+        final Properties props = getDefaultMasterConfigProperties();
+        
+        // Apply any overrides
+        if (overrides != null) {
+            props.putAll(overrides);
+        }
+
+        ConfigurationProvider.initialize(new StaticPropertiesConfigurationFactory(props));
+    }
+
+    /**
+     * Get the default master configuration properties used by tests.
+     * 
+     * @return Properties with default test configuration
+     */
+    public static Properties getDefaultMasterConfigProperties() {
         final Properties props = new Properties();
 
         props.setProperty("mantis.master.consoleport", "8080");
@@ -111,11 +140,12 @@ public class TestHelpers {
         props.setProperty("mantis.master.framework.name", "MantisFramework");
         props.setProperty("mesos.worker.timeoutSecondsToReportStart", "5");
         props.setProperty("mesos.lease.offer.expiry.secs", "1");
-        props.setProperty("mantis.master.stage.assignment.refresh.interval.ms","-1");
-        props.setProperty("mantis.master.api.cache.ttl.milliseconds","0");
-        props.setProperty("mantis.scheduler.enable-batch","true");
+        // Default to immediate refresh for most tests
+        props.setProperty("mantis.master.stage.assignment.refresh.interval.ms", "-1");
+        props.setProperty("mantis.master.api.cache.ttl.milliseconds", "0");
+        props.setProperty("mantis.scheduler.enable-batch", "true");
 
-        ConfigurationProvider.initialize(new StaticPropertiesConfigurationFactory(props));
+        return props;
     }
 
 //    public static MantisSchedulerFenzoImpl createMantisScheduler(final VMResourceManager vmResourceManager,
