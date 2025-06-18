@@ -2502,7 +2502,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             IMantisWorkerMetadata workerRequest = addWorker(schedInfo, stageMetaData.getStageNum(),
                                     newWorkerIndex);
                             jobStore.storeNewWorker(workerRequest);
-                            markStageAssignmentsChanged(false);
                             queueTask(workerRequest);
                         } catch (Exception e) {
                             // creating a worker failed but expected no of workers was set successfully,

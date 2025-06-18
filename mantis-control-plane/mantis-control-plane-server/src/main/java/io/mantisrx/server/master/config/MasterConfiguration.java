@@ -201,7 +201,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     long getStageAssignmentRefreshIntervalMs();
 
     @Config("mantis.master.stage.assignment.refresh.max.wait.ms")
-    @Default("10000")
+    @Default("30000")
     long getStageAssignmentRefreshMaxWaitMs();
 
     @Config("mantis.worker.heartbeat.termination.enabled")
