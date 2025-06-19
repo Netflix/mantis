@@ -70,7 +70,7 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
     private final Map<TaskExecutorID, TaskExecutorState> taskExecutorStateMap = new HashMap<>();
     Cache<String, JobRequirements> pendingJobRequests = CacheBuilder.newBuilder()
         .maximumSize(1000)
-        .expireAfterWrite(10, TimeUnit.MINUTES)
+        .expireAfterWrite(20, TimeUnit.MINUTES)
         .removalListener((RemovalListener<String, JobRequirements>) notification -> {
             log.info("Removing key {} from pending job requests due to reason {}", notification.getKey(), notification.getCause());
         })
