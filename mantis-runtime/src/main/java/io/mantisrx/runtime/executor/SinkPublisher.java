@@ -18,6 +18,7 @@ package io.mantisrx.runtime.executor;
 
 import io.mantisrx.common.metrics.rx.MonitorOperator;
 import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.EagerSubscriptionStrategy;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.SinkHolder;
@@ -25,6 +26,10 @@ import io.mantisrx.runtime.StageConfig;
 import io.mantisrx.runtime.sink.Sink;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -50,7 +55,16 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
 
     // state created during the lifecycle of the sink.
     private Subscription eagerSubscription;
+    private Observable<T> delayedEagerObservable;
     private Sink<T> sink;
+    private ScheduledExecutorService timeoutScheduler;
+    private final AtomicBoolean eagerSubscriptionActivated = new AtomicBoolean(false);
+    
+    // Parameter names for eager subscription strategy (delegate to parameter definitions)
+    private static final String EAGER_SUBSCRIPTION_STRATEGY_PARAM = 
+        io.mantisrx.runtime.EagerSubscriptionParameters.EAGER_SUBSCRIPTION_STRATEGY_PARAM;
+    private static final String SUBSCRIPTION_TIMEOUT_SECS_PARAM = 
+        io.mantisrx.runtime.EagerSubscriptionParameters.SUBSCRIPTION_TIMEOUT_SECS_PARAM;
 
     public SinkPublisher(SinkHolder<T> sinkHolder,
                          PortSelector portSelector,
@@ -108,9 +122,8 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
                 })
                 .share();
         if (context.getWorkerInfo().getDurationType() == MantisJobDurationType.Perpetual) {
-            // eager subscribe, don't allow unsubscribe back
-            logger.info("eagerSubscription subscribed for Perpetual job.");
-            eagerSubscription = o.subscribe();
+            EagerSubscriptionStrategy strategy = getEagerSubscriptionStrategy(context);
+            handlePerpetualJobSubscription(o, context, strategy);
         }
         sink.init(context);
         sink.call(context, new PortRequest(sinkPort), o);
@@ -118,6 +131,94 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
 
     @Override
     public RxMetrics getMetrics() {return null;}
+
+    /**
+     * Gets the eager subscription strategy from job parameters.
+     * Defaults to IMMEDIATE for backward compatibility.
+     */
+    private EagerSubscriptionStrategy getEagerSubscriptionStrategy(Context context) {
+        String strategyStr = (String) context.getParameters().get(EAGER_SUBSCRIPTION_STRATEGY_PARAM, "IMMEDIATE");
+        try {
+            return EagerSubscriptionStrategy.valueOf(strategyStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid eager subscription strategy '{}', defaulting to IMMEDIATE", strategyStr);
+            return EagerSubscriptionStrategy.IMMEDIATE;
+        }
+    }
+
+    /**
+     * Handles subscription logic for perpetual jobs based on the configured strategy.
+     */
+    private void handlePerpetualJobSubscription(Observable<T> observable, Context context, EagerSubscriptionStrategy strategy) {
+        switch (strategy) {
+            case IMMEDIATE:
+                logger.info("Perpetual job using IMMEDIATE eager subscription strategy");
+                eagerSubscription = observable.subscribe();
+                break;
+                
+            case ON_FIRST_CLIENT:
+                logger.info("Perpetual job using ON_FIRST_CLIENT eager subscription strategy");
+                delayedEagerObservable = observable;
+                context.setEagerSubscriptionActivationCallback(this::activateEagerSubscription);
+                break;
+                
+            case TIMEOUT_BASED:
+                logger.info("Perpetual job using TIMEOUT_BASED eager subscription strategy");
+                delayedEagerObservable = observable;
+                context.setEagerSubscriptionActivationCallback(this::activateEagerSubscription);
+                scheduleTimeoutActivation(context);
+                break;
+                
+            default:
+                logger.warn("Unknown eager subscription strategy {}, defaulting to IMMEDIATE", strategy);
+                eagerSubscription = observable.subscribe();
+                break;
+        }
+    }
+
+    /**
+     * Schedules timeout-based activation for TIMEOUT_BASED strategy.
+     */
+    private void scheduleTimeoutActivation(Context context) {
+        int timeoutSecs = (Integer) context.getParameters().get(SUBSCRIPTION_TIMEOUT_SECS_PARAM, 60);
+        if (timeoutSecs <= 0) {
+            logger.warn("Invalid subscription timeout {} seconds, defaulting to 60 seconds", timeoutSecs);
+            timeoutSecs = 60;
+        }
+        
+        timeoutScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "EagerSubscriptionTimeout");
+            t.setDaemon(true);
+            return t;
+        });
+        
+        final int finalTimeoutSecs = timeoutSecs;
+        timeoutScheduler.schedule(() -> {
+            if (eagerSubscriptionActivated.compareAndSet(false, true)) {
+                logger.info("Activating eager subscription due to timeout after {} seconds", finalTimeoutSecs);
+                activateEagerSubscription();
+            }
+        }, timeoutSecs, TimeUnit.SECONDS);
+        
+        logger.info("Scheduled timeout activation in {} seconds for perpetual job", timeoutSecs);
+    }
+
+    /**
+     * Activates delayed eager subscription for perpetual jobs when first client connects or timeout occurs.
+     * This ensures the job becomes perpetual and won't terminate even after clients disconnect.
+     */
+    public void activateEagerSubscription() {
+        if (eagerSubscriptionActivated.compareAndSet(false, true) && 
+            eagerSubscription == null && delayedEagerObservable != null) {
+            logger.info("Creating delayed eager subscription for perpetual job");
+            eagerSubscription = delayedEagerObservable.subscribe();
+            
+            // Cancel timeout scheduler if it exists
+            if (timeoutScheduler != null && !timeoutScheduler.isShutdown()) {
+                timeoutScheduler.shutdown();
+            }
+        }
+    }
 
     @Override
     public void close() throws IOException {
@@ -128,6 +229,10 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
             if (eagerSubscription != null) {
                 eagerSubscription.unsubscribe();
                 eagerSubscription = null;
+            }
+            if (timeoutScheduler != null && !timeoutScheduler.isShutdown()) {
+                timeoutScheduler.shutdown();
+                timeoutScheduler = null;
             }
         }
     }
