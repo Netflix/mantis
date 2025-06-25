@@ -24,7 +24,7 @@ buildscript {
         maven { url 'https://artifacts-oss.netflix.net/maven-oss-releases' }
     }
     dependencies {
-        classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:11.5.0'
+        classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:11.6.0'
         classpath 'com.netflix.nebula:nebula-dependency-recommender:11.+'
         classpath 'io.mantisrx:mantis-gradle-plugin:1.2.7'
         classpath "io.freefair.gradle:lombok-plugin:8.+"
