@@ -137,11 +137,21 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
      * Defaults to IMMEDIATE for backward compatibility.
      */
     private EagerSubscriptionStrategy getEagerSubscriptionStrategy(Context context) {
-        String strategyStr = (String) context.getParameters().get(EAGER_SUBSCRIPTION_STRATEGY_PARAM, "IMMEDIATE");
+        Object strategyObj = context.getParameters().get(EAGER_SUBSCRIPTION_STRATEGY_PARAM, "IMMEDIATE");
+        String strategyStr;
+        
+        if (strategyObj instanceof String) {
+            strategyStr = (String) strategyObj;
+        } else {
+            logger.warn("Invalid eager subscription strategy type '{}', expected String, defaulting to IMMEDIATE", 
+                       strategyObj != null ? strategyObj.getClass().getSimpleName() : "null");
+            strategyStr = "IMMEDIATE";
+        }
+        
         try {
             return EagerSubscriptionStrategy.valueOf(strategyStr.toUpperCase());
         } catch (IllegalArgumentException e) {
-            logger.warn("Invalid eager subscription strategy '{}', defaulting to IMMEDIATE", strategyStr);
+            logger.warn("Invalid eager subscription strategy value '{}', defaulting to IMMEDIATE", strategyStr);
             return EagerSubscriptionStrategy.IMMEDIATE;
         }
     }
@@ -180,7 +190,19 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
      * Schedules timeout-based activation for TIMEOUT_BASED strategy.
      */
     private void scheduleTimeoutActivation(Context context) {
-        int timeoutSecs = (Integer) context.getParameters().get(SUBSCRIPTION_TIMEOUT_SECS_PARAM, 60);
+        Object timeoutObj = context.getParameters().get(SUBSCRIPTION_TIMEOUT_SECS_PARAM, 60);
+        int timeoutSecs;
+        
+        if (timeoutObj instanceof Integer) {
+            timeoutSecs = (Integer) timeoutObj;
+        } else if (timeoutObj instanceof Number) {
+            timeoutSecs = ((Number) timeoutObj).intValue();
+        } else {
+            logger.warn("Invalid subscription timeout type '{}', expected Integer, defaulting to 60 seconds", 
+                       timeoutObj != null ? timeoutObj.getClass().getSimpleName() : "null");
+            timeoutSecs = 60;
+        }
+        
         if (timeoutSecs <= 0) {
             logger.warn("Invalid subscription timeout {} seconds, defaulting to 60 seconds", timeoutSecs);
             timeoutSecs = 60;
@@ -194,10 +216,8 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
         
         final int finalTimeoutSecs = timeoutSecs;
         timeoutScheduler.schedule(() -> {
-            if (eagerSubscriptionActivated.compareAndSet(false, true)) {
-                logger.info("Activating eager subscription due to timeout after {} seconds", finalTimeoutSecs);
-                activateEagerSubscription();
-            }
+            logger.info("Timeout reached after {} seconds, attempting activation", finalTimeoutSecs);
+            activateEagerSubscription();
         }, timeoutSecs, TimeUnit.SECONDS);
         
         logger.info("Scheduled timeout activation in {} seconds for perpetual job", timeoutSecs);
