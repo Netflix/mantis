@@ -218,7 +218,7 @@ public class ResourceClusterActorTest {
         resourceCluster =
             new ResourceClusterAkkaImpl(
                 resourceClusterActor,
-                Duration.ofSeconds(5),
+                Duration.ofSeconds(15),
                 CLUSTER_ID,
                 new LongDynamicProperty(propertiesLoader, "rate.limite.perSec", 10000L));
     }
