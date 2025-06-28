@@ -16,13 +16,11 @@
 
 package io.mantisrx.runtime;
 
-import io.mantisrx.runtime.parameter.Parameters;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import junit.framework.Assert;
+
+import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
-import rx.Observable;
 import rx.functions.Action0;
 
 public class ContextTest {
@@ -40,7 +38,7 @@ public class ContextTest {
         context.activateEagerSubscription();
 
         // Assert
-        Assert.assertTrue("Callback should be invoked when activateEagerSubscription is called", 
+        Assert.assertTrue("Callback should be invoked when activateEagerSubscription is called",
                          callbackInvoked.get());
     }
 
@@ -51,7 +49,7 @@ public class ContextTest {
 
         // Act & Assert - Should not throw exception when no callback is set
         context.activateEagerSubscription();
-        
+
         // Test passes if no exception is thrown
     }
 
@@ -61,12 +59,12 @@ public class ContextTest {
         Context context = createTestContext();
         AtomicInteger callbackCount = new AtomicInteger(0);
 
-        Action0 testCallback = () -> callbackCount.incrementAndGet();
+        Action0 testCallback = callbackCount::incrementAndGet;
 
         // Act
         context.setEagerSubscriptionActivationCallback(testCallback);
         context.activateEagerSubscription();
-        context.activateEagerSubscription(); // Call multiple times
+        context.activateEagerSubscription();
         context.activateEagerSubscription();
 
         // Assert
@@ -89,9 +87,9 @@ public class ContextTest {
         context.activateEagerSubscription();
 
         // Assert
-        Assert.assertFalse("First callback should not be invoked after replacement", 
+        Assert.assertFalse("First callback should not be invoked after replacement",
                           firstCallbackInvoked.get());
-        Assert.assertTrue("Second callback should be invoked", 
+        Assert.assertTrue("Second callback should be invoked",
                          secondCallbackInvoked.get());
     }
 
@@ -109,9 +107,8 @@ public class ContextTest {
         context.activateEagerSubscription();
 
         // Assert
-        Assert.assertFalse("Original callback should not be invoked after setting to null", 
+        Assert.assertFalse("Original callback should not be invoked after setting to null",
                           originalCallbackInvoked.get());
-        // Test passes if no exception is thrown when callback is null
     }
 
     @Test
@@ -126,7 +123,6 @@ public class ContextTest {
 
     @Test
     public void testEagerSubscriptionCallbackIntegrationWithCompleteAndExit() {
-        // Setup - use no-arg constructor and skip completeAndExit test since it's no-op in test constructor
         AtomicBoolean callbackCalled = new AtomicBoolean(false);
         Action0 eagerSubscriptionCallback = () -> callbackCalled.set(true);
 
@@ -140,7 +136,6 @@ public class ContextTest {
         Assert.assertTrue("Eager subscription callback should be called", callbackCalled.get());
     }
 
-    // Helper method
     private Context createTestContext() {
         return new Context(); // Use no-arg constructor for testing
     }

@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package io.mantisrx.runtime.executor;
+package io.mantisrx.runtime.sink;
 
+import io.mantisrx.common.SystemParameters;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.SinkHolder;
 import io.mantisrx.runtime.StageConfig;
 import io.mantisrx.runtime.WorkerInfo;
+import io.mantisrx.runtime.executor.PortSelector;
+import io.mantisrx.runtime.executor.SinkPublisher;
 import io.mantisrx.runtime.parameter.Parameters;
-import io.mantisrx.runtime.sink.Sink;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -32,12 +35,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import junit.framework.Assert;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 import rx.Observable;
-import rx.functions.Action0;
-import rx.functions.Action1;
 
 public class SinkPublisherTest {
 
@@ -67,7 +69,7 @@ public class SinkPublisherTest {
 
         // Mock context for perpetual job
         Context context = createPerpetualJobContext();
-        
+
         // Mock port selector
         PortSelector portSelector = Mockito.mock(PortSelector.class);
         Mockito.when(portSelector.acquirePort()).thenReturn(8080);
@@ -103,7 +105,7 @@ public class SinkPublisherTest {
         // Assert - For perpetual jobs, eager subscription should be delayed
         Assert.assertTrue("Sink should be initialized", sinkInitialized.get());
         Assert.assertTrue("Sink should be called", sinkCalled.get());
-        
+
         // Verify no subscription has happened yet (delayed eager subscription)
         Thread.sleep(100); // Give time for any potential subscription
         Assert.assertEquals("No subscription should occur for perpetual job before activation", 0, subscriptionCount.get());
@@ -112,7 +114,7 @@ public class SinkPublisherTest {
         context.activateEagerSubscription();
 
         // Assert - Now subscription should happen
-        Assert.assertTrue("Subscription should occur after activation", 
+        Assert.assertTrue("Subscription should occur after activation",
                          subscriptionLatch.await(1, TimeUnit.SECONDS));
         Assert.assertEquals("Exactly one subscription should occur", 1, subscriptionCount.get());
 
@@ -142,7 +144,7 @@ public class SinkPublisherTest {
 
         // Mock context for transient job
         Context context = createTransientJobContext();
-        
+
         // Mock port selector
         PortSelector portSelector = Mockito.mock(PortSelector.class);
 
@@ -175,7 +177,7 @@ public class SinkPublisherTest {
         sinkPublisher.start(stageConfig, observablesToPublish);
 
         // Assert - For transient jobs, subscription should happen immediately through sink
-        Assert.assertTrue("Subscription should occur immediately for transient job", 
+        Assert.assertTrue("Subscription should occur immediately for transient job",
                          subscriptionLatch.await(1, TimeUnit.SECONDS));
         Assert.assertEquals("Exactly one subscription should occur", 1, subscriptionCount.get());
 
@@ -202,7 +204,7 @@ public class SinkPublisherTest {
 
         // Mock context for perpetual job with IMMEDIATE strategy
         Context context = createPerpetualJobContextWithStrategy("IMMEDIATE");
-        
+
         // Mock port selector
         PortSelector portSelector = Mockito.mock(PortSelector.class);
 
@@ -230,7 +232,7 @@ public class SinkPublisherTest {
         sinkPublisher.start(stageConfig, observablesToPublish);
 
         // Assert - For IMMEDIATE strategy, subscription should happen immediately
-        Assert.assertTrue("Subscription should occur immediately for IMMEDIATE strategy", 
+        Assert.assertTrue("Subscription should occur immediately for IMMEDIATE strategy",
                          subscriptionLatch.await(1, TimeUnit.SECONDS));
         Assert.assertEquals("Exactly one subscription should occur", 1, subscriptionCount.get());
 
@@ -288,10 +290,10 @@ public class SinkPublisherTest {
         context.activateEagerSubscription();
 
         // Assert
-        Assert.assertTrue("First subscription should occur", 
+        Assert.assertTrue("First subscription should occur",
                          firstSubscriptionLatch.await(1, TimeUnit.SECONDS));
         Thread.sleep(100); // Give time for any additional subscriptions
-        Assert.assertEquals("Only one subscription should occur despite multiple activations", 
+        Assert.assertEquals("Only one subscription should occur despite multiple activations",
                            1, subscriptionCount.get());
 
         // Cleanup
@@ -311,7 +313,7 @@ public class SinkPublisherTest {
         context.activateEagerSubscription();
 
         // Assert
-        Assert.assertTrue("Callback should be called when activateEagerSubscription is invoked", 
+        Assert.assertTrue("Callback should be called when activateEagerSubscription is invoked",
                          callbackCalled.get());
     }
 
@@ -331,7 +333,7 @@ public class SinkPublisherTest {
     private Context createPerpetualJobContext() {
         return createPerpetualJobContextWithStrategy("ON_FIRST_CLIENT");
     }
-    
+
     private Context createPerpetualJobContextWithStrategy(String strategy) {
         WorkerInfo workerInfo = Mockito.mock(WorkerInfo.class);
         Mockito.when(workerInfo.getDurationType()).thenReturn(MantisJobDurationType.Perpetual);
@@ -339,9 +341,9 @@ public class SinkPublisherTest {
 
         // Create parameters with the strategy
         Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("eagerSubscriptionStrategy", strategy);
+        paramMap.put(SystemParameters.JOB_WORKER_EAGER_SUBSCRIPTION_STRATEGY, strategy);
         Set<String> paramDefs = new HashSet<>();
-        paramDefs.add("eagerSubscriptionStrategy");
+        paramDefs.add(SystemParameters.JOB_WORKER_EAGER_SUBSCRIPTION_STRATEGY);
         Parameters parameters = new Parameters(paramMap, new HashSet<>(), paramDefs);
 
         return new Context(

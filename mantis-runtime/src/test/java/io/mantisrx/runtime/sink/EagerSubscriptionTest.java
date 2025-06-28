@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.runtime.executor;
+package io.mantisrx.runtime.sink;
 
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.common.network.Endpoint;
@@ -23,8 +23,8 @@ import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.StageConfig;
 import io.mantisrx.runtime.WorkerInfo;
+import io.mantisrx.runtime.executor.*;
 import io.mantisrx.runtime.parameter.Parameters;
-import io.reactivex.mantis.remote.observable.ConnectToObservable;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.EndpointInjector;
 import io.reactivex.mantis.remote.observable.PortSelectorWithinRange;
@@ -34,7 +34,8 @@ import io.reactivex.mantis.remote.observable.RxMetrics;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import junit.framework.Assert;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 import rx.Observable;
