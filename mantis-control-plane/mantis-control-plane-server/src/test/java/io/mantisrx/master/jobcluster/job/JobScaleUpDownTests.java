@@ -145,7 +145,8 @@ public class JobScaleUpDownTests {
 		verify(jobStoreMock, times(3)).updateJob(any());
 
 		// initial worker + job master and scale up worker
-		verify(schedulerMock, times(3)).scheduleWorkers(any());
+        //should be twice because it is an initial request + scale up request
+		verify(schedulerMock, times(2)).scheduleWorkers(any());
 
 	}
 
