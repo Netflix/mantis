@@ -1776,30 +1776,38 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         /**
-         * Merges attributes assignment between job and artifact definitions. It does it by first fetching
-         * the associated JobArtifact tags using the artifact ID from the job, and then merging them with the assignment
-         * attributes from the job definition itself. The keys from the job definition take precedence over the
-         * keys from the artifact's tags.
+         * Merges attributes assignment between default configuration, artifact, and job definitions.
+         * The method creates a layered approach starting with default artifact tags as the base,
+         * then overlaying artifact-specific tags from the job store, and finally applying job definition
+         * scheduling constraints which have the highest precedence.
          *
          * @param artifactUrl The URL of the artifact leveraged by the job for which the attributes are to be collated
-         * @return A merged map of scheduling attributes. The precedence of keys follows: job definition > artifact's tags.
+         * @return A merged map of scheduling attributes. The precedence order is: job definition > artifact tags > default tags.
          */
         private Map<String, String> mergeJobDefAndArtifactAssigmentAttributes(URL artifactUrl) {
+            Map<String, String> mergedMap = new HashMap<>(ConfigurationProvider.getConfig().getArtifactDefaultTags());
+
             try {
                 Optional<String> artifactName = DataFormatAdapter.extractArtifactBaseName(artifactUrl);
                 if (artifactName.isPresent()) {
                     JobArtifact artifact = jobStore.getJobArtifact(ArtifactID.of(artifactName.get()));
                     if (artifact != null && artifact.getTags() != null) {
-                        Map<String, String> mergedMap = new HashMap<>(artifact.getTags());
-                        mergedMap.putAll(mantisJobMetaData.getJobDefinition().getSchedulingConstraints());
-                        return mergedMap;
+                        mergedMap.putAll(artifact.getTags());
+                        LOGGER.debug("Loaded artifact tags for {}: {}", artifactUrl, artifact.getTags());
                     }
                 }
-
             } catch (Exception e) {
-                LOGGER.warn("Couldn't find job artifact by id: {}", artifactUrl, e);
+                LOGGER.warn(
+                    "Couldn't find job artifact by id: {}, {}, using defaults: {}",
+                    mantisJobMetaData.getJobDefinition().getName(),
+                    artifactUrl,
+                    mergedMap,
+                    e);
             }
-            return mantisJobMetaData.getJobDefinition().getSchedulingConstraints();
+
+            // Finally, apply job definition constraints (highest precedence)
+            mergedMap.putAll(mantisJobMetaData.getJobDefinition().getSchedulingConstraints());
+            return mergedMap;
         }
 
         private List<IMantisWorkerMetadata> getInitialWorkers(JobDefinition jobDetails, long submittedAt)

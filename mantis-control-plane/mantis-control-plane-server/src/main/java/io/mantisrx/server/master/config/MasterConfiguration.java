@@ -372,6 +372,12 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("")
     String getSchedulingConstraintsString();
 
+    // Default tags to use when artifact loading fails
+    // Example: "jdk:17,environment:production"
+    @Config("mantis.scheduler.artifactDefaultTags")
+    @Default("")
+    String getArtifactDefaultTagsString();
+
     @Config("mantis.sla.headroomForAcceptedJobs")
     @Default("3")
     int getSlaMaxHeadroomForAccepted();
@@ -389,4 +395,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     }
 
     default Map<String, String> getSchedulingConstraints() { return getSchedulingConstraintsString().isEmpty() ? ImmutableMap.of() : Splitter.on(",").withKeyValueSeparator(':').split(getSchedulingConstraintsString());}
+
+    default Map<String, String> getArtifactDefaultTags() { return getArtifactDefaultTagsString().isEmpty() ? ImmutableMap.of() : Splitter.on(",").withKeyValueSeparator(':').split(getArtifactDefaultTagsString());}
 }
