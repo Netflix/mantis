@@ -2502,6 +2502,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             getJobId(), getJobState()));
                     throw new RuntimeException(error);
                 }
+                List<IMantisWorkerMetadata> workerRequests = new ArrayList<>();
                 if (newNumWorkerCount > oldNumWorkers) {
                     for (int i = 0; i < newNumWorkerCount - oldNumWorkers; i++) {
                         try {
@@ -2510,7 +2511,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             IMantisWorkerMetadata workerRequest = addWorker(schedInfo, stageMetaData.getStageNum(),
                                     newWorkerIndex);
                             jobStore.storeNewWorker(workerRequest);
-                            queueTask(workerRequest);
+                            markStageAssignmentsChanged(true);
+                            workerRequests.add(workerRequest);
                         } catch (Exception e) {
                             // creating a worker failed but expected no of workers was set successfully,
                             // during heartbeat check we will
@@ -2518,6 +2520,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             LOGGER.warn("Exception adding new worker for {}", stageMetaData.getJobId().getId(), e);
                         }
                     }
+                    //one request to provision all new workers
+                    queueTasks(workerRequests, empty());
                 } else {
                     //  potential bulk removal opportunity?
                     for (int i = 0; i < oldNumWorkers - newNumWorkerCount; i++) {
