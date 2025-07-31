@@ -1,4 +1,4 @@
-name: "Publish snapshot to NetflixOSS and Maven Central"
+name: "Publish snapshot to NetflixOSS and Maven Central "
 
 on: [pull_request_target]
 
