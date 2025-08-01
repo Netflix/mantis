@@ -154,13 +154,22 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
 
     @Override
     public void trackIfAbsent(TaskExecutorID taskExecutorID, TaskExecutorState state) {
-        this.taskExecutorStateMap.putIfAbsent(taskExecutorID, state);
+        TaskExecutorState oldState = this.taskExecutorStateMap.putIfAbsent(taskExecutorID, state);
         if (this.archivedState.getIfPresent(taskExecutorID) != null) {
             log.info("Reviving archived executor: {}", taskExecutorID);
             this.archivedState.invalidate(taskExecutorID);
         }
 
-        tryMarkAvailable(taskExecutorID, state);
+        // If the TE was not being tracked or was previously being tracked is available
+        // mark it as available.  Passing through previously available TE seems redundant,
+        // but trying to mark as available in case TE reg state changed.
+        //
+        // If we unconditionally mark a TE as available, it is possible that a TE currently
+        // assigned to a job worker fails hard without informing the control plane.  In this case
+        // it may inadvertently be used by another job before the JobActor fails the original worker
+        if (oldState == null || oldState.isAvailable()) {
+            tryMarkAvailable(taskExecutorID, state);
+        }
     }
 
     /**
