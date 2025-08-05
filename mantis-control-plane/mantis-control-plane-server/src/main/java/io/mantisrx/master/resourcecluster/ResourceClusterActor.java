@@ -54,6 +54,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Occupied;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
+import io.mantisrx.server.master.scheduler.TaskExecutorReconnectedEvent;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.Comparators;
@@ -644,9 +645,22 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         try {
             final TaskExecutorID taskExecutorID = registration.getTaskExecutorID();
             final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
+
+            // Check if this TE was previously running a worker before it disconnected
+            WorkerId previousWorkerId = state.getPreviousWorkerId();
+
             boolean stateChange = state.onRegistration(registration);
             mantisJobStore.storeNewTaskExecutor(registration);
             if (stateChange) {
+                // If this TE was previously running a worker, notify the affected job
+                if (previousWorkerId != null) {
+                    log.info("Task executor {} reconnected, was previously running worker {}. Notifying job for scheduling refresh.",
+                             taskExecutorID, previousWorkerId);
+                    jobMessageRouter.routeWorkerEvent(new TaskExecutorReconnectedEvent(previousWorkerId, taskExecutorID));
+                    // Clear the previousWorkerId since we've sent the notification
+                    state.clearPreviousWorkerId();
+                }
+
                 if (state.isAvailable()) {
                     this.executorStateManager.tryMarkAvailable(taskExecutorID);
                 }
