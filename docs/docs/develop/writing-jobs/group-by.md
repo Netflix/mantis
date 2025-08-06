@@ -1,6 +1,6 @@
 # Writing Your Third Mantis Job: Group By / Aggregate
 
-Until now we've run single stage Mantis jobs which a can run in a single process / container. Much of the power provided by Mantis is that we can design and implement a distributed job. Let's take a look at the [groupby-sample](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-groupby-sample) job definition and then break it down stage by stage.
+Until now we've run single stage Mantis jobs which can run in a single process / container. Much of the power provided by Mantis is that we can design and implement a distributed job. Let's take a look at the [groupby-sample](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-groupby-sample) job definition and then break it down stage by stage.
 
 ```java
 
