@@ -2202,18 +2202,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         @Override
         public void processEvent(WorkerEvent event, JobState jobState) {
             try {
-                // Handle TaskExecutorReconnectedEvent specially - this indicates a TE that was
-                // previously running a worker has reconnected and we need to refresh scheduling info
-                if (event instanceof TaskExecutorReconnectedEvent reconnectEvent) {
-                    LOGGER.info("Received TaskExecutorReconnectedEvent for worker {} on executor {}. " +
-                                "Refreshing stage assignments to prevent stale TE mappings.",
-                                reconnectEvent.getWorkerId(), reconnectEvent.getTaskExecutorID());
-
-                    // Force a refresh of stage assignments to update any stale TaskExecutor mappings
-                    markStageAssignmentsChanged(true);
-                    refreshStageAssignmentsAndPush();
-                    return;
-                }
 
                 Optional<IMantisStageMetadata> stageMetaOp = getStageForWorker(event);
                 if (!stageMetaOp.isPresent()) {
@@ -2294,7 +2282,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     }
 
                     if (!(event instanceof WorkerHeartbeat)) {
-                        markStageAssignmentsChanged(false);
+                        // Use immediate refresh for terminal worker events in running jobs for faster recovery
+                        boolean immediateRefresh = (event instanceof WorkerTerminate || 
+                                                   WorkerState.isTerminalState(wm.getState())) 
+                                                   && jobState == JobState.Launched;
+                        markStageAssignmentsChanged(immediateRefresh);
                     }
                 } catch (Exception e) {
                     LOGGER.warn("Exception saving worker update", e);
