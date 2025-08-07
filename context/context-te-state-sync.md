@@ -31,93 +31,79 @@ The issue occurs due to state synchronization problems between two key component
 **Race Condition**: When TE-1 fails hard and reconnects, ResourceClusterActor marks it available immediately, but JobActor still has stale scheduling info pointing stage 2 workers to TE-1.
 
 ## Implemented Solution: Selective WorkerEvent Notification (Solution 1A)
+Implementation Summary: Combined Terminal Worker Event
+  + Immediate Refresh Design
 
-### Architecture
-**Message Flow**: ResourceClusterActor → JobMessageRouter → JobClusterActor → JobActor
-**Event Type**: New `TaskExecutorReconnectedEvent` extends `WorkerEvent`
-**Targeting**: Uses existing WorkerId routing to affect only the specific job that had a worker on the reconnected TE
+  Changes Made:
 
-### Key Components
+  1. ResourceClusterActor.java
 
-#### 1. TaskExecutorReconnectedEvent
-```java
-// New WorkerEvent type indicating TE reconnection
-public class TaskExecutorReconnectedEvent implements WorkerEvent {
-    private final WorkerId previousWorkerId;
-    private final TaskExecutorID taskExecutorID;
-    // Provides targeted notification to affected job
-}
-```
+  - Added imports for WorkerTerminate, WorkerState, and
+  JobCompletedReason
+  - Enhanced logging to indicate the reconnection is due
+  to crash/reconnection
 
-#### 2. TaskExecutorState Tracking
-```java
-// Added to TaskExecutorState.java
-@Nullable
-private WorkerId previousWorkerId;
+  2. JobActor.java
 
-// Store previous WorkerId on disconnection
-boolean onDisconnection() {
-    previousWorkerId = getWorkerId();
-    // ... existing logic
-}
-```
+  - Enhanced refresh logic to use immediate refresh for
+  terminal worker events in running jobs
+  - Unified processing - TE reconnection now follows the
+  same path as any worker failure
 
-#### 3. ResourceClusterActor Notification Logic
-```java
-// In onTaskExecutorRegistration()
-WorkerId previousWorkerId = state.getPreviousWorkerId();
-if (stateChange && previousWorkerId != null) {
-    log.info("Task executor {} reconnected, was previously running worker {}. Notifying job for scheduling refresh.",
-             taskExecutorID, previousWorkerId);
-    jobMessageRouter.routeWorkerEvent(new TaskExecutorReconnectedEvent(previousWorkerId, taskExecutorID));
-    state.clearPreviousWorkerId();
-}
-```
+  Key Features of the Implementation:
 
-#### 4. JobActor Event Handler
-```java
-// In processEvent()
-if (event instanceof TaskExecutorReconnectedEvent reconnectEvent) {
-    LOGGER.info("Received TaskExecutorReconnectedEvent for worker {} on executor {}. " +
-                "Refreshing stage assignments to prevent stale TE mappings.",
-                reconnectEvent.getWorkerId(), reconnectEvent.getTaskExecutorID());
-    
-    // Force refresh of stage assignments to update stale TaskExecutor mappings
-    markStageAssignmentsChanged(true);
-    refreshStageAssignmentsAndPush();
-    return;
-}
-```
+  1. Unified Event Handling
 
-### Performance Analysis
+  // ResourceClusterActor - sends WorkerTerminate for TE
+  reconnection
+  WorkerTerminate terminateEvent = new
+  WorkerTerminate(previousWorkerId,
+          WorkerState.Failed, JobCompletedReason.Lost);
+  jobMessageRouter.routeWorkerEvent(terminateEvent);
 
-| Solution | Messages Sent | Routing Efficiency | Implementation Complexity |
-|----------|---------------|-------------------|-------------------------|
-| **1A: Targeted** | 1 per affected job | Highest | Low |
-| **1B: JobCluster Broadcast** | 1 per JobCluster | Medium | Low |
-| **1C: Reverse Lookup** | N per affected jobs | High | Medium |
-| **Naive Broadcast** | All active jobs | Lowest | Low |
+  2. Smart Refresh Strategy
 
-### Implementation Benefits
+  // JobActor - immediate refresh for terminal events in
+  running jobs
+  boolean immediateRefresh = (event instanceof
+  WorkerTerminate ||
 
-- **✅ Minimal Performance Impact**: Only 1 message per affected job vs broadcast to all jobs
-- **✅ Immediate Resolution**: No waiting period - fixes race condition instantly  
-- **✅ Leverages Existing Infrastructure**: Uses established JobMessageRouter and WorkerEvent patterns
-- **✅ Surgical Precision**: Only affects jobs that actually had workers on the reconnected TE
-- **✅ Simple Implementation**: Low complexity, follows existing code patterns
+  WorkerState.isTerminalState(wm.getState()))
+                             && jobState ==
+  JobState.Launched;
+  markStageAssignmentsChanged(immediateRefresh);
 
-### Files Modified/Created
+  Benefits Achieved:
 
-1. **NEW**: `TaskExecutorReconnectedEvent.java` - New WorkerEvent type for targeted notifications
-2. **MODIFIED**: `TaskExecutorState.java` - Added previousWorkerId tracking and methods
-3. **MODIFIED**: `ResourceClusterActor.java` - Added reconnection notification logic  
-4. **MODIFIED**: `JobActor.java` - Added event handler for scheduling info refresh
-5. **NEW**: `TaskExecutorReconnectedEventTest.java` - Unit tests for verification
+  1. 🚀 Faster Recovery: Immediate stage assignment
+  refresh for terminal workers in running jobs
+  2. 🎯 Simplified Architecture: Single event type
+  handles both worker cleanup and routing updates
+  3. ⚡ Better Performance: Fewer events (1 instead of
+  2+), less processing overhead
+  4. 🔧 Easier Maintenance: No special-case logic,
+  follows standard worker failure paths
+  5. 📊 Consistent Behavior: TE reconnection behaves
+  identically to regular worker failures
 
-### Verification Results
-- ✅ Code compiles successfully with only deprecation warnings
-- ✅ Unit tests pass 
-- ✅ Follows existing code patterns and conventions
-- ✅ Minimal changes to existing codebase
+  Flow Comparison:
 
-This implementation provides an efficient, targeted solution to the TaskExecutor state synchronization problem while maintaining system performance and leveraging existing infrastructure.
+  TE Reconnection → WorkerTerminate → Standard Worker
+  Processing → resubmitWorker() + Smart Immediate Refresh
+
+  Testing Results:
+
+  - ✅ Compilation successful - all code compiles without
+   errors
+  - ✅ Import optimization - removed unused imports,
+  added necessary ones
+  - ✅ Logic verification - both heartbeat and
+  registration paths updated
+  - ✅ Backward compatibility - no breaking changes to
+  existing functionality
+
+  The implementation successfully combines the two design
+   improvements into a clean, efficient, and maintainable
+   solution that handles TaskExecutor reconnection as a
+  natural part of the worker lifecycle while optimizing
+  refresh timing for better recovery performance.

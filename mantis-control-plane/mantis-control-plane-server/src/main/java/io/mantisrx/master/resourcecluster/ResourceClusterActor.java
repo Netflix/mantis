@@ -690,38 +690,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 TaskExecutorRegistration registration = this.mantisJobStore.getTaskExecutor(heartbeat.getTaskExecutorID());
                 if (registration != null) {
                     log.debug("Found registration {} for task executor {}", registration, heartbeat.getTaskExecutorID());
-
-                    // Check if this TE was previously running a worker before it disconnected
-                    WorkerId previousWorkerId = state.getPreviousWorkerId();
-
-                    // Alternative detection: If disconnection didn't update previousWorkerId (e.g., segfault),
-                    // check if current state thinks it's running a worker but heartbeat shows Available
-                    if (previousWorkerId == null) {
-                        WorkerId currentStateWorkerId = state.getWorkerId();
-                        TaskExecutorReport heartbeatReport = heartbeat.getTaskExecutorReport();
-
-                        // If state thinks TE is running a worker, but heartbeat shows Available,
-                        // this indicates the TE crashed and reconnected
-                        if (currentStateWorkerId != null && heartbeatReport instanceof TaskExecutorReport.Available) {
-                            previousWorkerId = currentStateWorkerId;
-                            log.info("Detected TaskExecutor {} crash/reconnection: state shows running worker {} but heartbeat shows Available",
-                                     taskExecutorID, previousWorkerId);
-                        }
-                    }
-
                     Preconditions.checkState(state.onRegistration(registration));
-
-                    // If this TE was previously running a worker, terminate the stale worker
-                    if (previousWorkerId != null) {
-                        log.info("Task executor {} reconnected via heartbeat, terminating stale worker {} due to crash/reconnection",
-                                 taskExecutorID, previousWorkerId);
-                        // Send WorkerTerminate event to clean up the stale worker and trigger replacement
-                        WorkerTerminate terminateEvent = new WorkerTerminate(previousWorkerId, 
-                                WorkerState.Failed, JobCompletedReason.Lost);
-                        jobMessageRouter.routeWorkerEvent(terminateEvent);
-                        // Clear the previousWorkerId since we've sent the notification
-                        state.clearPreviousWorkerId();
-                    }
 
                     // check if the task executor has been marked as 'Disabled'
                     if (isTaskExecutorDisabled(registration)) {
@@ -738,8 +707,36 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 log.debug("Found registration {} for registered task executor {}",
                     state.getRegistration(), heartbeat.getTaskExecutorID());
             }
+            // Check if this TE was previously running a worker before it disconnected
+            WorkerId previousWorkerId = state.getPreviousWorkerId();
+
+            // Alternative detection: If disconnection didn't update previousWorkerId (e.g., segfault),
+            // check if current state thinks it's running a worker but heartbeat shows Available
+            if (previousWorkerId == null) {
+                WorkerId currentStateWorkerId = state.getWorkerId();
+                TaskExecutorReport heartbeatReport = heartbeat.getTaskExecutorReport();
+
+                // If state thinks TE is running a worker, but heartbeat shows Available,
+                // this indicates the TE crashed and reconnected
+                if (currentStateWorkerId != null && heartbeatReport instanceof TaskExecutorReport.Available) {
+                    previousWorkerId = currentStateWorkerId;
+                    log.info("Detected TaskExecutor {} crash/reconnection: state shows running worker {} but heartbeat shows Available",
+                        taskExecutorID, previousWorkerId);
+                }
+            }
+
             boolean stateChange = state.onHeartbeat(heartbeat);
             if (stateChange && state.isAvailable()) {
+                // If this TE was previously running a worker, terminate the stale worker
+                if (previousWorkerId != null) {
+                    log.info("Task executor {} reconnected via heartbeat, terminating stale worker {} due to crash/reconnection",
+                        taskExecutorID, previousWorkerId);
+                    WorkerTerminate terminateEvent = new WorkerTerminate(previousWorkerId,
+                        WorkerState.Failed, JobCompletedReason.Lost);
+                    jobMessageRouter.routeWorkerEvent(terminateEvent);
+                    state.clearPreviousWorkerId();
+                }
+
                 this.executorStateManager.tryMarkAvailable(taskExecutorID);
             }
 
