@@ -100,12 +100,7 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.scheduler.BatchScheduleRequest;
-import io.mantisrx.server.master.scheduler.MantisScheduler;
-import io.mantisrx.server.master.scheduler.ScheduleRequest;
-import io.mantisrx.server.master.scheduler.WorkerEvent;
-import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
-import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
+import io.mantisrx.server.master.scheduler.*;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
@@ -2207,6 +2202,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         @Override
         public void processEvent(WorkerEvent event, JobState jobState) {
             try {
+
                 Optional<IMantisStageMetadata> stageMetaOp = getStageForWorker(event);
                 if (!stageMetaOp.isPresent()) {
                     terminateUnknownWorkerIfNonTerminal(event);
@@ -2286,7 +2282,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     }
 
                     if (!(event instanceof WorkerHeartbeat)) {
-                        markStageAssignmentsChanged(false);
+                        // Use immediate refresh for terminal worker events in running jobs for faster recovery
+                        boolean immediateRefresh = (event instanceof WorkerTerminate || 
+                                                   WorkerState.isTerminalState(wm.getState())) 
+                                                   && jobState == JobState.Launched;
+                        markStageAssignmentsChanged(immediateRefresh);
                     }
                 } catch (Exception e) {
                     LOGGER.warn("Exception saving worker update", e);
