@@ -502,7 +502,6 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
             }
         });
 
-        log.debug("Pending TE count by group key: {}" ,pendingCountByGroupKey);
         // remove jobs from pending set which have all pending workers
         jobIdToMachineDef.forEach((jobId, workers) -> {
             final JobRequirements jobStats = pendingJobRequests.getIfPresent(jobId);
@@ -566,9 +565,6 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
                     log.info("Adding job {} to pending requests for {} scheduling constraints {}", request.getJobId(), allocationRequests.size(), schedulingConstraints);
                     pendingJobRequests.put(request.getJobId(), new JobRequirements(request.getGroupedBySchedulingConstraints()));
                 }
-            }
-            else {
-                log.info("Not adding job {} to pending requests for {} scheduling constraints {} because there were less than 2 TE allocation requests", request.getJobId(), allocationRequests.size(), schedulingConstraints);
             }
             return Optional.empty();
         }
