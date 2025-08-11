@@ -16,6 +16,9 @@
 
 package io.reactivex.mantis.network.push;
 
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,12 +40,21 @@ public class ConsistentHashingRouter<K, V> extends Router<KeyValuePair<K, V>> {
     private static long validCacheAgeMSec = 5000;
     private HashFunction hashFunction;
     private AtomicReference<SnapshotCache<SortedMap<Long, AsyncConnection<KeyValuePair<K, V>>>>> cachedRingRef = new AtomicReference<>();
+    private final MetricGroupId metricGroup = new MetricGroupId("ConsistentHashingRouter");
+    private final Metrics metrics;
+    private final Counter collisionsCounter;
 
     public ConsistentHashingRouter(String name,
                                    Func1<KeyValuePair<K, V>, byte[]> dataEncoder,
                                    HashFunction hashFunction) {
         super("ConsistentHashingRouter_" + name, dataEncoder);
         this.hashFunction = hashFunction;
+        this.metrics = new Metrics.Builder()
+            .id(metricGroup)
+            .addCounter("numHashCollisions")
+            .build();
+
+        this.collisionsCounter = this.metrics.getCounter("numHashCollisions");
     }
 
     @Override
@@ -108,7 +120,7 @@ public class ConsistentHashingRouter<K, V> extends Router<KeyValuePair<K, V>> {
                 byte[] connectionBytes = (connectionId + "-" + i).getBytes();
                 long hash = hashFunction.computeHash(connectionBytes);
                 if (ring.containsKey(hash)) {
-                    logger.error("Hash collision when computing ring. {} hashed to a value already in the ring.", connectionId + "-" + i);
+                    this.collisionsCounter.increment();
                 }
                 ring.put(hash, connection);
             }
