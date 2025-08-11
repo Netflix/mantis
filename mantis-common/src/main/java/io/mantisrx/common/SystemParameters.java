@@ -28,6 +28,7 @@ public final class SystemParameters {
     public static final String JOB_WORKER_TIMEOUT_SECS = "mantis.job.worker.timeout.secs";
 
     public static final String JOB_AUTOSCALE_V2_ENABLED_PARAM = "mantis.job.autoscale.v2.enabled";
+    public static final String JOB_AUTOSCALE_V2_LOADER_CONFIG_PARAM = "mantis.job.autoscale.v2.loader.config";
 
 
     @Deprecated

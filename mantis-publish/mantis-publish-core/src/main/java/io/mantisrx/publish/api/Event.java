@@ -110,10 +110,10 @@ public class Event {
             return JACKSON_MAPPER.writeValueAsString(attributes);
         } catch (JsonProcessingException e) {
             if (ERROR_LOG_ENABLED.get()) {
-                LOG.error("failed to serialize Event to json {}", attributes.toString(), e);
+                LOG.error("failed to serialize Event to json {}", attributes, e);
                 ERROR_LOG_ENABLED.set(false);
             }
-            LOG.debug("failed to serialize Event to json {}", attributes.toString(), e);
+            LOG.debug("failed to serialize Event to json {}", attributes, e);
             return "";
         }
     }

@@ -1,4 +1,4 @@
-package io.mantisrx.server.worker.jobmaster.rules;
+package io.mantisrx.server.worker.jobmaster.akka.rules;
 
 
 import akka.actor.AbstractActor;

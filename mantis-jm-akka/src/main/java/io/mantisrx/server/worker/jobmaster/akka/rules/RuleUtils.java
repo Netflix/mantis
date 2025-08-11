@@ -1,9 +1,8 @@
-package io.mantisrx.server.worker.jobmaster.rules;
+package io.mantisrx.server.worker.jobmaster.akka.rules;
 
 import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.functions.Func1;

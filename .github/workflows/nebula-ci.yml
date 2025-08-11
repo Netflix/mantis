@@ -12,15 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # test against JDK 8
-        java: [ 8 ]
+        # test against JDK 17
+        java: [ 17 ]
     name: CI with Java ${{ matrix.java }}
     steps:
       - name: Setup Git
         run: |
           git config --global user.name "Mantis OSS Maintainers"
           git config --global user.email "mantis-oss-dev@googlegroups.com"
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - name: Setup jdk
         uses: actions/setup-java@v1
         with:

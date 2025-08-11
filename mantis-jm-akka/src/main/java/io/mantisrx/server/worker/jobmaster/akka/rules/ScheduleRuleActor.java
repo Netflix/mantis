@@ -1,6 +1,5 @@
-package io.mantisrx.server.worker.jobmaster.rules;
+package io.mantisrx.server.worker.jobmaster.akka.rules;
 
-import akka.actor.AbstractActor;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;

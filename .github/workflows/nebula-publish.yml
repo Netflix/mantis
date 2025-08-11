@@ -16,11 +16,11 @@ jobs:
         run: |
           git config --global user.name "Mantis OSS Maintainers"
           git config --global user.email "mantis-oss-dev@googlegroups.com"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup jdk
         uses: actions/setup-java@v2
         with:
-          java-version: 8
+          java-version: 17
           distribution: 'zulu'
       - name: Publish candidate
         if: contains(github.ref, '-rc.')

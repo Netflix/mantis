@@ -44,11 +44,11 @@ jobs:
           git config --global user.name "Mantis OSS Maintainers"
           git config --global user.email "mantis-oss-dev@googlegroups.com"
       - name: Checkout PR
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup jdk
         uses: actions/setup-java@v1
         with:
-          java-version: 8
+          java-version: 17
 
       - name: Generate dockerfiles
         uses: gradle/gradle-build-action@v2

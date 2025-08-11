@@ -173,7 +173,7 @@ public class ParameterUtils {
 
         ParameterDefinition<Integer> stageConcurrency = new IntParameter()
                 .name(STAGE_CONCURRENCY)
-                .validator(Validators.range(-1, 16))
+                .validator(Validators.range(-1, 9999))
                 .defaultValue(-1)
                 .description("Number of cores to use for stage processing")
                 .build();
@@ -228,6 +228,14 @@ public class ParameterUtils {
                         "Example: PushServerSse:clientId=_CLIENT_ID_:*::droppedCounter::MAX,ServerSentEventRequestHandler:clientId=_CLIENT_ID_:*::droppedCounter::MAX")
                 .build();
         systemParams.put(autoscaleSourceJobDropMetricPattern.getName(), autoscaleSourceJobDropMetricPattern);
+
+        ParameterDefinition<String> jmLoaderConfig = new StringParameter()
+            .name(JOB_AUTOSCALE_V2_LOADER_CONFIG_PARAM)
+            .validator(Validators.alwaysPass())
+            .defaultValue("")
+            .description("Override default JM loader configuration for parent/child prefix split by '|'.")
+            .build();
+        systemParams.put(jmLoaderConfig.getName(), jmLoaderConfig);
 
         ParameterDefinition<Integer> workerHeartbeatInterval = new IntParameter()
                 .name(JOB_WORKER_HEARTBEAT_INTERVAL_SECS)

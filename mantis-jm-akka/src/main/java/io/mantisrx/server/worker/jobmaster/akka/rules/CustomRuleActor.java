@@ -1,10 +1,12 @@
-package io.mantisrx.server.worker.jobmaster.rules;
+package io.mantisrx.server.worker.jobmaster.akka.rules;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
+import io.mantisrx.server.worker.jobmaster.rules.CustomRuleTriggerHandler;
 import io.mantisrx.server.worker.jobmaster.JobScalerContext;
+import io.mantisrx.server.worker.jobmaster.rules.JobScalingRuleCustomTrigger;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
