@@ -19,6 +19,7 @@ package io.reactivex.mantis.network.push;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import java.util.List;
 import java.util.Map;
+import rx.functions.Action0;
 import rx.functions.Func1;
 
 
@@ -36,6 +37,7 @@ public class ServerConfig<T> {
     private MetricsRegistry metricsRegistry; // registry used to store metrics
     private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
     private boolean useSpscQueue = false;
+    private Action0 firstConnectionCallback; // callback to trigger when first connection happens
 
     public ServerConfig(Builder<T> builder) {
         this.name = builder.name;
@@ -50,6 +52,7 @@ public class ServerConfig<T> {
         this.predicate = builder.predicate;
         this.useSpscQueue = builder.useSpscQueue;
         this.maxNotWritableTimeSec = builder.maxNotWritableTimeSec;
+        this.firstConnectionCallback = builder.firstConnectionCallback;
     }
 
     public Func1<Map<String, List<String>>, Func1<T, Boolean>> getPredicate() {
@@ -100,6 +103,10 @@ public class ServerConfig<T> {
         return useSpscQueue;
     }
 
+    public Action0 getFirstConnectionCallback() {
+        return firstConnectionCallback;
+    }
+
     public static class Builder<T> {
 
         private String name;
@@ -114,6 +121,7 @@ public class ServerConfig<T> {
         private MetricsRegistry metricsRegistry; // registry used to store metrics
         private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
         private boolean useSpscQueue = false;
+        private Action0 firstConnectionCallback;
 
         public Builder<T> predicate(Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate) {
             this.predicate = predicate;
@@ -177,6 +185,11 @@ public class ServerConfig<T> {
 
         public Builder<T> metricsRegistry(MetricsRegistry metricsRegistry) {
             this.metricsRegistry = metricsRegistry;
+            return this;
+        }
+
+        public Builder<T> firstConnectionCallback(Action0 callback) {
+            this.firstConnectionCallback = callback;
             return this;
         }
 
