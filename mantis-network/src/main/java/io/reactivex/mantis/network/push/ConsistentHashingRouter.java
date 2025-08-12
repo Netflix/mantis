@@ -113,6 +113,7 @@ public class ConsistentHashingRouter<K, V> extends Router<KeyValuePair<K, V>> {
 
     private void computeRing(Set<AsyncConnection<KeyValuePair<K, V>>> connections) {
         SortedMap<Long, AsyncConnection<KeyValuePair<K, V>>> ring = new TreeMap<Long, AsyncConnection<KeyValuePair<K, V>>>();
+        Map<Long, List<String>> collisions = new HashMap<>();
         for (AsyncConnection<KeyValuePair<K, V>> connection : connections) {
             for (int i = 0; i < connectionRepetitionOnRing; i++) {
                 // hash node on ring
@@ -124,11 +125,20 @@ public class ConsistentHashingRouter<K, V> extends Router<KeyValuePair<K, V>> {
                 long hash = hashFunction.computeHash(connectionBytes);
                 if (ring.containsKey(hash)) {
                     this.collisionsCounter.increment();
+                    if(!collisions.containsKey(hash)) {
+                        collisions.put(hash, new ArrayList<>());
+                        collisions.get(hash).add(ring.get(hash).getSlotId());
+                    }
+
+                    collisions.get(hash).add(connection.toString());
                 }
                 ring.put(hash, connection);
             }
         }
         cachedRingRef.set(new SnapshotCache<SortedMap<Long, AsyncConnection<KeyValuePair<K, V>>>>(ring));
+        if(!collisions.isEmpty()) {
+            logger.debug("hash collisions were found while recomputing ring: {}", collisions);
+        }
     }
 
     private SortedMap<Long, AsyncConnection<KeyValuePair<K, V>>> hashConnections(Set<AsyncConnection<KeyValuePair<K, V>>> connections) {
