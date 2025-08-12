@@ -18,6 +18,7 @@ package io.reactivex.mantis.network.push;
 
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,11 +50,13 @@ public class ConsistentHashingRouter<K, V> extends Router<KeyValuePair<K, V>> {
                                    HashFunction hashFunction) {
         super("ConsistentHashingRouter_" + name, dataEncoder);
         this.hashFunction = hashFunction;
-        this.metrics = new Metrics.Builder()
+
+        Metrics metrics = new Metrics.Builder()
             .id(metricGroup)
             .addCounter("numHashCollisions")
             .build();
 
+        this.metrics = MetricsRegistry.getInstance().registerAndGet(metrics);
         this.collisionsCounter = this.metrics.getCounter("numHashCollisions");
     }
 
