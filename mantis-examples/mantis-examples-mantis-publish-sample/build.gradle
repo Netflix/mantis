@@ -70,7 +70,7 @@ docker {
     }
 
     javaApplication {
-        baseImage = 'azul/zulu-openjdk:8-latest'
+        baseImage = 'azul/zulu-openjdk:17'
         maintainer = 'Mantis Developers "mantis-oss-dev@netflix.com"'
         mainClassName = 'com.netflix.mantis.examples.mantispublishsample.Application'
         images = [
