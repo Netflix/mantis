@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 public class DefaultSubscriptionTracker extends AbstractSubscriptionTracker {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultSubscriptionTracker.class);
 
-    private static final String SUBSCRIPTIONS_URL_FORMAT = "http://%s:%d?jobId=%s";
+    private static final String SUBSCRIPTIONS_URL_FORMAT = "http://%s:%d/?jobId=%s";
     private final MrePublishConfiguration mrePublishConfiguration;
     private final String subscriptionsFetchQueryParamString;
     private final Counter fetchSubscriptionsFailedCount;

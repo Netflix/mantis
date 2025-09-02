@@ -17,7 +17,6 @@ ext {
     archaiusVersion = 'latest.release'
     versionMockito = '2.18.+'
     mqlVersion = '3.2.2'
-    spectatorVersion = '0.134.0'
 }
 
 dependencies {
@@ -25,8 +24,8 @@ dependencies {
     implementation project(":mantis-common-serde")
     api project(":mantis-discovery-proto")
 
-    api "com.netflix.spectator:spectator-api:$spectatorVersion"
-    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
+    compileOnly libraries.spectatorExtIpc
+    compileOnly libraries.spectatorApi
 
     api "com.netflix.archaius:archaius2-api:$archaiusVersion"
     implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
@@ -39,6 +38,8 @@ dependencies {
     testImplementation libraries.mockitoCore
     testImplementation libraries.slf4jLog4j12
     testImplementation libraries.commonsIo
+    testImplementation libraries.spectatorExtIpc
+    testImplementation libraries.spectatorApi
 }
 
 test {

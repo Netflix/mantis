@@ -16,24 +16,25 @@
 ext {
     archaiusVersion = 'latest.release'
     guiceVersion = '4.2.2'
-    spectatorVersion = '0.96.0'
 }
 
 dependencies {
     api project(':mantis-publish:mantis-publish-core')
 
     implementation project(':mantis-publish:mantis-publish-netty')
-    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
     implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
     implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
     implementation "com.google.inject:guice:$guiceVersion"
-    implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
 
+    compileOnly libraries.spectatorExtIpc
+    compileOnly libraries.spectatorNflxPlugin
     implementation libraries.slf4jApi
 
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
     testImplementation libraries.slf4jLog4j12
+    testImplementation libraries.spectatorExtIpc
+    testImplementation libraries.spectatorNflxPlugin
 }
 
 test {
