@@ -459,7 +459,18 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             try {
                 Optional<JobClusterInfo> jobClusterInfoO = jobClusterInfoManager.createClusterActorAndRegister(request.getJobClusterDefinition());
                 if (jobClusterInfoO.isPresent()) {
-                    jobClusterInfoManager.initializeClusterAsync(jobClusterInfoO.get(), new JobClusterProto.InitializeJobClusterRequest(request.getJobClusterDefinition(), request.getUser(), getSender()));
+                    // Check if the job cluster name used to exist but was deleted
+                    // If it was, use the last known job number from that cluster instead of starting from 0
+                    // This ensures that there are no conflicts between archived jobs and old jobs
+                    // e.g. If a job cluster with the name "MyJobCluster" was deleted, but had run a job, then
+                    // we'd have a Job ID of `MyJobCluster-1` in the archived jobs table. When the new job cluster
+                    // came online it may partially overwrite the old archived job if we started a new job with ID MyJobCluster-1.
+                    List<CompletedJob> completedJobs = jobStore.loadCompletedJobsForCluster(request.getJobClusterDefinition().getName(), 1, null);
+                    long lastJobNum = completedJobs.stream()
+                        .map((job) -> JobId.fromId(job.getJobId()).map(JobId::getJobNum).orElse(0L))
+                        .max(Long::compareTo)
+                        .orElse(0L);
+                    jobClusterInfoManager.initializeClusterAsync(jobClusterInfoO.get(), new JobClusterProto.InitializeJobClusterRequest(request.getJobClusterDefinition(), lastJobNum, request.getUser(), getSender()));
                 } else {
                     getSender().tell(new CreateJobClusterResponse(
                         request.requestId, CLIENT_ERROR,
