@@ -64,19 +64,16 @@ import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
+import io.mantisrx.master.api.akka.route.utils.JobRouteUtils;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.runtime.MantisJobDefinition;
 import io.mantisrx.runtime.NamedJobDefinition;
-import io.mantisrx.runtime.descriptor.SchedulingInfo;
-import io.mantisrx.runtime.descriptor.StageScalingPolicy;
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -251,64 +248,6 @@ public class JobClusterRoute extends BaseRoute {
         );
     }
 
-    /**
-     * @return true to indicate valid, false otherwise. The String holds the error message when the request is invalid
-     */
-    private Pair<Boolean, String> validateSubmitJobRequest(MantisJobDefinition mjd) {
-        if (mjd.getName() == null ||
-            mjd.getName().length() == 0) {
-            logger.info("rejecting job submit request, must include name {}", mjd);
-            return Pair.apply(false, "Job definition must include name");
-        }
-        SchedulingInfo schedulingInfo = mjd.getSchedulingInfo();
-        if (schedulingInfo != null) {
-            Map<Integer, StageSchedulingInfo> stages = schedulingInfo.getStages();
-            if (stages == null) {
-                return Pair.apply(true, "");
-            }
-            for (StageSchedulingInfo stageSchedInfo : stages.values()) {
-                double cpuCores = stageSchedInfo.getMachineDefinition().getCpuCores();
-                int maxCpuCores = ConfigurationProvider.getConfig().getWorkerMachineDefinitionMaxCpuCores();
-                if (cpuCores > maxCpuCores) {
-                    logger.info("rejecting job submit request, requested CPU {} > max for {} (user: {}) (stage: {})",
-                        cpuCores, mjd.getName(), mjd.getUser(), stages);
-                    return Pair.apply(false, "requested CPU cannot be more than max CPU per worker "+maxCpuCores);
-                }
-                double memoryMB = stageSchedInfo.getMachineDefinition().getMemoryMB();
-                int maxMemoryMB = ConfigurationProvider.getConfig().getWorkerMachineDefinitionMaxMemoryMB();
-                if (memoryMB > maxMemoryMB) {
-                    logger.info("rejecting job submit request, requested memory {} > max for {} (user: {}) (stage: {})",
-                        memoryMB, mjd.getName(), mjd.getUser(), stages);
-                    return Pair.apply(false, "requested memory cannot be more than max memoryMB per worker "+maxMemoryMB);
-                }
-                double networkMbps = stageSchedInfo.getMachineDefinition().getNetworkMbps();
-                int maxNetworkMbps = ConfigurationProvider.getConfig().getWorkerMachineDefinitionMaxNetworkMbps();
-                if (networkMbps > maxNetworkMbps) {
-                    logger.info("rejecting job submit request, requested network {} > max for {} (user: {}) (stage: {})",
-                        networkMbps, mjd.getName(), mjd.getUser(), stages);
-                    return Pair.apply(false, "requested network cannot be more than max networkMbps per worker "+maxNetworkMbps);
-                }
-                int numberOfInstances = stageSchedInfo.getNumberOfInstances();
-                int maxWorkersPerStage = ConfigurationProvider.getConfig().getMaxWorkersPerStage();
-                if (numberOfInstances > maxWorkersPerStage) {
-                    logger.info("rejecting job submit request, requested num instances {} > max for {} (user: {}) (stage: {})",
-                        numberOfInstances, mjd.getName(), mjd.getUser(), stages);
-                    return Pair.apply(false, "requested number of instances per stage cannot be more than " + maxWorkersPerStage);
-                }
-
-                StageScalingPolicy scalingPolicy = stageSchedInfo.getScalingPolicy();
-                if (scalingPolicy != null) {
-                    if (scalingPolicy.getMax() > maxWorkersPerStage) {
-                        logger.info("rejecting job submit request, requested num instances in scaling policy {} > max for {} (user: {}) (stage: {})",
-                            numberOfInstances, mjd.getName(), mjd.getUser(), stages);
-                        return Pair.apply(false, "requested number of instances per stage in scaling policy cannot be more than " + maxWorkersPerStage);
-                    }
-                }
-            }
-        }
-        return Pair.apply(true, "");
-    }
-
     private Route getJobClusterRoutes() {
         return route(
             path(segment("api").slash("submit"), () ->
@@ -320,7 +259,7 @@ public class JobClusterRoute extends BaseRoute {
                             logger.debug("job submit request {}", mjd);
                             mjd.validate(true);
 
-                            Pair<Boolean, String> validationResult = validateSubmitJobRequest(mjd);
+                            Pair<Boolean, String> validationResult = JobRouteUtils.validateSubmitJobRequest(mjd, Optional.empty());
                             if (!validationResult.first()) {
                                 jobClusterSubmitError.increment();
                                 return complete(StatusCodes.BAD_REQUEST,
