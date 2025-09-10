@@ -144,6 +144,8 @@ public class MantisJobDefinition {
                 throw new InvalidJobException("disk must be >=0, not " + machineDefinition.getDiskMB());
             if (machineDefinition.getNumPorts() < 0)
                 throw new InvalidJobException("numPorts must be >=0, not " + machineDefinition.getNumPorts());
+            if (machineDefinition.getNumPorts() > 1)
+                throw new InvalidJobException("custom port configuration is not currently supported.");
         }
     }
 
