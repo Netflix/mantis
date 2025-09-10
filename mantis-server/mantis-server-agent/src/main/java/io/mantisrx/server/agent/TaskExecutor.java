@@ -36,7 +36,6 @@ import io.mantisrx.server.agent.utils.DurableBooleanState;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.utils.ConfigUtils;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
@@ -377,14 +376,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             }
         }
 
-        // todo(sundaram): rethink on how this needs to be handled better.
-        // The publishsubject is today used to communicate the failure to start the request in a timely fashion.
-        // Seems very convoluted.
-        WrappedExecuteStageRequest wrappedRequest =
-            new WrappedExecuteStageRequest(PublishSubject.create(), request);
-
         // do not wait for task processing (e.g. artifact download).
-        getIOExecutor().execute(() -> this.prepareTask(wrappedRequest));
+        getIOExecutor().execute(() -> this.prepareTask(request));
         return CompletableFuture.completedFuture(Ack.getInstance());
     }
 
@@ -396,18 +389,18 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         return CompletableFuture.completedFuture(Ack.getInstance());
     }
 
-    private void prepareTask(WrappedExecuteStageRequest wrappedRequest) {
+    private void prepareTask(ExecuteStageRequest request) {
         try {
-            this.currentRequest = wrappedRequest.getRequest();
+            this.currentRequest = request;
 
             UserCodeClassLoader userCodeClassLoader = this.taskFactory.getUserCodeClassLoader(
-                wrappedRequest.getRequest(), classLoaderHandle);
+                request, classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
             // There should only be 1 task implementation provided by mantis-server-worker.
             JsonSerializer ser = new JsonSerializer();
-            String executeRequest = ser.toJson(wrappedRequest.getRequest());
+            String executeRequest = ser.toJson(request);
             String configString = ser.toJson(WorkerConfigurationUtils.toWritable(workerConfiguration));
-            RuntimeTask task = this.taskFactory.getRuntimeTaskInstance(wrappedRequest.getRequest(), cl);
+            RuntimeTask task = this.taskFactory.getRuntimeTaskInstance(request, cl);
 
             task.initialize(
                 executeRequest,
@@ -419,7 +412,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 startCurrentTask();
             }, 0, TimeUnit.MILLISECONDS);
         } catch (Exception ex) {
-            log.error("Failed to submit task, request: {}", wrappedRequest.getRequest(), ex);
+            log.error("Failed to submit task, request: {}", request, ex);
             final Status failedStatus = new Status(currentRequest.getJobId(), currentRequest.getStage(), currentRequest.getWorkerIndex(), currentRequest.getWorkerNumber(),
                 Status.TYPE.INFO, "stage " + currentRequest.getStage() + " worker index=" + currentRequest.getWorkerIndex() + " number=" + currentRequest.getWorkerNumber() + " failed during initialization",
                 MantisJobState.Failed);
@@ -448,7 +441,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                     if (throwable != null) {
                         // okay failed to start task successfully
                         // lets stop it
-                        log.error("TaskExecutor failed to start: {}", throwable);
+                        log.error("TaskExecutor failed to start", throwable);
                         RuntimeTask task = currentTask;
                         setCurrentTask(null);
                         setPreviousFailure(throwable);
