@@ -406,6 +406,8 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                             logger.info("JobClusterManagerActor transitioning to initialized behavior");
                             getContext().become(initializedBehavior);
                             sender.tell(new JobClustersManagerInitializeResponse(initMsg.requestId, SUCCESS, "JobClustersManager successfully inited"), getSelf());
+                            //todo: trigger mantisSchedulerFactory ready
+                            //mantisSchedulerFactory.init()
                         });
 
                 getTimers().startPeriodicTimer(CHECK_CLUSTERS_TIMER_KEY, new ReconcileJobCluster(), Duration.ofSeconds(checkAgainInSecs));
