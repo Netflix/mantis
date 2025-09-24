@@ -77,12 +77,14 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
+import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.common.akka.MantisActorSupervisorStrategy;
+import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.JobClusterActor;
@@ -138,6 +140,8 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private final Logger logger = LoggerFactory.getLogger(JobClustersManagerActor.class);
     private final long checkAgainInSecs = 30;
 
+    private final Registry spectatorRegistry;
+
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
@@ -161,6 +165,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         this.eventPublisher = eventPublisher;
         this.costsCalculator = costsCalculator;
         this.slaHeadroomForAcceptedJobs = slaHeadroomForAcceptedJobs;
+        this.spectatorRegistry = SpectatorRegistryFactory.getRegistry();
 
         MetricGroupId metricGroupId = getMetricGroupId();
         Metrics m = new Metrics.Builder()
@@ -460,6 +465,12 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 Optional<JobClusterInfo> jobClusterInfoO = jobClusterInfoManager.createClusterActorAndRegister(request.getJobClusterDefinition());
                 if (jobClusterInfoO.isPresent()) {
                     jobClusterInfoManager.initializeClusterAsync(jobClusterInfoO.get(), new JobClusterProto.InitializeJobClusterRequest(request.getJobClusterDefinition(), request.getUser(), getSender()));
+                    spectatorRegistry
+                        .counter(
+                            "jobClustersManagerActor_create",
+                            "jobClusterName", name,
+                            "user", request.getUser())
+                        .increment();
                 } else {
                     getSender().tell(new CreateJobClusterResponse(
                         request.requestId, CLIENT_ERROR,
@@ -507,6 +518,12 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         } else {
             sender.tell(new UpdateJobClusterResponse(request.requestId, CLIENT_ERROR_NOT_FOUND, "JobCluster " + request.getJobClusterDefinition().getName() + " doesn't exist"), getSelf());
         }
+        spectatorRegistry
+            .counter(
+                "jobClustersManagerActor_update",
+                "jobClusterName", request.getJobClusterDefinition().getName(),
+                "user", request.getUser())
+            .increment();
     }
 
     @Override
@@ -1049,6 +1066,12 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                          new JobClusterProto.DeleteJobClusterRequest(request.getUser(), request.getName(), sender),
                          getSelf());
                  jobClusterInfo.markDeleting(System.currentTimeMillis());
+                 spectatorRegistry
+                     .counter(
+                         "jobClustersManagerActor_delete",
+                         "jobClusterName", request.getName(),
+                         "user", request.getUser())
+                     .increment();
 
              } else {
                  sender.tell(
