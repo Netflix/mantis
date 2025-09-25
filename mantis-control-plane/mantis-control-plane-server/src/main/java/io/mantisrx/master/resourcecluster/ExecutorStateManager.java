@@ -105,4 +105,20 @@ interface ExecutorStateManager {
 
     Predicate<Entry<TaskExecutorID, TaskExecutorState>> isAssigned =
         e -> e.getValue().isAssigned();
+
+    /***
+     * Move the given task executor to the zombie collection.
+     * Zombie collection contains the task executors that failes to report heartbeat within a threshold and are ready to be permanently removed.
+     *
+     * @param taskExecutorID TaskExecutorID
+     */
+    void markAsZombie(TaskExecutorID taskExecutorID);
+
+    /**
+     * True indicate the given task executor is already marked as zombie.
+     *
+     * @param taskExecutorID TaskExecutorID
+     * @return True indicates the task executor is zombie.
+     */
+    boolean isZombie(TaskExecutorID taskExecutorID);
 }
