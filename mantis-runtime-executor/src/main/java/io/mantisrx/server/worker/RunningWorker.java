@@ -18,9 +18,7 @@ package io.mantisrx.server.worker;
 
 import static io.mantisrx.server.core.utils.StatusConstants.STATUS_MESSAGE_FORMAT;
 
-import com.netflix.spectator.api.Tag;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.MantisJobState;
@@ -160,14 +158,13 @@ public class RunningWorker {
         logger.error("Worker failure detected, shutting down job: {}", jobId, t);
         // Send failure metrics when data emission failed
         if (t instanceof OnErrorThrowable) {
-            Metrics jobFailureMetrics = new Metrics.Builder()
-                .id(workerMonitorMetricId, Tag.of("jobId", this.jobId),
-                    Tag.of("workerIndex", String.valueOf(this.workerIndex)),
-                    Tag.of("stageNum", String.valueOf(this.stageNum)))
-                .addCounter(workerFailureMetricName)
-                .build();
-
-            MetricsRegistry.getInstance().registerAndGet(jobFailureMetrics).getCounter(workerFailureMetricName).increment();
+            SpectatorRegistryFactory.getRegistry()
+                .counter("runningWorker_failure",
+                    "jobId", jobId,
+                    "workerIndex", String.valueOf(this.workerIndex),
+                    "stageNum", String.valueOf(this.stageNum)
+                )
+                .increment();
         }
 
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
