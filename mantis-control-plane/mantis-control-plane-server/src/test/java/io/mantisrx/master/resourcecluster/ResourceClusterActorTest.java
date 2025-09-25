@@ -212,7 +212,8 @@ public class ResourceClusterActorTest {
                 "",
                 false,
                 ImmutableMap.of(),
-                new CpuWeightedFitnessCalculator());
+                new CpuWeightedFitnessCalculator(),
+                null);
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =
@@ -657,7 +658,7 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testIfDisabledTaskExecutorRequestsAreInitializedCorrectlyWhenTheControlPlaneStarts() throws Exception {
-        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(Matchers.eq(CLUSTER_ID)))
+        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
             .thenReturn(ImmutableList.of(
                 new DisableTaskExecutorsRequest(
                     ATTRIBUTES,
