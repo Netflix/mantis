@@ -282,6 +282,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("false")
     boolean getDisableShortfallEvaluation();
 
+    @Config("mantis.agent.zombie.detect.threshold")
+    @Default("1800000")
+    long zombieDetectThreshold();
+
     @Config("mantis.scheduling.info.observable.heartbeat.interval.secs")
     @Default("120")
     long getSchedulingInfoObservableHeartbeatIntervalSecs();

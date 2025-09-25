@@ -125,6 +125,14 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
 
     private final AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook;
 
+    // TODO(Gigi): add metrics and actions later
+    private final Cache<TaskExecutorID, TaskExecutorState> zombieState = CacheBuilder.newBuilder()
+        .maximumSize(1000)
+        .expireAfterWrite(30, TimeUnit.MINUTES)
+        .removalListener(notification ->
+            log.info("Archived TaskExecutor: {} removed due to: {}", notification.getKey(), notification.getCause()))
+        .build();
+
     ExecutorStateManagerImpl(Map<String, String> schedulingAttributes) {
         this.schedulingAttributes = schedulingAttributes;
         this.fitnessCalculator = new CpuWeightedFitnessCalculator();
@@ -274,6 +282,22 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
             log.warn("archiving invalid TaskExecutor: {}", taskExecutorID);
             return null;
         }
+    }
+
+    @Override
+    public void markAsZombie(TaskExecutorID taskExecutorID) {
+        final TaskExecutorState taskExecutorState = this.archivedState.getIfPresent(taskExecutorID);
+        if (taskExecutorState != null) {
+            this.archivedState.invalidate(taskExecutorID);
+            this.zombieState.put(taskExecutorID, taskExecutorState);
+        } else {
+            log.warn("TaskExecutor: {} not found from the archived", taskExecutorID);
+        }
+    }
+
+    @Override
+    public boolean isZombie(TaskExecutorID taskExecutorID) {
+        return this.zombieState.getIfPresent(taskExecutorID) != null;
     }
 
     @Override

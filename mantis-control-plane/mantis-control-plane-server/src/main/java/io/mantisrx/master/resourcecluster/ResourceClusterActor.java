@@ -30,6 +30,7 @@ import com.netflix.spectator.api.Tag;
 import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
+import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.scheduler.FitnessCalculator;
@@ -142,6 +143,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     private final String jobClustersWithArtifactCachingEnabled;
 
     private final boolean isJobArtifactCachingEnabled;
+    private final Duration zombieDetectThreshold;
 
     static Props props(
         final ClusterID clusterID,
@@ -158,7 +160,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
-        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook
+        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook,
+        final Duration zombieDetectThreshold
     ) {
         return Props.create(
             ResourceClusterActor.class,
@@ -176,7 +179,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             isJobArtifactCachingEnabled,
             schedulingAttributes,
             fitnessCalculator,
-            availableTaskExecutorMutatorHook
+            availableTaskExecutorMutatorHook,
+            zombieDetectThreshold
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -194,7 +198,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
-        FitnessCalculator fitnessCalculator
+        FitnessCalculator fitnessCalculator,
+        final Duration zombieDetectThreshold
     ) {
         return Props.create(
             ResourceClusterActor.class,
@@ -212,7 +217,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             isJobArtifactCachingEnabled,
             schedulingAttributes,
             fitnessCalculator,
-            null
+            null,
+            zombieDetectThreshold
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -231,7 +237,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
-        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook) {
+        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook,
+        Duration zombieDetectThreshold) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -252,6 +259,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration, availableTaskExecutorMutatorHook);
 
         this.metrics = new ResourceClusterActorMetrics();
+        this.zombieDetectThreshold = zombieDetectThreshold;
     }
 
     @Override
@@ -327,6 +335,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(AddNewJobArtifactsToCacheRequest.class, this::onAddNewJobArtifactsToCacheRequest)
                 .match(RemoveJobArtifactsToCacheRequest.class, this::onRemoveJobArtifactsToCacheRequest)
                 .match(GetJobArtifactsToCacheRequest.class, req -> sender().tell(new ArtifactList(new ArrayList<>(jobArtifactsToCache)), self()))
+                .match(ZombieTimeout.class, metrics.withTracking(this::onTaskExecutorZombieTimeout))
                 .build();
     }
 
@@ -682,6 +691,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onHeartbeat(TaskExecutorHeartbeat heartbeat) {
         log.debug("Received heartbeat {} from task executor {}", heartbeat, heartbeat.getTaskExecutorID());
+        // Cancel the zombie timer once receive the heartbeat
+        getTimers().cancel(getZombieTimerFor(heartbeat.getTaskExecutorID()));
         setupTaskExecutorStateIfNecessary(heartbeat.getTaskExecutorID());
         try {
             final TaskExecutorID taskExecutorID = heartbeat.getTaskExecutorID();
@@ -913,6 +924,10 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         return "Heartbeat-" + taskExecutorID.toString();
     }
 
+    private String getZombieTimerFor(TaskExecutorID taskExecutorID) {
+        return "Zombie-" + taskExecutorID.toString();
+    }
+
     private void onTaskExecutorHeartbeatTimeout(HeartbeatTimeout timeout) {
         setupTaskExecutorStateIfNecessary(timeout.getTaskExecutorID());
         try {
@@ -925,6 +940,12 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             if (state.getLastActivity().compareTo(timeout.getLastActivity()) <= 0) {
                 log.info("Disconnecting task executor {}", timeout.getTaskExecutorID());
                 disconnectTaskExecutor(timeout.getTaskExecutorID());
+                // Timer to process the given TE as zombie if it didn't recover from the heartbeat in the past 30mins
+                getTimers().startSingleTimer(
+                    getZombieTimerFor(timeout.taskExecutorID),
+                    new ZombieTimeout(timeout.taskExecutorID, state.getLastActivity()),
+                    zombieDetectThreshold
+                );
             }
 
         } catch (IllegalStateException e) {
@@ -932,7 +953,23 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         }
     }
 
+    private void onTaskExecutorZombieTimeout(ZombieTimeout timeout) {
+        // the TE not recover back from last timeout for over 30mins
+        final TaskExecutorID taskExecutorID = timeout.getTaskExecutorID();
+        log.info("Zombie timeout received for {}", taskExecutorID);
+        SpectatorRegistryFactory.getRegistry()
+            .counter("zombieTaskExecutor_count", "taskExecutorID", taskExecutorID.toString())
+            .increment();
+        this.executorStateManager.markAsZombie(taskExecutorID);
+    }
+
     private void setupTaskExecutorStateIfNecessary(TaskExecutorID taskExecutorID) {
+        if (this.executorStateManager.isZombie(taskExecutorID)) {
+            // TE recovers after zombie detect threshold, e.g 30mins
+            // TODO(Gigi): directly return and raise zombie TE once we add the action to remove the zombie every 30mins
+            // Log the zombie task executor for now to
+            log.info("Zombie task executor {} has been set", taskExecutorID);
+        }
         this.executorStateManager
             .trackIfAbsent(taskExecutorID, TaskExecutorState.of(clock, rpcService, jobMessageRouter));
     }
@@ -1023,6 +1060,12 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class HeartbeatTimeout {
 
+        TaskExecutorID taskExecutorID;
+        Instant lastActivity;
+    }
+
+    @Value
+    static class ZombieTimeout {
         TaskExecutorID taskExecutorID;
         Instant lastActivity;
     }
