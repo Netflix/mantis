@@ -119,8 +119,11 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
     private final Cache<TaskExecutorID, TaskExecutorState> archivedState = CacheBuilder.newBuilder()
         .maximumSize(10000)
         .expireAfterWrite(24, TimeUnit.HOURS)
-        .removalListener(notification ->
-            log.info("Archived TaskExecutor: {} removed due to: {}", notification.getKey(), notification.getCause()))
+        .removalListener(notification -> {
+            TaskExecutorState state = (TaskExecutorState) notification.getValue();
+            boolean teIsDisabled = state != null && state.onNodeDisabled();
+            log.info("Archived TaskExecutor: {} with disabled state: {} removed due to: {}", notification.getKey(), teIsDisabled, notification.getCause());
+        })
         .build();
 
     private final AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook;
