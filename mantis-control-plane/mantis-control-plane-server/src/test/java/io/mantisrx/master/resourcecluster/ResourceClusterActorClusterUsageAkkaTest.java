@@ -176,7 +176,8 @@ public class ResourceClusterActorClusterUsageAkkaTest {
                 "",
                 false,
                 ImmutableMap.of("jdk", "8"),
-                new CpuWeightedFitnessCalculator());
+                new CpuWeightedFitnessCalculator(),
+                null);
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =
