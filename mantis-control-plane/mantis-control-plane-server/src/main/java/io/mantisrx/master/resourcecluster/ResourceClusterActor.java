@@ -180,42 +180,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
-    static Props props(
-        final ClusterID clusterID,
-        final Duration heartbeatTimeout,
-        Duration assignmentTimeout,
-        Duration disabledTaskExecutorsCheckInterval,
-        Duration schedulerLeaseExpirationDuration,
-        Clock clock,
-        RpcService rpcService,
-        MantisJobStore mantisJobStore,
-        JobMessageRouter jobMessageRouter,
-        int maxJobArtifactsToCache,
-        String jobClustersWithArtifactCachingEnabled,
-        boolean isJobArtifactCachingEnabled,
-        Map<String, String> schedulingAttributes,
-        FitnessCalculator fitnessCalculator
-    ) {
-        return Props.create(
-            ResourceClusterActor.class,
-            clusterID,
-            heartbeatTimeout,
-            assignmentTimeout,
-            disabledTaskExecutorsCheckInterval,
-            schedulerLeaseExpirationDuration,
-            clock,
-            rpcService,
-            mantisJobStore,
-            jobMessageRouter,
-            maxJobArtifactsToCache,
-            jobClustersWithArtifactCachingEnabled,
-            isJobArtifactCachingEnabled,
-            schedulingAttributes,
-            fitnessCalculator,
-            null
-        ).withMailbox("akka.actor.metered-mailbox");
-    }
-
     ResourceClusterActor(
         ClusterID clusterID,
         Duration heartbeatTimeout,
