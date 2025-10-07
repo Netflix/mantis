@@ -22,6 +22,11 @@ Thoughts: strict batching is preferred to reduce risk and complexity for now whi
 - Worker: a worker in one of a job's stage. A job can have multiple stages and each stage will have a list of workers with worker index and worker number to id each one. JobActor is responsible to keep track of the workers and inform scheduler to add/remove workers from scaling/creation/deletion operations.
 - ESM (executor state manager): class in ResourceClusterActor tracking TE status (registration and heartbeats).
 
+### Key Logic Changes
+- A job's scheduling requests is no longer tracked in loop inside scheduler. Scheduler is only responsible to track the insertion of the reservation. Resource cluster actor and reservation registry is responsible (looping) the pending requests and push scheduled assignments into TEs.
+- ESM needs to be able to interact with registry to do operations: (try to allocate TEs) and (Notify registry to process).
+- Registry's main process loop shall trigger every x seconds (configurable) and also triggered by ESM message. Introduce minimum wait period to avoid live locking the dispatcher.
+
 ### Action List v2
 [Direction] use strict batching mode only. keep current code path as fallback with config options.
 
@@ -33,7 +38,7 @@ Thoughts: strict batching is preferred to reduce risk and complexity for now whi
 - ReservationRegistry: add `ReservationRegistry` owned by `ResourceClusterActor`
   - Types: `ReservationKey(jobId, stageNum)`, `Reservation{ReservationKey, canonicalSchedulingConstraint, workerRequests, stageTargetSize, lastUpdatedAt, priorityEpoch}`
   - Indexes: `reservationsByKey`, `perSchedulingConstraintPriorityQueue` ordered by `(priorityEpoch desc)`. (make sure there is proper GC on these index)
-  - API (actor message behavior): 
+  - API (actor message behavior):
     -- `upsertReservations`: recevied from JobActor/Scheduler. insert if new. If there is existing key, replace the old reservation.
     -- `completeReservation`: mark a reservation to be completed. Remove index entries.
     -- `cancelReservation`: cancel an existing reservation. Remove from index tables.
@@ -49,7 +54,7 @@ Thoughts: strict batching is preferred to reduce risk and complexity for now whi
     - abstract and config to support different priority behavior. Default strategy setup to use epoch time on creation + override signal (e.g. priorityEpoch as 0)
     - main processing logic: when reservation registry try to process the active reservations, it should go through the priority (so it honors the priority). Start with top of the queue of each "size" or "sku", check if the reservation can be fulfilled (matched) from executor state manager. Once matched, invoke resource cluster actor to do the actual assignement to TEs and finish (remove) the reservation in registry. If the target reservation cannot be matched, stop the process on this queue. Proceed to next reservation if the top one is successfully filled, otherwise stop (only top of the queue shall be processed). Error in assigning TEs tasks should be properly handled such that it moves the reservation to the tail of the queue (re-assigned priority).
     - (optional) new reservation trigger resource cluster scaler process.
-(wip marker)
+
 - ResourceClusterActor: integrate registry with matching and TE lifecycle
   - Integrate registry calls: getTaskExecutorFor from scheduler; getUsage from RC scaler (combine state from ESM and registry).
   - Delegate calls to registry and calls between registry and ExecutorStateManager
@@ -59,7 +64,7 @@ Thoughts: strict batching is preferred to reduce risk and complexity for now whi
    and build a new method named "tryAllocateTaskExecutors(ReservationAllocationRequest request, boolean
   allowsPartialMatch), which does similar operation as findbestFit except that ReservationAllocationRequest directly represents a reservation so the scheduling constraints in this request is the same for all of the workers inside.
 
-- Scheduler: simplify and become stateless on pending
+- Scheduler: simplify and become stateless (no longer tracks pending requests) (keep the current code path as fallback enabled by config flags)
   - Extend `BatchScheduleRequest` to each job stage's target size.
   - On schedule: keep the same `getTaskExecutorsFor` call to RC but no longer expect the allocation result. Only retry if RC returns a failure message indicating reservation insert failed.
   - On assignment: no longer responsible to call TE for assignment (now handled directly inside RC).
@@ -68,10 +73,6 @@ Thoughts: strict batching is preferred to reduce risk and complexity for now whi
 - Autoscaler coupling and readiness
   - RC usage response: `{ready:boolean, bySku: {available, pending, idle=available-pending}}`; still exclude disabled from `available`
   - Scaler ignores scale-down while registry not ready; optionally prompt scaler when `pending` reservations increases materially
-
-- API contracts to add/confirm
-  - RC: `scheduleFor(allocationRequestsWithKey)` → upsert+ack to replace current `getExecutorsFor*` APIs.
-  - Scheduler Factory → RC: `MarkRegistryReady`
 
 - Observability & ops
   - Metrics: track state in reservation registry (size, pending, actions). Metrics on usage result to scaler.
@@ -82,13 +83,9 @@ Thoughts: strict batching is preferred to reduce risk and complexity for now whi
   - Ensure idempotent upserts and submit result handling; timeouts recover assigned-but-unlaunched
 
 - Tests
-  - Unit: registry APIs and state transition.
+  - Unit: registry and state transition. ESM/ResourceClsuterActor actions.
   - Unit: ESM lease/assign/unassign/timeout invariants
   - Integration: multi-reservation handling, failed TE assignements, init behavior, RC restart with scheduler replay, scaler polling with readiness gating
-
-### Edge cases
-- JobActor/Scheduler retries: ensure handling if JobActor/Scheduler trigger retry on scheduling requests, proper handling and dedupe on reservations.
-
 
 ### Reservation-based Scheduling v2.1 (Mermaid)
 
@@ -130,102 +127,3 @@ sequenceDiagram
 
 
 ```
-
-## [Depreacted] Draft 1: Reservation-First Push Design
-
-### Reservation-First Push Sequence
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant JCM as JobClustersManagerActor
-    participant JC as JobClusterActor
-    participant JA as JobActor
-    participant SCH as ResourceClusterAwareSchedulerActor
-    participant RC as ResourceClusterActor
-    participant REG as ReservationRegistry
-    participant ESM as ExecutorStateManagerImpl
-    participant RCS as ResourceClusterScalerActor
-    participant HOST as ResourceClusterHostActor
-    participant TE as TaskExecutor
-
-    Client->>JCM: SubmitJob
-    JCM->>JC: forward
-    JC->>JA: InitJob
-    JA->>SCH: Request workers
-    SCH->>REG: UpsertReservation
-    REG->>RC: Request allocation
-    RC->>ESM: Select best fit and lease
-    RC->>ESM: Mark assigned and start timeout
-    RC->>SCH: AssignedBatchScheduleRequestEvent
-    SCH->>TE: submitTask
-    TE-->>SCH: Ack or Fail
-    SCH->>RC: MarkAllocationLaunched or Failed
-    RC->>REG: Update counts or rollback
-    RC->>ESM: Unassign on timeout
-
-    loop Capacity loop
-        RCS->>RC: GetClusterUsage
-        RC-->>RCS: Usage
-        RCS->>HOST: Scale up or down
-        HOST-->>RC: Add or remove TEs
-        TE->>RC: Register or Heartbeat
-        RC->>ESM: Mark available
-    end
-```
-
-### Scheduler Request Payload Change (Required)
-
-- Update `JobActor → Scheduler: BatchScheduleRequest` to carry the reservation-relevant state for dedupe and quick convergence:
-  - `targetCount` for the (jobId, stageNum, skuId) key as of this request
-  - `launchedCount` known by JobActor (optional; if omitted, scheduler/RC infers from active workers)
-- The scheduler will upsert these values into the `ReservationRegistry` before (or alongside) calling the existing allocation path. This allows the registry to coalesce rapid scale changes and avoid double-counting pending demand.
-
-
-## ReservationRegistry (Reuse-Path) Design
-
-Purpose
-- Provide a precise, deduped ledger of demand for autoscaling and visibility while reusing the existing scheduling/assignment flow unchanged.
-
-Key types
-- **ReservationKey**: `(jobId, stageNum, skuId)` where `skuId` matches the scaler's `usageGroupKey`.
-- **Reservation**:
-  - `key`: ReservationKey
-  - `targetCount`: int
-  - `launchedCount`: int
-  - `lastUpdatedAt`: long
-  - `priority`: long (updated whenever target changes to reorder within sku)
-- Derived: `pendingCount = max(0, targetCount - launchedCount)`
-
-Lifecycle and integration
-- JobActor emits BatchScheduleRequest to Scheduler with `(targetCount, launchedCount?)` attached.
-- Scheduler resolves `skuId`, calls `upsertFromScheduler` (with retries), then proceeds with the existing `getTaskExecutorsFor(...) → submitTask(...)` flow.
-- When an `AssignedBatchScheduleRequestEvent` completes without errors for a reservation key, Scheduler calls `completeReservationBatch(key, batchSize)`.
-- During leader reinit, Scheduler replays upserts from JobActors and then signals `markReady()` so scaler can trust `pending`.
-
-Autoscaler coupling
-- For each `skuId`: `idle = available - pending` where `pending = sum(max(0, targetCount - launchedCount))` from the registry. Because keys use the same `skuId` as the scaler's usage, the computation aligns exactly.
-
-Notes
-- No partial allocations are recorded at the reservation layer; it only updates when batches fully succeed. Existing assignment retries, timeouts, and error handling remain unchanged in Scheduler/RC/ESM.
-- Priority is updated on every target change to allow newer requests to reorder within the sku queue if/when RC later consults the registry for fairness.
-
-ReservationRegistry Placement
-
-- Recommendation: implement `ReservationRegistry` as a plain component owned by `ResourceClusterActor` (same actor turn), not as:
-  - an inner class of `ExecutorStateManagerImpl`, and
-  - not a separate actor.
-
-- Rationale:
-  - **Separation of concerns**: `ExecutorStateManagerImpl` is TE-centric (registered/available/assigned/disabled); reservations are job-centric (JobId/Stage/GroupKey target/allocated/launched). Keeping them separate preserves clarity and testability.
-  - **Atomicity**: Matching requires atomic steps across registry and TE state (lease → assign → start timeout → emit assignment). Owning both within `ResourceClusterActor` preserves atomicity under a single-threaded actor turn.
-  - **Lower complexity**: A separate actor would need cross-actor transactions or compensations, readiness choreography, and WAL/idempotency for recovery.
-
-- Practical shape:
-  - `ResourceClusterActor` composes:
-    - `ReservationRegistry` (maps and per-GroupKey FIFO/priority queues; counters: target, allocated, launched),
-    - `ExecutorStateManagerImpl` (existing TE state/selection/lease/assignment/timeout).
-  - All updates flow through RC:
-    - Upsert/cancel reservation → attempt allocation (best-fit + lease) → mark assigned + start timeout → push to scheduler.
-    - Submit ack/fail → update registry counts; on fail/timeout → unassign and return TE to available.
-  - Scaler usage: `idle = ESM.available − Registry.pending`, gated by a registry readiness flag on leader startup.
