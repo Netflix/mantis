@@ -25,11 +25,8 @@ import io.mantisrx.server.core.ServiceRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
-import io.reactivex.mantis.network.push.PushServerSse;
-import io.reactivex.mantis.network.push.PushServers;
-import io.reactivex.mantis.network.push.Routers;
-import io.reactivex.mantis.network.push.ServerConfig;
-import io.reactivex.mantis.network.push.Router;
+import io.reactivex.mantis.network.push.*;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +55,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     private int port = -1;
     private final MantisPropertiesLoader propService;
     private final Router<T> router;
+    private Func1<String, ProactiveRouter<T>> proactiveRouterFactory = (String routerName) -> null;
 
     private PushServerSse<T, Context> pushServerSse;
     private HttpServer<ByteBuf, ServerSentEvent> httpServer;
@@ -90,6 +88,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         this.subscribeProcessor = builder.subscribeProcessor;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
         this.router = builder.router;
+        this.proactiveRouterFactory = builder.proactiveRouterFactory;
     }
 
     @Override
@@ -147,6 +146,11 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         return Boolean.parseBoolean(useSpsc);
     }
 
+    private boolean useProactiveRouter() {
+        String useProactiveRouter = propService.getStringValue("mantis.sse.useProactiveRouter", "false");
+        return Boolean.parseBoolean(useProactiveRouter);
+    }
+
     @Override
     public void call(Context context, PortRequest portRequest, final Observable<T> observable) {
         port = portRequest.getPort();
@@ -165,7 +169,8 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
                 .numQueueConsumers(numConsumerThreads())
                 .useSpscQueue(useSpsc())
                 .maxChunkTimeMSec(getBatchInterval())
-                .maxNotWritableTimeSec(maxNotWritableTimeSec());
+                .maxNotWritableTimeSec(maxNotWritableTimeSec())
+                .proactiveRouterFactory(proactiveRouterFactory);
             if (predicate != null) {
                 config.predicate(predicate.getPredicate());
             }
@@ -254,6 +259,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         private Predicate<T> predicate;
         private Func2<Map<String, List<String>>, Context, Void> subscribeProcessor;
         private Router<T> router;
+        private Func1<String, ProactiveRouter<T>> proactiveRouterFactory = (String routerName) -> null;;
 
         public Builder<T> withEncoder(Func1<T, String> encoder) {
             this.encoder = encoder;
@@ -289,6 +295,10 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         public Builder<T> withRouter(Router<T> router) {
             this.router = router;
             return this;
+        }
+
+        public void withProactiveRouterFactory(Func1<String, ProactiveRouter<T>> proactiveRouterFactory) {
+            this.proactiveRouterFactory = proactiveRouterFactory;
         }
 
         public ServerSentEventsSink<T> build() {

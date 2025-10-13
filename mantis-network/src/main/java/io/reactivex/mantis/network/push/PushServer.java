@@ -108,7 +108,7 @@ public abstract class PushServer<T, R> {
         final MetricGroupId metricsGroup = new MetricGroupId("PushServer", idTag);
         // manager will auto add metrics for connection groups
         connectionManager = new ConnectionManager<T>(metricsRegistry, doOnFirstConnection,
-            doOnZeroConnections);
+            doOnZeroConnections, config.getRouterFactory());
 
 
         int numQueueProcessingThreads = config.getNumQueueConsumers();
@@ -155,7 +155,7 @@ public abstract class PushServer<T, R> {
 
         registerMetrics(metricsRegistry, serverMetrics, consumerThreads.getMetrics(),
             outboundBuffer.getMetrics(), trigger.getMetrics(),
-            config.getChunkProcessor().router.getMetrics());
+            config.getChunkProcessor().fallbackRouter.getMetrics());
 
         port = config.getPort();
         writeRetryCount = config.getWriteRetryCount();

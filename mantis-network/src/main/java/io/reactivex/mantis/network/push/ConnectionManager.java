@@ -20,18 +20,21 @@ import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
 import rx.functions.Action0;
+import rx.functions.Func1;
+import rx.functions.Func2;
+import rx.subjects.BehaviorSubject;
+import rx.subjects.PublishSubject;
 
 
 public class ConnectionManager<T> {
@@ -46,12 +49,21 @@ public class ConnectionManager<T> {
     private Action0 doOnZeroConnections;
     private Lock connectionState = new ReentrantLock();
     private AtomicBoolean subscribed = new AtomicBoolean();
+    private final Func1<String, ProactiveRouter<T>> routerFactory;
+    private final ProactiveRouter<T> defaultRouter;
 
     public ConnectionManager(MetricsRegistry metricsRegistry,
-                             Action0 doOnFirstConnection, Action0 doOnZeroConnections) {
+                             Action0 doOnFirstConnection,
+                             Action0 doOnZeroConnections,
+                             Func1<String, ProactiveRouter<T>> routerFactory) {
+        this.routerFactory = routerFactory;
         this.doOnFirstConnection = doOnFirstConnection;
         this.doOnZeroConnections = doOnZeroConnections;
         this.metricsRegistry = metricsRegistry;
+        this.defaultRouter = routerFactory.call("default");
+        if (this.defaultRouter != null) {
+            metricsRegistry.registerAndGet(this.defaultRouter.getMetrics());
+        }
     }
 
     private int activeConnections() {
@@ -119,14 +131,21 @@ public class ConnectionManager<T> {
             String groupId = connection.getGroupId();
             ConnectionGroup<T> current = managedConnections.get(groupId);
             if (current == null) {
-                ConnectionGroup<T> newGroup = new ConnectionGroup<T>(groupId);
+                ProactiveRouter<T> router = routerFactory.call(groupId);
+                ConnectionGroup<T> newGroup = new ConnectionGroup<T>(groupId, router);
                 current = managedConnections.putIfAbsent(groupId, newGroup);
                 if (current == null) {
                     current = newGroup;
                     metricsRegistry.registerAndGet(current.getMetrics());
+                    if (router != null) {
+                        metricsRegistry.registerAndGet(router.getMetrics());
+                    }
                 }
             }
             current.addConnection(connection);
+            if (this.defaultRouter != null) {
+                this.defaultRouter.addConnection(connection);
+            }
             logger.debug("Connection added to group: " + groupId + ", connection: " + connection + ", group: " + current);
         } finally {
             connectionState.unlock();
@@ -153,7 +172,11 @@ public class ConnectionManager<T> {
                     metricsRegistry.remove(current.getMetricsGroup());
                     // remove group
                     managedConnections.remove(groupId);
+                    current.close();
                 }
+            }
+            if (this.defaultRouter != null) {
+                this.defaultRouter.removeConnection(connection);
             }
         } finally {
             connectionState.unlock();
@@ -186,6 +209,14 @@ public class ConnectionManager<T> {
             return new HashMap<String, ConnectionGroup<T>>(managedConnections);
         } finally {
             connectionState.unlock();
+        }
+    }
+
+    public void route(List<T> chunks, Router<T> fallbackRouter) {
+        if (this.defaultRouter != null) {
+            this.defaultRouter.route(chunks);
+        } else {
+            fallbackRouter.route(this.connections(), chunks);
         }
     }
 }

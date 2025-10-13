@@ -94,6 +94,20 @@ public class ParameterUtils {
                 .build();
         systemParams.put(w2wtoKeyThreads.getName(), w2wtoKeyThreads);
 
+        ParameterDefinition<Boolean> w2wUseProactiveRouter = new BooleanParameter()
+                .name(W2W_USE_PROACTIVE_ROUTER)
+                .description("Whether to use proactive routing for worker to worker connections")
+                .defaultValue(false)
+                .build();
+        systemParams.put(w2wUseProactiveRouter.getName(), w2wUseProactiveRouter);
+
+        ParameterDefinition<Boolean> sseUseProactiveRouter = new BooleanParameter()
+                .name(SSE_USE_PROACTIVE_ROUTER)
+                .description("Whether to use proactive routing for SSE connections")
+                .defaultValue(false)
+                .build();
+        systemParams.put(sseUseProactiveRouter.getName(), sseUseProactiveRouter);
+
 
         // mantis.sse.bufferCapacity 25000
         ParameterDefinition<Integer> sseBuffer = new IntParameter()

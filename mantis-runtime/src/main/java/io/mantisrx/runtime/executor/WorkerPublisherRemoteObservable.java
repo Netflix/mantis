@@ -39,6 +39,8 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 
+import static io.mantisrx.common.SystemParameters.W2W_USE_PROACTIVE_ROUTER;
+
 /**
  * Execution of WorkerPublisher that publishes the stream to the next stage.
  *
@@ -86,12 +88,17 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
 
                 Func1<T, byte[]> encoder = t1 -> stage.getOutputCodec().encode(t1);
                 Router router = this.routerFactory.scalarStageToStageRouter(name, encoder);
+                Func1<String, ProactiveRouter<T>> proactiveFactory = (String k) -> null;
+                if (useProactiveRouters()) {
+                    proactiveFactory = (String name) -> routerFactory.scalarStageToStageProactiveRouter(name, encoder);
+                }
 
                 ServerConfig<T> config = new ServerConfig.Builder<T>()
                         .name(name)
                         .port(serverPort)
                         .metricsRegistry(MetricsRegistry.getInstance())
-                        .router(router)
+                        .groupRouter(router)
+                        .proactiveRouterFactory(proactiveFactory)
                         .build();
                 final LegacyTcpPushServer<T> modernServer =
                         PushServers.infiniteStreamLegacyTcpNested(config, toServe);
@@ -144,7 +151,9 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
             .maxChunkTimeMSec(maxChunkTimeMSec())
             .bufferCapacity(bufferCapacity())
             .useSpscQueue(useSpsc())
-            .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
+            .groupRouter(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
+            .proactiveRouterFactory(useProactiveRouters() ?
+                routerName -> routerFactory.keyedStageToStageProactiveRouter(routerName, keyEncoder, valueEncoder) : (k) -> null)
             .build();
 
         if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
@@ -158,10 +167,14 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
             HashFunctions.xxh3());
     }
 
+    private boolean useProactiveRouters() {
+        String stringValue = propService.getStringValue(W2W_USE_PROACTIVE_ROUTER, "false");
+        return Boolean.parseBoolean(stringValue);
+    }
+
     private boolean useSpsc() {
         String stringValue = propService.getStringValue("mantis.w2w.spsc", "false");
         return Boolean.parseBoolean(stringValue);
-
     }
 
     private int bufferCapacity() {

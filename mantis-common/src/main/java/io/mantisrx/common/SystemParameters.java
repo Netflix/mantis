@@ -27,6 +27,9 @@ public final class SystemParameters {
     public static final String JOB_WORKER_HEARTBEAT_INTERVAL_SECS = "mantis.job.worker.heartbeat.interval.secs";
     public static final String JOB_WORKER_TIMEOUT_SECS = "mantis.job.worker.timeout.secs";
 
+    public static final String W2W_USE_PROACTIVE_ROUTER = "mantis.w2w.useProactiveRouter";
+    public static final String SSE_USE_PROACTIVE_ROUTER = "mantis.sse.useProactiveRouter";
+
     public static final String JOB_AUTOSCALE_V2_ENABLED_PARAM = "mantis.job.autoscale.v2.enabled";
     public static final String JOB_AUTOSCALE_V2_LOADER_CONFIG_PARAM = "mantis.job.autoscale.v2.loader.config";
 

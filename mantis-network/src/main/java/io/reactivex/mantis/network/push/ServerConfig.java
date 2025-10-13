@@ -36,6 +36,7 @@ public class ServerConfig<T> {
     private MetricsRegistry metricsRegistry; // registry used to store metrics
     private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
     private boolean useSpscQueue = false;
+    private final Func1<String, ProactiveRouter<T>> routerFactory;
 
     public ServerConfig(Builder<T> builder) {
         this.name = builder.name;
@@ -50,6 +51,7 @@ public class ServerConfig<T> {
         this.predicate = builder.predicate;
         this.useSpscQueue = builder.useSpscQueue;
         this.maxNotWritableTimeSec = builder.maxNotWritableTimeSec;
+        this.routerFactory = builder.routerFactory;
     }
 
     public Func1<Map<String, List<String>>, Func1<T, Boolean>> getPredicate() {
@@ -100,6 +102,10 @@ public class ServerConfig<T> {
         return useSpscQueue;
     }
 
+    public Func1<String, ProactiveRouter<T>> getRouterFactory() {
+        return this.routerFactory;
+    }
+
     public static class Builder<T> {
 
         private String name;
@@ -114,6 +120,7 @@ public class ServerConfig<T> {
         private MetricsRegistry metricsRegistry; // registry used to store metrics
         private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
         private boolean useSpscQueue = false;
+        private Func1<String, ProactiveRouter<T>> routerFactory = (String groupId) -> null;
 
         public Builder<T> predicate(Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate) {
             this.predicate = predicate;
@@ -170,13 +177,13 @@ public class ServerConfig<T> {
             return this;
         }
 
-        public Builder<T> router(Router<T> router) {
-            this.chunkProcessor = new ChunkProcessor<>(router);
+        public Builder<T> metricsRegistry(MetricsRegistry metricsRegistry) {
+            this.metricsRegistry = metricsRegistry;
             return this;
         }
 
-        public Builder<T> metricsRegistry(MetricsRegistry metricsRegistry) {
-            this.metricsRegistry = metricsRegistry;
+        public Builder<T> proactiveRouterFactory(Func1<String, ProactiveRouter<T>> routerFactory) {
+            this.routerFactory = routerFactory;
             return this;
         }
 

@@ -23,14 +23,16 @@ import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
 import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.subjects.BehaviorSubject;
 
 
 public class ConnectionGroup<T> {
@@ -43,10 +45,12 @@ public class ConnectionGroup<T> {
     private Counter successfulWrites;
     private Counter numSlotSwaps;
     private Counter failedWrites;
+    private final ProactiveRouter<T> router;
 
-    public ConnectionGroup(String groupId) {
+    public ConnectionGroup(String groupId, ProactiveRouter<T> router) {
         this.groupId = groupId;
         this.connections = new HashMap<>();
+        this.router = router;
 
         final String grpId = Optional.ofNullable(groupId).orElse("none");
         final BasicTag groupIdTag = new BasicTag(MantisMetricStringConstants.GROUP_ID_TAG, grpId);
@@ -93,6 +97,9 @@ public class ConnectionGroup<T> {
                     + " a new connection has already been swapped in the place of the old connection");
 
         }
+        if (this.router != null) {
+            this.router.removeConnection(connection);
+        }
     }
 
     public synchronized void addConnection(AsyncConnection<T> connection) {
@@ -106,6 +113,19 @@ public class ConnectionGroup<T> {
             logger.info("Swapping connection: " + previousConnection + " with new connection: " + connection);
             previousConnection.close();
             numSlotSwaps.increment();
+        }
+        if (this.router != null) {
+            this.router.addConnection(connection);
+        }
+    }
+
+    public void close() {
+        if (this.router != null) {
+            try {
+                this.router.close();
+            } catch (Exception e) {
+                logger.warn("Error closing router for group " + groupId + ": " + e.getMessage(), e);
+            }
         }
     }
 
@@ -131,5 +151,13 @@ public class ConnectionGroup<T> {
     public String toString() {
         return "ConnectionGroup [groupId=" + groupId + ", connections="
                 + connections + "]";
+    }
+
+    public void route(List<T> chunks, Router<T> fallbackRouter) {
+        if (router == null) {
+            fallbackRouter.route(this.getConnections(), chunks);
+            return;
+        }
+        this.router.route(chunks);
     }
 }

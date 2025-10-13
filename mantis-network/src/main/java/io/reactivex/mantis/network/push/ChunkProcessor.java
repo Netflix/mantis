@@ -20,15 +20,14 @@ import java.util.List;
 
 
 public class ChunkProcessor<T> {
-
-    protected Router<T> router;
+    protected Router<T> fallbackRouter;
 
     public ChunkProcessor(Router<T> router) {
-        this.router = router;
+        this.fallbackRouter = router;
     }
 
     public void process(ConnectionManager<T> connectionManager, List<T> chunks) {
-        router.route(connectionManager.connections(), chunks);
+        connectionManager.route(chunks, this.fallbackRouter);
     }
 
 }

@@ -34,23 +34,30 @@ public class Routers implements RouterFactory {
     public static <K, V> Router<KeyValuePair<K, V>> consistentHashingLegacyTcpProtocol(String name,
                                                                                        final Func1<K, byte[]> keyEncoder,
                                                                                        final Func1<V, byte[]> valueEncoder) {
-        return new ConsistentHashingRouter<K, V>(name, new Func1<KeyValuePair<K, V>, byte[]>() {
-            @Override
-            public byte[] call(KeyValuePair<K, V> kvp) {
-                byte[] keyBytes = kvp.getKeyBytes();
-                byte[] valueBytes = valueEncoder.call(kvp.getValue());
-                return
-                        // length + opcode + notification type + key length
-                        ByteBuffer.allocate(4 + 1 + 1 + 4 + keyBytes.length + valueBytes.length)
-                                .putInt(1 + 1 + 4 + keyBytes.length + valueBytes.length) // length
-                                .put((byte) 1) // opcode
-                                .put((byte) 1) // notification type
-                                .putInt(keyBytes.length) // key length
-                                .put(keyBytes) // key bytes
-                                .put(valueBytes) // value bytes
-                                .array();
-            }
-        }, HashFunctions.xxh3());
+        return new ConsistentHashingRouter<K, V>(name, consistentHashingEncoder(valueEncoder), HashFunctions.xxh3());
+    }
+
+    public static <K, V> ProactiveRouter<KeyValuePair<K, V>> proactiveConsistentHashingLegacyTcpProtocol(String name,
+                                                                                                         final Func1<K, byte[]> keyEncoder,
+                                                                                                         final Func1<V, byte[]> valueEncoder) {
+        return new ProactiveConsistentHashingRouter<>(name, consistentHashingEncoder(valueEncoder), HashFunctions.xxh3());
+    }
+
+    private static <K, V> Func1<KeyValuePair<K, V>, byte[]> consistentHashingEncoder(final Func1<V, byte[]> valueEncoder) {
+        return kvp -> {
+            byte[] keyBytes = kvp.getKeyBytes();
+            byte[] valueBytes = valueEncoder.call(kvp.getValue());
+            return
+                // length + opcode + notification type + key length
+                ByteBuffer.allocate(4 + 1 + 1 + 4 + keyBytes.length + valueBytes.length)
+                    .putInt(1 + 1 + 4 + keyBytes.length + valueBytes.length) // length
+                    .put((byte) 1) // opcode
+                    .put((byte) 1) // notification type
+                    .putInt(keyBytes.length) // key length
+                    .put(keyBytes) // key bytes
+                    .put(valueBytes) // value bytes
+                    .array();
+        };
     }
 
     private static byte[] dataPayload(byte[] data) {
@@ -123,5 +130,15 @@ public class Routers implements RouterFactory {
     @Override
     public <T> Router<T> scalarStageToStageRouter(String name, Func1<T, byte[]> toBytes) {
         return roundRobinLegacyTcpProtocol(name, toBytes);
+    }
+
+    @Override
+    public <T> ProactiveRouter<T> scalarStageToStageProactiveRouter(String name, Func1<T, byte[]> toBytes) {
+        return new ProactiveRoundRobinRouter<>(name, toBytes);
+    }
+
+    @Override
+    public <K, V> ProactiveRouter<KeyValuePair<K, V>> keyedStageToStageProactiveRouter(String name, Func1<K, byte[]> keyEncoder, Func1<V, byte[]> valueEncoder) {
+        return proactiveConsistentHashingLegacyTcpProtocol(name, keyEncoder, valueEncoder);
     }
 }
