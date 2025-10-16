@@ -20,9 +20,9 @@ import static java.util.stream.Collectors.groupingBy;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
-import akka.actor.OneForOneStrategy;
 import akka.actor.Props;
 import akka.actor.Status;
+import akka.actor.OneForOneStrategy;
 import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
@@ -30,6 +30,7 @@ import com.netflix.spectator.api.Tag;
 import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
+import io.mantisrx.common.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.scheduler.FitnessCalculator;
@@ -87,6 +88,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.flink.runtime.rpc.RpcService;
+import scala.Option;
 
 /**
  * Akka actor implementation of ResourceCluster.
@@ -98,23 +100,9 @@ import org.apache.flink.runtime.rpc.RpcService;
 @ToString(of = {"clusterID"})
 @Slf4j
 public class ResourceClusterActor extends AbstractActorWithTimers {
-    /**
-     * For ResourceClusterActor instances, we need to ensure they are always running after encountering error so that
-     * TaskExecutors can still remain connected. If there is a fatal error that needs to be escalated to terminate the
-     * whole system/leader you can define a fatal exception type and override its behavior to
-     * SupervisorStrategy.escalate() instead.
-     */
-    private static SupervisorStrategy resourceClusterActorStrategy =
-        new OneForOneStrategy(
-            3,
-            Duration.ofSeconds(60),
-            DeciderBuilder
-                .match(Exception.class, e -> SupervisorStrategy.restart())
-                .build());
-
     @Override
     public SupervisorStrategy supervisorStrategy() {
-        return resourceClusterActorStrategy;
+        return MantisActorSupervisorStrategy.getInstance().create();
     }
 
     private final Duration heartbeatTimeout;
@@ -139,6 +127,9 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     private final String jobClustersWithArtifactCachingEnabled;
 
     private final boolean isJobArtifactCachingEnabled;
+
+    private final String reservationRegistryActorName;
+    private ActorRef reservationRegistryActor;
 
     static Props props(
         final ClusterID clusterID,
@@ -249,6 +240,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration, availableTaskExecutorMutatorHook);
 
         this.metrics = new ResourceClusterActorMetrics();
+        this.reservationRegistryActorName = buildReservationRegistryActorName(clusterID);
     }
 
     @Override
@@ -259,6 +251,14 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             TagList.create(ImmutableMap.of(
                 "resourceCluster",
                 clusterID.getResourceID())));
+
+        Option<ActorRef> existingRegistry = getContext().child(reservationRegistryActorName);
+        if (existingRegistry.isDefined()) {
+            reservationRegistryActor = existingRegistry.get();
+        } else {
+            Props registryProps = ReservationRegistryActor.props(clock, null);
+            reservationRegistryActor = getContext().actorOf(registryProps, reservationRegistryActorName);
+        }
 
         fetchJobArtifactsToCache();
 
@@ -284,6 +284,10 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         return
             ReceiveBuilder
                 .create()
+                .match(UpsertReservation.class, this::forwardToReservationRegistry)
+                .match(CancelReservation.class, this::forwardToReservationRegistry)
+                .match(GetPendingReservationsView.class, this::forwardToReservationRegistry)
+                .match(MarkReady.class, this::forwardToReservationRegistry)
                 .match(GetRegisteredTaskExecutorsRequest.class,
                     req -> {
                         sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isRegistered)), self());
@@ -325,6 +329,16 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(RemoveJobArtifactsToCacheRequest.class, this::onRemoveJobArtifactsToCacheRequest)
                 .match(GetJobArtifactsToCacheRequest.class, req -> sender().tell(new ArtifactList(new ArrayList<>(jobArtifactsToCache)), self()))
                 .build();
+    }
+
+    private void forwardToReservationRegistry(Object message) {
+        if (reservationRegistryActor == null) {
+            log.warn("Reservation registry actor not initialized; dropping {}", message);
+            sender().tell(new Status.Failure(new IllegalStateException("reservation registry not available")), self());
+            return;
+        }
+        // TODO (reservation-registry): job actor and scheduler interactions will route through this bridge.
+        reservationRegistryActor.forward(message, getContext());
     }
 
 
@@ -1215,6 +1229,89 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         }
     }
 
+    /**
+     * Reservation value objects shared with {@link ReservationRegistryActor} for tracking outstanding scheduling
+     * requests.
+     */
+    @Value
+    @Builder
+    static class ReservationKey {
+        String jobId;
+        int stageNumber;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    static class Reservation {
+        ReservationKey key;
+        SchedulingConstraints schedulingConstraints;
+        String canonicalConstraintKey;
+        int requestedWorkers;
+        int stageTargetSize;
+        Instant createdAt;
+        Instant lastUpdatedAt;
+
+        boolean hasSameShape(Reservation other) {
+            return other != null
+                && requestedWorkers == other.requestedWorkers
+                && stageTargetSize == other.stageTargetSize
+                && Objects.equals(canonicalConstraintKey, other.canonicalConstraintKey);
+        }
+    }
+
+    @Value
+    @Builder
+    static class PendingReservationsView {
+        boolean ready;
+        @Builder.Default
+        Map<String, PendingReservationGroupView> groups = Collections.emptyMap();
+    }
+
+    @Value
+    @Builder
+    static class PendingReservationGroupView {
+        String canonicalConstraintKey;
+        int reservationCount;
+        int totalRequestedWorkers;
+        @Builder.Default
+        List<ReservationRegistryActor.ReservationSnapshot> reservations = Collections.emptyList();
+    }
+
+    @Value
+    @Builder
+    static class CancelReservation {
+        ReservationKey reservationKey;
+    }
+
+    @Value
+    static class CancelReservationAck {
+        ReservationKey reservationKey;
+        boolean cancelled;
+    }
+
+    @Value
+    @Builder
+    static class UpsertReservation {
+        ReservationKey reservationKey;
+        SchedulingConstraints schedulingConstraints;
+        int requestedWorkers;
+        int stageTargetSize;
+        @Builder.Default
+        Optional<Long> priorityOverride = Optional.empty();
+    }
+
+    enum MarkReady {
+        INSTANCE
+    }
+
+    enum ProcessReservationsTick {
+        INSTANCE
+    }
+
+    enum GetPendingReservationsView {
+        INSTANCE
+    }
+
 
 
     /**
@@ -1354,5 +1451,19 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         } else {
             return e -> e.getValue().containsAttributes(hasAttributes.getAttributes());
         }
+    }
+
+    private static String buildReservationRegistryActorName(ClusterID clusterID) {
+        String resourceId = clusterID != null ? clusterID.getResourceID() : "";
+        if (resourceId == null) {
+            resourceId = "";
+        }
+        String sanitized = resourceId.replaceAll("[^a-zA-Z0-9-_]", "_");
+        if (sanitized.isEmpty()) {
+            sanitized = "default";
+        } else if (sanitized.charAt(0) == '$') {
+            sanitized = "_" + sanitized.substring(1);
+        }
+        return "reservationRegistry-" + sanitized;
     }
 }

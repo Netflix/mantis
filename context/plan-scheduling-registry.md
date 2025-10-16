@@ -26,6 +26,10 @@ Thoughts: strict batching is preferred to reduce risk and complexity for now whi
 - A job's scheduling requests is no longer tracked in loop inside scheduler. Scheduler is only responsible to track the insertion of the reservation. Resource cluster actor and reservation registry is responsible (looping) the pending requests and push scheduled assignments into TEs.
 - ESM needs to be able to interact with registry to do operations: (try to allocate TEs) and (Notify registry to process).
 - Registry's main process loop shall trigger every x seconds (configurable) and also triggered by ESM message. Introduce minimum wait period to avoid live locking the dispatcher.
+- Operations' within actor e.g. reservation updates runs in actor dispather thread so no locking is needed.
+- Batch Scheduling Logic: when a reservation secures the full batch e.g 100 TEs, we also need to assign the TE with actual worker requests but this step can fail. To handle partial failure here e.g 3 out of 100 TE's worker assignment failed, we cannot requeue a reservation with the 3 failed TE as it breaks the batch contract. Thus we need to track/retry the failed assignment requests (same as what is happening today in scheduler). however now we have a messy state to manage: 97 TEs running the assigned workers while 3 keep failing (e.g. bad container/disk full etc.).
+ * Option 1: limit retry attempts and reserve again in reservation separately with high priority (e.g. similar to replace worker request) for each failure assignment. If worker kill or job kill happened in the middle of retry or reservation, they shall be cancelled.
+-
 
 ### Action List v2
 [Direction] use strict batching mode only. keep current code path as fallback with config options.
@@ -34,6 +38,7 @@ Thoughts: strict batching is preferred to reduce risk and complexity for now whi
     - The reservation should use total target stage size + request worker list to help determine: dedupe requests, determining whether the request is for a new job vs a scaling request.
     - On new job (total target stage size == worker request list size), the reservation fullfillment should not allow partial allocation.
     - On scaling request, partial allocation is also not allowed.
+    - Scheduling constrain should be converted to canonical format to reduce potential error and make logging cleaner.
 
 - ReservationRegistry: add `ReservationRegistry` owned by `ResourceClusterActor`
   - Types: `ReservationKey(jobId, stageNum)`, `Reservation{ReservationKey, canonicalSchedulingConstraint, workerRequests, stageTargetSize, lastUpdatedAt, priorityEpoch}`
@@ -45,6 +50,7 @@ Thoughts: strict batching is preferred to reduce risk and complexity for now whi
     -- `getPendingReservationsBySchedulingConstraints`: return a map of summary of pending reservations grouped by reservation's schedulingConstraint.
     -- `markReady`: signal from external actors to indicate the registry has received all the state (init messages) from job actors. This is important since a partial pending result to resource cluster actor and scaler can interrupt ongoing provisoin tasks during a leader switch.
   - Behavior:
+    - the general reservations from job actors should be processed FIFO
     - same reservation request doesn't change existing reservation priority.
     - init: return not ready from getPendingReservationsBySchedulingConstraints until ready signal from schduler factory.
     - reservation priority: default on request epoch; override to (0/1/2 etc. on manual overide e.g. replace worker request). Leave interface to add custom logic in future too.
