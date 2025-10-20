@@ -41,6 +41,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Supplier;
 
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -54,6 +55,7 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
     private static JsonParser parser = new JsonParser();
     protected List<TargetInfo> targets;
     private final List<MantisSSEJob> jobs = new ArrayList<>();
+    private final Map<String, String> additionalUrlParams = new HashMap<>();
 
     public JobSource(List<TargetInfo> targets) {
         this.targets = targets;
@@ -66,6 +68,11 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
 
     public JobSource(String targetInfoStr) {
         this.targets = parseTargetInfo(targetInfoStr);
+    }
+
+    public JobSource withUrlParams(Map<String, String> params) {
+        this.additionalUrlParams.putAll(params);
+        return this;
     }
 
     @Override
@@ -86,6 +93,9 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
     public Observable<Observable<MantisServerSentEvent>> call(Context context, Index index) {
         if (targets.isEmpty()) {
             targets = parseInputParameters(context);
+            for (TargetInfo targetInfo : targets) {
+                targetInfo.additionalParams.putAll(this.additionalUrlParams);
+            }
         }
 
         Observable<Observable<MantisServerSentEvent>> sourceObs = null;
@@ -274,6 +284,7 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
         private boolean enableMetaMessages = false;
         private boolean enableCompressedBinary = false;
         private Map<String, String> additionalParams = new HashMap<>();
+        private Supplier<Map<String, String>> additionalParamsSupplier = () -> new HashMap<>();
 
         public TargetInfoBuilder() {
         }
@@ -316,6 +327,11 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
 
         public TargetInfoBuilder withAdditionalParams(Map<String, String> additionalParams) {
             this.additionalParams = additionalParams;
+            return this;
+        }
+
+        public TargetInfoBuilder withAdditionalParams(Supplier<Map<String, String>> additionalParamsSupplier) {
+            this.additionalParamsSupplier = additionalParamsSupplier;
             return this;
         }
 
