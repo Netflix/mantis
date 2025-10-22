@@ -141,7 +141,6 @@ public class ReservationRegistryActorTest {
         upsert(registry, probe, key, constraints, 5, 5);
         registry.tell(MarkReady.INSTANCE, probe.getRef());
         probe.expectMsg(Ack.getInstance());
-        
         registry.tell(GetPendingReservationsView.INSTANCE, probe.getRef());
         PendingReservationsView initialView = probe.expectMsgClass(PendingReservationsView.class);
         PendingReservationGroupView initialGroup =

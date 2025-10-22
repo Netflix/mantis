@@ -158,3 +158,7 @@
     - main processing logic: when reservation registry try to process the active reservations, it should go through the priority (so it honors the priority). Start with top of the queue of each "size" or "sku", check if the reservation can be fulfilled (matched) from executor state manager. Once matched, invoke resource cluster actor to do the actual assignement to TEs and finish (remove) the reservation in registry. If the target reservation cannot be matched, stop the process on this queue. Proceed to next reservation if the top one is successfully filled, otherwise stop (only top of the queue shall be processed). Error in assigning TEs tasks should be properly handled such that it moves the reservation to the tail of the queue (re-assigned priority).
     - (optional) new reservation trigger resource cluster scaler process.
 
+- AssignmentTrackerActor: tracks and manages actual worker assignments
+    - Host similar funcationality as onAssignedScheduleRequestEvent(AssignedScheduleRequestEvent event) in ResourceClusterAwareSchedulerActor; Since this is now a child actor in resourceClusterActor it doesn't need to go throgh resource cluster interface to get the connections etc. but can directly ask the parent actor for the needed objects.
+    - track ongoing IO tasks to each TE and handle retry similar to logic in scheduler actor.
+    - assignment tasks can be cancelled due to job kill and worker replacement.
