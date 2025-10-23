@@ -54,6 +54,7 @@ public class JobMasterService implements JobAutoScalerService {
     private final WorkerMetricsClient workerMetricsClient;
     private final AutoScaleMetricsConfig autoScaleMetricsConfig;
     private final Observer<MetricData> metricObserver;
+    private final WorkerMetricHandler workerMetricHandler;
     private final JobAutoScaler jobAutoScaler;
     private final Context context;
     private final Action0 observableOnCompleteCallback;
@@ -78,7 +79,8 @@ public class JobMasterService implements JobAutoScalerService {
         this.autoScaleMetricsConfig = autoScaleMetricsConfig;
         this.masterClientApi = masterClientApi;
         this.jobAutoScaler = new JobAutoScaler(jobId, schedInfo, masterClientApi, context, jobAutoscalerManager);
-        this.metricObserver = new WorkerMetricHandler(jobId, jobAutoScaler.getObserver(), masterClientApi, autoScaleMetricsConfig, jobAutoscalerManager).initAndGetMetricDataObserver();
+        this.workerMetricHandler = new WorkerMetricHandler(jobId, jobAutoScaler.getObserver(), masterClientApi, autoScaleMetricsConfig, jobAutoscalerManager);
+        this.metricObserver = workerMetricHandler.initAndGetMetricDataObserver();
         this.observableOnCompleteCallback = observableOnCompleteCallback;
         this.observableOnErrorCallback = observableOnErrorCallback;
         this.observableOnTerminateCallback = observableOnTerminateCallback;
@@ -95,13 +97,13 @@ public class JobMasterService implements JobAutoScalerService {
         this.autoScaleMetricsConfig = jobScalerContext.getAutoScaleMetricsConfig();
         this.masterClientApi = jobScalerContext.getMasterClientApi();
         this.jobAutoScaler = new JobAutoScaler(jobScalerContext, activeRule);
-        this.metricObserver = new WorkerMetricHandler(
+        this.workerMetricHandler = new WorkerMetricHandler(
             jobId,
             jobAutoScaler.getObserver(),
             masterClientApi,
             autoScaleMetricsConfig,
-            jobScalerContext.getJobAutoscalerManager())
-            .initAndGetMetricDataObserver();
+            jobScalerContext.getJobAutoscalerManager());
+        this.metricObserver = workerMetricHandler.initAndGetMetricDataObserver();
         this.observableOnCompleteCallback = jobScalerContext.getObservableOnCompleteCallback();
         this.observableOnErrorCallback = jobScalerContext.getObservableOnErrorCallback();
         this.observableOnTerminateCallback = jobScalerContext.getObservableOnTerminateCallback();
@@ -185,6 +187,7 @@ public class JobMasterService implements JobAutoScalerService {
         if (subscription != null) {
             subscription.unsubscribe();
         }
+        this.workerMetricHandler.shutdown();
         this.jobAutoScaler.shutdown();
         this.metricObserver.onCompleted();
     }
