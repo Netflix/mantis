@@ -21,6 +21,7 @@ import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.util.Collections;
 import java.util.List;
+import rx.internal.util.RxRingBuffer;
 
 
 public abstract class StageConfig<T, R> {
@@ -40,35 +41,44 @@ public abstract class StageConfig<T, R> {
     // number of inner observables processed
     private int concurrency = DEFAULT_STAGE_CONCURRENCY;
 
+    // buffer size for observeOn scheduler, defaults to RxRingBuffer.SIZE
+    private int bufferSize = RxRingBuffer.SIZE;
+
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy) {
-        this(description, inputCodec, outputCodec, inputStrategy, Collections.emptyList(), DEFAULT_STAGE_CONCURRENCY);
+        this(description, null, inputCodec, outputCodec, inputStrategy, Collections.emptyList(), DEFAULT_STAGE_CONCURRENCY, RxRingBuffer.SIZE);
     }
 
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params) {
-        this(description, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY);
+        this(description, null, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY, RxRingBuffer.SIZE);
     }
 
     public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params) {
-        this(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY);
+        this(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY, RxRingBuffer.SIZE);
     }
 
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, int concurrency) {
-        this(description, inputCodec, outputCodec, inputStrategy, Collections.emptyList(), concurrency);
+        this(description, null, inputCodec, outputCodec, inputStrategy, Collections.emptyList(), concurrency, RxRingBuffer.SIZE);
     }
 
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
                        int concurrency) {
-        this(description, null, inputCodec, outputCodec, inputStrategy, params, concurrency);
+        this(description, null, inputCodec, outputCodec, inputStrategy, params, concurrency, RxRingBuffer.SIZE);
     }
 
     public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
                        int concurrency) {
+        this(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, concurrency, RxRingBuffer.SIZE);
+    }
+
+    public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
+                       Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
+                       int concurrency, int bufferSize) {
         this.description = description;
         this.inputKeyCodec = inputKeyCodec;
         this.inputCodec = inputCodec;
@@ -76,6 +86,7 @@ public abstract class StageConfig<T, R> {
         this.inputStrategy = inputStrategy;
         this.parameters = params;
         this.concurrency = concurrency;
+        this.bufferSize = bufferSize;
     }
 
     public String getDescription() {
@@ -107,6 +118,10 @@ public abstract class StageConfig<T, R> {
 
     public int getConcurrency() {
         return concurrency;
+    }
+
+    public int getBufferSize() {
+        return bufferSize;
     }
 
     public enum INPUT_STRATEGY {NONE_SPECIFIED, SERIAL, CONCURRENT}
