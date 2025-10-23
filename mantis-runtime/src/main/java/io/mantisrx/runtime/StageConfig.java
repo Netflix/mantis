@@ -42,32 +42,32 @@ public abstract class StageConfig<T, R> {
     private int concurrency = DEFAULT_STAGE_CONCURRENCY;
 
     // buffer size for observeOn scheduler, defaults to RxRingBuffer.SIZE
-    private int bufferSize = RxRingBuffer.SIZE;
+    private final int bufferSize;
 
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy) {
-        this(description, null, inputCodec, outputCodec, inputStrategy, Collections.emptyList(), DEFAULT_STAGE_CONCURRENCY, RxRingBuffer.SIZE);
+        this(description, inputCodec, outputCodec, inputStrategy, Collections.emptyList(), DEFAULT_STAGE_CONCURRENCY);
     }
 
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params) {
-        this(description, null, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY, RxRingBuffer.SIZE);
+        this(description, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY);
     }
 
     public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params) {
-        this(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY, RxRingBuffer.SIZE);
+        this(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY);
     }
 
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, int concurrency) {
-        this(description, null, inputCodec, outputCodec, inputStrategy, Collections.emptyList(), concurrency, RxRingBuffer.SIZE);
+        this(description, inputCodec, outputCodec, inputStrategy, Collections.emptyList(), concurrency);
     }
 
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
                        int concurrency) {
-        this(description, null, inputCodec, outputCodec, inputStrategy, params, concurrency, RxRingBuffer.SIZE);
+        this(description, null, inputCodec, outputCodec, inputStrategy, params, concurrency);
     }
 
     public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
