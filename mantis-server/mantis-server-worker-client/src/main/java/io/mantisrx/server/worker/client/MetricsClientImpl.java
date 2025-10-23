@@ -293,10 +293,10 @@ class MetricsClientImpl<T> implements MetricsClient<T> {
         private void closeOut(Action1<WorkerConnection<T>> onClose) {
             synchronized (workerConnections) {
                 isClosed = true;
-            }
-            for (WorkerConnection<T> workerConnection : workerConnections.values()) {
-                logger.info("Closing " + workerConnection.getName());
-                onClose.call(workerConnection);
+                for (WorkerConnection<T> workerConnection : workerConnections.values()) {
+                    logger.info("Closing " + workerConnection.getName());
+                    onClose.call(workerConnection);
+                }
             }
         }
     }

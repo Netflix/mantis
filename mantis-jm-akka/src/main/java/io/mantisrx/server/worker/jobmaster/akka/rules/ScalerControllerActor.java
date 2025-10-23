@@ -128,8 +128,14 @@ public class ScalerControllerActor extends AbstractActor {
                     if (result.isSuccess()) {
                         log.info("[Job Auto Scaler Shutdown] for rule {} successfully", currentRule.getRuleId());
                     } else {
-                        log.error("failed to shutdown job auto scaler service in rule: {}, reset and request refresh",
+                        log.error("[FATAL] failed to shutdown job auto scaler service in rule: {}, shutting down JVM process",
                             currentRule, result.failed().get());
+                        // Give some time for logs to flush and cleanup
+                        getContext().system().scheduler().scheduleOnce(
+                            scala.concurrent.duration.Duration.create(2, java.util.concurrent.TimeUnit.SECONDS),
+                            () -> System.exit(1),
+                            getContext().dispatcher()
+                        );
                     }
                     return null;
                 }, getContext().dispatcher());
