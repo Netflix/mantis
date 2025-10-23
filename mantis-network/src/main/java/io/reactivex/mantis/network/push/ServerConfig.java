@@ -19,6 +19,8 @@ package io.reactivex.mantis.network.push;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
 import rx.functions.Func1;
 
 
@@ -36,7 +38,7 @@ public class ServerConfig<T> {
     private MetricsRegistry metricsRegistry; // registry used to store metrics
     private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
     private boolean useSpscQueue = false;
-    private final Func1<String, ProactiveRouter<T>> routerFactory;
+    private final Func1<String, Optional<ProactiveRouter<T>>> routerFactory;
 
     public ServerConfig(Builder<T> builder) {
         this.name = builder.name;
@@ -102,7 +104,7 @@ public class ServerConfig<T> {
         return useSpscQueue;
     }
 
-    public Func1<String, ProactiveRouter<T>> getRouterFactory() {
+    public Func1<String, Optional<ProactiveRouter<T>>> getRouterFactory() {
         return this.routerFactory;
     }
 
@@ -120,7 +122,7 @@ public class ServerConfig<T> {
         private MetricsRegistry metricsRegistry; // registry used to store metrics
         private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
         private boolean useSpscQueue = false;
-        private Func1<String, ProactiveRouter<T>> routerFactory = (String groupId) -> null;
+        private Func1<String, Optional<ProactiveRouter<T>>> routerFactory = (String groupId) -> Optional.empty();
 
         public Builder<T> predicate(Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate) {
             this.predicate = predicate;
@@ -182,7 +184,7 @@ public class ServerConfig<T> {
             return this;
         }
 
-        public Builder<T> proactiveRouterFactory(Func1<String, ProactiveRouter<T>> routerFactory) {
+        public Builder<T> proactiveRouterFactory(Func1<String, Optional<ProactiveRouter<T>>> routerFactory) {
             this.routerFactory = routerFactory;
             return this;
         }

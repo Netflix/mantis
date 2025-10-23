@@ -30,6 +30,8 @@ import io.reactivex.mantis.network.push.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServer;
@@ -55,7 +57,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     private int port = -1;
     private final MantisPropertiesLoader propService;
     private final Router<T> router;
-    private Func1<String, ProactiveRouter<T>> proactiveRouterFactory = (String routerName) -> null;
+    private Func1<String, Optional<ProactiveRouter<T>>> proactiveRouterFactory = (String routerName) -> Optional.empty();
 
     private PushServerSse<T, Context> pushServerSse;
     private HttpServer<ByteBuf, ServerSentEvent> httpServer;
@@ -259,7 +261,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         private Predicate<T> predicate;
         private Func2<Map<String, List<String>>, Context, Void> subscribeProcessor;
         private Router<T> router;
-        private Func1<String, ProactiveRouter<T>> proactiveRouterFactory = (String routerName) -> null;;
+        private Func1<String, Optional<ProactiveRouter<T>>> proactiveRouterFactory = (String routerName) -> Optional.empty();;
 
         public Builder<T> withEncoder(Func1<T, String> encoder) {
             this.encoder = encoder;
@@ -297,8 +299,9 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
             return this;
         }
 
-        public void withProactiveRouterFactory(Func1<String, ProactiveRouter<T>> proactiveRouterFactory) {
+        public Builder<T> withProactiveRouterFactory(Func1<String, Optional<ProactiveRouter<T>>> proactiveRouterFactory) {
             this.proactiveRouterFactory = proactiveRouterFactory;
+            return this;
         }
 
         public ServerSentEventsSink<T> build() {
