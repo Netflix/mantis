@@ -172,7 +172,6 @@ public class ConnectionManager<T> {
                     metricsRegistry.remove(current.getMetricsGroup());
                     // remove group
                     managedConnections.remove(groupId);
-                    current.close();
                 }
             }
             if (this.defaultRouter != null) {

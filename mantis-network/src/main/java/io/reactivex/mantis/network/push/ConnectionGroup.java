@@ -25,14 +25,10 @@ import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
 import rx.functions.Func0;
-import rx.functions.Func1;
-import rx.subjects.BehaviorSubject;
 
 
 public class ConnectionGroup<T> {
@@ -116,16 +112,6 @@ public class ConnectionGroup<T> {
         }
         if (this.router != null) {
             this.router.addConnection(connection);
-        }
-    }
-
-    public void close() {
-        if (this.router != null) {
-            try {
-                this.router.close();
-            } catch (Exception e) {
-                logger.warn("Error closing router for group " + groupId + ": " + e.getMessage(), e);
-            }
         }
     }
 
