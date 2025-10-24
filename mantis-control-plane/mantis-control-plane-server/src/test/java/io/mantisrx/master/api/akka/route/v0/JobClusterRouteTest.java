@@ -81,6 +81,8 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.awaitility.Awaitility.await;
+
 public class JobClusterRouteTest {
     private static final Logger logger = LoggerFactory.getLogger(JobClusterRouteTest.class);
     private static final Duration latchTimeout = Duration.ofSeconds(10);
@@ -515,10 +517,31 @@ public class JobClusterRouteTest {
     }
 
     private void testJobClusterDelete() throws InterruptedException {
-        final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
-            HttpRequest.POST(namedJobAPIEndpoint("delete"))
-                .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, JobClusterPayloads.JOB_CLUSTER_DELETE)));
-        HttpResponse response = responseFuture.toCompletableFuture().join();
-        assertEquals("sine-function deleted", processRespFut(response, 200).toCompletableFuture().join());
+        // Retry delete if it fails due to active jobs.  The response from the disable request
+        // can return before the jobs are killed.  This checks for that explicit error message
+        // and retries until successful.
+        await().atMost(latchTimeout)
+            .pollInterval(100, TimeUnit.MILLISECONDS)
+            .until(() -> {
+                final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
+                    HttpRequest.POST(namedJobAPIEndpoint("delete"))
+                        .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, JobClusterPayloads.JOB_CLUSTER_DELETE)));
+
+                HttpResponse response = responseFuture.toCompletableFuture().join();
+
+                // Get response body
+                CompletionStage<HttpEntity.Strict> strictEntity = response.entity().toStrict(1000, materializer);
+                String body = strictEntity.thenApply(s -> s.getData().utf8String()).toCompletableFuture().join();
+
+                logger.info("Delete response status: {}, body: {}", response.status().intValue(), body);
+
+                // If it's 400 with active jobs error, retry
+                if (response.status().intValue() == 400 && body.contains("Job cluster deletion failed as there are active jobs")) {
+                    return false;
+                }
+                assertEquals(200, response.status().intValue());
+                assertEquals("sine-function deleted", body);
+                return true;
+            });
     }
 }
