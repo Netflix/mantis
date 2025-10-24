@@ -48,11 +48,13 @@ public class ProactiveRoundRobinRouter<T> implements ProactiveRouter<T> {
     @Override
     public synchronized void addConnection(AsyncConnection<T> connection) {
         // We do not need to shuffle because we are constantly looping through
+        numConnectionUpdates.increment();
         connections.add(connection);
     }
 
     @Override
     public synchronized void removeConnection(AsyncConnection<T> connection) {
+        numConnectionUpdates.increment();
         connections.remove(connection);
     }
 

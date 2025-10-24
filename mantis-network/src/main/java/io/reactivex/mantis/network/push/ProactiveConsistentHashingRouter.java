@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<KeyValuePair<K, V>> {
     private static final Logger logger = LoggerFactory.getLogger(ProactiveConsistentHashingRouter.class);
-    private static final int connectionRepetitionOnRing = 1000;
+    private final int connectionRepetitionOnRing;
 
     protected final Func1<KeyValuePair<K, V>, byte[]> encoder;
     protected final Counter numEventsRouted;
@@ -43,6 +43,15 @@ public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<K
         String name,
         Func1<KeyValuePair<K, V>, byte[]> dataEncoder,
         HashFunction hashFunction) {
+        this(name, dataEncoder, hashFunction, 1000);
+    }
+
+    public ProactiveConsistentHashingRouter(
+        String name,
+        Func1<KeyValuePair<K, V>, byte[]> dataEncoder,
+        HashFunction hashFunction,
+        int ringRepetitionPerConnection) {
+        this.connectionRepetitionOnRing = ringRepetitionPerConnection;
         this.encoder = dataEncoder;
         metrics = new Metrics.Builder()
             .name("Router_" + name)
@@ -61,6 +70,7 @@ public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<K
         if (chunks == null || chunks.isEmpty()) {
             return;
         }
+        numEventsProcessed.increment(chunks.size());
 
         // Read lock only for ring access
         Map<AsyncConnection<KeyValuePair<K, V>>, List<byte[]>> writes;
@@ -78,7 +88,8 @@ public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<K
             for (KeyValuePair<K, V> kvp : chunks) {
                 long hash = kvp.getKeyBytesHashed();
                 // lookup slot
-                AsyncConnection<KeyValuePair<K, V>> connection = lookupConnection(hash);
+                Map.Entry<Long, AsyncConnection<KeyValuePair<K, V>>> connectionEntry = ring.ceilingEntry(hash);
+                AsyncConnection<KeyValuePair<K, V>> connection = (connectionEntry == null ? ring.firstEntry() : connectionEntry).getValue();
                 // add to writes
                 Func1<KeyValuePair<K, V>, Boolean> predicate = connection.getPredicate();
                 if (predicate == null || predicate.call(kvp)) {
@@ -123,6 +134,7 @@ public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<K
         } finally {
             ringLock.writeLock().unlock();
         }
+        numConnectionUpdates.increment();
 
         // Log outside lock
         if (!hashCollisions.isEmpty()) {
@@ -148,15 +160,11 @@ public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<K
         } finally {
             ringLock.writeLock().unlock();
         }
+        numConnectionUpdates.increment();
     }
 
     @Override
     public Metrics getMetrics() {
         return metrics;
-    }
-
-    private AsyncConnection<KeyValuePair<K, V>> lookupConnection(long hash) {
-        Map.Entry<Long, AsyncConnection<KeyValuePair<K, V>>> connection = ring.ceilingEntry(hash);
-        return (connection == null ? ring.firstEntry() : connection).getValue();
     }
 }
