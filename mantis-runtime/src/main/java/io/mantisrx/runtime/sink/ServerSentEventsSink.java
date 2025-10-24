@@ -25,7 +25,12 @@ import io.mantisrx.server.core.ServiceRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
-import io.reactivex.mantis.network.push.*;
+import io.reactivex.mantis.network.push.ProactiveRouter;
+import io.reactivex.mantis.network.push.PushServerSse;
+import io.reactivex.mantis.network.push.PushServers;
+import io.reactivex.mantis.network.push.Routers;
+import io.reactivex.mantis.network.push.ServerConfig;
+import io.reactivex.mantis.network.push.Router;
 
 import java.io.IOException;
 import java.util.List;
@@ -90,14 +95,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         this.subscribeProcessor = builder.subscribeProcessor;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
         this.router = builder.router;
-
-        // Set up proactive router factory based on builder configuration
-        // If proactive router is requested, caller must provide a factory
-        if (builder.proactiveRouterFactory != null) {
-            this.proactiveRouterFactory = builder.proactiveRouterFactory;
-        } else {
-            this.proactiveRouterFactory = (String routerName) -> Optional.empty();
-        }
+        this.proactiveRouterFactory = builder.proactiveRouterFactory;
     }
 
     @Override
@@ -153,11 +151,6 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     private boolean useSpsc() {
         String useSpsc = propService.getStringValue("mantis.sse.spsc", "false");
         return Boolean.parseBoolean(useSpsc);
-    }
-
-    private boolean useProactiveRouter() {
-        String useProactiveRouter = propService.getStringValue("mantis.sse.useProactiveRouter", "false");
-        return Boolean.parseBoolean(useProactiveRouter);
     }
 
     @Override
