@@ -19,14 +19,14 @@ public interface RouterFactory {
         return new ProactiveConsistentHashingRouter<>(name, RouterFactory.consistentHashingEncoder(valueEncoder), HashFunctions.xxh3());
     }
 
-    static <K, V> Func1<KeyValuePair<K, V>, byte[]> consistentHashingEncoder(final Func1<V, byte[]> valueEncoder) {
+    public static <K, V> Func1<KeyValuePair<K, V>, byte[]> consistentHashingEncoder(final Func1<V, byte[]> valueEncoder) {
         return kvp -> {
             byte[] keyBytes = kvp.getKeyBytes();
             byte[] valueBytes = valueEncoder.call(kvp.getValue());
             return
                 // length + opcode + notification type + key length
-                ByteBuffer.allocate(4 + 1 + 1 + 4 + keyBytes.length + valueBytes.length)
-                    .putInt(1 + 1 + 4 + keyBytes.length + valueBytes.length) // length
+                ByteBuffer.allocate(2 * Integer.BYTES + 2 * Byte.BYTES + keyBytes.length + valueBytes.length)
+                    .putInt(2 * Byte.BYTES + Integer.BYTES + keyBytes.length + valueBytes.length) // length
                     .put((byte) 1) // opcode
                     .put((byte) 1) // notification type
                     .putInt(keyBytes.length) // key length
