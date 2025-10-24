@@ -19,15 +19,6 @@ package io.reactivex.mantis.network.push;
 import java.util.List;
 
 
-public class ChunkProcessor<T> {
-    protected Router<T> fallbackRouter;
-
-    public ChunkProcessor(Router<T> router) {
-        this.fallbackRouter = router;
-    }
-
-    public void process(ConnectionManager<T> connectionManager, List<T> chunks) {
-        connectionManager.route(chunks, this.fallbackRouter);
-    }
-
+public interface ChunkProcessor<T> {
+    void process(ConnectionManager<T> connectionManager, List<T> chunks);
 }

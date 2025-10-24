@@ -45,7 +45,6 @@ public class ConnectionManager<T> {
     private Lock connectionState = new ReentrantLock();
     private AtomicBoolean subscribed = new AtomicBoolean();
     private final Func1<String, Optional<ProactiveRouter<T>>> routerFactory;
-    private final Optional<ProactiveRouter<T>> defaultRouter;
 
     public ConnectionManager(MetricsRegistry metricsRegistry,
                              Action0 doOnFirstConnection,
@@ -55,8 +54,6 @@ public class ConnectionManager<T> {
         this.doOnFirstConnection = doOnFirstConnection;
         this.doOnZeroConnections = doOnZeroConnections;
         this.metricsRegistry = metricsRegistry;
-        this.defaultRouter = routerFactory.call("default");
-        this.defaultRouter.ifPresent(router -> metricsRegistry.registerAndGet(router.getMetrics()));
     }
 
     private int activeConnections() {
@@ -134,7 +131,6 @@ public class ConnectionManager<T> {
                 }
             }
             current.addConnection(connection);
-            this.defaultRouter.ifPresent(router -> router.addConnection(connection));
             logger.debug("Connection added to group: " + groupId + ", connection: " + connection + ", group: " + current);
         } finally {
             connectionState.unlock();
@@ -163,7 +159,6 @@ public class ConnectionManager<T> {
                     managedConnections.remove(groupId);
                 }
             }
-            this.defaultRouter.ifPresent(router -> router.removeConnection(connection));
         } finally {
             connectionState.unlock();
         }
@@ -176,19 +171,6 @@ public class ConnectionManager<T> {
         }
     }
 
-    public Set<AsyncConnection<T>> connections() {
-        connectionState.lock();
-        try {
-            Set<AsyncConnection<T>> connections = new HashSet<>();
-            for (ConnectionGroup<T> group : managedConnections.values()) {
-                connections.addAll(group.getConnections());
-            }
-            return connections;
-        } finally {
-            connectionState.unlock();
-        }
-    }
-
     public Map<String, ConnectionGroup<T>> groups() {
         connectionState.lock();
         try {
@@ -196,12 +178,5 @@ public class ConnectionManager<T> {
         } finally {
             connectionState.unlock();
         }
-    }
-
-    public void route(List<T> chunks, Router<T> fallbackRouter) {
-        this.defaultRouter.ifPresentOrElse(
-            router -> router.route(chunks),
-            () -> fallbackRouter.route(this.connections(), chunks)
-        );
     }
 }

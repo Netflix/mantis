@@ -39,6 +39,8 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 
+import java.util.Optional;
+
 import static io.mantisrx.common.SystemParameters.W2W_USE_PROACTIVE_ROUTER;
 
 /**
@@ -88,9 +90,9 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
 
                 Func1<T, byte[]> encoder = t1 -> stage.getOutputCodec().encode(t1);
                 Router router = this.routerFactory.scalarStageToStageRouter(name, encoder);
-                Func1<String, ProactiveRouter<T>> proactiveFactory = (String k) -> null;
+                Func1<String, Optional<ProactiveRouter<T>>> proactiveFactory = (String k) -> Optional.empty();
                 if (useProactiveRouters()) {
-                    proactiveFactory = (String name) -> routerFactory.scalarStageToStageProactiveRouter(name, encoder);
+                    proactiveFactory = (String name) -> Optional.of(routerFactory.scalarStageToStageProactiveRouter(name, encoder));
                 }
 
                 ServerConfig<T> config = new ServerConfig.Builder<T>()
@@ -142,6 +144,12 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
         Func1<T, byte[]> valueEncoder = t1 -> stage.getOutputCodec().encode(t1);
         Func1<K, byte[]> keyEncoder = t1 -> stage.getOutputKeyCodec().encode(t1);
 
+        Router<KeyValuePair<K, T>> router = this.routerFactory.keyedRouter(name, keyEncoder, valueEncoder);
+        Func1<String, Optional<ProactiveRouter<KeyValuePair<K, T>>>> proactiveFactory = (String k) -> Optional.empty();
+        if (useProactiveRouters()) {
+            proactiveFactory = (String name) -> Optional.of(routerFactory.keyedProactiveRouter(name, keyEncoder, valueEncoder));
+        }
+
         ServerConfig<KeyValuePair<K, T>> config = new ServerConfig.Builder<KeyValuePair<K, T>>()
             .name(name)
             .port(serverPort)
@@ -151,9 +159,8 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
             .maxChunkTimeMSec(maxChunkTimeMSec())
             .bufferCapacity(bufferCapacity())
             .useSpscQueue(useSpsc())
-            .groupRouter(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
-            .proactiveRouterFactory(useProactiveRouters() ?
-                routerName -> routerFactory.keyedStageToStageProactiveRouter(routerName, keyEncoder, valueEncoder) : (k) -> null)
+            .groupRouter(router)
+            .proactiveRouterFactory(proactiveFactory)
             .build();
 
         if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {

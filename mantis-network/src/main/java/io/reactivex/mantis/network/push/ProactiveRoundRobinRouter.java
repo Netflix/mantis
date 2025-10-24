@@ -50,16 +50,13 @@ public class ProactiveRoundRobinRouter<T> implements ProactiveRouter<T> {
         int arrayListSize = chunks.size() / connections.size() + 1; // assume even distribution
         // process chunks
         for (T chunk : chunks) {
-            currentIndex = (currentIndex + 1) % connections.size();
+            currentIndex = currentIndex % connections.size();
             AsyncConnection<T> connection = connections.get(currentIndex);
             Func1<T, Boolean> predicate = connection.getPredicate();
             if (predicate == null || predicate.call(chunk)) {
-                List<byte[]> buffer = writes.get(connection);
-                if (buffer == null) {
-                    buffer = new ArrayList<>(arrayListSize);
-                    writes.put(connection, buffer);
-                }
+                List<byte[]> buffer = writes.computeIfAbsent(connection, k -> new ArrayList<>(arrayListSize));
                 buffer.add(encoder.call(chunk));
+                currentIndex++;
             }
         }
         for (Map.Entry<AsyncConnection<T>, List<byte[]>> entry : writes.entrySet()) {

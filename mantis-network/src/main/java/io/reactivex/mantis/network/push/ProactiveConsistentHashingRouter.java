@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import rx.functions.Func1;
 
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<KeyValuePair<K, V>> {
     private static final Logger logger = LoggerFactory.getLogger(ProactiveConsistentHashingRouter.class);
@@ -19,6 +21,7 @@ public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<K
     protected final Metrics metrics;
     private final HashFunction hashFunction;
     private final NavigableMap<Long, AsyncConnection<KeyValuePair<K, V>>> ring = new TreeMap<>();
+    private final ReadWriteLock ringLock = new ReentrantReadWriteLock();
 
     public ProactiveConsistentHashingRouter(
         String name,
@@ -38,29 +41,40 @@ public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<K
     }
 
     @Override
-    public synchronized void route(List<KeyValuePair<K, V>> chunks) {
-        if (ring.isEmpty() || chunks == null || chunks.isEmpty()) {
+    public void route(List<KeyValuePair<K, V>> chunks) {
+        if (chunks == null || chunks.isEmpty()) {
             return;
         }
 
-        int numConnections = ring.size() / connectionRepetitionOnRing;
-        int bufferCapacity = (chunks.size() / numConnections) + 1; // assume even distribution
-        Map<AsyncConnection<KeyValuePair<K, V>>, List<byte[]>> writes = new HashMap<>(numConnections);
-
-        // process chunks
-        for (KeyValuePair<K, V> kvp : chunks) {
-            long hash = kvp.getKeyBytesHashed();
-            // lookup slot
-            AsyncConnection<KeyValuePair<K, V>> connection = lookupConnection(hash);
-            // add to writes
-            Func1<KeyValuePair<K, V>, Boolean> predicate = connection.getPredicate();
-            if (predicate == null || predicate.call(kvp)) {
-                List<byte[]> buffer = writes.computeIfAbsent(connection, k -> new ArrayList<>(bufferCapacity));
-                buffer.add(encoder.call(kvp));
+        // Read lock only for ring access
+        Map<AsyncConnection<KeyValuePair<K, V>>, List<byte[]>> writes;
+        ringLock.readLock().lock();
+        try {
+            if (ring.isEmpty()) {
+                return;
             }
+
+            int numConnections = ring.size() / connectionRepetitionOnRing;
+            int bufferCapacity = (chunks.size() / numConnections) + 1; // assume even distribution
+            writes = new HashMap<>(numConnections);
+
+            // process chunks (ring access inside lookupConnection)
+            for (KeyValuePair<K, V> kvp : chunks) {
+                long hash = kvp.getKeyBytesHashed();
+                // lookup slot
+                AsyncConnection<KeyValuePair<K, V>> connection = lookupConnection(hash);
+                // add to writes
+                Func1<KeyValuePair<K, V>, Boolean> predicate = connection.getPredicate();
+                if (predicate == null || predicate.call(kvp)) {
+                    List<byte[]> buffer = writes.computeIfAbsent(connection, k -> new ArrayList<>(bufferCapacity));
+                    buffer.add(encoder.call(kvp));
+                }
+            }
+        } finally {
+            ringLock.readLock().unlock();
         }
 
-        // process writes
+        // process writes (outside lock - no ring access)
         if (!writes.isEmpty()) {
             for (Map.Entry<AsyncConnection<KeyValuePair<K, V>>, List<byte[]>> entry : writes.entrySet()) {
                 AsyncConnection<KeyValuePair<K, V>> connection = entry.getKey();
@@ -72,38 +86,51 @@ public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<K
     }
 
     @Override
-    public synchronized void addConnection(AsyncConnection<KeyValuePair<K, V>> connection) {
-        List<String> hashCollisions = new ArrayList<>();
-        for (int i = 0; i < connectionRepetitionOnRing; i++) {
-            // hash node on ring
-            String connectionId = connection.getSlotId();
-            if (connectionId == null) {
-                throw new IllegalStateException("Connection must specify an id for consistent hashing");
-            }
-            byte[] connectionBytes = (connectionId + "-" + i).getBytes();
-            long hash = hashFunction.computeHash(connectionBytes);
-            if (ring.containsKey(hash)) {
-                hashCollisions.add(connectionId + "-" + i);
-            }
-            ring.put(hash, connection);
+    public void addConnection(AsyncConnection<KeyValuePair<K, V>> connection) {
+        String connectionId = connection.getSlotId();
+        if (connectionId == null) {
+            throw new IllegalStateException("Connection must specify an id for consistent hashing");
         }
+
+        List<String> hashCollisions = new ArrayList<>();
+        ringLock.writeLock().lock();
+        try {
+            for (int i = 0; i < connectionRepetitionOnRing; i++) {
+                // hash node on ring
+                byte[] connectionBytes = (connectionId + "-" + i).getBytes();
+                long hash = hashFunction.computeHash(connectionBytes);
+                if (ring.containsKey(hash)) {
+                    hashCollisions.add(connectionId + "-" + i);
+                }
+                ring.put(hash, connection);
+            }
+        } finally {
+            ringLock.writeLock().unlock();
+        }
+
+        // Log outside lock
         if (!hashCollisions.isEmpty()) {
-            logger.error("Hash collisions detected when adding connection {}: {}", connection.getSlotId(), hashCollisions);
+            logger.error("Hash collisions detected when adding connection {}: {}", connectionId, hashCollisions);
         }
     }
 
     @Override
-    public synchronized void removeConnection(AsyncConnection<KeyValuePair<K, V>> connection) {
-        for (int i = 0; i < connectionRepetitionOnRing; i++) {
-            // hash node on ring
-            String connectionId = connection.getSlotId();
-            if (connectionId == null) {
-                throw new IllegalStateException("Connection must specify an id for consistent hashing");
-            }
+    public void removeConnection(AsyncConnection<KeyValuePair<K, V>> connection) {
+        String connectionId = connection.getSlotId();
+        if (connectionId == null) {
+            throw new IllegalStateException("Connection must specify an id for consistent hashing");
+        }
 
-            byte[] connectionBytes = (connectionId + "-" + i).getBytes();
-            long hash = hashFunction.computeHash(connectionBytes);
-            ring.remove(hash);
+        ringLock.writeLock().lock();
+        try {
+            for (int i = 0; i < connectionRepetitionOnRing; i++) {
+                // hash node on ring
+                byte[] connectionBytes = (connectionId + "-" + i).getBytes();
+                long hash = hashFunction.computeHash(connectionBytes);
+                ring.remove(hash);
+            }
+        } finally {
+            ringLock.writeLock().unlock();
         }
     }
 

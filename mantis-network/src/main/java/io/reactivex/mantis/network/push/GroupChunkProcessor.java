@@ -20,9 +20,11 @@ import java.util.List;
 import java.util.Map;
 
 
-public class GroupChunkProcessor<T> extends ChunkProcessor<T> {
+public class GroupChunkProcessor<T> implements ChunkProcessor<T> {
+    protected Router<T> fallbackRouter;
+
     public GroupChunkProcessor(Router<T> fallbackRouter) {
-        super(fallbackRouter);
+        this.fallbackRouter = fallbackRouter;
     }
 
     @Override

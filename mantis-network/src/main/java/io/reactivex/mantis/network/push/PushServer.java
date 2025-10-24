@@ -154,8 +154,7 @@ public abstract class PushServer<T, R> {
         processedWrites = serverMetrics.getCounter("numProcessedWrites");
 
         registerMetrics(metricsRegistry, serverMetrics, consumerThreads.getMetrics(),
-            outboundBuffer.getMetrics(), trigger.getMetrics(),
-            config.getChunkProcessor().fallbackRouter.getMetrics());
+            outboundBuffer.getMetrics(), trigger.getMetrics());
 
         port = config.getPort();
         writeRetryCount = config.getWriteRetryCount();
@@ -165,14 +164,12 @@ public abstract class PushServer<T, R> {
 
     private void registerMetrics(MetricsRegistry registry, Metrics serverMetrics,
                                  Metrics consumerPoolMetrics, Metrics queueMetrics,
-                                 Metrics pushTriggerMetrics,
-                                 Metrics routerMetrics) {
+                                 Metrics pushTriggerMetrics) {
 
         registry.registerAndGet(serverMetrics);
         registry.registerAndGet(consumerPoolMetrics);
         registry.registerAndGet(queueMetrics);
         registry.registerAndGet(pushTriggerMetrics);
-        registry.registerAndGet(routerMetrics);
     }
 
     protected Observable<Void> manageConnection(final DefaultChannelWriter<R> writer, String host, int port,

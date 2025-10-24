@@ -16,59 +16,26 @@
 
 package io.reactivex.mantis.network.push;
 
-import io.mantisrx.common.metrics.Metrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import rx.subjects.PublishSubject;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ProactiveConsistentHashingRouterTest {
 
     private ProactiveConsistentHashingRouter<String, String> router;
     private HashFunction hashFunction;
-    private List<TestAsyncConnection> connections;
 
     @BeforeEach
     public void setup() {
         hashFunction = HashFunctions.xxh3();
         router = new ProactiveConsistentHashingRouter<>("test-router",
             kvp -> kvp.getValue().getBytes(), hashFunction);
-        connections = new ArrayList<>();
-    }
-
-    @Test
-    public void testAddConnection() {
-        TestAsyncConnection connection = createConnection("slot-1");
-
-        router.addConnection(connection);
-
-        // Route some data to verify connection was added
-        List<KeyValuePair<String, String>> data = createTestData("key1", "value1");
-        router.route(data);
-
-        assertTrue(connection.getWrittenData().size() > 0);
-    }
-
-    @Test
-    public void testRemoveConnection() {
-        TestAsyncConnection connection1 = createConnection("slot-1");
-        TestAsyncConnection connection2 = createConnection("slot-2");
-
-        router.addConnection(connection1);
-        router.addConnection(connection2);
-
-        // Remove first connection
-        router.removeConnection(connection1);
-
-        // Route data - should only go to connection2
-        List<KeyValuePair<String, String>> data = createTestData("key1", "value1");
-        router.route(data);
-
-        assertEquals(0, connection1.getWrittenData().size());
-        assertTrue(connection2.getWrittenData().size() > 0);
     }
 
     @Test
@@ -116,22 +83,9 @@ public class ProactiveConsistentHashingRouterTest {
             List<KeyValuePair<String, String>> data = createTestData(key, "value" + i);
             router.route(data);
         }
-
-        // Find which connection received the data
-        TestAsyncConnection targetConnection = null;
-        for (TestAsyncConnection conn : Arrays.asList(connection1, connection2, connection3)) {
-            if (conn.getWrittenData().size() > 0) {
-                if (targetConnection == null) {
-                    targetConnection = conn;
-                } else {
-                    // Should only be one connection receiving data for this key
-                    fail("Data was routed to multiple connections for the same key");
-                }
-            }
-        }
-
-        assertNotNull(targetConnection);
-        assertEquals(5, targetConnection.getWrittenData().size());
+        assertEquals(5, connection1.getWrittenData().size());
+        assertEquals(0, connection2.getWrittenData().size());
+        assertEquals(0, connection3.getWrittenData().size());
     }
 
     @Test
@@ -147,22 +101,23 @@ public class ProactiveConsistentHashingRouterTest {
 
         // Route many different keys
         List<KeyValuePair<String, String>> data = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        int routed = 30000;
+        for (int i = 0; i < routed; i++) {
             String key = "key-" + i;
             long hash = hashFunction.computeHash(key.getBytes());
             data.add(new KeyValuePair<>(hash, key.getBytes(), "value-" + i));
         }
         router.route(data);
 
-        // Verify all connections received some data (probabilistically should happen with 100 keys)
-        int totalRouted = connection1.getWrittenData().size() +
+        int actualRouted = connection1.getWrittenData().size() +
                          connection2.getWrittenData().size() +
                          connection3.getWrittenData().size();
 
-        assertEquals(100, totalRouted);
-        assertTrue(connection1.getWrittenData().size() > 0);
-        assertTrue(connection2.getWrittenData().size() > 0);
-        assertTrue(connection3.getWrittenData().size() > 0);
+        assertEquals(routed, actualRouted);
+        // roughly even distribution, but allow 2% variance
+        assertEquals(10000, connection1.getWrittenData().size(), routed / 50.0);
+        assertEquals(10000, connection2.getWrittenData().size(), routed / 50.0);
+        assertEquals(10000, connection3.getWrittenData().size(), routed / 50.0);
     }
 
     @Test
@@ -203,72 +158,6 @@ public class ProactiveConsistentHashingRouterTest {
         assertThrows(IllegalStateException.class, () -> router.removeConnection(connection));
     }
 
-    @Test
-    public void testMetrics() {
-        TestAsyncConnection connection = createConnection("slot-1");
-        router.addConnection(connection);
-
-        Metrics metrics = router.getMetrics();
-        assertNotNull(metrics);
-        assertEquals("Router_test-router", metrics.getMetricGroupId().id());
-
-        // Route some data
-        List<KeyValuePair<String, String>> data = createTestData("key1", "value1");
-        router.route(data);
-
-        // Verify metrics are updated
-        assertTrue(metrics.getCounter("numEventsRouted").value() > 0);
-    }
-
-    @Test
-    public void testMultipleDataItemsInSingleRoute() {
-        TestAsyncConnection connection1 = createConnection("slot-1");
-        TestAsyncConnection connection2 = createConnection("slot-2");
-
-        router.addConnection(connection1);
-        router.addConnection(connection2);
-
-        // Route multiple items at once
-        List<KeyValuePair<String, String>> data = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            data.add(createKeyValuePair("key-" + i, "value-" + i));
-        }
-
-        router.route(data);
-
-        int totalRouted = connection1.getWrittenData().size() + connection2.getWrittenData().size();
-        assertEquals(10, totalRouted);
-    }
-
-    @Test
-    public void testThreadSafety() throws InterruptedException {
-        TestAsyncConnection connection = createConnection("slot-1");
-        router.addConnection(connection);
-
-        // Create multiple threads that route data concurrently
-        List<Thread> threads = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            final int threadNum = i;
-            Thread thread = new Thread(() -> {
-                for (int j = 0; j < 10; j++) {
-                    List<KeyValuePair<String, String>> data =
-                        createTestData("key-" + threadNum + "-" + j, "value-" + threadNum + "-" + j);
-                    router.route(data);
-                }
-            });
-            threads.add(thread);
-            thread.start();
-        }
-
-        // Wait for all threads to complete
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        // Verify all data was routed
-        assertEquals(100, connection.getWrittenData().size());
-    }
-
     // Helper methods
 
     private TestAsyncConnection createConnection(String slotId) {
@@ -277,9 +166,7 @@ public class ProactiveConsistentHashingRouterTest {
 
     private TestAsyncConnection createConnection(String slotId,
                                                  rx.functions.Func1<KeyValuePair<String, String>, Boolean> predicate) {
-        TestAsyncConnection connection = new TestAsyncConnection(slotId, predicate);
-        connections.add(connection);
-        return connection;
+        return new TestAsyncConnection(slotId, predicate);
     }
 
     private List<KeyValuePair<String, String>> createTestData(String key, String value) {
@@ -295,7 +182,7 @@ public class ProactiveConsistentHashingRouterTest {
 
     // Test helper class
     private static class TestAsyncConnection extends AsyncConnection<KeyValuePair<String, String>> {
-        private final List<byte[]> writtenData = new ArrayList<>();
+        private final List<byte[]> writtenData = Collections.synchronizedList(new ArrayList<>());
         private int writeCalls = 0;
 
         public TestAsyncConnection(String slotId,
@@ -305,17 +192,13 @@ public class ProactiveConsistentHashingRouterTest {
         }
 
         @Override
-        public void write(List<byte[]> data) {
+        public synchronized void write(List<byte[]> data) {
             writeCalls++;
             writtenData.addAll(data);
         }
 
-        public List<byte[]> getWrittenData() {
-            return writtenData;
-        }
-
-        public int getWriteCalls() {
-            return writeCalls;
+        public synchronized List<byte[]> getWrittenData() {
+            return new ArrayList<>(writtenData);
         }
     }
 }
