@@ -33,7 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,6 +49,7 @@ import rx.functions.Func1;
 import rx.observers.SerializedObserver;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
+import rx.subscriptions.CompositeSubscription;
 
 
 /* package */ class WorkerMetricHandler {
@@ -72,6 +73,9 @@ import rx.subjects.PublishSubject;
         }
     };
     private final JobAutoscalerManager jobAutoscalerManager;
+    private final CompositeSubscription subscriptions = new CompositeSubscription();
+    private final CompositeSubscription stageSubscriptions = new CompositeSubscription();
+    private final AtomicBoolean started = new AtomicBoolean(false);
 
     public WorkerMetricHandler(final String jobId,
                                final Observer<JobAutoScaler.Event> jobAutoScaleObserver,
@@ -262,7 +266,24 @@ import rx.subjects.PublishSubject;
 
         @Override
         public Subscriber<? super MetricData> call(final Subscriber<? super Object> child) {
-            child.add(Schedulers.computation().createWorker().schedulePeriodically(
+            rx.Scheduler.Worker worker = Schedulers.computation().createWorker();
+            
+            // Wrap worker to add logging on unsubscribe
+            rx.Subscription workerSubscription = new rx.Subscription() {
+                @Override
+                public void unsubscribe() {
+                    logger.info("Shutting down periodic worker for stage {}", stage);
+                    worker.unsubscribe();
+                }
+                
+                @Override
+                public boolean isUnsubscribed() {
+                    return worker.isUnsubscribed();
+                }
+            };
+            
+            child.add(workerSubscription);
+            worker.schedulePeriodically(
                     new Action0() {
                         @Override
                         public void call() {
@@ -392,7 +413,7 @@ import rx.subjects.PublishSubject;
                             addScalerEventForSourceJobDrops(numWorkers);
                         }
                     }, metricsIntervalSeconds, metricsIntervalSeconds, TimeUnit.SECONDS
-            ));
+            );
             return new Subscriber<MetricData>() {
                 @Override
                 public void onCompleted() {
@@ -464,8 +485,12 @@ import rx.subjects.PublishSubject;
     }
 
     private void start() {
-        final AtomicReference<List<Subscription>> ref = new AtomicReference<>(new ArrayList<>());
-        masterClientApi.schedulingChanges(jobId)
+        if (!started.compareAndSet(false, true)) {
+            return;
+        }
+        subscriptions.add(stageSubscriptions);
+
+        Subscription schedulingSubscription = masterClientApi.schedulingChanges(jobId)
                 .doOnNext(jobSchedulingInfo -> {
                     final Map<Integer, WorkerAssignments> workerAssignments = jobSchedulingInfo.getWorkerAssignments();
                     for (Map.Entry<Integer, WorkerAssignments> workerAssignmentsEntry : workerAssignments.entrySet()) {
@@ -474,10 +499,12 @@ import rx.subjects.PublishSubject;
                         numWorkersByStage.put(workerAssignment.getStage(), workerAssignment.getNumWorkers());
                         workerHostsByStage.put(workerAssignment.getStage(), new ArrayList<>(workerAssignment.getHosts().values()));
                     }
-                }).subscribe();
+                })
+                .subscribe();
+        subscriptions.add(schedulingSubscription);
 
         logger.info("Starting worker metric handler with autoscale config {}", autoScaleMetricsConfig);
-        metricDataSubject
+        Subscription metricSubscription = metricDataSubject
                 .groupBy(metricData -> metricData.getStage())
                 .lift(new DropOperator<>(WorkerMetricHandler.class.getName()))
                 .doOnNext(go -> {
@@ -486,12 +513,15 @@ import rx.subjects.PublishSubject;
                             .lift(new StageMetricDataOperator(stage, lookupNumWorkersByStage, autoScaleMetricsConfig))
                             .subscribe();
                     logger.info("adding subscription for stage {} StageMetricDataOperator", stage);
-                    ref.get().add(s);
-                })
-                .doOnUnsubscribe(() -> {
-                    for (Subscription s : ref.get())
-                        s.unsubscribe();
+                    stageSubscriptions.add(s);
                 })
                 .subscribe();
+        subscriptions.add(metricSubscription);
+    }
+
+    public void shutdown() {
+        if (started.get()) {
+            subscriptions.unsubscribe();
+        }
     }
 }
