@@ -90,7 +90,14 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         this.subscribeProcessor = builder.subscribeProcessor;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
         this.router = builder.router;
-        this.proactiveRouterFactory = builder.proactiveRouterFactory;
+
+        // Set up proactive router factory based on builder configuration
+        // If proactive router is requested, caller must provide a factory
+        if (builder.proactiveRouterFactory != null) {
+            this.proactiveRouterFactory = builder.proactiveRouterFactory;
+        } else {
+            this.proactiveRouterFactory = (String routerName) -> Optional.empty();
+        }
     }
 
     @Override
@@ -261,7 +268,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         private Predicate<T> predicate;
         private Func2<Map<String, List<String>>, Context, Void> subscribeProcessor;
         private Router<T> router;
-        private Func1<String, Optional<ProactiveRouter<T>>> proactiveRouterFactory = (String routerName) -> Optional.empty();;
+        private Func1<String, Optional<ProactiveRouter<T>>> proactiveRouterFactory = (String routerName) -> Optional.empty();
 
         public Builder<T> withEncoder(Func1<T, String> encoder) {
             this.encoder = encoder;

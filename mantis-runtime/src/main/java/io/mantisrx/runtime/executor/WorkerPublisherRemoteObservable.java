@@ -41,8 +41,6 @@ import rx.functions.Func1;
 
 import java.util.Optional;
 
-import static io.mantisrx.common.SystemParameters.W2W_USE_PROACTIVE_ROUTER;
-
 /**
  * Execution of WorkerPublisher that publishes the stream to the next stage.
  *
@@ -91,7 +89,7 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
                 Func1<T, byte[]> encoder = t1 -> stage.getOutputCodec().encode(t1);
                 Router router = this.routerFactory.scalarStageToStageRouter(name, encoder);
                 Func1<String, Optional<ProactiveRouter<T>>> proactiveFactory = (String k) -> Optional.empty();
-                if (useProactiveRouters()) {
+                if (stage.shouldUseProactiveRouter()) {
                     proactiveFactory = (String name) -> Optional.of(routerFactory.scalarStageToStageProactiveRouter(name, encoder));
                 }
 
@@ -146,7 +144,7 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
 
         Router<KeyValuePair<K, T>> router = this.routerFactory.keyedRouter(name, keyEncoder, valueEncoder);
         Func1<String, Optional<ProactiveRouter<KeyValuePair<K, T>>>> proactiveFactory = (String k) -> Optional.empty();
-        if (useProactiveRouters()) {
+        if (stage.shouldUseProactiveRouter()) {
             proactiveFactory = (String name) -> Optional.of(routerFactory.keyedProactiveRouter(name, keyEncoder, valueEncoder));
         }
 
@@ -172,11 +170,6 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
         return PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(
             config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
             HashFunctions.xxh3());
-    }
-
-    private boolean useProactiveRouters() {
-        String stringValue = propService.getStringValue(W2W_USE_PROACTIVE_ROUTER, "false");
-        return Boolean.parseBoolean(stringValue);
     }
 
     private boolean useSpsc() {
