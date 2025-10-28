@@ -59,6 +59,7 @@ dependencies {
     testImplementation testFixtures(project(":mantis-common"))
     testImplementation testFixtures(project(":mantis-control-plane:mantis-control-plane-core"))
     testImplementation libraries.commonsIo
+    testImplementation 'org.awaitility:awaitility:4.2.0'
 }
 def installDir = file("${buildDir}/install")
 def controlPlaneState = file("${project.resources}/docker")
