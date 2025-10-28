@@ -16,6 +16,7 @@
 
 package io.reactivex.mantis.network.push;
 
+import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import org.slf4j.Logger;
@@ -54,7 +55,7 @@ public class ProactiveConsistentHashingRouter<K, V> implements ProactiveRouter<K
         this.connectionRepetitionOnRing = ringRepetitionPerConnection;
         this.encoder = dataEncoder;
         metrics = new Metrics.Builder()
-            .name("Router_" + name)
+            .id("Router_" + name, Tag.of("router_type", "proactive_consistent_hashing"))
             .addCounter("numEventsRouted")
             .addCounter("numEventsProcessed")
             .addCounter("numConnectionUpdates")

@@ -16,6 +16,7 @@
 
 package io.reactivex.mantis.network.push;
 
+import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import rx.functions.Func1;
@@ -35,7 +36,7 @@ public class ProactiveRoundRobinRouter<T> implements ProactiveRouter<T> {
     public ProactiveRoundRobinRouter(String name, Func1<T, byte[]> encoder) {
         this.encoder = encoder;
         metrics = new Metrics.Builder()
-            .name("Router_" + name)
+            .id("Router_" + name, Tag.of("router_type", "proactive_round_robin"))
             .addCounter("numEventsRouted")
             .addCounter("numEventsProcessed")
             .addCounter("numConnectionUpdates")

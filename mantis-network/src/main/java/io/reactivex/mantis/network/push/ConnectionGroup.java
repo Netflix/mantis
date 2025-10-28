@@ -46,12 +46,12 @@ public class ConnectionGroup<T> {
     private Counter successfulWrites;
     private Counter numSlotSwaps;
     private Counter failedWrites;
-    private final Optional<ProactiveRouter<T>> router;
+    private final Optional<ProactiveRouter<T>> routerO;
 
-    public ConnectionGroup(String groupId, Optional<ProactiveRouter<T>> router) {
+    public ConnectionGroup(String groupId, Optional<ProactiveRouter<T>> routerO) {
         this.groupId = groupId;
         this.connections = new HashMap<>();
-        this.router = router;
+        this.routerO = routerO;
 
         final String grpId = Optional.ofNullable(groupId).orElse("none");
         final BasicTag groupIdTag = new BasicTag(MantisMetricStringConstants.GROUP_ID_TAG, grpId);
@@ -98,7 +98,7 @@ public class ConnectionGroup<T> {
                     + " a new connection has already been swapped in the place of the old connection");
 
         }
-        this.router.ifPresent(router -> router.removeConnection(connection));
+        this.routerO.ifPresent(router -> router.removeConnection(connection));
     }
 
     public synchronized void addConnection(AsyncConnection<T> connection) {
@@ -113,7 +113,7 @@ public class ConnectionGroup<T> {
             previousConnection.close();
             numSlotSwaps.increment();
         }
-        this.router.ifPresent(router -> router.addConnection(connection));
+        this.routerO.ifPresent(router -> router.addConnection(connection));
     }
 
     public synchronized boolean isEmpty() {
@@ -141,7 +141,7 @@ public class ConnectionGroup<T> {
     }
 
     public void route(List<T> chunks, Router<T> fallbackRouter) {
-        this.router.ifPresentOrElse(
+        this.routerO.ifPresentOrElse(
             router -> router.route(chunks),
             () -> fallbackRouter.route(this.getConnections(), chunks)
         );
