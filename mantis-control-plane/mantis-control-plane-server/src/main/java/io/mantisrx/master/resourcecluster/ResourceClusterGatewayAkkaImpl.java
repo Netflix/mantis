@@ -97,9 +97,7 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
 
     @Override
     public CompletableFuture<Ack> registerTaskExecutor(TaskExecutorRegistration registration) {
-        // testing if the issue is with ratelimiting
-        return this.registerTaskExecutorImpl(registration);
-//        return withThrottle(this::registerTaskExecutorImpl).apply(registration);
+        return withThrottle(this::registerTaskExecutorImpl).apply(registration);
     }
 
     private CompletableFuture<Ack> registerTaskExecutorImpl(TaskExecutorRegistration registration) {
