@@ -221,7 +221,7 @@ public class ResourceClusterActorTest {
                 resourceClusterActor,
                 Duration.ofSeconds(15),
                 CLUSTER_ID,
-                new LongDynamicProperty(propertiesLoader, "rate.limite.perSec", 10000L));
+                new LongDynamicProperty(propertiesLoader, "rate.limite.perSec", 20000L));
     }
 
     @Test
