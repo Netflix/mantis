@@ -164,7 +164,7 @@ public class JobActorSmartRefreshTest {
         CountDownLatch schedulingUpdateLatch = new CountDownLatch(1);
         JobSchedulingInfo[] capturedSchedulingInfo = new JobSchedulingInfo[1];
 
-        schedInfoSubject.subscribe(new Observer<>() {
+        schedInfoSubject.subscribe(new Observer<JobSchedulingInfo>() {
             @Override
             public void onCompleted() {}
 
@@ -539,7 +539,7 @@ public class JobActorSmartRefreshTest {
         boolean[] maxWaitTimeoutReached = {false};
 
         BehaviorSubject<JobSchedulingInfo> schedInfoSubject = getJobSchedulingInfoSubject(probe, jobActor, clusterName);
-        schedInfoSubject.subscribe(new Observer<>() {
+        schedInfoSubject.subscribe(new Observer<JobSchedulingInfo>() {
             @Override
             public void onCompleted() {}
             @Override
