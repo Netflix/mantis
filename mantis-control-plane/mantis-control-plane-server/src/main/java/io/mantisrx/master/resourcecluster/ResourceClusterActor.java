@@ -250,7 +250,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         if (existingRegistry.isDefined()) {
             reservationRegistryActor = existingRegistry.get();
         } else {
-            Props registryProps = ReservationRegistryActor.props(clock, null);
+            Props registryProps = ReservationRegistryActor.props(this.clusterID, clock, null);
             reservationRegistryActor = getContext().actorOf(registryProps, reservationRegistryActorName);
         }
 
@@ -352,9 +352,9 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 })
                 .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
                 .match(GetTaskExecutorWorkerMappingRequest.class,
-                    metrics.withTracking(req -> forwardToExecutorStateManager(req)))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(PublishResourceOverviewMetricsRequest.class,
-                    metrics.withTracking(req -> forwardToExecutorStateManager(req)))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(CacheJobArtifactsOnTaskExecutorRequest.class, metrics.withTracking(req ->
                     pipe(
                         FutureConverters.toJava(Patterns.ask(
@@ -573,8 +573,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
      * The list includes resource cluster, workerId, jobCluster, and either sizeName or cpuCores and memoryMB
      * based on whether sizeName is present in the request's constraints.
      *
-     * @param req The task executor allocation request from which the tag list will be generated.
-     *
      * @return An iterable list of tags created from the task executor allocation request.
      */
     @Value
@@ -588,6 +586,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     public static class TaskExecutorBatchAssignmentRequest {
         Set<TaskExecutorAllocationRequest> allocationRequests;
         ClusterID clusterID;
+        Reservation reservation;
 
         public Map<SchedulingConstraints, List<TaskExecutorAllocationRequest>> getGroupedBySchedulingConstraints() {
             return allocationRequests
@@ -713,6 +712,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class TaskExecutorsAllocation {
         Map<TaskExecutorAllocationRequest, TaskExecutorID> allocations;
+        Reservation reservation;
     }
 
     @Value
@@ -870,7 +870,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     @Builder(toBuilder = true)
     static class Reservation {
         ReservationKey key;
-        ClusterID clusterID;
         SchedulingConstraints schedulingConstraints;
         String canonicalConstraintKey;
         Set<WorkerId> requestedWorkers;
@@ -880,9 +879,45 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
 
         boolean hasSameShape(Reservation other) {
             return other != null
-                && allocationRequests.equals(other.allocationRequests)
-                && stageTargetSize == other.stageTargetSize
-                && Objects.equals(canonicalConstraintKey, other.canonicalConstraintKey);
+                && Objects.equals(key, other.key)
+                && Objects.equals(canonicalConstraintKey, other.canonicalConstraintKey)
+                && Objects.equals(requestedWorkers, other.requestedWorkers)
+                && stageTargetSize == other.stageTargetSize;
+        }
+
+        int getRequestedWorkersCount() {
+            return requestedWorkers != null ? requestedWorkers.size() : 0;
+        }
+
+        static Reservation fromUpsertReservation(UpsertReservation upsert, String canonicalConstraintKey) {
+            return Reservation.builder()
+                .key(upsert.getReservationKey())
+                .schedulingConstraints(upsert.getSchedulingConstraints())
+                .canonicalConstraintKey(canonicalConstraintKey)
+                .requestedWorkers(upsert.getAllocationRequests() != null ?
+                    upsert.getAllocationRequests().stream().map(TaskExecutorAllocationRequest::getWorkerId).collect(Collectors.toSet())
+                    : Collections.emptySet())
+                .allocationRequests(upsert.getAllocationRequests() != null ? upsert.getAllocationRequests() : Collections.emptySet())
+                .stageTargetSize(upsert.getStageTargetSize())
+                .priority(upsert.getPriority())
+                .build();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Reservation that = (Reservation) o;
+            return stageTargetSize == that.stageTargetSize
+                && Objects.equals(key, that.key)
+                && Objects.equals(canonicalConstraintKey, that.canonicalConstraintKey)
+                && Objects.equals(priority, that.priority)
+                && Objects.equals(requestedWorkers, that.requestedWorkers);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(key, canonicalConstraintKey, priority, stageTargetSize, requestedWorkers);
         }
     }
 
@@ -921,10 +956,9 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     static class UpsertReservation {
         ReservationKey reservationKey;
         SchedulingConstraints schedulingConstraints;
-        int requestedWorkers;
+        Set<TaskExecutorAllocationRequest>  allocationRequests;
         int stageTargetSize;
-        @Builder.Default
-        Optional<Long> priorityOverride = Optional.empty();
+        ReservationPriority priority;
     }
 
     enum MarkReady {
@@ -932,6 +966,10 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     enum ProcessReservationsTick {
+        INSTANCE
+    }
+
+    enum ForceProcessReservationsTick {
         INSTANCE
     }
 

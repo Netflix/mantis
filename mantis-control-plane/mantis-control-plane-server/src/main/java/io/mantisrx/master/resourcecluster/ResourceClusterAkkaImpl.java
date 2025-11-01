@@ -194,11 +194,12 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
             .thenApply(ArtifactList::getArtifacts);
     }
 
+    // todo: deprecate
     @Override
     public CompletableFuture<Map<TaskExecutorAllocationRequest, TaskExecutorID>> getTaskExecutorsFor(Set<TaskExecutorAllocationRequest> allocationRequests) {
         return
             Patterns
-                .ask(resourceClusterManagerActor, new TaskExecutorBatchAssignmentRequest(allocationRequests, clusterID), askTimeout)
+                .ask(resourceClusterManagerActor, new TaskExecutorBatchAssignmentRequest(allocationRequests, clusterID, null), askTimeout)
                 .thenApply(TaskExecutorsAllocation.class::cast)
                 .toCompletableFuture()
                 .thenApply(l -> l.getAllocations());

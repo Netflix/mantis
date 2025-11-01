@@ -1,6 +1,7 @@
 package io.mantisrx.master.resourcecluster;
 
 import akka.actor.AbstractActorWithTimers;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
 import com.netflix.spectator.api.Tag;
@@ -83,6 +84,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -136,6 +138,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
     private final Set<DisableTaskExecutorsRequest> activeDisableTaskExecutorsByAttributesRequests;
     private final Set<TaskExecutorID> disabledTaskExecutors;
     private final Set<ArtifactID> jobArtifactsToCache;
+    private final ActorRef assignmentHandlerActor;
 
     public static Props props(
         Map<String, String> schedulingAttributes,
@@ -286,6 +289,12 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         this.activeDisableTaskExecutorsByAttributesRequests = new HashSet<>();
         this.disabledTaskExecutors = new HashSet<>();
         this.jobArtifactsToCache = new HashSet<>();
+
+        // Create child AssignmentHandlerActor
+        this.assignmentHandlerActor = getContext().actorOf(
+            AssignmentHandlerActor.props(clusterID, jobMessageRouter, assignmentTimeout),
+            "assignment-handler"
+        );
     }
 
     @Override
@@ -296,7 +305,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             .match(TaskExecutorHeartbeat.class, this::onHeartbeat)
             .match(TaskExecutorStatusChange.class, this::onTaskExecutorStatusChange)
             .match(TaskExecutorBatchAssignmentRequest.class, this::onTaskExecutorBatchAssignmentRequest)
-            .match(TaskExecutorAssignmentTimeout.class, this::onTaskExecutorAssignmentTimeout)
+            .match(AssignmentHandlerActor.TaskExecutorAssignmentTimeout.class, this::onTaskExecutorAssignmentTimeout)
             .match(TaskExecutorDisconnection.class, this::onTaskExecutorDisconnection)
             .match(HeartbeatTimeout.class, this::onTaskExecutorHeartbeatTimeout)
             .match(CacheJobArtifactsOnTaskExecutorRequest.class, this::onCacheJobArtifactsOnTaskExecutorRequest)
@@ -448,7 +457,11 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             log.info("Matched all executors {} for request {}", matchedExecutors.get(), request);
             matchedExecutors.get().getBestFit().forEach((allocationRequest, taskExecutorToState) -> assignTaskExecutor(
                 allocationRequest, taskExecutorToState.getLeft(), taskExecutorToState.getRight(), request));
-            sender().tell(new TaskExecutorsAllocation(matchedExecutors.get().getRequestToTaskExecutorMap()), self());
+            sender().tell(
+                new TaskExecutorsAllocation(
+                    matchedExecutors.get().getRequestToTaskExecutorMap(),
+                    request.getReservation()),
+                self());
         } else {
             request.getAllocationRequests().forEach(req -> metrics.incrementCounter(
                 ResourceClusterActorMetrics.NO_RESOURCES_AVAILABLE,
@@ -464,14 +477,32 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             getContext().parent().tell(new AddNewJobArtifactsToCacheRequest(clusterID, Collections.singletonList(allocationRequest.getJobMetadata().getJobArtifact())), self());
         }
 
+        // Mark task executor as assigned
         taskExecutorState.onAssignment(allocationRequest.getWorkerId());
-        getTimers().startSingleTimer(
-            "Assignment-" + taskExecutorID.toString(),
-            new TaskExecutorAssignmentTimeout(taskExecutorID),
-            assignmentTimeout);
+
+        // Get task executor registration info
+        TaskExecutorRegistration registration = taskExecutorState.getRegistration();
+        if (registration == null) {
+            log.error("Cannot assign task executor {} - no registration found", taskExecutorID);
+            return;
+        }
+
+        // Get the gateway future from the TaskExecutorState
+        CompletableFuture<TaskExecutorGateway> gatewayFuture = taskExecutorState.getGatewayAsync();
+
+        // Delegate actual assignment logic to AssignmentHandlerActor
+        AssignmentHandlerActor.TaskExecutorAssignmentRequest assignmentRequest =
+            AssignmentHandlerActor.TaskExecutorAssignmentRequest.of(
+                allocationRequest,
+                taskExecutorID,
+                registration,
+                gatewayFuture
+            );
+
+        assignmentHandlerActor.tell(assignmentRequest, self());
     }
 
-    private void onTaskExecutorAssignmentTimeout(TaskExecutorAssignmentTimeout request) {
+    private void onTaskExecutorAssignmentTimeout(AssignmentHandlerActor.TaskExecutorAssignmentTimeout request) {
         TaskExecutorState state = this.delegate.get(request.getTaskExecutorID());
         if (state == null) {
             log.error("TaskExecutor lost during task assignment: {}", request);
