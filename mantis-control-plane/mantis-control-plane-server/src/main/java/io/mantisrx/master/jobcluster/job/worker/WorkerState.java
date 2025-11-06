@@ -134,6 +134,22 @@ public enum WorkerState {
     }
 
     /**
+     * Returns true if the worker is any valid starting state.
+     * @param state
+     * @return
+     */
+    public static boolean isPendingState(WorkerState state) {
+        switch (state) {
+            case Accepted:
+            case Launched:
+            case StartInitiated:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
      * Returns true if the old state -> new state transition is valid.
      * @param currentState
      * @param newState

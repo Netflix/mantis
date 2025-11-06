@@ -173,7 +173,7 @@ public class ParameterUtils {
 
         ParameterDefinition<Integer> stageConcurrency = new IntParameter()
                 .name(STAGE_CONCURRENCY)
-                .validator(Validators.range(-1, 16))
+                .validator(Validators.range(-1, 9999))
                 .defaultValue(-1)
                 .description("Number of cores to use for stage processing")
                 .build();

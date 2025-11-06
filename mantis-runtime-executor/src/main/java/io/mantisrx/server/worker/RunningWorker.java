@@ -18,6 +18,7 @@ package io.mantisrx.server.worker;
 
 import static io.mantisrx.server.core.utils.StatusConstants.STATUS_MESSAGE_FORMAT;
 
+import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.MantisJobState;
@@ -28,12 +29,14 @@ import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
-import java.util.Iterator;
+
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Observer;
+import rx.exceptions.OnErrorThrowable;
 import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.subjects.PublishSubject;
@@ -43,6 +46,8 @@ import rx.subjects.PublishSubject;
 public class RunningWorker {
 
     private static final Logger logger = LoggerFactory.getLogger(RunningWorker.class);
+    private static final String workerFailureMetricName = "workerFailure";
+    private static final String workerMonitorMetricId = "runningWorkerMonitor";
     private final int totalStagesNet;
     private Action0 onTerminateCallback;
     private Action0 onCompleteCallback;
@@ -150,7 +155,18 @@ public class RunningWorker {
     public void signalFailed(Throwable t) {
         logger.info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
                 + " signaling failed");
-        logger.error("Worker failure detected, shutting down job", t);
+        logger.error("Worker failure detected, shutting down job: {}", jobId, t);
+        // Send failure metrics when data emission failed
+        if (t instanceof OnErrorThrowable) {
+            SpectatorRegistryFactory.getRegistry()
+                .counter("runningWorker_failure",
+                    "jobId", jobId,
+                    "workerIndex", String.valueOf(this.workerIndex),
+                    "stageNum", String.valueOf(this.stageNum)
+                )
+                .increment();
+        }
+
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
                 TYPE.INFO, String.format(STATUS_MESSAGE_FORMAT, stageNum, workerIndex, workerNum, "failed. error: " + t.getMessage()),
                 MantisJobState.Failed));

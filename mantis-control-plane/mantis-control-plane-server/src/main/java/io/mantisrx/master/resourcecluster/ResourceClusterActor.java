@@ -34,6 +34,7 @@ import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.scheduler.FitnessCalculator;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
+import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
@@ -53,6 +54,8 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Occupied;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
+import io.mantisrx.master.jobcluster.job.worker.WorkerState;
+import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -174,42 +177,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             schedulingAttributes,
             fitnessCalculator,
             availableTaskExecutorMutatorHook
-        ).withMailbox("akka.actor.metered-mailbox");
-    }
-
-    static Props props(
-        final ClusterID clusterID,
-        final Duration heartbeatTimeout,
-        Duration assignmentTimeout,
-        Duration disabledTaskExecutorsCheckInterval,
-        Duration schedulerLeaseExpirationDuration,
-        Clock clock,
-        RpcService rpcService,
-        MantisJobStore mantisJobStore,
-        JobMessageRouter jobMessageRouter,
-        int maxJobArtifactsToCache,
-        String jobClustersWithArtifactCachingEnabled,
-        boolean isJobArtifactCachingEnabled,
-        Map<String, String> schedulingAttributes,
-        FitnessCalculator fitnessCalculator
-    ) {
-        return Props.create(
-            ResourceClusterActor.class,
-            clusterID,
-            heartbeatTimeout,
-            assignmentTimeout,
-            disabledTaskExecutorsCheckInterval,
-            schedulerLeaseExpirationDuration,
-            clock,
-            rpcService,
-            mantisJobStore,
-            jobMessageRouter,
-            maxJobArtifactsToCache,
-            jobClustersWithArtifactCachingEnabled,
-            isJobArtifactCachingEnabled,
-            schedulingAttributes,
-            fitnessCalculator,
-            null
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -644,6 +611,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         try {
             final TaskExecutorID taskExecutorID = registration.getTaskExecutorID();
             final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
+
             boolean stateChange = state.onRegistration(registration);
             mantisJobStore.storeNewTaskExecutor(registration);
             if (stateChange) {
@@ -703,8 +671,36 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 log.debug("Found registration {} for registered task executor {}",
                     state.getRegistration(), heartbeat.getTaskExecutorID());
             }
+            // Check if this TE was previously running a worker before it disconnected
+            WorkerId previousWorkerId = state.getPreviousWorkerId();
+
+            // Alternative detection: If disconnection didn't update previousWorkerId (e.g., segfault),
+            // check if current state thinks it's running a worker but heartbeat shows Available
+            if (previousWorkerId == null) {
+                WorkerId currentStateWorkerId = state.getWorkerId();
+                TaskExecutorReport heartbeatReport = heartbeat.getTaskExecutorReport();
+
+                // If state thinks TE is running a worker, but heartbeat shows Available,
+                // this indicates the TE crashed and reconnected
+                if (currentStateWorkerId != null && heartbeatReport instanceof TaskExecutorReport.Available) {
+                    previousWorkerId = currentStateWorkerId;
+                    log.info("Detected TaskExecutor {} crash/reconnection: state shows running worker {} but heartbeat shows Available",
+                        taskExecutorID, previousWorkerId);
+                }
+            }
+
             boolean stateChange = state.onHeartbeat(heartbeat);
             if (stateChange && state.isAvailable()) {
+                // If this TE was previously running a worker, terminate the stale worker
+                if (previousWorkerId != null) {
+                    log.info("Task executor {} reconnected via heartbeat, terminating stale worker {} due to crash/reconnection",
+                        taskExecutorID, previousWorkerId);
+                    WorkerTerminate terminateEvent = new WorkerTerminate(previousWorkerId,
+                        WorkerState.Failed, JobCompletedReason.Lost);
+                    jobMessageRouter.routeWorkerEvent(terminateEvent);
+                    state.clearPreviousWorkerId();
+                }
+
                 this.executorStateManager.tryMarkAvailable(taskExecutorID);
             }
 

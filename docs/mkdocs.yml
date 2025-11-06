@@ -32,7 +32,7 @@ nav:
     - 'Autoscaling': 'operate/autoscaling.md'
     - 'Autoscaling Strategies': 'operate/autoscalingstrategies.md'
     - 'Memory and CPU Profiling': 'operate/profiling.md'
-    - 'Worker Heartbeats and Timeouts': 'operate/hearbeat.md'
+    - 'Worker Heartbeats and Timeouts': 'operate/heartbeat.md'
   - 'Reference':
     - 'MQL': 'reference/mql.md'
     - 'Job DSL': 'reference/dsl.md'

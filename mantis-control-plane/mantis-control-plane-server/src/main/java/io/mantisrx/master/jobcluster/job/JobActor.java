@@ -80,7 +80,6 @@ import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.MigrationStrategy;
 import io.mantisrx.runtime.WorkerMigrationConfig;
-import io.mantisrx.runtime.descriptor.JobScalingRule;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
@@ -101,12 +100,7 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.scheduler.BatchScheduleRequest;
-import io.mantisrx.server.master.scheduler.MantisScheduler;
-import io.mantisrx.server.master.scheduler.ScheduleRequest;
-import io.mantisrx.server.master.scheduler.WorkerEvent;
-import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
-import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
+import io.mantisrx.server.master.scheduler.*;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
@@ -151,6 +145,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final Counter numWorkersCompletedNotTerminal;
     private final Counter numSchedulingChangesRefreshed;
     private final Counter numMissingWorkerPorts;
+    private final Counter numPeriodicRefreshSkipped;
 
     /**
      * Behavior after being initialized.
@@ -279,6 +274,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .addCounter("numSchedulingChangesRefreshed")
                 .addCounter("numMissingWorkerPorts")
                 .addCounter("numWorkerMissingHeartbeat")
+                .addCounter("numPeriodicRefreshSkipped")
                 .build();
         this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
         this.numWorkerResubmissions = metrics.getCounter("numWorkerResubmissions");
@@ -287,6 +283,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.numWorkersCompletedNotTerminal = metrics.getCounter("numWorkersCompletedNotTerminal");
         this.numSchedulingChangesRefreshed = metrics.getCounter("numSchedulingChangesRefreshed");
         this.numMissingWorkerPorts = metrics.getCounter("numMissingWorkerPorts");
+        this.numPeriodicRefreshSkipped = metrics.getCounter("numPeriodicRefreshSkipped");
     }
 
     /**
@@ -1423,6 +1420,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .expireAfterWrite(1, TimeUnit.HOURS)
                 .build();
         private volatile boolean stageAssignmentPotentiallyChanged;
+
+        // Simple state tracking for smart refresh timing
+        private volatile long lastWorkerTransitionTime = 0;
+
         private final boolean batchSchedulingEnabled;
         private final Counter numWorkerStuckInAccepted;
         private final Counter numWorkerMissingHeartbeat;
@@ -1489,12 +1490,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             List<JobWorker> workersToResubmit = markCorruptedWorkers();
             List<IMantisWorkerMetadata> workersToSubmit = new ArrayList<>();
 
-            // publish a refresh before enqueuing tasks to the Scheduler, as there is a potential race between
-            // WorkerRegistryV2 getting updated and isWorkerValid being called from SchedulingService loop
-            // If worker is not found in the SchedulingService loop, it is considered invalid and prematurely
-            // removed from Fenzo state.
-            markStageAssignmentsChanged(true);
-
             for (IMantisStageMetadata stageMeta : mantisJobMetaData.getStageMetadata().values()) {
                 Map<Integer, WorkerHost> workerHosts = new HashMap<>();
 
@@ -1549,8 +1544,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 queueTasks(workersToSubmit, empty());
             }
 
-            // publish another update after queuing tasks to Fenzo (in case some workers were marked Started
-            // due to the Fake heartbeat in above loop)
+            // queue a refresh check after re-init workers.
             markStageAssignmentsChanged(true);
 
             // Resubmit workers with missing ports so they can be reassigned new resources.
@@ -1600,10 +1594,26 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         private void markStageAssignmentsChanged(boolean forceRefresh) {
             this.stageAssignmentPotentiallyChanged = true;
+            lastWorkerTransitionTime = System.currentTimeMillis();
+
             long refreshInterval = ConfigurationProvider.getConfig().getStageAssignmentRefreshIntervalMs();
             if (refreshInterval == -1 || forceRefresh) {
                 refreshStageAssignmentsAndPush();
             }
+        }
+
+        private boolean hasWorkersTransitioningToStarted() {
+            // Check if we have workers in transitioning states (Accepted, Launched, StartInitiated)
+            // that might soon become Started
+            for (IMantisStageMetadata stageMeta : mantisJobMetaData.getStageMetadata().values()) {
+                for (JobWorker worker : stageMeta.getAllWorkers()) {
+                    WorkerState state = worker.getMetadata().getState();
+                    if (WorkerState.isPendingState(state)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private void refreshStageAssignmentsAndPush() {
@@ -1612,15 +1622,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             }
 
             List<IMantisWorkerMetadata> acceptedAndActiveWorkers = new ArrayList<>();
-            List<IMantisWorkerMetadata> activeWorkers = new ArrayList<>();
+            boolean hasPendingWorkers = false;
 
             for (IMantisStageMetadata stageMeta : mantisJobMetaData.getStageMetadata().values()) {
 
                 Map<Integer, WorkerHost> workerHosts = new HashMap<>();
                 for (JobWorker worker : stageMeta.getAllWorkers()) {
                     IMantisWorkerMetadata wm = worker.getMetadata();
-                    if (WorkerState.isRunningState(wm.getState())) {
-
+                    if (wm.getState().equals(WorkerState.Started)) {
                         workerHosts.put(
                                 wm.getWorkerNumber(),
                                 new WorkerHost(
@@ -1631,25 +1640,31 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                         wm.getWorkerNumber(),
                                         wm.getMetricsPort(),
                                         wm.getCustomPort()));
-                        activeWorkers.add(wm);
                         acceptedAndActiveWorkers.add(wm);
-                    } else if (wm.getState().equals(WorkerState.Accepted)) {
+                    } else if (WorkerState.isPendingState(wm.getState())) {
                         acceptedAndActiveWorkers.add(wm);
+                        hasPendingWorkers = true;
                     }
                 }
                 stageAssignments.put(stageMeta.getStageNum(), new WorkerAssignments(stageMeta.getStageNum(),
                         stageMeta.getNumWorkers(), workerHosts));
             }
             JobSchedulingInfo jobSchedulingInfo = new JobSchedulingInfo(jobId.getId(), stageAssignments);
-
             jobSchedulingInfoBehaviorSubject.onNext(jobSchedulingInfo);
 
             eventPublisher.publishWorkerListChangedEvent(new LifecycleEventsProto.WorkerListChangedEvent(
-                    new WorkerInfoListHolder(this.jobMgr.getJobId(), acceptedAndActiveWorkers)));
+                new WorkerInfoListHolder(this.jobMgr.getJobId(), acceptedAndActiveWorkers)));
 
             numSchedulingChangesRefreshed.increment();
 
-            stageAssignmentPotentiallyChanged = false;
+            // Reset the transition timer when we publish changes to prevent redundant immediate refreshes
+            // while keeping the flag true if there are still pending workers
+            if (hasPendingWorkers) {
+                // Reset timer to current time - future refreshes will wait for new transitions or timeout
+                lastWorkerTransitionTime = System.currentTimeMillis();
+            } else {
+                stageAssignmentPotentiallyChanged = false;
+            }
         }
 
         private void submitInitialWorkers() throws Exception {
@@ -1756,30 +1771,38 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         /**
-         * Merges attributes assignment between job and artifact definitions. It does it by first fetching
-         * the associated JobArtifact tags using the artifact ID from the job, and then merging them with the assignment
-         * attributes from the job definition itself. The keys from the job definition take precedence over the
-         * keys from the artifact's tags.
+         * Merges attributes assignment between default configuration, artifact, and job definitions.
+         * The method creates a layered approach starting with default artifact tags as the base,
+         * then overlaying artifact-specific tags from the job store, and finally applying job definition
+         * scheduling constraints which have the highest precedence.
          *
          * @param artifactUrl The URL of the artifact leveraged by the job for which the attributes are to be collated
-         * @return A merged map of scheduling attributes. The precedence of keys follows: job definition > artifact's tags.
+         * @return A merged map of scheduling attributes. The precedence order is: job definition > artifact tags > default tags.
          */
         private Map<String, String> mergeJobDefAndArtifactAssigmentAttributes(URL artifactUrl) {
+            Map<String, String> mergedMap = new HashMap<>(ConfigurationProvider.getConfig().getArtifactDefaultTags());
+
             try {
                 Optional<String> artifactName = DataFormatAdapter.extractArtifactBaseName(artifactUrl);
                 if (artifactName.isPresent()) {
                     JobArtifact artifact = jobStore.getJobArtifact(ArtifactID.of(artifactName.get()));
                     if (artifact != null && artifact.getTags() != null) {
-                        Map<String, String> mergedMap = new HashMap<>(artifact.getTags());
-                        mergedMap.putAll(mantisJobMetaData.getJobDefinition().getSchedulingConstraints());
-                        return mergedMap;
+                        mergedMap.putAll(artifact.getTags());
+                        LOGGER.debug("Loaded artifact tags for {}: {}", artifactUrl, artifact.getTags());
                     }
                 }
-
             } catch (Exception e) {
-                LOGGER.warn("Couldn't find job artifact by id: {}", artifactUrl, e);
+                LOGGER.warn(
+                    "Couldn't find job artifact by id: {}, {}, using defaults: {}",
+                    mantisJobMetaData.getJobDefinition().getName(),
+                    artifactUrl,
+                    mergedMap,
+                    e);
             }
-            return mantisJobMetaData.getJobDefinition().getSchedulingConstraints();
+
+            // Finally, apply job definition constraints (highest precedence)
+            mergedMap.putAll(mantisJobMetaData.getJobDefinition().getSchedulingConstraints());
+            return mergedMap;
         }
 
         private List<IMantisWorkerMetadata> getInitialWorkers(JobDefinition jobDetails, long submittedAt)
@@ -1981,6 +2004,25 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         @Override
         public void refreshAndSendWorkerAssignments() {
+            // Smart refresh logic: delay updates if workers are transitioning to Started
+            if (stageAssignmentPotentiallyChanged && hasWorkersTransitioningToStarted()) {
+                long currentTime = System.currentTimeMillis();
+                long timeSinceLastTransition = currentTime - lastWorkerTransitionTime;
+                long maxWaitMs = ConfigurationProvider.getConfig().getStageAssignmentRefreshMaxWaitMs();
+
+                // Wait up to configured time for workers to transition to Started state
+                // This gives time for batching while preventing indefinite delays
+                if (timeSinceLastTransition < maxWaitMs) {
+                    LOGGER.debug("Delaying refresh for job {} - workers still transitioning ({}ms ago)",
+                        jobId, timeSinceLastTransition);
+                    numPeriodicRefreshSkipped.increment();
+                    return;
+                } else {
+                    LOGGER.info("Forcing refresh for job {} - max wait time exceeded ({}ms)",
+                        jobId, timeSinceLastTransition);
+                }
+            }
+
             refreshStageAssignmentsAndPush();
         }
 
@@ -2160,6 +2202,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         @Override
         public void processEvent(WorkerEvent event, JobState jobState) {
             try {
+
                 Optional<IMantisStageMetadata> stageMetaOp = getStageForWorker(event);
                 if (!stageMetaOp.isPresent()) {
                     terminateUnknownWorkerIfNonTerminal(event);
@@ -2239,7 +2282,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     }
 
                     if (!(event instanceof WorkerHeartbeat)) {
-                        markStageAssignmentsChanged(false);
+                        // Use immediate refresh for terminal worker events in running jobs for faster recovery
+                        boolean immediateRefresh = (event instanceof WorkerTerminate || 
+                                                   WorkerState.isTerminalState(wm.getState())) 
+                                                   && jobState == JobState.Launched;
+                        markStageAssignmentsChanged(immediateRefresh);
                     }
                 } catch (Exception e) {
                     LOGGER.warn("Exception saving worker update", e);
@@ -2463,7 +2510,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             IMantisWorkerMetadata workerRequest = addWorker(schedInfo, stageMetaData.getStageNum(),
                                     newWorkerIndex);
                             jobStore.storeNewWorker(workerRequest);
-                            markStageAssignmentsChanged(true);
                             queueTask(workerRequest);
                         } catch (Exception e) {
                             // creating a worker failed but expected no of workers was set successfully,
