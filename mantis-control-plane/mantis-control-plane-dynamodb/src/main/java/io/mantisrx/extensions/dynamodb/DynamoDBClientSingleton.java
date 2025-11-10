@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import javax.swing.SingleSelectionModel;
 import org.skife.config.Config;
 import org.skife.config.ConfigurationObjectFactory;
 import org.slf4j.Logger;
