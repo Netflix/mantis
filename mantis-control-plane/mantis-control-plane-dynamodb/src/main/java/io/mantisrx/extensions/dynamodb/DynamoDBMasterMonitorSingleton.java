@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 import rx.subjects.BehaviorSubject;
 
 class DynamoDBMasterMonitorSingleton {
-    private static final Logger logger = LoggerFactory.getLogger(DynamoDBMasterMonitor.class);
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDBMasterMonitorSingleton.class);
 
 
     private final ThreadFactory monitorThreadFactory = r -> {
