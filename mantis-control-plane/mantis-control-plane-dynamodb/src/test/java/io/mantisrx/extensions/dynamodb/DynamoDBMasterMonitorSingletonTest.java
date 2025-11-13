@@ -17,6 +17,8 @@ package io.mantisrx.extensions.dynamodb;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -148,5 +150,42 @@ public class DynamoDBMasterMonitorSingletonTest {
         testSubscriber.assertNoErrors();
         Observable.from(testSubscriber.getOnNextEvents())
             .forEach(Assert::assertNotNull);
+    }
+
+    @Test
+    public void exceptionInScheduledTaskDoesNotStopScheduling() throws IOException, InterruptedException {
+        final String key = "exception-test-key";
+        final DynamoDBMasterMonitorSingleton m = new DynamoDBMasterMonitorSingleton(
+            mockLockClient,
+            key,
+            Duration.ofMillis(100), // Short interval for faster test
+            GRACEFUL
+        );
+
+        // First call throws exception, subsequent calls return empty
+        when(mockLockClient.getLock(key, Optional.empty()))
+            .thenThrow(new RuntimeException("Simulated exception"))
+            .thenReturn(Optional.empty())
+            .thenReturn(Optional.empty());
+
+        m.start();
+
+        await()
+            .atMost(Duration.ofSeconds(2))
+            .pollInterval(Duration.ofMillis(50))
+            .untilAsserted(() -> {
+                int invocationCount = mockingDetails(mockLockClient)
+                    .getInvocations()
+                    .stream()
+                    .mapToInt(invocation -> invocation.getMethod().getName().equals("getLock") ? 1 : 0)
+                    .sum();
+                assertTrue(
+                    "Expected at least 3 invocations of getLock() to prove scheduling continued after exception. " +
+                    "Got: " + invocationCount + ". If scheduling stopped after exception, we would only get 1 call.",
+                    invocationCount >= 3
+                );
+            });
+
+        m.shutdown();
     }
 }
