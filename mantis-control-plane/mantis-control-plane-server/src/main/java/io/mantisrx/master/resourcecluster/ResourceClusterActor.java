@@ -229,10 +229,15 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
 
         fetchJobArtifactsToCache();
 
+        final Instant now = clock.instant();
         List<DisableTaskExecutorsRequest> activeRequests =
             mantisJobStore.loadAllDisableTaskExecutorsRequests(clusterID);
         for (DisableTaskExecutorsRequest request : activeRequests) {
-            onNewDisableTaskExecutorsRequest(request);
+            if (!request.isExpired(now)) {
+                onNewDisableTaskExecutorsRequest(request);
+            } else {
+                onDisableTaskExecutorsRequestExpiry(new ExpireDisableTaskExecutorsRequest(request));
+            }
         }
 
         timers().startTimerWithFixedDelay(
