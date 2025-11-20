@@ -193,9 +193,22 @@ public interface ResourceCluster extends ResourceClusterGateway {
         Map<String, String> attributes);
 
     class NoResourceAvailableException extends Exception {
+        @Nullable
+        private final String constraintKey;
 
         public NoResourceAvailableException(String message) {
             super(message);
+            this.constraintKey = null;
+        }
+
+        public NoResourceAvailableException(String message, @Nullable String constraintKey) {
+            super(message);
+            this.constraintKey = constraintKey;
+        }
+
+        @Nullable
+        public String getConstraintKey() {
+            return constraintKey;
         }
     }
 

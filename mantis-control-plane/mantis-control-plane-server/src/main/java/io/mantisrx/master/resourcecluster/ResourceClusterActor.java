@@ -250,7 +250,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         if (existingRegistry.isDefined()) {
             reservationRegistryActor = existingRegistry.get();
         } else {
-            Props registryProps = ReservationRegistryActor.props(this.clusterID, clock, null);
+            Props registryProps = ReservationRegistryActor.props(this.clusterID, clock, null, null, metrics);
             reservationRegistryActor = getContext().actorOf(registryProps, reservationRegistryActorName);
         }
 
@@ -308,41 +308,41 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(GetPendingReservationsView.class, this::forwardToReservationRegistry)
                 .match(MarkReady.class, this::forwardToReservationRegistry)
                 .match(GetRegisteredTaskExecutorsRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetBusyTaskExecutorsRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetAvailableTaskExecutorsRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetDisabledTaskExecutorsRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetUnregisteredTaskExecutorsRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetActiveJobsRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetTaskExecutorStatusRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetClusterUsageRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetClusterIdleInstancesRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetAssignedTaskExecutorRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(MarkExecutorTaskCancelledRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
-                .match(TaskExecutorRegistration.class, metrics.withTracking(this::askExecutorStateManager))
-                .match(InitializeTaskExecutorRequest.class, metrics.withTracking(this::askExecutorStateManager))
-                .match(TaskExecutorHeartbeat.class, metrics.withTracking(this::askExecutorStateManager))
-                .match(TaskExecutorStatusChange.class, metrics.withTracking(this::askExecutorStateManager))
-                .match(TaskExecutorDisconnection.class, metrics.withTracking(this::askExecutorStateManager))
-                .match(TaskExecutorBatchAssignmentRequest.class, metrics.withTracking(this::askExecutorStateManager))
+                .match(TaskExecutorRegistration.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(InitializeTaskExecutorRequest.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TaskExecutorHeartbeat.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TaskExecutorStatusChange.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TaskExecutorDisconnection.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TaskExecutorBatchAssignmentRequest.class, metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(ResourceOverviewRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(TaskExecutorInfoRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(TaskExecutorGatewayRequest.class,
-                    metrics.withTracking(this::askExecutorStateManager))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(DisableTaskExecutorsRequest.class, this::onNewDisableTaskExecutorsRequest)
                 .match(CheckDisabledTaskExecutors.class, req -> {
                     log.info(
@@ -386,22 +386,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             return;
         }
         executorStateManagerActor.forward(message, getContext());
-    }
-
-    private void askExecutorStateManager(Object message) {
-        if (executorStateManagerActor == null) {
-            log.warn("ExecutorStateManagerActor not initialized; dropping {}", message);
-            sender().tell(new Status.Failure(new IllegalStateException("executor state manager actor not available")), self());
-            return;
-        }
-        final ActorRef replyTo = sender();
-        pipe(
-            FutureConverters.toJava(Patterns.ask(
-                executorStateManagerActor,
-                message,
-                assignmentTimeout.toMillis())),
-            getContext().dispatcher())
-            .to(replyTo, self());
     }
 
 

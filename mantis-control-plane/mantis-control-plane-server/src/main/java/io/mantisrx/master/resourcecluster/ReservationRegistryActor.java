@@ -3,8 +3,10 @@ package io.mantisrx.master.resourcecluster;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Status;
 import akka.pattern.Patterns;
 import io.mantisrx.common.Ack;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.CancelReservation;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.CancelReservationAck;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetPendingReservationsView;
@@ -32,6 +34,8 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import scala.compat.java8.FutureConverters;
+import com.netflix.spectator.api.TagList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 
 import static akka.pattern.Patterns.pipe;
 
@@ -49,6 +53,7 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
     private final Clock clock;
     private final Duration processingInterval;
     private final Duration inFlightReservationTimeout;
+    private final ResourceClusterActorMetrics metrics;
 
     private final Duration processingCooldown;
     private final Comparator<Reservation> reservationComparator;
@@ -56,27 +61,30 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
     private final Map<ReservationKey, LinkedList<Reservation>> reservationsByKey;
     private final Map<String, ConstraintGroup> reservationsByConstraint;
     private final Map<String, Reservation> inFlightReservations;
+    private final Map<String, Instant> inFlightReservationRequestTimestamps;
 
     private boolean ready;
     private Instant lastProcessAt;
 
-    public ReservationRegistryActor(ClusterID clusterID, Clock clock, Duration processingInterval) {
+    public ReservationRegistryActor(ClusterID clusterID, Clock clock, Duration processingInterval, Duration inFlightReservationTimeout, ResourceClusterActorMetrics metrics) {
         this.clusterID = clusterID;
         this.clock = Objects.requireNonNull(clock, "clock");
         this.processingInterval = processingInterval == null ? DEFAULT_PROCESS_INTERVAL : processingInterval;
         this.processingCooldown = this.processingInterval.dividedBy(2);
-        this.inFlightReservationTimeout = this.processingInterval;
+        this.inFlightReservationTimeout = inFlightReservationTimeout == null ? this.processingInterval.multipliedBy(5) : inFlightReservationTimeout;
+        this.metrics = Objects.requireNonNull(metrics, "metrics");
         this.reservationComparator = Comparator
             .comparing(Reservation::getPriority)
             .thenComparingInt(System::identityHashCode);
         this.reservationsByKey = new HashMap<>();
         this.reservationsByConstraint = new HashMap<>();
         this.inFlightReservations = new HashMap<>();
+        this.inFlightReservationRequestTimestamps = new HashMap<>();
         this.lastProcessAt = Instant.EPOCH;
     }
 
-    public static Props props(ClusterID clusterID, Clock clock, Duration processingInterval) {
-        return Props.create(ReservationRegistryActor.class, clusterID, clock, processingInterval);
+    public static Props props(ClusterID clusterID, Clock clock, Duration processingInterval, Duration inFlightReservationTimeout, ResourceClusterActorMetrics metrics) {
+        return Props.create(ReservationRegistryActor.class, clusterID, clock, processingInterval, inFlightReservationTimeout, metrics);
     }
 
     @Override
@@ -94,7 +102,9 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
             .match(MarkReady.class, message -> onMarkReady())
             .match(ProcessReservationsTick.class, message -> onProcessReservationsTick(false))
             .match(ResourceClusterActor.ForceProcessReservationsTick.class, message -> onProcessReservationsTick(true))
-            .match(ReservationAllocationResponse.class, this::onTaskExecutorBatchAssignmentResult)
+            // .match(ReservationAllocationResponse.class, this::onTaskExecutorBatchAssignmentResult)
+            .match(ResourceClusterActor.TaskExecutorsAllocation.class, this::onTaskExecutorBatchAssignmentResult)
+            .match(Status.Failure.class, this::onStatusFailure)
             .build();
     }
 
@@ -189,6 +199,16 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         processReservation();
     }
 
+    /*
+    Main process logic for each sku (constraintKey) is:
+    - take the first item in queue and track it as inflight if inflight is empty.
+    - send batch allocation request for the inflight reservation (only trigger once when it's insert as inflight).
+    - process loop ends on the group. Rely on callback from allocation (ReservationAllocationResponse) to update inflight.
+    - once inflight gets allocated the reservation is considered done. Any worker task submit error or worker init
+        error is going to be tracked by JobActor worker level heartbeat timeout. This also requires the executorManager
+        to send JobActor worker state update when the TEs are leased for allocation. This allows the reservation
+        registry to be free from tracking those failure.
+     */
     private void processReservation() {
         if (!ready) {
             log.trace("Reservation registry not ready; skipping processing");
@@ -200,9 +220,27 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
             Reservation inFlight = inFlightReservations.get(constraintKey);
 
             if (inFlight != null) {
-                log.info("Skipping constraint group {} - already has in-flight reservation {}",
-                    constraintKey, inFlight.getKey());
-                continue;
+                // Check if the in-flight reservation has timed out and needs to be retried
+                Instant requestTimestamp = inFlightReservationRequestTimestamps.get(constraintKey);
+                if (requestTimestamp != null) {
+                    Duration timeSinceRequest = Duration.between(requestTimestamp, clock.instant());
+                    if (timeSinceRequest.compareTo(inFlightReservationTimeout) >= 0) {
+                        log.info("In-flight reservation {} for constraint group {} has timed out ({}ms), retrying",
+                            inFlight.getKey(), constraintKey, timeSinceRequest.toMillis());
+                        // Clear the in-flight state to allow retry
+                        inFlightReservations.remove(constraintKey);
+                        inFlightReservationRequestTimestamps.remove(constraintKey);
+                        // Continue processing to retry the reservation
+                    } else {
+                        log.info("Skipping constraint group {} - already has in-flight reservation {} (waiting for {}ms)",
+                            constraintKey, inFlight.getKey(), inFlightReservationTimeout.minus(timeSinceRequest).toMillis());
+                        continue;
+                    }
+                } else {
+                    log.info("Skipping constraint group {} - already has in-flight reservation {}",
+                        constraintKey, inFlight.getKey());
+                    continue;
+                }
             }
 
             // the top reservation is only removed from group from upsert change and success batch assignment reply.
@@ -215,7 +253,16 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
             log.info("Sending batch assignment request for reservation {} in constraint group {}",
                 topReservationO.get().getKey(), constraintKey);
 
+            metrics.incrementCounter(
+                ResourceClusterActorMetrics.RESERVATION_PROCESSED,
+                TagList.create(ImmutableMap.of(
+                    "resourceCluster",
+                    clusterID.getResourceID(),
+                    "constraintKey",
+                    constraintKey)));
+
             inFlightReservations.put(constraintKey, topReservationO.get());
+            inFlightReservationRequestTimestamps.put(constraintKey, clock.instant());
 
             ResourceClusterActor.TaskExecutorBatchAssignmentRequest request =
                 new ResourceClusterActor.TaskExecutorBatchAssignmentRequest(
@@ -223,27 +270,32 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
                     this.clusterID,
                     topReservationO.get());
 
-            CompletionStage<ReservationAllocationResponse> askFut = FutureConverters.toJava(
-                Patterns.ask(
-                    getContext().parent(),
-                    request,
-                    this.inFlightReservationTimeout.toMillis()))
-                .thenApply( res -> new ReservationAllocationResponse(
-                    ((ResourceClusterActor.TaskExecutorsAllocation) res).getReservation(),
-                    ((ResourceClusterActor.TaskExecutorsAllocation) res),
-                    null))
-                .exceptionally(failure -> new ReservationAllocationResponse(
-                    topReservationO.get(), null, failure))
-                ;
+            // todo: make ESM track allocation results. Dedupe on repeated requests and only clear after registry ack.
+            // todo: make batch request ack as reply. retry if allocation failed or inflight timeout.
 
-            pipe(
-                askFut,
-                getContext().dispatcher())
-                .to(self());
+//            CompletionStage<ReservationAllocationResponse> askFut = FutureConverters.toJava(
+//                Patterns.ask(
+//                    getContext().parent(),
+//                    request,
+//                    this.inFlightReservationTimeout.toMillis()))
+//                .thenApply( res -> new ReservationAllocationResponse(
+//                    ((ResourceClusterActor.TaskExecutorsAllocation) res).getReservation(),
+//                    ((ResourceClusterActor.TaskExecutorsAllocation) res),
+//                    null))
+//                .exceptionally(failure -> new ReservationAllocationResponse(
+//                    topReservationO.get(), null, failure))
+//                ;
+//
+//            pipe(
+//                askFut,
+//                getContext().dispatcher())
+//                .to(self());
+
+            getContext().parent().tell(request, self());
         }
     }
 
-    private void onTaskExecutorBatchAssignmentResult(ReservationAllocationResponse result) {
+    private void onTaskExecutorBatchAssignmentResult(ResourceClusterActor.TaskExecutorsAllocation result) {
         if (result == null || result.getReservation() == null) {
             log.warn("Received null reservation allocation result, ignoring");
             return;
@@ -252,19 +304,23 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         Reservation reservation = result.getReservation();
         String constraintKey = reservation.getCanonicalConstraintKey();
 
-        log.info("Received batch assignment result for reservation {} (success={}, constraintKey={})",
-            reservation.getKey(), result.isSuccess(), constraintKey);
+        log.info("Received batch assignment result for reservation {} (constraintKey={})",
+            reservation.getKey(), constraintKey);
 
         clearInFlightIfMatches(reservation);
 
-        if (result.isSuccess()) {
-            removeEntry(reservation);
-            triggerForcedProcessingLoop();
-        } else {
-            log.warn("Reservation allocation failed for {}: {}",
-                result.getReservation().getKey(),
-                result.error != null ? result.error.getMessage() : "unknown error");
-        }
+        // todo: validate reservation match the result.
+        removeEntry(reservation);
+        triggerForcedProcessingLoop();
+
+//        if (result.isSuccess()) {
+//            removeEntry(reservation);
+//            triggerForcedProcessingLoop();
+//        } else {
+//            log.warn("Reservation allocation failed for {}: {}",
+//                result.getReservation().getKey(),
+//                result.error != null ? result.error.getMessage() : "unknown error");
+//        }
     }
 
     private void clearInFlightIfMatches(Reservation reservation) {
@@ -273,7 +329,37 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
 
         if (inFlight != null && inFlight.equals(reservation)) {
             inFlightReservations.remove(constraintKey);
+            inFlightReservationRequestTimestamps.remove(constraintKey);
             log.debug("Cleared in-flight reservation for constraint group {}", constraintKey);
+        }
+    }
+
+    private void onStatusFailure(Status.Failure failure) {
+        Throwable cause = failure.cause();
+        if (cause instanceof NoResourceAvailableException) {
+            NoResourceAvailableException exception = (NoResourceAvailableException) cause;
+            String exceptionConstraintKey = exception.getConstraintKey();
+
+            log.info("Received NoResourceAvailableException: {} (constraintKey={})",
+                exception.getMessage(), exceptionConstraintKey);
+
+            if (exceptionConstraintKey != null) {
+                // Match the exact reservation by constraint key
+                Reservation matchingReservation = inFlightReservations.get(exceptionConstraintKey);
+                if (matchingReservation != null) {
+                    // Update the timestamp for the matching in-flight reservation
+                    // This tracks when the reservation last received a NoResourceAvailableException
+                    // The reservation will be retried if this timestamp is older than the timeout
+                    inFlightReservationRequestTimestamps.put(exceptionConstraintKey, clock.instant());
+                    log.info("Updated request timestamp for in-flight reservation {} (constraintKey={}) due to NoResourceAvailableException",
+                        matchingReservation.getKey(), exceptionConstraintKey);
+                } else {
+                    log.warn("Received NoResourceAvailableException for constraintKey {} but no matching in-flight reservation found",
+                        exceptionConstraintKey);
+                }
+            }
+        } else {
+            log.warn("Received Status.Failure with non-NoResourceAvailableException: {}", cause != null ? cause.getClass().getName() : "null");
         }
     }
 

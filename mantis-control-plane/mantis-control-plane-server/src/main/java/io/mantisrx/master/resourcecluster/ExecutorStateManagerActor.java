@@ -466,9 +466,12 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             request.getAllocationRequests().forEach(req -> metrics.incrementCounter(
                 ResourceClusterActorMetrics.NO_RESOURCES_AVAILABLE,
                 createTagListFrom(req)));
+            String constraintKey = request.getReservation() != null
+                ? request.getReservation().getCanonicalConstraintKey()
+                : null;
             sender().tell(new Status.Failure(new NoResourceAvailableException(
                 String.format("No resource available for request %s: resource overview: %s", request,
-                    getResourceOverview()))), self());
+                    getResourceOverview()), constraintKey)), self());
         }
     }
 

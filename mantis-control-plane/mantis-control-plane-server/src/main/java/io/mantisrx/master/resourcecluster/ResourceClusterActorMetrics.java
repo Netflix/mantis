@@ -58,6 +58,7 @@ class ResourceClusterActorMetrics {
 
     public static final String RC_ACTOR_RESTART = "resourceClusterActorRestart";
     public static final String MAX_JOB_ARTIFACTS_TO_CACHE_REACHED = "maxJobArtifactsToCacheReached";
+    public static final String RESERVATION_PROCESSED = "reservationProcessed";
 
     private final Registry registry;
     private final Map<Class<?>, Tuple2<Counter, Timer>> messageMetrics;

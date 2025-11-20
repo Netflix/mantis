@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Status;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.CancelReservation;
@@ -38,6 +39,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -66,7 +68,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldGroupReservationsByCanonicalConstraint() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints skuAConstraints = constraints("sku-a", ImmutableMap.of("attr", "1"));
         SchedulingConstraints skuBConstraints = constraints("sku-b", Collections.emptyMap());
@@ -109,7 +111,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldMarkReadyAndHandleCancellation() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
 
         ReservationKey key = ReservationKey.builder().jobId("job-ready").stageNumber(1).build();
         SchedulingConstraints constraints = constraints("sku-ready", Collections.emptyMap());
@@ -149,7 +151,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldDeduplicateOnIdenticalReservationShape() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
 
         ReservationKey key = ReservationKey.builder().jobId("job-dedupe").stageNumber(0).build();
         SchedulingConstraints constraints = constraints("sku-dedupe", ImmutableMap.of("zone", "us-west"));
@@ -180,7 +182,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldRetainExistingReservationsWhenTargetSizeIncreases() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
 
         ReservationKey key = ReservationKey.builder().jobId("job-scale-up").stageNumber(1).build();
         SchedulingConstraints constraints = constraints("sku-scale-up", Collections.emptyMap());
@@ -209,7 +211,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldDropOlderReservationsWhenTargetSizeDecreases() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
 
         ReservationKey key = ReservationKey.builder().jobId("job-scale-down").stageNumber(2).build();
         SchedulingConstraints constraints = constraints("sku-scale-down", Collections.emptyMap());
@@ -346,7 +348,7 @@ public class ReservationRegistryActorTest {
     public void shouldSendBatchAssignmentRequestWhenProcessingReservations() {
         TestKit probe = new TestKit(system);
         TestKit parent = new TestKit(system);
-        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL));
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
 
         ReservationKey key = ReservationKey.builder().jobId("job-batch").stageNumber(1).build();
         SchedulingConstraints constraints = constraints("sku-batch", Collections.emptyMap());
@@ -410,7 +412,7 @@ public class ReservationRegistryActorTest {
     public void shouldNotSendMultipleBatchRequestsForSameConstraintGroup() {
         TestKit probe = new TestKit(system);
         TestKit parent = new TestKit(system);
-        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, Duration.ofMillis(100)));
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, Duration.ofMillis(100), null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraints = constraints("sku-inflight", Collections.emptyMap());
 
@@ -447,7 +449,7 @@ public class ReservationRegistryActorTest {
     public void shouldClearInFlightAndSendNextRequestOnSuccess() {
         TestKit probe = new TestKit(system);
         TestKit parent = new TestKit(system);
-        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL));
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraints = constraints("sku-success", Collections.emptyMap());
 
@@ -479,7 +481,7 @@ public class ReservationRegistryActorTest {
             Collections.emptyMap(),
             completedReservation);
 
-        registry.tell(new ReservationAllocationResponse(completedReservation, allocation, null), probe.getRef());
+        registry.tell(allocation, probe.getRef());
 
         TaskExecutorBatchAssignmentRequest secondRequest = parent.expectMsgClass(
             Duration.ofSeconds(2),
@@ -495,7 +497,7 @@ public class ReservationRegistryActorTest {
     public void shouldClearInFlightOnCancellation() {
         TestKit probe = new TestKit(system);
         TestKit parent = new TestKit(system);
-        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL));
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraints = constraints("sku-cancel", Collections.emptyMap());
 
@@ -537,7 +539,7 @@ public class ReservationRegistryActorTest {
     public void shouldHandleMultipleConstraintGroupsIndependently() {
         TestKit probe = new TestKit(system);
         TestKit parent = new TestKit(system);
-        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL));
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraintsA = constraints("sku-a", ImmutableMap.of("zone", "us-west"));
         SchedulingConstraints constraintsB = constraints("sku-b", ImmutableMap.of("zone", "us-east"));
@@ -596,6 +598,123 @@ public class ReservationRegistryActorTest {
 
         registry.tell(upsert, probe.getRef());
         probe.expectMsg(Ack.getInstance());
+    }
+
+    @Test
+    public void shouldRetryInFlightReservationAfterTimeout() throws InterruptedException {
+        TestKit probe = new TestKit(system);
+        TestKit parent = new TestKit(system);
+
+        // Use a short timeout for testing - we'll use actual time passing
+        Duration timeout = Duration.ofMillis(150);
+        Clock systemClock = Clock.systemUTC();
+
+        ActorRef registry = parent.childActorOf(
+            ReservationRegistryActor.props(TEST_CLUSTER_ID, systemClock, PROCESS_INTERVAL, timeout, new ResourceClusterActorMetrics()));
+
+        SchedulingConstraints constraints = constraints("sku-timeout", Collections.emptyMap());
+        ReservationKey key = ReservationKey.builder().jobId("job-timeout").stageNumber(1).build();
+        WorkerId worker1 = WorkerId.fromIdUnsafe("job-timeout-1-worker-0-1");
+        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(
+            worker1, constraints, null, 1);
+
+        upsertWithAllocations(registry, probe, key, constraints, Set.of(req1), 1, BASE_INSTANT.toEpochMilli());
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        // Wait for the batch request to be sent (reservation becomes in-flight with timestamp set to now)
+        TaskExecutorBatchAssignmentRequest firstRequest = parent.expectMsgClass(
+            Duration.ofSeconds(2),
+            TaskExecutorBatchAssignmentRequest.class);
+        assertNotNull(firstRequest);
+        assertEquals(1, firstRequest.getAllocationRequests().size());
+        assertTrue(firstRequest.getAllocationRequests().contains(req1));
+
+        // Wait for the timeout period to pass
+        Thread.sleep(timeout.toMillis() + 50);
+
+        // Force process - the reservation should now timeout and be retried
+        registry.tell(ResourceClusterActor.ForceProcessReservationsTick.INSTANCE, probe.getRef());
+
+        // After timeout, the reservation should be retried (cleared and re-sent)
+        TaskExecutorBatchAssignmentRequest retryRequest = parent.expectMsgClass(
+            Duration.ofSeconds(2),
+            TaskExecutorBatchAssignmentRequest.class);
+        assertNotNull(retryRequest);
+        assertEquals(1, retryRequest.getAllocationRequests().size());
+        assertTrue(retryRequest.getAllocationRequests().contains(req1));
+
+        stopActor(registry);
+    }
+
+    @Test
+    public void shouldUpdateTimestampOnStatusFailure() throws InterruptedException {
+        TestKit probe = new TestKit(system);
+        TestKit parent = new TestKit(system);
+
+        Duration timeout = Duration.ofMillis(200);
+        Clock systemClock = Clock.systemUTC();
+
+        ActorRef registry = parent.childActorOf(
+            ReservationRegistryActor.props(TEST_CLUSTER_ID, systemClock, Duration.ofMillis(1000), timeout, new ResourceClusterActorMetrics()));
+
+        SchedulingConstraints constraints = constraints("sku-failure", Collections.emptyMap());
+        ReservationKey key = ReservationKey.builder().jobId("job-failure").stageNumber(1).build();
+        WorkerId worker1 = WorkerId.fromIdUnsafe("job-failure-1-worker-0-1");
+        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(
+            worker1, constraints, null, 1);
+
+        upsertWithAllocations(registry, probe, key, constraints, Set.of(req1), 1, BASE_INSTANT.toEpochMilli());
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        // Wait for the batch request to be sent
+        TaskExecutorBatchAssignmentRequest firstRequest = parent.expectMsgClass(
+            Duration.ofSeconds(2),
+            TaskExecutorBatchAssignmentRequest.class);
+        assertNotNull(firstRequest);
+        Reservation reservation = firstRequest.getReservation();
+        assertNotNull(reservation);
+        String constraintKey = reservation.getCanonicalConstraintKey();
+
+        // Wait a bit to let some time pass
+        Thread.sleep(100);
+
+        // Send Status.Failure with NoResourceAvailableException containing the constraint key
+        // This should update the timestamp for the matching reservation
+        NoResourceAvailableException exception = new NoResourceAvailableException(
+            "No resource available for test", constraintKey);
+        Status.Failure failure = new Status.Failure(exception);
+
+        registry.tell(failure, parent.getRef());
+
+        // Now wait for most of the timeout period (but not all, since timestamp was just updated)
+        Thread.sleep(110);
+
+        // Force process - since timestamp was updated 100ms ago, it should NOT timeout yet
+        // (timeout is 200ms, so we're still within the timeout window)
+        registry.tell(ResourceClusterActor.ForceProcessReservationsTick.INSTANCE, probe.getRef());
+
+        // Should NOT receive another request immediately since timestamp was updated
+        parent.expectNoMessage(Duration.ofMillis(100));
+
+        // Now wait for the full timeout period from the timestamp update
+        //Thread.sleep(150);
+
+        // Force process again - now it should timeout and retry
+        registry.tell(ResourceClusterActor.ForceProcessReservationsTick.INSTANCE, probe.getRef());
+
+        // Should receive retry request after timeout
+        TaskExecutorBatchAssignmentRequest retryRequest = parent.expectMsgClass(
+            Duration.ofSeconds(2),
+            TaskExecutorBatchAssignmentRequest.class);
+        assertNotNull(retryRequest);
+        assertEquals(1, retryRequest.getAllocationRequests().size());
+        assertTrue(retryRequest.getAllocationRequests().contains(req1));
+
+        stopActor(registry);
     }
 
     private static void stopActor(ActorRef actor) {
