@@ -673,7 +673,7 @@ public class JobClustersRouteTest extends RouteTestBase {
         assert isClusterExist("sine-function");
 
         testDelete(getJobClusterInstanceEndpoint("sine-function") + "?user=test&reason=unittest",
-                   StatusCodes.ACCEPTED, null);
+                   StatusCodes.NO_CONTENT, null);
         boolean clusterExist = isClusterExist("sine-function");
         int retry = 10;
         while (clusterExist && retry > 0) {
