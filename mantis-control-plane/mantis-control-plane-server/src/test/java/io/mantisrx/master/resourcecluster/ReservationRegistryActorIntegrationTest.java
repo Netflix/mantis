@@ -6,6 +6,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import akka.actor.ActorRef;
@@ -24,6 +27,8 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import io.mantisrx.server.master.ExecuteStageRequestFactory;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
@@ -42,10 +47,21 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
+
+import io.mantisrx.server.core.ExecuteStageRequest;
+import io.mantisrx.server.core.domain.JobMetadata;
+import io.mantisrx.server.master.scheduler.WorkerLaunchFailed;
+import io.mantisrx.server.master.scheduler.WorkerLaunched;
+import java.net.URL;
 import org.junit.After;
+import org.mockito.ArgumentCaptor;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -57,7 +73,7 @@ public class ReservationRegistryActorIntegrationTest {
         new MachineDefinition(2.0, 4096, 128.0, 10240, 1);
     private static final Duration PROCESS_INTERVAL = Duration.ofMillis(100);
     private static final Duration HEARTBEAT_TIMEOUT = Duration.ofSeconds(10);
-    private static final Duration ASSIGNMENT_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration ASSIGNMENT_TIMEOUT = Duration.ofMillis(200);
     private static final Duration DISABLED_CHECK_INTERVAL = Duration.ofSeconds(10);
     private static final Duration SCHEDULER_LEASE_EXPIRATION = Duration.ofMillis(100);
     private static final Instant BASE_INSTANT = Instant.parse("2024-01-01T00:00:00Z");
@@ -100,7 +116,10 @@ public class ReservationRegistryActorIntegrationTest {
         when(mantisJobStore.loadAllDisableTaskExecutorsRequests(any())).thenReturn(ImmutableList.of());
         when(mantisJobStore.getJobArtifactsToCache(any())).thenReturn(ImmutableList.of());
         when(jobMessageRouter.routeWorkerEvent(any())).thenReturn(true);
+        when(gateway.submitTask(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
 
+        MasterConfiguration masterConfig = mock(MasterConfiguration.class);
+        ExecuteStageRequestFactory executeStageRequestFactory = new ExecuteStageRequestFactory(masterConfig);
         resourceClusterActor = system.actorOf(
             ResourceClusterActor.props(
                 TEST_CLUSTER_ID,
@@ -116,7 +135,8 @@ public class ReservationRegistryActorIntegrationTest {
                 "",
                 false,
                 ImmutableMap.of(),
-                new CpuWeightedFitnessCalculator()));
+                new CpuWeightedFitnessCalculator(),
+                executeStageRequestFactory));
     }
 
     @After
@@ -182,8 +202,8 @@ public class ReservationRegistryActorIntegrationTest {
         WorkerId worker1 = WorkerId.fromIdUnsafe("job-1-worker-0-1");
         WorkerId worker2 = WorkerId.fromIdUnsafe("job-2-worker-0-1");
 
-        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(worker1, constraints, null, 1);
-        TaskExecutorAllocationRequest req2 = TaskExecutorAllocationRequest.of(worker2, constraints, null, 1);
+        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(worker1, constraints, createJobMetadata(), 1);
+        TaskExecutorAllocationRequest req2 = TaskExecutorAllocationRequest.of(worker2, constraints, createJobMetadata(), 1);
 
         // Upsert reservations
         upsertReservation(resourceClusterActor, probe, key1, constraints, Set.of(req1), 1, BASE_INSTANT.toEpochMilli());
@@ -198,6 +218,9 @@ public class ReservationRegistryActorIntegrationTest {
         PendingReservationsView view = probe.expectMsgClass(PendingReservationsView.class);
         assertTrue(view.isReady());
         assertEquals(1, view.getGroups().size());
+        assertEquals(
+            2,
+            view.getGroups().entrySet().stream().findFirst().get().getValue().getReservations().size());
 
         // Allow some time for processing
         Thread.sleep(300);
@@ -210,7 +233,29 @@ public class ReservationRegistryActorIntegrationTest {
         assertTrue(view.getGroups().isEmpty() || view.getGroups().values().stream()
             .allMatch(g -> g.getReservationCount() == 0));
 
-        // todo: listen to job messenger when esm sent worker lease update.
+        // Verify assignment was attempted on the gateway
+        ArgumentCaptor<ExecuteStageRequest> executeStageRequestCaptor = ArgumentCaptor.forClass(ExecuteStageRequest.class);
+        verify(gateway, timeout(5000).times(2)).submitTask(executeStageRequestCaptor.capture());
+
+        List<ExecuteStageRequest> requests = executeStageRequestCaptor.getAllValues();
+        Set<WorkerId> submittedWorkers = requests.stream()
+            .map(r -> new WorkerId(r.getJobId(), r.getWorkerIndex(), r.getWorkerNumber()))
+            .collect(Collectors.toSet());
+
+        assertTrue(submittedWorkers.contains(worker1));
+        assertTrue(submittedWorkers.contains(worker2));
+
+        // Verify WorkerLaunched event was routed
+        ArgumentCaptor<WorkerLaunched> workerLaunchedCaptor = ArgumentCaptor.forClass(WorkerLaunched.class);
+        verify(jobMessageRouter, timeout(5000).times(2)).routeWorkerEvent(workerLaunchedCaptor.capture());
+
+        List<WorkerLaunched> launchedEvents = workerLaunchedCaptor.getAllValues();
+        Set<WorkerId> launchedWorkers = launchedEvents.stream()
+            .map(WorkerLaunched::getWorkerId)
+            .collect(Collectors.toSet());
+
+        assertTrue(launchedWorkers.contains(worker1));
+        assertTrue(launchedWorkers.contains(worker2));
     }
 
     @Test
@@ -249,8 +294,8 @@ public class ReservationRegistryActorIntegrationTest {
         WorkerId workerA = WorkerId.fromIdUnsafe("job-a-worker-0-1");
         WorkerId workerB = WorkerId.fromIdUnsafe("job-b-worker-0-1");
 
-        TaskExecutorAllocationRequest reqA = TaskExecutorAllocationRequest.of(workerA, constraintsA, null, 1);
-        TaskExecutorAllocationRequest reqB = TaskExecutorAllocationRequest.of(workerB, constraintsB, null, 1);
+        TaskExecutorAllocationRequest reqA = TaskExecutorAllocationRequest.of(workerA, constraintsA, createJobMetadata(), 1);
+        TaskExecutorAllocationRequest reqB = TaskExecutorAllocationRequest.of(workerB, constraintsB, createJobMetadata(), 1);
 
         upsertReservation(resourceClusterActor, probe, key1, constraintsA, Set.of(reqA), 1, BASE_INSTANT.toEpochMilli());
         upsertReservation(resourceClusterActor, probe, key2, constraintsB, Set.of(reqB), 1, BASE_INSTANT.toEpochMilli());
@@ -273,12 +318,11 @@ public class ReservationRegistryActorIntegrationTest {
         ReservationKey key = ReservationKey.builder().jobId("job-cancel").stageNumber(1).build();
         SchedulingConstraints constraints = SchedulingConstraints.of(MACHINE, Optional.empty(), ImmutableMap.of());
         WorkerId worker = WorkerId.fromIdUnsafe("job-cancel-worker-0-1");
-        TaskExecutorAllocationRequest req = TaskExecutorAllocationRequest.of(worker, constraints, null, 1);
-
-        upsertReservation(resourceClusterActor, probe, key, constraints, Set.of(req), 1, BASE_INSTANT.toEpochMilli());
-
+        TaskExecutorAllocationRequest req = TaskExecutorAllocationRequest.of(worker, constraints, createJobMetadata(), 1);
         resourceClusterActor.tell(MarkReady.INSTANCE, probe.getRef());
         probe.expectMsg(Ack.getInstance());
+
+        upsertReservation(resourceClusterActor, probe, key, constraints, Set.of(req), 1, BASE_INSTANT.toEpochMilli());
 
         // Verify reservation exists
         resourceClusterActor.tell(GetPendingReservationsView.INSTANCE, probe.getRef());
@@ -297,6 +341,109 @@ public class ReservationRegistryActorIntegrationTest {
         resourceClusterActor.tell(GetPendingReservationsView.INSTANCE, probe.getRef());
         view = probe.expectMsgClass(PendingReservationsView.class);
         assertTrue(view.getGroups().isEmpty());
+    }
+
+    @Test
+    public void testAssignmentRetry() throws Exception {
+        TestKit probe = new TestKit(system);
+
+        // Reset gateway mock to have different behavior for this test
+        // 1. Fail first
+        // 2. Succeed second
+        when(gateway.submitTask(any()))
+            .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Connection failed")))
+            .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+
+        TaskExecutorRegistration registration = TaskExecutorRegistration.builder()
+            .taskExecutorID(TASK_EXECUTOR_ID_1)
+            .clusterID(TEST_CLUSTER_ID)
+            .taskExecutorAddress("te-address-1")
+            .hostname("hostname-1")
+            .workerPorts(WORKER_PORTS)
+            .machineDefinition(MACHINE)
+            .taskExecutorAttributes(ImmutableMap.of(
+                WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_SKU_ID.getResourceID()))
+            .build();
+
+        resourceClusterActor.tell(registration, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        resourceClusterActor.tell(
+            new TaskExecutorHeartbeat(TASK_EXECUTOR_ID_1, TEST_CLUSTER_ID, TaskExecutorReport.available()),
+            probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        // Create reservation
+        ReservationKey key = ReservationKey.builder().jobId("job-retry").stageNumber(1).build();
+        SchedulingConstraints constraints = SchedulingConstraints.of(MACHINE, Optional.empty(), ImmutableMap.of());
+        WorkerId worker = WorkerId.fromIdUnsafe("job-retry-worker-0-1");
+        TaskExecutorAllocationRequest req = TaskExecutorAllocationRequest.of(worker, constraints, createJobMetadata(), 1);
+
+        upsertReservation(resourceClusterActor, probe, key, constraints, Set.of(req), 1, BASE_INSTANT.toEpochMilli());
+
+        resourceClusterActor.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        // Check that reservation is eventually processed
+        Thread.sleep(500);
+
+        resourceClusterActor.tell(GetPendingReservationsView.INSTANCE, probe.getRef());
+        PendingReservationsView view = probe.expectMsgClass(PendingReservationsView.class);
+        assertTrue(view.getGroups().isEmpty() || view.getGroups().values().stream()
+            .allMatch(g -> g.getReservationCount() == 0));
+
+        // Verify gateway was called twice
+        verify(gateway, timeout(5000).times(2)).submitTask(any());
+
+        // Verify WorkerLaunched event was routed (eventually success)
+        verify(jobMessageRouter, timeout(5000).times(1)).routeWorkerEvent(any(WorkerLaunched.class));
+    }
+
+    @Test
+    public void testAssignmentFailure() throws Exception {
+        TestKit probe = new TestKit(system);
+
+        // Fail always
+        when(gateway.submitTask(any()))
+            .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Permanent failure")));
+
+        TaskExecutorRegistration registration = TaskExecutorRegistration.builder()
+            .taskExecutorID(TASK_EXECUTOR_ID_2)
+            .clusterID(TEST_CLUSTER_ID)
+            .taskExecutorAddress("te-address-2")
+            .hostname("hostname-2")
+            .workerPorts(WORKER_PORTS)
+            .machineDefinition(MACHINE)
+            .taskExecutorAttributes(ImmutableMap.of(
+                WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_SKU_ID.getResourceID()))
+            .build();
+
+        resourceClusterActor.tell(registration, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        resourceClusterActor.tell(
+            new TaskExecutorHeartbeat(TASK_EXECUTOR_ID_2, TEST_CLUSTER_ID, TaskExecutorReport.available()),
+            probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        ReservationKey key = ReservationKey.builder().jobId("job-fail").stageNumber(1).build();
+        SchedulingConstraints constraints = SchedulingConstraints.of(MACHINE, Optional.empty(), ImmutableMap.of());
+        WorkerId worker = WorkerId.fromIdUnsafe("job-fail-worker-0-1");
+        TaskExecutorAllocationRequest req = TaskExecutorAllocationRequest.of(worker, constraints, createJobMetadata(), 1);
+
+        upsertReservation(resourceClusterActor, probe, key, constraints, Set.of(req), 1, BASE_INSTANT.toEpochMilli());
+
+        resourceClusterActor.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        // Wait for retries to exhaust
+        Thread.sleep(1000);
+
+        // Verify gateway called multiple times (3 retries)
+        verify(gateway, timeout(5000).atLeast(3)).submitTask(any());
+
+        // Verify WorkerLaunchFailed event was routed
+        verify(jobMessageRouter, timeout(5000).times(1)).routeWorkerEvent(any(WorkerLaunchFailed.class));
     }
 
     private void upsertReservation(
@@ -324,5 +471,19 @@ public class ReservationRegistryActorIntegrationTest {
 
         actor.tell(upsert, probe.getRef());
         probe.expectMsg(Ack.getInstance());
+    }
+
+    private JobMetadata createJobMetadata() {
+        try {
+            JobMetadata jm = mock(JobMetadata.class);
+            when(jm.getJobJarUrl()).thenReturn(new URL("http://localhost"));
+            when(jm.getParameters()).thenReturn(Collections.emptyList());
+            when(jm.getSubscriptionTimeoutSecs()).thenReturn(10L);
+            when(jm.getHeartbeatIntervalSecs()).thenReturn(10L);
+            when(jm.getMinRuntimeSecs()).thenReturn(10L);
+            return jm;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -41,6 +41,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoR
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.QueueClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
+import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -77,6 +78,7 @@ class ResourceClustersManagerActor extends AbstractActor {
     private final ActorRef resourceClusterHostActor;
     private final IMantisPersistenceProvider mantisPersistenceProvider;
     private final JobMessageRouter jobMessageRouter;
+    private final ExecuteStageRequestFactory executeStageRequestFactory;
 
     public static Props props(
         MasterConfiguration masterConfiguration,
@@ -111,6 +113,7 @@ class ResourceClustersManagerActor extends AbstractActor {
         this.resourceClusterHostActor = resourceClusterHostActorRef;
         this.mantisPersistenceProvider = mantisPersistenceProvider;
         this.jobMessageRouter = jobMessageRouter;
+        this.executeStageRequestFactory = new ExecuteStageRequestFactory(masterConfiguration);
 
         this.resourceClusterActorMap = new HashMap<>();
     }
@@ -184,7 +187,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                     masterConfiguration.isJobArtifactCachingEnabled(),
                     masterConfiguration.getSchedulingConstraints(),
                     masterConfiguration.getFitnessCalculator(),
-                    masterConfiguration.getAvailableTaskExecutorMutatorHook()),
+                    masterConfiguration.getAvailableTaskExecutorMutatorHook(),
+                    executeStageRequestFactory),
                 "ResourceClusterActor-" + clusterID.getResourceID());
         log.info("Created resource cluster actor for {}", clusterID);
         return clusterActor;

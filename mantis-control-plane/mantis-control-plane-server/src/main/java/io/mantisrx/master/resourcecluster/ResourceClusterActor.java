@@ -45,6 +45,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Occupied;
+import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -105,9 +106,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     private final RpcService rpcService;
     private final ClusterID clusterID;
     private final MantisJobStore mantisJobStore;
-    private final Set<DisableTaskExecutorsRequest> activeDisableTaskExecutorsByAttributesRequests;
-    private final Set<TaskExecutorID> disabledTaskExecutors;
     private final JobMessageRouter jobMessageRouter;
+    private final ExecuteStageRequestFactory executeStageRequestFactory;
 
     private final ResourceClusterActorMetrics metrics;
 
@@ -139,7 +139,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
-        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook
+        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook,
+        ExecuteStageRequestFactory executeStageRequestFactory
     ) {
         return Props.create(
             ResourceClusterActor.class,
@@ -157,7 +158,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             isJobArtifactCachingEnabled,
             schedulingAttributes,
             fitnessCalculator,
-            availableTaskExecutorMutatorHook
+            availableTaskExecutorMutatorHook,
+            executeStageRequestFactory
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -175,7 +177,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
-        FitnessCalculator fitnessCalculator
+        FitnessCalculator fitnessCalculator,
+        ExecuteStageRequestFactory executeStageRequestFactory
     ) {
         return Props.create(
             ResourceClusterActor.class,
@@ -193,7 +196,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             isJobArtifactCachingEnabled,
             schedulingAttributes,
             fitnessCalculator,
-            null
+            null,
+            executeStageRequestFactory
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -212,7 +216,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
-        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook) {
+        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook,
+        ExecuteStageRequestFactory executeStageRequestFactory) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -224,8 +229,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         this.rpcService = rpcService;
         this.jobMessageRouter = jobMessageRouter;
         this.mantisJobStore = mantisJobStore;
-        this.activeDisableTaskExecutorsByAttributesRequests = new HashSet<>();
-        this.disabledTaskExecutors = new HashSet<>();
+        this.executeStageRequestFactory = executeStageRequestFactory;
         this.maxJobArtifactsToCache = maxJobArtifactsToCache;
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
 
@@ -269,28 +273,18 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 mantisJobStore,
                 heartbeatTimeout,
                 assignmentTimeout,
+                disabledTaskExecutorsCheckInterval,
                 clusterID,
                 isJobArtifactCachingEnabled,
                 jobClustersWithArtifactCachingEnabled,
-                metrics);
+                metrics,
+                executeStageRequestFactory);
             executorStateManagerActor = getContext().actorOf(esmProps, executorStateManagerActorName);
         }
 
-        syncExecutorDisabledState();
         syncExecutorJobArtifactsCache();
 
         fetchJobArtifactsToCache();
-
-        List<DisableTaskExecutorsRequest> activeRequests =
-            mantisJobStore.loadAllDisableTaskExecutorsRequests(clusterID);
-        for (DisableTaskExecutorsRequest request : activeRequests) {
-            onNewDisableTaskExecutorsRequest(request);
-        }
-
-        timers().startTimerWithFixedDelay(
-            String.format("periodic-disabled-task-executors-test-for-%s", clusterID.getResourceID()),
-            new CheckDisabledTaskExecutors("periodic"),
-            disabledTaskExecutorsCheckInterval);
 
         timers().startTimerWithFixedDelay(
             "periodic-resource-overview-metrics-publisher",
@@ -343,14 +337,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                     metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(TaskExecutorGatewayRequest.class,
                     metrics.withTracking(this::forwardToExecutorStateManager))
-                .match(DisableTaskExecutorsRequest.class, this::onNewDisableTaskExecutorsRequest)
-                .match(CheckDisabledTaskExecutors.class, req -> {
-                    log.info(
-                        "Checking disabled task executors for Cluster {} because of {}. Current disabled request size: {}",
-                        clusterID.getResourceID(), req.getReason(), activeDisableTaskExecutorsByAttributesRequests.size());
-                    forwardToExecutorStateManager(req);
-                })
-                .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
+                .match(DisableTaskExecutorsRequest.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(CheckDisabledTaskExecutors.class, metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetTaskExecutorWorkerMappingRequest.class,
                     metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(PublishResourceOverviewMetricsRequest.class,
@@ -397,19 +385,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             new UpdateJobArtifactsToCache(new HashSet<>(jobArtifactsToCache)),
             self());
     }
-
-    private void syncExecutorDisabledState() {
-        if (executorStateManagerActor == null) {
-            return;
-        }
-        executorStateManagerActor.tell(
-            new UpdateDisabledState(
-                new HashSet<>(activeDisableTaskExecutorsByAttributesRequests),
-                new HashSet<>(disabledTaskExecutors)),
-            self());
-    }
-
-
 
     private void onAddNewJobArtifactsToCacheRequest(AddNewJobArtifactsToCacheRequest req) {
         try {
@@ -470,82 +445,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             log.warn("Cannot refresh job artifacts to cache in cluster: {}", clusterID, e);
         }
     }
-    // custom equals function to check if the existing set already has the request under consideration.
-    private boolean addNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest newRequest) {
-        if (newRequest.isRequestByAttributes()) {
-            log.info("Req with attributes {}", newRequest);
-            for (DisableTaskExecutorsRequest existing: activeDisableTaskExecutorsByAttributesRequests) {
-                if (existing.targetsSameTaskExecutorsAs(newRequest)) {
-                    return false;
-                }
-            }
-
-            Preconditions.checkState(activeDisableTaskExecutorsByAttributesRequests.add(newRequest), "activeDisableTaskExecutorRequests cannot contain %s", newRequest);
-            syncExecutorDisabledState();
-            return true;
-        } else if (newRequest.getTaskExecutorID().isPresent() && !disabledTaskExecutors.contains(newRequest.getTaskExecutorID().get())) {
-            log.info("Req with id {}", newRequest);
-            disabledTaskExecutors.add(newRequest.getTaskExecutorID().get());
-            syncExecutorDisabledState();
-            return true;
-        }
-        log.info("No Req {}", newRequest);
-        return false;
-    }
-
-    private void onNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
-        ActorRef sender = sender();
-        if (addNewDisableTaskExecutorsRequest(request)) {
-            try {
-                log.info("New req to add {}", request);
-                // store the request in a persistent store in order to retrieve it if the node goes down
-                mantisJobStore.storeNewDisabledTaskExecutorsRequest(request);
-                // figure out the time to expire the current request
-                Duration toExpiry = Comparators.max(Duration.between(clock.instant(), request.getExpiry()), Duration.ZERO);
-                // setup a timer to clear it after a given period
-                getTimers().startSingleTimer(
-                    getExpiryKeyFor(request),
-                    new ExpireDisableTaskExecutorsRequest(request),
-                    toExpiry);
-                findAndMarkDisabledTaskExecutorsFor(request);
-                sender.tell(Ack.getInstance(), self());
-            } catch (IOException e) {
-                sender().tell(new Status.Failure(e), self());
-            }
-        } else {
-            sender.tell(Ack.getInstance(), self());
-        }
-    }
-
-    private String getExpiryKeyFor(DisableTaskExecutorsRequest request) {
-        return "ExpireDisableTaskExecutorsRequest-" + request;
-    }
-
-    private void findAndMarkDisabledTaskExecutorsFor(DisableTaskExecutorsRequest request) {
-        if (request.isRequestByAttributes()) {
-            forwardToExecutorStateManager(new CheckDisabledTaskExecutors("new_request"));
-        } else if (request.getTaskExecutorID().isPresent()) {
-            forwardToExecutorStateManager(new CheckDisabledTaskExecutors("targeted_request"));
-        }
-    }
-
-    private void onDisableTaskExecutorsRequestExpiry(ExpireDisableTaskExecutorsRequest request) {
-        try {
-            log.debug("Expiring Disable Task Executors Request {}", request.getRequest());
-            getTimers().cancel(getExpiryKeyFor(request.getRequest()));
-            boolean removed = activeDisableTaskExecutorsByAttributesRequests.remove(request.getRequest()) ||
-                (request.getRequest().getTaskExecutorID().isPresent() && disabledTaskExecutors.remove(request.getRequest().getTaskExecutorID().get()));
-            if (removed) {
-                syncExecutorDisabledState();
-                mantisJobStore.deleteExpiredDisableTaskExecutorsRequest(request.getRequest());
-            }
-
-            forwardToExecutorStateManager(request);
-            forwardToExecutorStateManager(new CheckDisabledTaskExecutors("expiry"));
-        } catch (Exception e) {
-            log.error("Failed to delete expired {}", request.getRequest(), e);
-        }
-    }
 
     /**
      * Artifact is added to the list of artifacts if it's the first worker of the first stage
@@ -581,16 +480,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         public String getJobId() {
             return allocationRequests.iterator().next().getWorkerId().getJobId();
         }
-    }
-
-    @Value
-    static class TaskExecutorAssignmentTimeout {
-        TaskExecutorID taskExecutorID;
-    }
-
-    @Value
-    static class ExpireDisableTaskExecutorsRequest {
-        DisableTaskExecutorsRequest request;
     }
 
     @Value

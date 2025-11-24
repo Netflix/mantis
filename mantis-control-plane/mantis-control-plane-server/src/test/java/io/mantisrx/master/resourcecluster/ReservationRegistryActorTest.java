@@ -21,7 +21,6 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatch
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.UpsertReservation;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.Reservation;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsAllocation;
-import io.mantisrx.master.resourcecluster.ReservationRegistryActor.ReservationAllocationResponse;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
@@ -289,8 +288,8 @@ public class ReservationRegistryActorTest {
             WorkerId workerId = WorkerId.fromId(
                 String.format("%s-%d-worker-%d-%d", key.getJobId(), key.getStageNumber(), i, 0)
             ).get();
-            allocationRequests.add(TaskExecutorAllocationRequest.of(
-                workerId, constraints, null, key.getStageNumber()
+            allocationRequests.add(createAllocationRequest(
+                workerId, constraints, key.getStageNumber()
             ));
         }
 
@@ -356,11 +355,11 @@ public class ReservationRegistryActorTest {
         WorkerId worker1 = WorkerId.fromIdUnsafe("job-batch-1-worker-0-1");
         WorkerId worker2 = WorkerId.fromIdUnsafe("job-batch-1-worker-0-2");
 
-        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(
-            worker1, constraints, null, 1);
+        TaskExecutorAllocationRequest req1 = createAllocationRequest(
+            worker1, constraints, 1);
 
-        TaskExecutorAllocationRequest req2 = TaskExecutorAllocationRequest.of(
-            worker2, constraints, null, 1);
+        TaskExecutorAllocationRequest req2 = createAllocationRequest(
+            worker2, constraints, 1);
 
         Set<TaskExecutorAllocationRequest> allocationRequests = new HashSet<>();
         allocationRequests.add(req1);
@@ -422,11 +421,11 @@ public class ReservationRegistryActorTest {
         WorkerId worker1 = WorkerId.fromIdUnsafe("job-inflight-1-worker-0-1");
         WorkerId worker2 = WorkerId.fromIdUnsafe("job-inflight-2-worker-0-1");
 
-        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(
-            worker1, constraints, null, 1);
+        TaskExecutorAllocationRequest req1 = createAllocationRequest(
+            worker1, constraints, 1);
 
-        TaskExecutorAllocationRequest req2 = TaskExecutorAllocationRequest.of(
-            worker2, constraints, null, 1);
+        TaskExecutorAllocationRequest req2 = createAllocationRequest(
+            worker2, constraints, 1);
 
         upsertWithAllocations(registry, probe, key1, constraints, Set.of(req1), 1, BASE_INSTANT.toEpochMilli());
         upsertWithAllocations(registry, probe, key2, constraints, Set.of(req2), 1, BASE_INSTANT.plusSeconds(1).toEpochMilli());
@@ -459,11 +458,11 @@ public class ReservationRegistryActorTest {
         WorkerId worker1 = WorkerId.fromIdUnsafe("job-success-1-worker-0-1");
         WorkerId worker2 = WorkerId.fromIdUnsafe("job-success-2-worker-0-1");
 
-        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(
-            worker1, constraints, null, 1);
+        TaskExecutorAllocationRequest req1 = createAllocationRequest(
+            worker1, constraints, 1);
 
-        TaskExecutorAllocationRequest req2 = TaskExecutorAllocationRequest.of(
-            worker2, constraints, null, 1);
+        TaskExecutorAllocationRequest req2 = createAllocationRequest(
+            worker2, constraints, 1);
 
         upsertWithAllocations(registry, probe, key1, constraints, Set.of(req1), 1, BASE_INSTANT.toEpochMilli());
         upsertWithAllocations(registry, probe, key2, constraints, Set.of(req2), 1, BASE_INSTANT.plusSeconds(1).toEpochMilli());
@@ -507,11 +506,11 @@ public class ReservationRegistryActorTest {
         WorkerId worker1 = WorkerId.fromIdUnsafe("job-cancel-1-worker-0-1");
         WorkerId worker2 = WorkerId.fromIdUnsafe("job-cancel-2-worker-0-1");
 
-        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(
-            worker1, constraints, null, 1);
+        TaskExecutorAllocationRequest req1 = createAllocationRequest(
+            worker1, constraints, 1);
 
-        TaskExecutorAllocationRequest req2 = TaskExecutorAllocationRequest.of(
-            worker2, constraints, null, 1);
+        TaskExecutorAllocationRequest req2 = createAllocationRequest(
+            worker2, constraints, 1);
 
         upsertWithAllocations(registry, probe, key1, constraints, Set.of(req1), 1, BASE_INSTANT.toEpochMilli());
         upsertWithAllocations(registry, probe, key2, constraints, Set.of(req2), 1, BASE_INSTANT.plusSeconds(1).toEpochMilli());
@@ -550,11 +549,11 @@ public class ReservationRegistryActorTest {
         WorkerId workerA = WorkerId.fromIdUnsafe("job-a-worker-0-1");
         WorkerId workerB = WorkerId.fromIdUnsafe("job-b-worker-0-1");
 
-        TaskExecutorAllocationRequest reqA = TaskExecutorAllocationRequest.of(
-            workerA, constraintsA, null, 1);
+        TaskExecutorAllocationRequest reqA = createAllocationRequest(
+            workerA, constraintsA, 1);
 
-        TaskExecutorAllocationRequest reqB = TaskExecutorAllocationRequest.of(
-            workerB, constraintsB, null, 1);
+        TaskExecutorAllocationRequest reqB = createAllocationRequest(
+            workerB, constraintsB, 1);
 
         upsertWithAllocations(registry, probe, keyA, constraintsA, Set.of(reqA), 1, BASE_INSTANT.toEpochMilli());
         upsertWithAllocations(registry, probe, keyB, constraintsB, Set.of(reqB), 1, BASE_INSTANT.toEpochMilli());
@@ -615,8 +614,8 @@ public class ReservationRegistryActorTest {
         SchedulingConstraints constraints = constraints("sku-timeout", Collections.emptyMap());
         ReservationKey key = ReservationKey.builder().jobId("job-timeout").stageNumber(1).build();
         WorkerId worker1 = WorkerId.fromIdUnsafe("job-timeout-1-worker-0-1");
-        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(
-            worker1, constraints, null, 1);
+        TaskExecutorAllocationRequest req1 = createAllocationRequest(
+            worker1, constraints, 1);
 
         upsertWithAllocations(registry, probe, key, constraints, Set.of(req1), 1, BASE_INSTANT.toEpochMilli());
 
@@ -662,8 +661,8 @@ public class ReservationRegistryActorTest {
         SchedulingConstraints constraints = constraints("sku-failure", Collections.emptyMap());
         ReservationKey key = ReservationKey.builder().jobId("job-failure").stageNumber(1).build();
         WorkerId worker1 = WorkerId.fromIdUnsafe("job-failure-1-worker-0-1");
-        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(
-            worker1, constraints, null, 1);
+        TaskExecutorAllocationRequest req1 = createAllocationRequest(
+            worker1, constraints, 1);
 
         upsertWithAllocations(registry, probe, key, constraints, Set.of(req1), 1, BASE_INSTANT.toEpochMilli());
 
@@ -715,6 +714,134 @@ public class ReservationRegistryActorTest {
         assertTrue(retryRequest.getAllocationRequests().contains(req1));
 
         stopActor(registry);
+    }
+
+
+    @Test
+    public void shouldOrderReservationsByPriority() {
+        TestKit probe = new TestKit(system);
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+
+        SchedulingConstraints constraints = constraints("sku-priority", Collections.emptyMap());
+
+        // 1. NEW_JOB (Lowest priority)
+        ReservationKey keyLow = ReservationKey.builder().jobId("job-low").stageNumber(1).build();
+        upsert(registry, probe, keyLow, constraints, 1, 1,
+            ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.toEpochMilli());
+
+        // 2. REPLACE (Highest priority)
+        ReservationKey keyHigh = ReservationKey.builder().jobId("job-high").stageNumber(1).build();
+        upsert(registry, probe, keyHigh, constraints, 1, 1,
+            ResourceClusterActor.ReservationPriority.PriorityType.REPLACE, 0, BASE_INSTANT.toEpochMilli());
+
+        // 3. SCALE (Medium priority)
+        ReservationKey keyMedium = ReservationKey.builder().jobId("job-medium").stageNumber(1).build();
+        upsert(registry, probe, keyMedium, constraints, 1, 1,
+            ResourceClusterActor.ReservationPriority.PriorityType.SCALE, 0, BASE_INSTANT.toEpochMilli());
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        registry.tell(GetPendingReservationsView.INSTANCE, probe.getRef());
+        PendingReservationsView view = probe.expectMsgClass(PendingReservationsView.class);
+
+        PendingReservationGroupView group = view.getGroups().get(canonicalKeyFor(constraints));
+        assertNotNull(group);
+        assertEquals(3, group.getReservations().size());
+
+        // Expect order: REPLACE, SCALE, NEW_JOB
+        assertEquals(keyHigh, group.getReservations().get(0).getReservationKey());
+        assertEquals(keyMedium, group.getReservations().get(1).getReservationKey());
+        assertEquals(keyLow, group.getReservations().get(2).getReservationKey());
+
+        stopActor(registry);
+    }
+
+    @Test
+    public void shouldOrderReservationsByTimestampWithinSamePriority() {
+        TestKit probe = new TestKit(system);
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+
+        SchedulingConstraints constraints = constraints("sku-time", Collections.emptyMap());
+
+        // 1. Middle timestamp
+        ReservationKey keyMid = ReservationKey.builder().jobId("job-mid").stageNumber(1).build();
+        upsert(registry, probe, keyMid, constraints, 1, 1,
+            ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.plusSeconds(10).toEpochMilli());
+
+        // 2. Oldest timestamp (First)
+        ReservationKey keyOld = ReservationKey.builder().jobId("job-old").stageNumber(1).build();
+        upsert(registry, probe, keyOld, constraints, 1, 1,
+            ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.toEpochMilli());
+
+        // 3. Newest timestamp (Last)
+        ReservationKey keyNew = ReservationKey.builder().jobId("job-new").stageNumber(1).build();
+        upsert(registry, probe, keyNew, constraints, 1, 1,
+            ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.plusSeconds(20).toEpochMilli());
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        registry.tell(GetPendingReservationsView.INSTANCE, probe.getRef());
+        PendingReservationsView view = probe.expectMsgClass(PendingReservationsView.class);
+
+        PendingReservationGroupView group = view.getGroups().get(canonicalKeyFor(constraints));
+        assertNotNull(group);
+        assertEquals(3, group.getReservations().size());
+
+        // Expect order: Old, Mid, New
+        assertEquals(keyOld, group.getReservations().get(0).getReservationKey());
+        assertEquals(keyMid, group.getReservations().get(1).getReservationKey());
+        assertEquals(keyNew, group.getReservations().get(2).getReservationKey());
+
+        stopActor(registry);
+    }
+
+    private static void upsert(
+        ActorRef registry,
+        TestKit probe,
+        ReservationKey key,
+        SchedulingConstraints constraints,
+        int requestedWorkers,
+        int stageTargetSize,
+        ResourceClusterActor.ReservationPriority.PriorityType type,
+        int tier,
+        long priorityTimestamp
+    ) {
+        ResourceClusterActor.ReservationPriority priority = ResourceClusterActor.ReservationPriority.builder()
+            .type(type)
+            .tier(tier)
+            .timestamp(priorityTimestamp)
+            .build();
+
+        Set<TaskExecutorAllocationRequest> allocationRequests = new HashSet<>();
+        for (int i = 0; i < requestedWorkers; i++) {
+            WorkerId workerId = WorkerId.fromId(
+                String.format("%s-%d-worker-%d-%d", key.getJobId(), key.getStageNumber(), i, 0)
+            ).get();
+            allocationRequests.add(createAllocationRequest(
+                workerId, constraints, key.getStageNumber()
+            ));
+        }
+
+        UpsertReservation upsert =
+            UpsertReservation.builder()
+                .reservationKey(key)
+                .schedulingConstraints(constraints)
+                .allocationRequests(allocationRequests)
+                .stageTargetSize(stageTargetSize)
+                .priority(priority)
+                .build();
+        registry.tell(upsert, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+    }
+
+    private static TaskExecutorAllocationRequest createAllocationRequest(
+        WorkerId workerId,
+        SchedulingConstraints constraints,
+        int stageNum
+    ) {
+        return TaskExecutorAllocationRequest.of(workerId, constraints, null, stageNum);
     }
 
     private static void stopActor(ActorRef actor) {

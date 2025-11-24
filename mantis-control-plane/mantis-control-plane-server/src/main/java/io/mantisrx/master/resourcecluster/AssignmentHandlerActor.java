@@ -1,26 +1,21 @@
 package io.mantisrx.master.resourcecluster;
 
 import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
 import akka.actor.Props;
-import akka.actor.Status;
-import io.mantisrx.common.Ack;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
-import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.flink.util.ExceptionUtils;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import javax.annotation.Nullable;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -33,30 +28,35 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
     private final Duration assignmentTimeout;
     private final int maxAssignmentRetries;
     private final Duration intervalBetweenRetries;
+    private final ExecuteStageRequestFactory executeStageRequestFactory;
 
     public static Props props(
         ClusterID clusterID,
         JobMessageRouter jobMessageRouter,
-        Duration assignmentTimeout
+        Duration assignmentTimeout,
+        ExecuteStageRequestFactory executeStageRequestFactory
     ) {
-        return props(clusterID, jobMessageRouter, assignmentTimeout, 3, Duration.ofSeconds(1));
+        return props(clusterID, jobMessageRouter, assignmentTimeout, executeStageRequestFactory, 3, assignmentTimeout);
     }
 
     public static Props props(
         ClusterID clusterID,
         JobMessageRouter jobMessageRouter,
         Duration assignmentTimeout,
+        ExecuteStageRequestFactory executeStageRequestFactory,
         int maxAssignmentRetries,
         Duration intervalBetweenRetries
     ) {
         Objects.requireNonNull(clusterID, "clusterID");
         Objects.requireNonNull(jobMessageRouter, "jobMessageRouter");
         Objects.requireNonNull(assignmentTimeout, "assignmentTimeout");
+        Objects.requireNonNull(executeStageRequestFactory, "executeStageRequestFactory");
         return Props.create(
             AssignmentHandlerActor.class,
             clusterID,
             jobMessageRouter,
             assignmentTimeout,
+            executeStageRequestFactory,
             maxAssignmentRetries,
             intervalBetweenRetries
         );
@@ -66,12 +66,14 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
         ClusterID clusterID,
         JobMessageRouter jobMessageRouter,
         Duration assignmentTimeout,
+        ExecuteStageRequestFactory executeStageRequestFactory,
         int maxAssignmentRetries,
         Duration intervalBetweenRetries
     ) {
         this.clusterID = clusterID;
         this.jobMessageRouter = jobMessageRouter;
         this.assignmentTimeout = assignmentTimeout;
+        this.executeStageRequestFactory = executeStageRequestFactory;
         this.maxAssignmentRetries = maxAssignmentRetries;
         this.intervalBetweenRetries = intervalBetweenRetries;
     }
@@ -80,31 +82,41 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
     public Receive createReceive() {
         return receiveBuilder()
             .match(TaskExecutorAssignmentRequest.class, this::onTaskExecutorAssignmentRequest)
-            .match(AssignmentTimeoutEvent.class, this::onAssignmentTimeout)
             .match(TaskExecutorAssignmentSucceededEvent.class, this::onAssignmentSucceeded)
             .match(TaskExecutorAssignmentFailedEvent.class, this::onAssignmentFailed)
             .build();
     }
 
     private void onTaskExecutorAssignmentRequest(TaskExecutorAssignmentRequest request) {
-        log.debug("Received task executor assignment request: {}", request);
+        log.info("Received task executor assignment request: {} (attempt {}/{})",
+            request, request.getAttempt(), maxAssignmentRetries);
         try {
             TaskExecutorRegistration registration = request.getRegistration();
-            TaskExecutorAllocationRequest allocationRequest = request.getAllocationRequest();
-            
             // Use the gateway future from the request
             CompletableFuture<TaskExecutorGateway> gatewayFut = request.getGatewayFuture();
 
-            CompletionStage<Object> ackFuture =
+            CompletableFuture<Object> ackFuture =
                 gatewayFut
-                    .thenComposeAsync(gateway -> {
-                        log.debug("Successfully obtained gateway for task executor {}", 
+                    .<Object>thenComposeAsync(gateway -> {
+                        log.debug("Successfully obtained gateway for task executor {}",
                             registration.getTaskExecutorID());
-                        
-                        // For now, just test the connection. In a full implementation,
-                        // this would submit an ExecuteStageRequest to the gateway
-                        return CompletableFuture.completedFuture(
-                            new TaskExecutorAssignmentSucceededEvent(request));
+                        return gateway
+                            .submitTask(
+                                executeStageRequestFactory.of(
+                                    registration,
+                                    request.getAllocationRequest()))
+                            .<Object>thenApplyAsync(
+                                dontCare -> {
+                                    log.debug("[Submit Task] succeeded for {}", registration.getTaskExecutorID());
+                                    return new TaskExecutorAssignmentSucceededEvent(request);
+                                })
+                            .exceptionally(
+                                throwable -> {
+                                    log.error("[Submit Task] failed for {}: {}",
+                                        registration.getTaskExecutorID(), throwable.getMessage());
+                                    return new TaskExecutorAssignmentFailedEvent(
+                                        request, ExceptionUtils.stripCompletionException(throwable));
+                                });
                     })
                     .exceptionally(throwable -> {
                         log.warn("Failed to obtain gateway for task executor {}",
@@ -112,96 +124,63 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
                         return new TaskExecutorAssignmentFailedEvent(
                             request,
                             ExceptionUtils.stripCompletionException(throwable));
+                    })
+                    .toCompletableFuture()
+                    .orTimeout(
+                        assignmentTimeout.toMillis(),
+                        java.util.concurrent.TimeUnit.MILLISECONDS)
+                    .exceptionally(throwable -> {
+                        if (throwable instanceof java.util.concurrent.TimeoutException) {
+                            log.warn("Assignment timeout for task executor {} after {}ms",
+                                registration.getTaskExecutorID(), assignmentTimeout.toMillis());
+                            return new TaskExecutorAssignmentFailedEvent(
+                                request,
+                                throwable);
+                        }
+                        return new TaskExecutorAssignmentFailedEvent(
+                            request,
+                            ExceptionUtils.stripCompletionException(throwable));
                     });
 
             akka.pattern.Patterns.pipe(ackFuture, getContext().getDispatcher()).to(self());
-
-            // Start assignment timeout timer
-            getTimers().startSingleTimer(
-                getAssignmentTimerKeyFor(registration.getTaskExecutorID()),
-                new AssignmentTimeoutEvent(request),
-                assignmentTimeout
-            );
         } catch (Exception e) {
-            log.error("Exception during task executor assignment for {}", 
+            log.error("Exception during task executor assignment for {}",
                 request.getRegistration().getTaskExecutorID(), e);
             self().tell(new TaskExecutorAssignmentFailedEvent(request, e), self());
         }
     }
 
-    private void onAssignmentTimeout(AssignmentTimeoutEvent event) {
-        TaskExecutorID taskExecutorID = event.getRequest().getRegistration().getTaskExecutorID();
-        log.warn("Assignment timeout for task executor {}", taskExecutorID);
-        
-        // Send TaskExecutorAssignmentTimeout to parent to trigger unassignment
-        getContext().parent().tell(new TaskExecutorAssignmentTimeout(taskExecutorID), self());
-        
-        // Also trigger the failure handling
-        self().tell(new TaskExecutorAssignmentFailedEvent(
-            event.getRequest(), 
-            new RuntimeException("Assignment timeout")), self());
-    }
-
     private void onAssignmentSucceeded(TaskExecutorAssignmentSucceededEvent event) {
         TaskExecutorAssignmentRequest request = event.getRequest();
         TaskExecutorRegistration registration = request.getRegistration();
-        
         log.info("Task executor assignment succeeded for {}", registration.getTaskExecutorID());
-        
-        // Cancel the timeout timer since assignment succeeded
-        getTimers().cancel(getAssignmentTimerKeyFor(registration.getTaskExecutorID()));
-        
-        try {
-            // Route worker launched event to job message router
-            boolean success = jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
-                request.getWorkerId(),
-                request.getStageNum(),
-                registration.getHostname(),
-                registration.getTaskExecutorID().getResourceId(),
-                Optional.ofNullable(registration.getClusterID().getResourceID()),
-                Optional.of(registration.getClusterID()),
-                registration.getWorkerPorts()
-            ));
-            
-            if (success) {
-                log.debug("Successfully routed WorkerLaunched event for {}", request.getWorkerId());
-            } else {
-                log.warn("Failed to route WorkerLaunched event for {}", request.getWorkerId());
-            }
-            
-            // Notify parent actor of successful assignment
-            getContext().parent().tell(Ack.getInstance(), self());
-            
-        } catch (Exception e) {
-            log.error("Error routing WorkerLaunched event for {}", request.getWorkerId(), e);
-            getContext().parent().tell(new Status.Failure(e), self());
-        }
     }
 
     private void onAssignmentFailed(TaskExecutorAssignmentFailedEvent event) {
         TaskExecutorAssignmentRequest request = event.getRequest();
         TaskExecutorRegistration registration = request.getRegistration();
-        
-        log.error("Task executor assignment failed for {} (attempt {}/{}: {})", 
-            registration.getTaskExecutorID(), 
+
+        log.warn("Task executor assignment failed for {} (attempt {}/{}: {})",
+            registration.getTaskExecutorID(),
             request.getAttempt(),
             maxAssignmentRetries,
             event.getThrowable().getMessage());
-        
-        // Cancel the timeout timer
-        getTimers().cancel(getAssignmentTimerKeyFor(registration.getTaskExecutorID()));
-        
+
         if (request.getAttempt() >= maxAssignmentRetries) {
             log.error("Assignment failed for {} after {} attempts, giving up",
                 registration.getTaskExecutorID(), maxAssignmentRetries);
-            
-            // Send TaskExecutorAssignmentTimeout to parent to trigger unassignment
-            getContext().parent().tell(new TaskExecutorAssignmentTimeout(registration.getTaskExecutorID()), self());
-            getContext().parent().tell(new Status.Failure(event.getThrowable()), self());
+
+            // Send assignmentFailure event to parent after max retries
+            getContext().parent().tell(new TaskExecutorAssignmentFailAndTerminate(
+                registration.getTaskExecutorID(),
+                request.getAllocationRequest(),
+                event.getThrowable(),
+                request.getAttempt()
+            ), self());
         } else {
-            log.info("Retrying assignment for {} in {}", 
-                registration.getTaskExecutorID(), intervalBetweenRetries);
-            
+            log.info("Retrying assignment for {} in {} (attempt {}/{})",
+                registration.getTaskExecutorID(), intervalBetweenRetries, request.getAttempt(), maxAssignmentRetries);
+
             TaskExecutorAssignmentRequest retryRequest = request.onRetry();
             getTimers().startSingleTimer(
                 getRetryTimerKeyFor(registration.getTaskExecutorID()),
@@ -209,10 +188,6 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
                 intervalBetweenRetries
             );
         }
-    }
-
-    private String getAssignmentTimerKeyFor(TaskExecutorID taskExecutorID) {
-        return "Assignment-" + taskExecutorID.getResourceId();
     }
 
     private String getRetryTimerKeyFor(TaskExecutorID taskExecutorID) {
@@ -294,11 +269,6 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
     }
 
     @Value
-    private static class AssignmentTimeoutEvent {
-        TaskExecutorAssignmentRequest request;
-    }
-
-    @Value
     private static class TaskExecutorAssignmentSucceededEvent {
         TaskExecutorAssignmentRequest request;
     }
@@ -310,7 +280,10 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
     }
 
     @Value
-    public static class TaskExecutorAssignmentTimeout {
+    public static class TaskExecutorAssignmentFailAndTerminate {
         TaskExecutorID taskExecutorID;
+        TaskExecutorAllocationRequest allocationRequest;
+        Throwable throwable;
+        int attemptCount;
     }
 }

@@ -1,6 +1,8 @@
 package io.mantisrx.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -344,5 +346,100 @@ public class ReservationTest {
         assertEquals(2, result.getStageTargetSize());
         assertEquals(priority, result.getPriority());
         assertEquals(2, result.getRequestedWorkersCount()); // Should be 2 after deduplication
+    }
+
+    @Test
+    public void testReservationPriorityComparison() {
+        // 1. Compare by Type (REPLACE < SCALE < NEW_JOB)
+        ReservationPriority pReplace = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.REPLACE)
+            .tier(1)
+            .timestamp(1000)
+            .build();
+
+        ReservationPriority pScale = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.SCALE)
+            .tier(1)
+            .timestamp(1000)
+            .build();
+
+        ReservationPriority pNewJob = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.NEW_JOB)
+            .tier(1)
+            .timestamp(1000)
+            .build();
+
+        // REPLACE < SCALE
+        assertTrue("REPLACE should be less than SCALE", pReplace.compareTo(pScale) < 0);
+        // SCALE < NEW_JOB
+        assertTrue("SCALE should be less than NEW_JOB", pScale.compareTo(pNewJob) < 0);
+        // REPLACE < NEW_JOB
+        assertTrue("REPLACE should be less than NEW_JOB", pReplace.compareTo(pNewJob) < 0);
+
+        // 2. Compare by Tier (Ascending)
+        ReservationPriority pTier1 = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.SCALE)
+            .tier(1)
+            .timestamp(1000)
+            .build();
+
+        ReservationPriority pTier2 = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.SCALE)
+            .tier(2)
+            .timestamp(1000)
+            .build();
+
+        assertTrue("Lower tier should be less than higher tier", pTier1.compareTo(pTier2) < 0);
+
+        // 3. Compare by Timestamp (Ascending)
+        ReservationPriority pTime1 = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.SCALE)
+            .tier(2)
+            .timestamp(1000)
+            .build();
+
+        ReservationPriority pTime2 = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.SCALE)
+            .tier(2)
+            .timestamp(2000)
+            .build();
+
+        assertTrue("Earlier timestamp should be less than later timestamp", pTime1.compareTo(pTime2) < 0);
+
+        // 4. Equality check for comparison
+        ReservationPriority pTime1Copy = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.SCALE)
+            .tier(2)
+            .timestamp(1000)
+            .build();
+
+        assertEquals("Equal priorities should return 0", 0, pTime1.compareTo(pTime1Copy));
+    }
+
+    @Test
+    public void testReservationPriorityEquality() {
+        ReservationPriority p1 = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.SCALE)
+            .tier(1)
+            .timestamp(1000)
+            .build();
+
+        ReservationPriority p2 = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.SCALE)
+            .tier(1)
+            .timestamp(1000)
+            .build();
+
+        ReservationPriority p3 = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.NEW_JOB)
+            .tier(1)
+            .timestamp(1000)
+            .build();
+
+        assertEquals(p1, p2);
+        assertEquals(p1.hashCode(), p2.hashCode());
+        assertNotEquals(p1, p3);
+        assertFalse(p1.equals(null));
+        assertFalse(p1.equals(new Object()));
     }
 }
