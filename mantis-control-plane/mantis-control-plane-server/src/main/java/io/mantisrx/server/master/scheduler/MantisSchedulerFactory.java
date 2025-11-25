@@ -38,4 +38,6 @@ public interface MantisSchedulerFactory {
      * @return MantisScheduler corresponding to the ClusterID.
      */
     MantisScheduler forClusterID(@Nullable ClusterID clusterID);
+
+    // todo add api to mark registry ready when init success on JobClustersManagerActor.
 }

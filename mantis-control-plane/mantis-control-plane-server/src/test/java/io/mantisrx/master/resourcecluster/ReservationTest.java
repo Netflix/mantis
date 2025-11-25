@@ -6,10 +6,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.Reservation;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.ReservationKey;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.ReservationPriority;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.UpsertReservation;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.*;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.core.domain.WorkerId;

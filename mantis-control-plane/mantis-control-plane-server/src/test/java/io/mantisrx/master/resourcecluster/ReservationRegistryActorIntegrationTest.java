@@ -18,10 +18,8 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetPendingReservationsView;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.MarkReady;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.PendingReservationsView;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.ReservationKey;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.UpsertReservation;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.*;
 import io.mantisrx.master.scheduler.CpuWeightedFitnessCalculator;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
@@ -331,11 +329,9 @@ public class ReservationRegistryActorIntegrationTest {
 
         // Cancel reservation
         resourceClusterActor.tell(
-            ResourceClusterActor.CancelReservation.builder().reservationKey(key).build(),
+            CancelReservation.builder().reservationKey(key).build(),
             probe.getRef());
-        ResourceClusterActor.CancelReservationAck ack =
-            probe.expectMsgClass(ResourceClusterActor.CancelReservationAck.class);
-        assertTrue(ack.isCancelled());
+        probe.expectMsgClass(Ack.class);
 
         // Verify reservation removed
         resourceClusterActor.tell(GetPendingReservationsView.INSTANCE, probe.getRef());
@@ -455,8 +451,8 @@ public class ReservationRegistryActorIntegrationTest {
         int stageTargetSize,
         long priorityTimestamp
     ) {
-        ResourceClusterActor.ReservationPriority priority = ResourceClusterActor.ReservationPriority.builder()
-            .type(ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB)
+        ReservationPriority priority = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.NEW_JOB)
             .tier(0)
             .timestamp(priorityTimestamp)
             .build();

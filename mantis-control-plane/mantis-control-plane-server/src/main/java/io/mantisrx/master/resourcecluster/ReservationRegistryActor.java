@@ -7,16 +7,11 @@ import akka.actor.Status;
 import akka.pattern.Patterns;
 import io.mantisrx.common.Ack;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.CancelReservation;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.CancelReservationAck;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetPendingReservationsView;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.MarkReady;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.PendingReservationGroupView;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.PendingReservationsView;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ProcessReservationsTick;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.Reservation;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.ReservationKey;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.UpsertReservation;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.*;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
@@ -157,10 +152,10 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         if (existingReservations != null && !existingReservations.isEmpty()) {
             new ArrayList<>(existingReservations).forEach(this::removeEntryAndClearInFlight);
             log.info("Cancelled reservation {}", cancel.getReservationKey());
-            sender().tell(new CancelReservationAck(cancel.getReservationKey(), true), self());
+            sender().tell(Ack.getInstance(), self());
             triggerForcedProcessingLoop();
         } else {
-            sender().tell(new CancelReservationAck(cancel.getReservationKey(), false), self());
+            sender().tell(Ack.getInstance(), self());
         }
     }
 

@@ -10,17 +10,12 @@ import akka.actor.ActorSystem;
 import akka.actor.Status;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.CancelReservation;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.CancelReservationAck;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetPendingReservationsView;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.MarkReady;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.PendingReservationGroupView;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.PendingReservationsView;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.ReservationKey;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatchAssignmentRequest;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.UpsertReservation;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.Reservation;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsAllocation;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.*;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
@@ -131,14 +126,12 @@ public class ReservationRegistryActorTest {
         registry.tell(
             CancelReservation.builder().reservationKey(key).build(),
             probe.getRef());
-        CancelReservationAck cancelled = probe.expectMsgClass(CancelReservationAck.class);
-        assertTrue(cancelled.isCancelled());
+        probe.expectMsgClass(Ack.class);
 
         registry.tell(
             CancelReservation.builder().reservationKey(key).build(),
             probe.getRef());
-        CancelReservationAck cancelAgain = probe.expectMsgClass(CancelReservationAck.class);
-        assertFalse(cancelAgain.isCancelled());
+        probe.expectMsgClass(Ack.class);
 
         registry.tell(GetPendingReservationsView.INSTANCE, probe.getRef());
         PendingReservationsView emptyView = probe.expectMsgClass(PendingReservationsView.class);
@@ -277,8 +270,8 @@ public class ReservationRegistryActorTest {
         int stageTargetSize,
         long priorityTimestamp
     ) {
-        ResourceClusterActor.ReservationPriority priority = ResourceClusterActor.ReservationPriority.builder()
-            .type(ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB)
+        ReservationPriority priority = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.NEW_JOB)
             .tier(0)
             .timestamp(priorityTimestamp)
             .build();
@@ -365,8 +358,8 @@ public class ReservationRegistryActorTest {
         allocationRequests.add(req1);
         allocationRequests.add(req2);
 
-        ResourceClusterActor.ReservationPriority priority = ResourceClusterActor.ReservationPriority.builder()
-            .type(ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB)
+        ReservationPriority priority = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.NEW_JOB)
             .tier(0)
             .timestamp(BASE_INSTANT.toEpochMilli())
             .build();
@@ -521,8 +514,7 @@ public class ReservationRegistryActorTest {
         parent.expectMsgClass(Duration.ofSeconds(2), TaskExecutorBatchAssignmentRequest.class);
 
         registry.tell(CancelReservation.builder().reservationKey(key1).build(), probe.getRef());
-        CancelReservationAck ack = probe.expectMsgClass(CancelReservationAck.class);
-        assertTrue(ack.isCancelled());
+        probe.expectMsgClass(Ack.class);
 
         TaskExecutorBatchAssignmentRequest nextRequest = parent.expectMsgClass(
             Duration.ofSeconds(2),
@@ -581,8 +573,8 @@ public class ReservationRegistryActorTest {
         int stageTargetSize,
         long priorityTimestamp
     ) {
-        ResourceClusterActor.ReservationPriority priority = ResourceClusterActor.ReservationPriority.builder()
-            .type(ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB)
+        ReservationPriority priority = ReservationPriority.builder()
+            .type(ReservationPriority.PriorityType.NEW_JOB)
             .tier(0)
             .timestamp(priorityTimestamp)
             .build();
@@ -727,17 +719,17 @@ public class ReservationRegistryActorTest {
         // 1. NEW_JOB (Lowest priority)
         ReservationKey keyLow = ReservationKey.builder().jobId("job-low").stageNumber(1).build();
         upsert(registry, probe, keyLow, constraints, 1, 1,
-            ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.toEpochMilli());
+            ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.toEpochMilli());
 
         // 2. REPLACE (Highest priority)
         ReservationKey keyHigh = ReservationKey.builder().jobId("job-high").stageNumber(1).build();
         upsert(registry, probe, keyHigh, constraints, 1, 1,
-            ResourceClusterActor.ReservationPriority.PriorityType.REPLACE, 0, BASE_INSTANT.toEpochMilli());
+            ReservationPriority.PriorityType.REPLACE, 0, BASE_INSTANT.toEpochMilli());
 
         // 3. SCALE (Medium priority)
         ReservationKey keyMedium = ReservationKey.builder().jobId("job-medium").stageNumber(1).build();
         upsert(registry, probe, keyMedium, constraints, 1, 1,
-            ResourceClusterActor.ReservationPriority.PriorityType.SCALE, 0, BASE_INSTANT.toEpochMilli());
+            ReservationPriority.PriorityType.SCALE, 0, BASE_INSTANT.toEpochMilli());
 
         registry.tell(MarkReady.INSTANCE, probe.getRef());
         probe.expectMsg(Ack.getInstance());
@@ -767,17 +759,17 @@ public class ReservationRegistryActorTest {
         // 1. Middle timestamp
         ReservationKey keyMid = ReservationKey.builder().jobId("job-mid").stageNumber(1).build();
         upsert(registry, probe, keyMid, constraints, 1, 1,
-            ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.plusSeconds(10).toEpochMilli());
+            ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.plusSeconds(10).toEpochMilli());
 
         // 2. Oldest timestamp (First)
         ReservationKey keyOld = ReservationKey.builder().jobId("job-old").stageNumber(1).build();
         upsert(registry, probe, keyOld, constraints, 1, 1,
-            ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.toEpochMilli());
+            ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.toEpochMilli());
 
         // 3. Newest timestamp (Last)
         ReservationKey keyNew = ReservationKey.builder().jobId("job-new").stageNumber(1).build();
         upsert(registry, probe, keyNew, constraints, 1, 1,
-            ResourceClusterActor.ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.plusSeconds(20).toEpochMilli());
+            ReservationPriority.PriorityType.NEW_JOB, 0, BASE_INSTANT.plusSeconds(20).toEpochMilli());
 
         registry.tell(MarkReady.INSTANCE, probe.getRef());
         probe.expectMsg(Ack.getInstance());
@@ -804,11 +796,11 @@ public class ReservationRegistryActorTest {
         SchedulingConstraints constraints,
         int requestedWorkers,
         int stageTargetSize,
-        ResourceClusterActor.ReservationPriority.PriorityType type,
+        ReservationPriority.PriorityType type,
         int tier,
         long priorityTimestamp
     ) {
-        ResourceClusterActor.ReservationPriority priority = ResourceClusterActor.ReservationPriority.builder()
+        ReservationPriority priority = ReservationPriority.builder()
             .type(type)
             .tier(tier)
             .timestamp(priorityTimestamp)

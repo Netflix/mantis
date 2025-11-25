@@ -31,6 +31,7 @@ import io.mantisrx.master.resourcecluster.ExecutorStateManagerActor.RefreshTaskE
 import io.mantisrx.master.resourcecluster.ExecutorStateManagerActor.UpdateDisabledState;
 import io.mantisrx.master.resourcecluster.ExecutorStateManagerActor.UpdateJobArtifactsToCache;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.*;
 import io.mantisrx.master.scheduler.FitnessCalculator;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -678,121 +679,10 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     /**
-     * Reservation value objects shared with {@link ReservationRegistryActor} for tracking outstanding scheduling
-     * requests.
+     * Reservation value objects are now in MantisResourceClusterReservationProto.
+     * These classes are shared between ResourceClusterActor, ReservationRegistryActor,
+     * MantisScheduler, and JobActor.
      */
-    @Value
-    @Builder
-    static class ReservationKey {
-        String jobId;
-        int stageNumber;
-    }
-
-    @Value
-    @Builder
-    static class ReservationPriority implements Comparable<ReservationPriority>{
-        public enum PriorityType {
-            REPLACE,
-            SCALE,
-            NEW_JOB
-        }
-
-        PriorityType type;
-        int tier;
-        long timestamp;
-
-        @Override
-        public int compareTo(ReservationPriority other) {
-            // 1. First, compare by PriorityType (REPLACE < SCALE < NEW_JOB)
-            // Enums compareTo method uses their ordinal (declaration order)
-            int typeComparison = this.type.compareTo(other.type);
-            if (typeComparison != 0) {
-                return typeComparison;
-            }
-
-            // 2. If types are equal, compare by level (ascending)
-            int levelComparison = Integer.compare(this.tier, other.tier);
-            if (levelComparison != 0) {
-                return levelComparison;
-            }
-
-            // 3. If types and levels are equal, compare by value (ascending)
-            return Long.compare(this.timestamp, other.timestamp);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ReservationPriority priority = (ReservationPriority) o;
-            return tier == priority.tier &&
-                timestamp == priority.timestamp &&
-                type == priority.type;
-        }
-
-        /**
-         * Generates a hash code based on type, level, and value.
-         */
-        @Override
-        public int hashCode() {
-            return Objects.hash(type, tier, timestamp);
-        }
-    }
-
-    @Value
-    @Builder(toBuilder = true)
-    static class Reservation {
-        ReservationKey key;
-        SchedulingConstraints schedulingConstraints;
-        String canonicalConstraintKey;
-        Set<WorkerId> requestedWorkers;
-        Set<TaskExecutorAllocationRequest> allocationRequests;
-        int stageTargetSize;
-        ReservationPriority priority;
-
-        boolean hasSameShape(Reservation other) {
-            return other != null
-                && Objects.equals(key, other.key)
-                && Objects.equals(canonicalConstraintKey, other.canonicalConstraintKey)
-                && Objects.equals(requestedWorkers, other.requestedWorkers)
-                && stageTargetSize == other.stageTargetSize;
-        }
-
-        int getRequestedWorkersCount() {
-            return requestedWorkers != null ? requestedWorkers.size() : 0;
-        }
-
-        static Reservation fromUpsertReservation(UpsertReservation upsert, String canonicalConstraintKey) {
-            return Reservation.builder()
-                .key(upsert.getReservationKey())
-                .schedulingConstraints(upsert.getSchedulingConstraints())
-                .canonicalConstraintKey(canonicalConstraintKey)
-                .requestedWorkers(upsert.getAllocationRequests() != null ?
-                    upsert.getAllocationRequests().stream().map(TaskExecutorAllocationRequest::getWorkerId).collect(Collectors.toSet())
-                    : Collections.emptySet())
-                .allocationRequests(upsert.getAllocationRequests() != null ? upsert.getAllocationRequests() : Collections.emptySet())
-                .stageTargetSize(upsert.getStageTargetSize())
-                .priority(upsert.getPriority())
-                .build();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Reservation that = (Reservation) o;
-            return stageTargetSize == that.stageTargetSize
-                && Objects.equals(key, that.key)
-                && Objects.equals(canonicalConstraintKey, that.canonicalConstraintKey)
-                && Objects.equals(priority, that.priority)
-                && Objects.equals(requestedWorkers, that.requestedWorkers);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(key, canonicalConstraintKey, priority, stageTargetSize, requestedWorkers);
-        }
-    }
 
     @Value
     @Builder
@@ -812,31 +702,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         List<ReservationRegistryActor.ReservationSnapshot> reservations = Collections.emptyList();
     }
 
-    @Value
-    @Builder
-    static class CancelReservation {
-        ReservationKey reservationKey;
-    }
-
-    @Value
-    static class CancelReservationAck {
-        ReservationKey reservationKey;
-        boolean cancelled;
-    }
-
-    @Value
-    @Builder
-    static class UpsertReservation {
-        ReservationKey reservationKey;
-        SchedulingConstraints schedulingConstraints;
-        Set<TaskExecutorAllocationRequest>  allocationRequests;
-        int stageTargetSize;
-        ReservationPriority priority;
-    }
-
-    enum MarkReady {
-        INSTANCE
-    }
+    // CancelReservation, CancelReservationAck, UpsertReservation, and MarkReady
+    // are now in MantisResourceClusterReservationProto
 
     enum ProcessReservationsTick {
         INSTANCE
