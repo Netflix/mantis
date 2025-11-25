@@ -216,6 +216,17 @@ public interface ResourceCluster extends ResourceClusterGateway {
         throw new UnsupportedOperationException("Reservation not supported");
     }
 
+    /**
+     * Mark the reservation registry as ready to process reservations.
+     * This should be called after master initialization is complete and all
+     * existing jobs have been recovered.
+     *
+     * @return Future that completes when the registry is marked ready
+     */
+    default CompletableFuture<Ack> markRegistryReady() {
+        throw new UnsupportedOperationException("Reservation not supported");
+    }
+
     class NoResourceAvailableException extends Exception {
         @Nullable
         private final String constraintKey;

@@ -405,9 +405,21 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                         }, () -> {
                             logger.info("JobClusterManagerActor transitioning to initialized behavior");
                             getContext().become(initializedBehavior);
+
+                            // Mark all reservation registries as ready
+                            if (mantisSchedulerFactory != null) {
+                                mantisSchedulerFactory.markAllRegistriesReady()
+                                    .whenComplete((ack, ex) -> {
+                                        if (ex != null) {
+                                            // right now this rely on registry's self-triggering to be ready.
+                                            logger.error("Failed to mark reservation registries as ready", ex);
+                                        } else {
+                                            logger.info("All reservation registries marked ready");
+                                        }
+                                    });
+                            }
+
                             sender.tell(new JobClustersManagerInitializeResponse(initMsg.requestId, SUCCESS, "JobClustersManager successfully inited"), getSelf());
-                            //todo: trigger mantisSchedulerFactory ready
-                            //mantisSchedulerFactory.init()
                         });
 
                 getTimers().startPeriodicTimer(CHECK_CLUSTERS_TIMER_KEY, new ReconcileJobCluster(), Duration.ofSeconds(checkAgainInSecs));

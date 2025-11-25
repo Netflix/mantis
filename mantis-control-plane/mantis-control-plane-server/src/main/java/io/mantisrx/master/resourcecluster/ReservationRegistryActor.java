@@ -42,12 +42,15 @@ import static akka.pattern.Patterns.pipe;
 @Slf4j
 public class ReservationRegistryActor extends AbstractActorWithTimers {
     private static final String TIMER_KEY_PROCESS = "reservation-registry-process";
+    private static final String TIMER_KEY_AUTO_MARK_READY = "reservation-registry-auto-mark-ready";
     private static final Duration DEFAULT_PROCESS_INTERVAL = Duration.ofMillis(1000);
+    private static final Duration DEFAULT_AUTO_MARK_READY_TIMEOUT = Duration.ofMinutes(5);
 
     private final ClusterID clusterID;
     private final Clock clock;
     private final Duration processingInterval;
     private final Duration inFlightReservationTimeout;
+    private final Duration autoMarkReadyTimeout;
     private final ResourceClusterActorMetrics metrics;
 
     private final Duration processingCooldown;
@@ -61,12 +64,13 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
     private boolean ready;
     private Instant lastProcessAt;
 
-    public ReservationRegistryActor(ClusterID clusterID, Clock clock, Duration processingInterval, Duration inFlightReservationTimeout, ResourceClusterActorMetrics metrics) {
+    public ReservationRegistryActor(ClusterID clusterID, Clock clock, Duration processingInterval, Duration inFlightReservationTimeout, Duration autoMarkReadyTimeout, ResourceClusterActorMetrics metrics) {
         this.clusterID = clusterID;
         this.clock = Objects.requireNonNull(clock, "clock");
         this.processingInterval = processingInterval == null ? DEFAULT_PROCESS_INTERVAL : processingInterval;
         this.processingCooldown = this.processingInterval.dividedBy(2);
         this.inFlightReservationTimeout = inFlightReservationTimeout == null ? this.processingInterval.multipliedBy(5) : inFlightReservationTimeout;
+        this.autoMarkReadyTimeout = autoMarkReadyTimeout == null ? DEFAULT_AUTO_MARK_READY_TIMEOUT : autoMarkReadyTimeout;
         this.metrics = Objects.requireNonNull(metrics, "metrics");
         this.reservationComparator = Comparator
             .comparing(Reservation::getPriority)
@@ -78,14 +82,16 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         this.lastProcessAt = Instant.EPOCH;
     }
 
-    public static Props props(ClusterID clusterID, Clock clock, Duration processingInterval, Duration inFlightReservationTimeout, ResourceClusterActorMetrics metrics) {
-        return Props.create(ReservationRegistryActor.class, clusterID, clock, processingInterval, inFlightReservationTimeout, metrics);
+    public static Props props(ClusterID clusterID, Clock clock, Duration processingInterval, Duration inFlightReservationTimeout, Duration autoMarkReadyTimeout, ResourceClusterActorMetrics metrics) {
+        return Props.create(ReservationRegistryActor.class, clusterID, clock, processingInterval, inFlightReservationTimeout, autoMarkReadyTimeout, metrics);
     }
 
     @Override
     public void preStart() throws Exception {
         super.preStart();
         getTimers().startTimerWithFixedDelay(TIMER_KEY_PROCESS, ProcessReservationsTick.INSTANCE, processingInterval);
+        // Start a one-time timer to auto-mark ready after the configured timeout if not already ready
+        getTimers().startSingleTimer(TIMER_KEY_AUTO_MARK_READY, AutoMarkReadyTick.INSTANCE, autoMarkReadyTimeout);
     }
 
     @Override
@@ -97,6 +103,7 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
             .match(MarkReady.class, message -> onMarkReady())
             .match(ProcessReservationsTick.class, message -> onProcessReservationsTick(false))
             .match(ResourceClusterActor.ForceProcessReservationsTick.class, message -> onProcessReservationsTick(true))
+            .match(AutoMarkReadyTick.class, message -> onAutoMarkReadyTick())
             // .match(ReservationAllocationResponse.class, this::onTaskExecutorBatchAssignmentResult)
             .match(ResourceClusterActor.TaskExecutorsAllocation.class, this::onTaskExecutorBatchAssignmentResult)
             .match(Status.Failure.class, this::onStatusFailure)
@@ -107,9 +114,22 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         if (!ready) {
             ready = true;
             log.info("Reservation registry marked ready; pending reservations={}", reservationsByKey.size());
+            // Cancel the auto-mark-ready timer since we're now ready
+            getTimers().cancel(TIMER_KEY_AUTO_MARK_READY);
         }
         sender().tell(Ack.getInstance(), self());
         triggerForcedProcessingLoop();
+    }
+
+    private void onAutoMarkReadyTick() {
+        if (!ready) {
+            log.info("Auto-mark-ready timer expired after {}ms; marking reservation registry as ready", autoMarkReadyTimeout.toMillis());
+            ready = true;
+            log.info("Reservation registry auto-marked ready; pending reservations={}", reservationsByKey.size());
+            triggerForcedProcessingLoop();
+        } else {
+            log.debug("Auto-mark-ready timer fired but registry is already ready; ignoring");
+        }
     }
 
     private void onUpsertReservation(UpsertReservation message) {
@@ -457,6 +477,13 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         }
 
         return builder.toString();
+    }
+
+    /**
+     * Timer message to trigger auto-mark-ready after timeout.
+     */
+    enum AutoMarkReadyTick {
+        INSTANCE
     }
 
     private static final class ConstraintGroup {

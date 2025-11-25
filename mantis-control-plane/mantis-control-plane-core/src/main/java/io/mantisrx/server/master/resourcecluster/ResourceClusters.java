@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.master.resourcecluster;
 
+import io.mantisrx.common.Ack;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -26,4 +27,13 @@ public interface ResourceClusters {
   ResourceCluster getClusterFor(ClusterID clusterID);
 
   CompletableFuture<Set<ClusterID>> listActiveClusters();
+
+  /**
+   * Mark all reservation registries as ready to process reservations.
+   * This should be called after master initialization is complete and all
+   * existing jobs have been recovered.
+   *
+   * @return Future that completes when all clusters are marked ready
+   */
+  CompletableFuture<Ack> markAllRegistriesReady();
 }

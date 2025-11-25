@@ -255,7 +255,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         if (existingRegistry.isDefined()) {
             reservationRegistryActor = existingRegistry.get();
         } else {
-            Props registryProps = ReservationRegistryActor.props(this.clusterID, clock, null, null, metrics);
+            Props registryProps = ReservationRegistryActor.props(this.clusterID, clock, null, null, null, metrics);
             reservationRegistryActor = getContext().actorOf(registryProps, reservationRegistryActorName);
         }
 

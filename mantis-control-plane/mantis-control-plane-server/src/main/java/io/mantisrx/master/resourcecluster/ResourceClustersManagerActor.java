@@ -41,6 +41,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoR
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.QueueClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.MarkReady;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
@@ -165,6 +166,12 @@ class ResourceClustersManagerActor extends AbstractActor {
                     getRCScalerActor(req.getClusterID()).forward(req, context()))
                 .match(SetResourceClusterScalerStatusRequest.class, req ->
                     getRCScalerActor(req.getClusterID()).forward(req, context()))
+                .match(MarkReady.class, markReady -> {
+                    // Broadcast MarkReady to all cluster actors
+                    resourceClusterActorMap.values().forEach(holder ->
+                        holder.getResourceClusterActor().forward(markReady, context()));
+                    sender().tell(io.mantisrx.common.Ack.getInstance(), self());
+                })
                 .build();
     }
 

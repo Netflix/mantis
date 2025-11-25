@@ -703,7 +703,7 @@ class WorkerManager implements IWorkerManager {
 
     WorkerManager(...) {
         // Existing initialization...
-        this.useReservationScheduling = scheduler.supportsReservationScheduling();
+        this.useReservationScheduling = // from master config value
     }
 }
 ```

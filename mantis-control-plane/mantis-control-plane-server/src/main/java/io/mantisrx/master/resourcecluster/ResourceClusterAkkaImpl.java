@@ -42,7 +42,11 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoR
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsAllocation;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsList;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.QueueClusterRuleRefreshRequest;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.MarkReady;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservation;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservationAck;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -336,5 +340,32 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
                 .ask(resourceClusterManagerActor, new GetTaskExecutorWorkerMappingRequest(attributes), askTimeout)
                 .thenApply(obj -> (Map<TaskExecutorID, WorkerId>) obj)
                 .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> markRegistryReady() {
+        // MarkReady is forwarded by ResourceClusterActor to ReservationRegistryActor
+        // We need to send it through a wrapper that includes clusterID so the manager can route it
+        // For now, send it directly - ResourceClusterActor handles MarkReady messages
+        // The manager actor will need to be updated to route MarkReady to the correct cluster
+        // TODO: Update ResourceClustersManagerActor to handle MarkReady routing
+        return Patterns
+            .ask(resourceClusterManagerActor, MarkReady.INSTANCE, askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> upsertReservation(UpsertReservation request) {
+        return Patterns.ask(resourceClusterManagerActor, request, askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> cancelReservation(CancelReservation request) {
+        return Patterns.ask(resourceClusterManagerActor, request, askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
     }
 }

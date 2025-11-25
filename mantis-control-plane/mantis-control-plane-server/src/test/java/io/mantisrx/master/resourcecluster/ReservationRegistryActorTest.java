@@ -62,7 +62,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldGroupReservationsByCanonicalConstraint() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints skuAConstraints = constraints("sku-a", ImmutableMap.of("attr", "1"));
         SchedulingConstraints skuBConstraints = constraints("sku-b", Collections.emptyMap());
@@ -105,7 +105,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldMarkReadyAndHandleCancellation() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         ReservationKey key = ReservationKey.builder().jobId("job-ready").stageNumber(1).build();
         SchedulingConstraints constraints = constraints("sku-ready", Collections.emptyMap());
@@ -143,7 +143,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldDeduplicateOnIdenticalReservationShape() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         ReservationKey key = ReservationKey.builder().jobId("job-dedupe").stageNumber(0).build();
         SchedulingConstraints constraints = constraints("sku-dedupe", ImmutableMap.of("zone", "us-west"));
@@ -174,7 +174,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldRetainExistingReservationsWhenTargetSizeIncreases() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         ReservationKey key = ReservationKey.builder().jobId("job-scale-up").stageNumber(1).build();
         SchedulingConstraints constraints = constraints("sku-scale-up", Collections.emptyMap());
@@ -203,7 +203,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldDropOlderReservationsWhenTargetSizeDecreases() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         ReservationKey key = ReservationKey.builder().jobId("job-scale-down").stageNumber(2).build();
         SchedulingConstraints constraints = constraints("sku-scale-down", Collections.emptyMap());
@@ -340,7 +340,7 @@ public class ReservationRegistryActorTest {
     public void shouldSendBatchAssignmentRequestWhenProcessingReservations() {
         TestKit probe = new TestKit(system);
         TestKit parent = new TestKit(system);
-        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         ReservationKey key = ReservationKey.builder().jobId("job-batch").stageNumber(1).build();
         SchedulingConstraints constraints = constraints("sku-batch", Collections.emptyMap());
@@ -404,7 +404,7 @@ public class ReservationRegistryActorTest {
     public void shouldNotSendMultipleBatchRequestsForSameConstraintGroup() {
         TestKit probe = new TestKit(system);
         TestKit parent = new TestKit(system);
-        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, Duration.ofMillis(100), null, new ResourceClusterActorMetrics()));
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, Duration.ofMillis(100), null, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraints = constraints("sku-inflight", Collections.emptyMap());
 
@@ -441,7 +441,7 @@ public class ReservationRegistryActorTest {
     public void shouldClearInFlightAndSendNextRequestOnSuccess() {
         TestKit probe = new TestKit(system);
         TestKit parent = new TestKit(system);
-        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraints = constraints("sku-success", Collections.emptyMap());
 
@@ -489,7 +489,7 @@ public class ReservationRegistryActorTest {
     public void shouldClearInFlightOnCancellation() {
         TestKit probe = new TestKit(system);
         TestKit parent = new TestKit(system);
-        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraints = constraints("sku-cancel", Collections.emptyMap());
 
@@ -530,7 +530,7 @@ public class ReservationRegistryActorTest {
     public void shouldHandleMultipleConstraintGroupsIndependently() {
         TestKit probe = new TestKit(system);
         TestKit parent = new TestKit(system);
-        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraintsA = constraints("sku-a", ImmutableMap.of("zone", "us-west"));
         SchedulingConstraints constraintsB = constraints("sku-b", ImmutableMap.of("zone", "us-east"));
@@ -601,7 +601,7 @@ public class ReservationRegistryActorTest {
         Clock systemClock = Clock.systemUTC();
 
         ActorRef registry = parent.childActorOf(
-            ReservationRegistryActor.props(TEST_CLUSTER_ID, systemClock, PROCESS_INTERVAL, timeout, new ResourceClusterActorMetrics()));
+            ReservationRegistryActor.props(TEST_CLUSTER_ID, systemClock, PROCESS_INTERVAL, timeout, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraints = constraints("sku-timeout", Collections.emptyMap());
         ReservationKey key = ReservationKey.builder().jobId("job-timeout").stageNumber(1).build();
@@ -648,7 +648,7 @@ public class ReservationRegistryActorTest {
         Clock systemClock = Clock.systemUTC();
 
         ActorRef registry = parent.childActorOf(
-            ReservationRegistryActor.props(TEST_CLUSTER_ID, systemClock, Duration.ofMillis(1000), timeout, new ResourceClusterActorMetrics()));
+            ReservationRegistryActor.props(TEST_CLUSTER_ID, systemClock, Duration.ofMillis(1000), timeout, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraints = constraints("sku-failure", Collections.emptyMap());
         ReservationKey key = ReservationKey.builder().jobId("job-failure").stageNumber(1).build();
@@ -712,7 +712,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldOrderReservationsByPriority() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraints = constraints("sku-priority", Collections.emptyMap());
 
@@ -752,7 +752,7 @@ public class ReservationRegistryActorTest {
     @Test
     public void shouldOrderReservationsByTimestampWithinSamePriority() {
         TestKit probe = new TestKit(system);
-        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, new ResourceClusterActorMetrics()));
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
 
         SchedulingConstraints constraints = constraints("sku-time", Collections.emptyMap());
 

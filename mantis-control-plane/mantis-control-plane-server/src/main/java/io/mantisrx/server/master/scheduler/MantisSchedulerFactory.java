@@ -16,9 +16,11 @@
 
 package io.mantisrx.server.master.scheduler;
 
+import io.mantisrx.common.Ack;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 
 /**
@@ -39,5 +41,14 @@ public interface MantisSchedulerFactory {
      */
     MantisScheduler forClusterID(@Nullable ClusterID clusterID);
 
-    // todo add api to mark registry ready when init success on JobClustersManagerActor.
+    /**
+     * Mark all reservation registries as ready after master initialization.
+     * Should be called after all jobs have been recovered.
+     *
+     * @return Future that completes when all registries are ready
+     */
+    default CompletableFuture<Ack> markAllRegistriesReady() {
+        // Default implementation for factories that don't support reservation scheduling
+        return CompletableFuture.completedFuture(Ack.getInstance());
+    }
 }
