@@ -146,6 +146,18 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         if (sameShapeReservation != null) {
             log.warn("Replacing existing reservation {} with new reservation {}", sameShapeReservation, reservation);
             replaceEntry(sameShapeReservation, reservation);
+
+            // Metric for reservation update
+            metrics.incrementCounter(
+                ResourceClusterActorMetrics.RESERVATION_UPSERTED,
+                TagList.create(ImmutableMap.of(
+                    "resourceCluster",
+                    clusterID.getResourceID(),
+                    "jobId",
+                    key.getJobId(),
+                    "operation",
+                    "update")));
+
             sender().tell(Ack.getInstance(), self());
             triggerProcessingLoop();
             return;
@@ -161,6 +173,18 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         }
 
         addEntry(reservation);
+
+        // Metric for reservation insert
+        metrics.incrementCounter(
+            ResourceClusterActorMetrics.RESERVATION_UPSERTED,
+            TagList.create(ImmutableMap.of(
+                "resourceCluster",
+                clusterID.getResourceID(),
+                "jobId",
+                key.getJobId(),
+                "operation",
+                "insert")));
+
         log.info("Upserted reservation {} (priority={}, requestedWorkers={})",
             key, reservation.getPriority(), reservation.getRequestedWorkersCount());
         sender().tell(Ack.getInstance(), self());
@@ -242,6 +266,16 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
                     if (timeSinceRequest.compareTo(inFlightReservationTimeout) >= 0) {
                         log.info("In-flight reservation {} for constraint group {} has timed out ({}ms), retrying",
                             inFlight.getKey(), constraintKey, timeSinceRequest.toMillis());
+
+                        // Metric for inflight timeout
+                        metrics.incrementCounter(
+                            ResourceClusterActorMetrics.RESERVATION_INFLIGHT_TIMEOUT,
+                            TagList.create(ImmutableMap.of(
+                                "resourceCluster",
+                                clusterID.getResourceID(),
+                                "jobId",
+                                inFlight.getKey().getJobId())));
+
                         // Clear the in-flight state to allow retry
                         inFlightReservations.remove(constraintKey);
                         inFlightReservationRequestTimestamps.remove(constraintKey);
@@ -268,15 +302,18 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
             log.info("Sending batch assignment request for reservation {} in constraint group {}",
                 topReservationO.get().getKey(), constraintKey);
 
+            Reservation reservation = topReservationO.get();
             metrics.incrementCounter(
                 ResourceClusterActorMetrics.RESERVATION_PROCESSED,
                 TagList.create(ImmutableMap.of(
                     "resourceCluster",
                     clusterID.getResourceID(),
+                    "jobId",
+                    reservation.getKey().getJobId(),
                     "constraintKey",
                     constraintKey)));
 
-            inFlightReservations.put(constraintKey, topReservationO.get());
+            inFlightReservations.put(constraintKey, reservation);
             inFlightReservationRequestTimestamps.put(constraintKey, clock.instant());
 
             ResourceClusterActor.TaskExecutorBatchAssignmentRequest request =

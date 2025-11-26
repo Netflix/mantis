@@ -760,7 +760,9 @@ public class ResourceClusterActorTest {
         doReturn(TASK_EXECUTOR_REGISTRATION).when(mantisJobStore).getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID));
         doReturn(ImmutableList.of()).when(mantisJobStore).getJobArtifactsToCache(ArgumentMatchers.eq(CLUSTER_ID));
 
-        resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get();
+        resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION);
+
+        Thread.sleep(500);
         resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
         assertTrue(resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get().isDisabled());
 

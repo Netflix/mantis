@@ -38,9 +38,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -67,6 +65,7 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
@@ -76,6 +75,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -104,10 +104,29 @@ public class JobScaleUpDownTests {
 		system = null;
 	}
 
+	/**
+	 * Setup master config for reservation-based scheduling tests.
+	 */
+	private static void setupReservationConfig() {
+		Properties props = new Properties();
+		props.setProperty("mantis.scheduling.reservation.enabled", "true");
+		TestHelpers.setupMasterConfig(props);
+	}
+
+	/**
+	 * Setup master config for legacy scheduling tests.
+	 */
+	private static void setupLegacyConfig() {
+		Properties props = new Properties();
+		props.setProperty("mantis.scheduling.reservation.enabled", "false");
+		TestHelpers.setupMasterConfig(props);
+	}
+
 
 	////////////////////////Scale up Tests ////////////////////////////////////
 	@Test
-	public void testJobScaleUp() throws Exception, InvalidJobException, io.mantisrx.runtime.command.InvalidJobException {
+	public void testJobScaleUpReservation() throws Exception, InvalidJobException, io.mantisrx.runtime.command.InvalidJobException {
+		setupReservationConfig();
 		final TestKit probe = new TestKit(system);
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
 		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
@@ -120,8 +139,55 @@ public class JobScaleUpDownTests {
 						Lists.newArrayList(),
 						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
 				.build();
-		String clusterName = "testJobScaleUp";
-		MantisScheduler schedulerMock = mock(MantisScheduler.class);
+		String clusterName = "testJobScaleUpReservation";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
+
+		// send scale up request
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName+"-1", 1, 3, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		System.out.println("ScaleupResp " + scaleResp.message);
+		assertEquals(SUCCESS, scaleResp.responseCode);
+		assertEquals(3,scaleResp.getActualNumWorkers());
+
+		verify(jobStoreMock, times(1)).storeNewJob(any());
+		// initial worker
+		verify(jobStoreMock, times(1)).storeNewWorkers(any(),any());
+
+		//scale up worker
+		verify(jobStoreMock, times(2)).storeNewWorker(any());
+
+		verify(jobStoreMock, times(6)).updateWorker(any());
+
+		verify(jobStoreMock, times(3)).updateJob(any());
+
+		// initial worker + job master and scale up worker
+        // should be twice because it is an initial request + scale up request
+		// For reservation-based scheduling, verify upsertReservation instead of scheduleWorkers
+		verify(schedulerMock, times(3)).upsertReservation(any(UpsertReservation.class));
+		verify(schedulerMock, never()).scheduleWorkers(any());
+
+	}
+
+	@Test
+	public void testJobScaleUpLegacy() throws Exception, InvalidJobException, io.mantisrx.runtime.command.InvalidJobException {
+		setupLegacyConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		smap.put(ScalingReason.DataDrop, new Strategy(ScalingReason.DataDrop, 0.0, 2.0, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0,1.0,1.0,3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "testJobScaleUpLegacy";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
 		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
 		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
@@ -147,11 +213,13 @@ public class JobScaleUpDownTests {
 		// initial worker + job master and scale up worker
         //should be twice because it is an initial request + scale up request
 		verify(schedulerMock, times(2)).scheduleWorkers(any());
+		verify(schedulerMock, never()).upsertReservation(any(UpsertReservation.class));
 
 	}
 
 	@Test
-	public void testJobScaleDown() throws Exception, InvalidJobException, io.mantisrx.runtime.command.InvalidJobException {
+	public void testJobScaleDownReservation() throws Exception, InvalidJobException, io.mantisrx.runtime.command.InvalidJobException {
+		setupReservationConfig();
 		final TestKit probe = new TestKit(system);
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
 		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
@@ -164,8 +232,54 @@ public class JobScaleUpDownTests {
 						Lists.newArrayList(),
 						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
 				.build();
-		String clusterName = "testJobScaleUp";
-		MantisScheduler schedulerMock = mock(MantisScheduler.class);
+		String clusterName = "testJobScaleDownReservation";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
+		// send scale down request
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName+"-1",1, 1, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		System.out.println("ScaleDownResp " + scaleResp.message);
+		assertEquals(SUCCESS, scaleResp.responseCode);
+		assertEquals(1,scaleResp.getActualNumWorkers());
+
+		verify(jobStoreMock, times(1)).storeNewJob(any());
+		// initial worker
+		verify(jobStoreMock, times(1)).storeNewWorkers(any(),any());
+
+		// 9 for worker events + 1 for scale down
+		verify(jobStoreMock, times(10)).updateWorker(any());
+
+		verify(jobStoreMock, times(3)).updateJob(any());
+
+		// 1 scale down
+		verify(schedulerMock, times(1)).unscheduleAndTerminateWorker(any(), any());
+
+		// 1 job master + 2 workers
+		// For reservation-based scheduling, verify upsertReservation instead of scheduleWorkers
+		verify(schedulerMock, times(2)).upsertReservation(any(UpsertReservation.class));
+		verify(schedulerMock, never()).scheduleWorkers(any());
+
+	}
+
+	@Test
+	public void testJobScaleDownLegacy() throws Exception, InvalidJobException, io.mantisrx.runtime.command.InvalidJobException {
+		setupLegacyConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		smap.put(ScalingReason.DataDrop, new Strategy(ScalingReason.DataDrop, 0.0, 2.0, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(2,
+						new MachineDefinition(1.0,1.0,1.0,3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "testJobScaleDownLegacy";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
 		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
 
@@ -192,6 +306,7 @@ public class JobScaleUpDownTests {
 
 		// 1 job master + 2 workers
 		verify(schedulerMock, times(1)).scheduleWorkers(any());
+		verify(schedulerMock, never()).upsertReservation(any(UpsertReservation.class));
 
 	}
 
@@ -223,7 +338,7 @@ public class JobScaleUpDownTests {
                         new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
                 .build();
         String clusterName = "testSchedulingInfo";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         CountDownLatch worker1Started = new CountDownLatch(1);
 
@@ -490,7 +605,8 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
     }
 
 	@Test
-	public void testJobScaleUpFailsIfNoScaleStrategy() throws Exception {
+	public void testJobScaleUpFailsIfNoScaleStrategyReservation() throws Exception {
+		setupReservationConfig();
 		final TestKit probe = new TestKit(system);
 
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
@@ -503,8 +619,54 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 						Lists.newArrayList(),
 						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
 				.build();
-		String clusterName = "testJobScaleUpFailsIfNoScaleStrategy";
-		MantisScheduler schedulerMock = mock(MantisScheduler.class);
+		String clusterName = "testJobScaleUpFailsIfNoScaleStrategyReservation";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+
+		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
+
+		// send scale up request
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName+"-1",1, 2, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		System.out.println("ScaleupResp " + scaleResp.message);
+		assertEquals(CLIENT_ERROR, scaleResp.responseCode);
+		assertEquals(0, scaleResp.getActualNumWorkers());
+
+		verify(jobStoreMock, times(1)).storeNewJob(any());
+		// initial worker
+		verify(jobStoreMock, times(1)).storeNewWorkers(any(),any());
+
+		//no scale up worker happened
+		verify(jobStoreMock, times(0)).storeNewWorker(any());
+
+		verify(jobStoreMock, times(3)).updateWorker(any());
+
+		verify(jobStoreMock, times(3)).updateJob(any());
+
+		// initial worker only
+		// For reservation-based scheduling, verify upsertReservation instead of scheduleWorkers
+		verify(schedulerMock, times(1)).upsertReservation(any(UpsertReservation.class));
+		verify(schedulerMock, never()).scheduleWorkers(any());
+	}
+
+	@Test
+	public void testJobScaleUpFailsIfNoScaleStrategyLegacy() throws Exception {
+		setupLegacyConfig();
+		final TestKit probe = new TestKit(system);
+
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0,1.0,1.0,3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "testJobScaleUpFailsIfNoScaleStrategyLegacy";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
 		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
 
@@ -530,10 +692,12 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 
 		// initial worker only
 		verify(schedulerMock, times(1)).scheduleWorkers(any());
+		verify(schedulerMock, never()).upsertReservation(any(UpsertReservation.class));
 	}
 
 	@Test
-	public void testJobScaleUpFailsIfMinEqualsMax() throws Exception {
+	public void testJobScaleUpFailsIfMinEqualsMaxReservation() throws Exception {
+		setupReservationConfig();
 		final TestKit probe = new TestKit(system);
 
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
@@ -546,8 +710,54 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 						Lists.newArrayList(),
 						new StageScalingPolicy(1, 1, 1, 1, 1, 0, smap, true))
 				.build();
-		String clusterName = "testJobScaleUpFailsIfNoScaleStrategy";
-		MantisScheduler schedulerMock = mock(MantisScheduler.class);
+		String clusterName = "testJobScaleUpFailsIfMinEqualsMaxReservation";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+
+		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
+
+		// send scale up request
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName + "-1",1, 3, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		System.out.println("ScaleupResp " + scaleResp.message);
+		assertEquals(CLIENT_ERROR, scaleResp.responseCode);
+		assertEquals(0, scaleResp.getActualNumWorkers());
+
+		verify(jobStoreMock, times(1)).storeNewJob(any());
+		// initial worker
+		verify(jobStoreMock, times(1)).storeNewWorkers(any(),any());
+
+		//no scale up worker happened
+		verify(jobStoreMock, times(0)).storeNewWorker(any());
+
+		verify(jobStoreMock, times(3)).updateWorker(any());
+
+		verify(jobStoreMock, times(3)).updateJob(any());
+
+		// initial worker only
+		// For reservation-based scheduling, verify upsertReservation instead of scheduleWorkers
+		verify(schedulerMock, times(1)).upsertReservation(any(UpsertReservation.class));
+		verify(schedulerMock, never()).scheduleWorkers(any());
+	}
+
+	@Test
+	public void testJobScaleUpFailsIfMinEqualsMaxLegacy() throws Exception {
+		setupLegacyConfig();
+		final TestKit probe = new TestKit(system);
+
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0,1.0,1.0,3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 1, 1, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "testJobScaleUpFailsIfMinEqualsMaxLegacy";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
 		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
 
@@ -573,6 +783,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 
 		// initial worker only
 		verify(schedulerMock, times(1)).scheduleWorkers(any());
+		verify(schedulerMock, never()).upsertReservation(any(UpsertReservation.class));
 	}
 	@Test
 	public void stageScalingPolicyTest() {
