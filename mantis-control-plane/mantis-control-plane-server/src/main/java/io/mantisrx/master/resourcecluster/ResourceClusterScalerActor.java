@@ -86,6 +86,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private final Counter numReachScaleMinLimit;
     private final Counter numScaleRuleTrigger;
 
+    private final boolean reservationSchedulingEnabled;
+
     public static Props props(
         ClusterID clusterId,
         Clock clock,
@@ -93,7 +95,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         Duration ruleRefreshThreshold,
         IMantisPersistenceProvider storageProvider,
         ActorRef resourceClusterHostActor,
-        ActorRef resourceClusterActor) {
+        ActorRef resourceClusterActor,
+        boolean reservationSchedulingEnabled) {
         return Props.create(
             ResourceClusterScalerActor.class,
             clusterId,
@@ -102,7 +105,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             ruleRefreshThreshold,
             storageProvider,
             resourceClusterHostActor,
-            resourceClusterActor);
+            resourceClusterActor,
+            reservationSchedulingEnabled);
     }
 
     public ResourceClusterScalerActor(
@@ -112,7 +116,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         Duration ruleRefreshThreshold,
         IMantisPersistenceProvider storageProvider,
         ActorRef resourceClusterHostActor,
-        ActorRef resourceClusterActor) {
+        ActorRef resourceClusterActor,
+        boolean reservationSchedulingEnabled) {
         this.clusterId = clusterId;
         this.resourceClusterActor = resourceClusterActor;
         this.resourceClusterHostActor = resourceClusterHostActor;
@@ -120,6 +125,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.clock = clock;
         this.scalerPullThreshold = scalerPullThreshold;
         this.ruleSetRefreshThreshold = ruleRefreshThreshold;
+        this.reservationSchedulingEnabled = reservationSchedulingEnabled;
 
         MetricGroupId metricGroupId = new MetricGroupId(
             "ResourceClusterScalerActor",

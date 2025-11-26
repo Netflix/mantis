@@ -132,7 +132,8 @@ public class ResourceClusterScalerActorTests {
                 Duration.ofSeconds(2),
                 this.storageProvider,
                 hostActorProbe.getRef(),
-                clusterActorProbe.getRef());
+                clusterActorProbe.getRef(),
+                false);
 
         scalerActor = actorSystem.actorOf(props);
         GetClusterUsageRequest req = clusterActorProbe.expectMsgClass(GetClusterUsageRequest.class);
@@ -222,7 +223,8 @@ public class ResourceClusterScalerActorTests {
                 Duration.ofSeconds(1),
                 this.storageProvider,
                 hostActorProbe.getRef(),
-                clusterActorProbe.getRef());
+                clusterActorProbe.getRef(),
+                false);
 
         scalerActor = actorSystem.actorOf(props);
         scalerActor.tell(GetRuleSetRequest.builder().build(), clusterActorProbe.getRef());

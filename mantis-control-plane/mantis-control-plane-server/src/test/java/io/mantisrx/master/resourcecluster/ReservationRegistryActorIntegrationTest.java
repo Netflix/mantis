@@ -134,7 +134,8 @@ public class ReservationRegistryActorIntegrationTest {
                 false,
                 ImmutableMap.of(),
                 new CpuWeightedFitnessCalculator(),
-                executeStageRequestFactory));
+                executeStageRequestFactory,
+                false));
     }
 
     @After

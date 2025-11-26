@@ -125,6 +125,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     private final String executorStateManagerActorName;
     private ActorRef executorStateManagerActor;
 
+    private final boolean reservationSchedulingEnabled;
+
     static Props props(
         final ClusterID clusterID,
         final Duration heartbeatTimeout,
@@ -141,7 +143,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
         AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook,
-        ExecuteStageRequestFactory executeStageRequestFactory
+        ExecuteStageRequestFactory executeStageRequestFactory,
+        boolean reservationSchedulingEnabled
     ) {
         return Props.create(
             ResourceClusterActor.class,
@@ -160,7 +163,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             schedulingAttributes,
             fitnessCalculator,
             availableTaskExecutorMutatorHook,
-            executeStageRequestFactory
+            executeStageRequestFactory,
+            reservationSchedulingEnabled
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -179,7 +183,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
-        ExecuteStageRequestFactory executeStageRequestFactory
+        ExecuteStageRequestFactory executeStageRequestFactory,
+        boolean reservationSchedulingEnabled
     ) {
         return Props.create(
             ResourceClusterActor.class,
@@ -198,7 +203,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             schedulingAttributes,
             fitnessCalculator,
             null,
-            executeStageRequestFactory
+            executeStageRequestFactory,
+            reservationSchedulingEnabled
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -218,7 +224,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
         AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook,
-        ExecuteStageRequestFactory executeStageRequestFactory) {
+        ExecuteStageRequestFactory executeStageRequestFactory,
+        boolean reservationSchedulingEnabled) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -233,9 +240,10 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         this.executeStageRequestFactory = executeStageRequestFactory;
         this.maxJobArtifactsToCache = maxJobArtifactsToCache;
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
+        this.reservationSchedulingEnabled = reservationSchedulingEnabled;
 
         this.executorStateManager = new ExecutorStateManagerImpl(
-            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration, availableTaskExecutorMutatorHook);
+            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration, availableTaskExecutorMutatorHook, reservationSchedulingEnabled);
 
         this.metrics = new ResourceClusterActorMetrics();
         this.reservationRegistryActorName = buildReservationRegistryActorName(clusterID);
@@ -279,7 +287,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 isJobArtifactCachingEnabled,
                 jobClustersWithArtifactCachingEnabled,
                 metrics,
-                executeStageRequestFactory);
+                executeStageRequestFactory,
+                reservationSchedulingEnabled);
             executorStateManagerActor = getContext().actorOf(esmProps, executorStateManagerActorName);
         }
 
@@ -598,6 +607,41 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     static class GetClusterUsageRequest {
         ClusterID clusterID;
         Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
+    }
+
+    /**
+     * Request from ScalerActor to get cluster usage with pending reservation counts.
+     * This triggers a two-phase query: first to ReservationRegistryActor, then to ExecutorStateManagerActor.
+     */
+    @Value
+    static class GetReservationAwareClusterUsageRequest {
+        ClusterID clusterID;
+        Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
+    }
+
+    /**
+     * Pending reservation info with actual SchedulingConstraints (not just constraint key string).
+     * This avoids the need to parse constraint keys back into machine definitions.
+     */
+    @Value
+    @Builder
+    static class PendingReservationInfo {
+        String canonicalConstraintKey;
+        SchedulingConstraints schedulingConstraints;  // Actual constraints - no parsing needed!
+        int totalRequestedWorkers;
+        int reservationCount;
+    }
+
+    /**
+     * Internal message to pass pending reservations from ReservationRegistryActor
+     * to ExecutorStateManagerActor for final usage computation.
+     * Contains actual SchedulingConstraints for direct matching.
+     */
+    @Value
+    static class GetClusterUsageWithReservationsRequest {
+        ClusterID clusterID;
+        Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
+        List<PendingReservationInfo> pendingReservations;
     }
 
     @Value

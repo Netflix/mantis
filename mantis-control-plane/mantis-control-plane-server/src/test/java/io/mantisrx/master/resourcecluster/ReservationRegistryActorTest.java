@@ -836,6 +836,216 @@ public class ReservationRegistryActorTest {
         return TaskExecutorAllocationRequest.of(workerId, constraints, null, stageNum);
     }
 
+    @Test
+    public void shouldReturnNotReadyWhenRegistryNotReady() {
+        TestKit probe = new TestKit(system);
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
+
+        SchedulingConstraints constraints = constraints("sku-test", Collections.emptyMap());
+        upsert(registry, probe, "job-test", 1, constraints, 2, 2);
+
+        // Request before marking ready
+        registry.tell(ReservationRegistryActor.GetPendingReservationsForScaler.INSTANCE, probe.getRef());
+        ReservationRegistryActor.PendingReservationsForScalerResponse response = probe.expectMsgClass(
+            ReservationRegistryActor.PendingReservationsForScalerResponse.class);
+        assertFalse(response.isReady());
+        assertTrue(response.getReservations().isEmpty());
+
+        stopActor(registry);
+    }
+
+    @Test
+    public void shouldReturnEmptyListWhenReadyButNoReservations() {
+        TestKit probe = new TestKit(system);
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        registry.tell(ReservationRegistryActor.GetPendingReservationsForScaler.INSTANCE, probe.getRef());
+        ReservationRegistryActor.PendingReservationsForScalerResponse response = probe.expectMsgClass(
+            ReservationRegistryActor.PendingReservationsForScalerResponse.class);
+        assertTrue(response.isReady());
+        assertTrue(response.getReservations().isEmpty());
+
+        stopActor(registry);
+    }
+
+    @Test
+    public void shouldReturnReservationsWithActualSchedulingConstraints() {
+        TestKit probe = new TestKit(system);
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
+
+        SchedulingConstraints skuAConstraints = constraints("sku-a", ImmutableMap.of("zone", "us-west"));
+        SchedulingConstraints skuBConstraints = constraints("sku-b", ImmutableMap.of("zone", "us-east"));
+
+        upsert(registry, probe, "jobA", 1, skuAConstraints, 3, 3);
+        upsert(registry, probe, "jobB", 2, skuAConstraints, 2, 2);
+        upsert(registry, probe, "jobC", 1, skuBConstraints, 4, 4);
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        registry.tell(ReservationRegistryActor.GetPendingReservationsForScaler.INSTANCE, probe.getRef());
+        ReservationRegistryActor.PendingReservationsForScalerResponse response = probe.expectMsgClass(
+            ReservationRegistryActor.PendingReservationsForScalerResponse.class);
+
+        assertTrue(response.isReady());
+        assertEquals(2, response.getReservations().size());
+
+        // Find the two constraint groups
+        ReservationRegistryActor.PendingReservationInfoSnapshot groupA = response.getReservations().stream()
+            .filter(r -> r.getCanonicalConstraintKey().equals(canonicalKeyFor(skuAConstraints)))
+            .findFirst()
+            .orElse(null);
+        assertNotNull(groupA);
+        assertEquals(2, groupA.getReservationCount());
+        assertEquals(5, groupA.getTotalRequestedWorkers()); // 3 + 2
+        assertNotNull(groupA.getSchedulingConstraints());
+        assertEquals(skuAConstraints.getSizeName(), groupA.getSchedulingConstraints().getSizeName());
+        assertEquals(skuAConstraints.getSchedulingAttributes(), groupA.getSchedulingConstraints().getSchedulingAttributes());
+
+        ReservationRegistryActor.PendingReservationInfoSnapshot groupB = response.getReservations().stream()
+            .filter(r -> r.getCanonicalConstraintKey().equals(canonicalKeyFor(skuBConstraints)))
+            .findFirst()
+            .orElse(null);
+        assertNotNull(groupB);
+        assertEquals(1, groupB.getReservationCount());
+        assertEquals(4, groupB.getTotalRequestedWorkers());
+        assertNotNull(groupB.getSchedulingConstraints());
+        assertEquals(skuBConstraints.getSizeName(), groupB.getSchedulingConstraints().getSizeName());
+        assertEquals(skuBConstraints.getSchedulingAttributes(), groupB.getSchedulingConstraints().getSchedulingAttributes());
+
+        stopActor(registry);
+    }
+
+    @Test
+    public void shouldReturnCorrectReservationCountsPerConstraintGroup() {
+        TestKit probe = new TestKit(system);
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
+
+        SchedulingConstraints constraints = constraints("sku-count", Collections.emptyMap());
+
+        // Add multiple reservations to same constraint group
+        upsert(registry, probe, "job1", 1, constraints, 2, 2);
+        upsert(registry, probe, "job2", 1, constraints, 3, 3);
+        upsert(registry, probe, "job3", 1, constraints, 1, 1);
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        registry.tell(ReservationRegistryActor.GetPendingReservationsForScaler.INSTANCE, probe.getRef());
+        ReservationRegistryActor.PendingReservationsForScalerResponse response = probe.expectMsgClass(
+            ReservationRegistryActor.PendingReservationsForScalerResponse.class);
+
+        assertTrue(response.isReady());
+        assertEquals(1, response.getReservations().size());
+
+        ReservationRegistryActor.PendingReservationInfoSnapshot snapshot = response.getReservations().get(0);
+        assertEquals(3, snapshot.getReservationCount()); // 3 reservations
+        assertEquals(6, snapshot.getTotalRequestedWorkers()); // 2 + 3 + 1
+        assertEquals(canonicalKeyFor(constraints), snapshot.getCanonicalConstraintKey());
+        assertNotNull(snapshot.getSchedulingConstraints());
+
+        stopActor(registry);
+    }
+
+    @Test
+    public void shouldHandleReservationsWithDifferentMachineDefinitions() {
+        TestKit probe = new TestKit(system);
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
+
+        MachineDefinition machine1 = new MachineDefinition(2.0, 4096, 128.0, 10240, 1);
+        MachineDefinition machine2 = new MachineDefinition(4.0, 8192, 256.0, 20480, 2);
+
+        SchedulingConstraints constraints1 = SchedulingConstraints.of(machine1, Optional.of("size-1"), Collections.emptyMap());
+        SchedulingConstraints constraints2 = SchedulingConstraints.of(machine2, Optional.of("size-2"), Collections.emptyMap());
+
+        upsert(registry, probe, "job1", 1, constraints1, 2, 2);
+        upsert(registry, probe, "job2", 1, constraints2, 3, 3);
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        registry.tell(ReservationRegistryActor.GetPendingReservationsForScaler.INSTANCE, probe.getRef());
+        ReservationRegistryActor.PendingReservationsForScalerResponse response = probe.expectMsgClass(
+            ReservationRegistryActor.PendingReservationsForScalerResponse.class);
+
+        assertTrue(response.isReady());
+        assertEquals(2, response.getReservations().size());
+
+        // Verify machine definitions are preserved in SchedulingConstraints
+        for (ReservationRegistryActor.PendingReservationInfoSnapshot snapshot : response.getReservations()) {
+            assertNotNull(snapshot.getSchedulingConstraints());
+            assertNotNull(snapshot.getSchedulingConstraints().getMachineDefinition());
+        }
+
+        stopActor(registry);
+    }
+
+    @Test
+    public void shouldSkipEmptyConstraintGroups() {
+        TestKit probe = new TestKit(system);
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
+
+        SchedulingConstraints constraints = constraints("sku-test", Collections.emptyMap());
+
+        // Add a reservation and then cancel it
+        ReservationKey key = ReservationKey.builder().jobId("job-test").stageNumber(1).build();
+        upsert(registry, probe, key, constraints, 2, 2);
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        // Cancel the reservation
+        registry.tell(CancelReservation.builder().reservationKey(key).build(), probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        // Request scaler reservations - should return empty list since group was removed
+        registry.tell(ReservationRegistryActor.GetPendingReservationsForScaler.INSTANCE, probe.getRef());
+        ReservationRegistryActor.PendingReservationsForScalerResponse response = probe.expectMsgClass(
+            ReservationRegistryActor.PendingReservationsForScalerResponse.class);
+
+        assertTrue(response.isReady());
+        assertTrue(response.getReservations().isEmpty());
+
+        stopActor(registry);
+    }
+
+    @Test
+    public void shouldReturnActualSchedulingConstraintsNotParsed() {
+        TestKit probe = new TestKit(system);
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
+
+        // Use complex constraints with attributes
+        SchedulingConstraints originalConstraints = constraints("sku-complex", ImmutableMap.of("zone", "us-west", "env", "prod"));
+
+        upsert(registry, probe, "job-complex", 1, originalConstraints, 2, 2);
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        registry.tell(ReservationRegistryActor.GetPendingReservationsForScaler.INSTANCE, probe.getRef());
+        ReservationRegistryActor.PendingReservationsForScalerResponse response = probe.expectMsgClass(
+            ReservationRegistryActor.PendingReservationsForScalerResponse.class);
+
+        assertTrue(response.isReady());
+        assertEquals(1, response.getReservations().size());
+
+        ReservationRegistryActor.PendingReservationInfoSnapshot snapshot = response.getReservations().get(0);
+        SchedulingConstraints returnedConstraints = snapshot.getSchedulingConstraints();
+
+        // Verify it's the actual object (same machine definition, size name, attributes)
+        assertNotNull(returnedConstraints);
+        assertEquals(originalConstraints.getSizeName(), returnedConstraints.getSizeName());
+        assertEquals(originalConstraints.getSchedulingAttributes(), returnedConstraints.getSchedulingAttributes());
+        assertEquals(originalConstraints.getMachineDefinition().getCpuCores(),
+            returnedConstraints.getMachineDefinition().getCpuCores(), 0.01);
+        assertEquals(originalConstraints.getMachineDefinition().getMemoryMB(),
+            returnedConstraints.getMachineDefinition().getMemoryMB(), 0.01);
+
+        stopActor(registry);
+    }
+
     private static void stopActor(ActorRef actor) {
         TestKit watcher = new TestKit(system);
         watcher.watch(actor);

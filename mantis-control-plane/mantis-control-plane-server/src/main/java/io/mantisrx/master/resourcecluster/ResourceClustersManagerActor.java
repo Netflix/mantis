@@ -195,7 +195,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                     masterConfiguration.getSchedulingConstraints(),
                     masterConfiguration.getFitnessCalculator(),
                     masterConfiguration.getAvailableTaskExecutorMutatorHook(),
-                    executeStageRequestFactory),
+                    executeStageRequestFactory,
+                    masterConfiguration.isReservationSchedulingEnabled()),
                 "ResourceClusterActor-" + clusterID.getResourceID());
         log.info("Created resource cluster actor for {}", clusterID);
         return clusterActor;
@@ -212,7 +213,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                     Duration.ofSeconds(masterConfiguration.getScalerRuleSetRefreshThresholdInSecs()),
                     this.mantisPersistenceProvider,
                     this.resourceClusterHostActor,
-                    rcActor
+                    rcActor,
+                    masterConfiguration.isReservationSchedulingEnabled()
                 ),
                 "ResourceClusterScalerActor-" + clusterID.getResourceID());
         log.info("Created resource cluster scaler actor for {}", clusterID);

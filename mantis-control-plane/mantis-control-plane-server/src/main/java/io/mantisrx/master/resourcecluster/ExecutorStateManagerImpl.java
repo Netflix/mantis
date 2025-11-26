@@ -125,11 +125,15 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
 
     private final AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook;
 
+    // NEW: Flag to enable reservation-aware usage computation
+    private final boolean reservationSchedulingEnabled;
+
     ExecutorStateManagerImpl(Map<String, String> schedulingAttributes) {
         this.schedulingAttributes = schedulingAttributes;
         this.fitnessCalculator = new CpuWeightedFitnessCalculator();
         this.schedulerLeaseExpirationDuration = Duration.ofMillis(100);
         this.availableTaskExecutorMutatorHook = null;
+        this.reservationSchedulingEnabled = false;
     }
 
     ExecutorStateManagerImpl(
@@ -140,6 +144,7 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
         this.fitnessCalculator = fitnessCalculator;
         this.schedulerLeaseExpirationDuration = schedulerLeaseExpirationDuration;
         this.availableTaskExecutorMutatorHook = null;
+        this.reservationSchedulingEnabled = false;
     }
 
     ExecutorStateManagerImpl(Map<String, String> schedulingAttributes,
@@ -150,6 +155,19 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
         this.fitnessCalculator = fitnessCalculator;
         this.schedulerLeaseExpirationDuration = schedulerLeaseExpirationDuration;
         this.availableTaskExecutorMutatorHook = availableTaskExecutorMutatorHook;
+        this.reservationSchedulingEnabled = false;
+    }
+
+    ExecutorStateManagerImpl(Map<String, String> schedulingAttributes,
+                             FitnessCalculator fitnessCalculator,
+                             Duration schedulerLeaseExpirationDuration,
+                             AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook,
+                             boolean reservationSchedulingEnabled) {
+        this.schedulingAttributes = schedulingAttributes;
+        this.fitnessCalculator = fitnessCalculator;
+        this.schedulerLeaseExpirationDuration = schedulerLeaseExpirationDuration;
+        this.availableTaskExecutorMutatorHook = availableTaskExecutorMutatorHook;
+        this.reservationSchedulingEnabled = reservationSchedulingEnabled;
     }
 
     @Override

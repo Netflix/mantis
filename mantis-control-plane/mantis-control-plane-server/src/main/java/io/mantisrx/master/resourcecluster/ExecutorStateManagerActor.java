@@ -143,6 +143,9 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
     private final ActorRef assignmentHandlerActor;
     private final ExecuteStageRequestFactory executeStageRequestFactory;
 
+    // NEW: Flag to enable reservation-aware usage computation
+    private final boolean reservationSchedulingEnabled;
+
     public static Props props(
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
@@ -159,7 +162,8 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         String jobClustersWithArtifactCachingEnabled,
         ResourceClusterActorMetrics metrics,
-        ExecuteStageRequestFactory executeStageRequestFactory
+        ExecuteStageRequestFactory executeStageRequestFactory,
+        boolean reservationSchedulingEnabled
     ) {
         Objects.requireNonNull(schedulingAttributes, "schedulingAttributes");
         Objects.requireNonNull(fitnessCalculator, "fitnessCalculator");
@@ -192,7 +196,8 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             isJobArtifactCachingEnabled,
             jobClustersWithArtifactCachingEnabled,
             metrics,
-            executeStageRequestFactory
+            executeStageRequestFactory,
+            reservationSchedulingEnabled
         )
             .withMailbox("akka.actor.metered-mailbox");
     }
@@ -210,7 +215,8 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         String jobClustersWithArtifactCachingEnabled,
         ResourceClusterActorMetrics metrics,
-        ExecuteStageRequestFactory executeStageRequestFactory
+        ExecuteStageRequestFactory executeStageRequestFactory,
+        boolean reservationSchedulingEnabled
     ) {
         Objects.requireNonNull(delegate, "delegate");
         Objects.requireNonNull(clock, "clock");
@@ -238,7 +244,8 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             isJobArtifactCachingEnabled,
             jobClustersWithArtifactCachingEnabled,
             metrics,
-            executeStageRequestFactory
+            executeStageRequestFactory,
+            reservationSchedulingEnabled
         )
             .withMailbox("akka.actor.metered-mailbox");
     }
@@ -259,14 +266,16 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         String jobClustersWithArtifactCachingEnabled,
         ResourceClusterActorMetrics metrics,
-        ExecuteStageRequestFactory executeStageRequestFactory
+        ExecuteStageRequestFactory executeStageRequestFactory,
+        boolean reservationSchedulingEnabled
     ) {
         this(
             new ExecutorStateManagerImpl(
                 schedulingAttributes,
                 fitnessCalculator,
                 schedulerLeaseExpirationDuration,
-                availableTaskExecutorMutatorHook),
+                availableTaskExecutorMutatorHook,
+                reservationSchedulingEnabled),
             clock,
             rpcService,
             jobMessageRouter,
@@ -278,7 +287,8 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             isJobArtifactCachingEnabled,
             jobClustersWithArtifactCachingEnabled,
             metrics,
-            executeStageRequestFactory);
+            executeStageRequestFactory,
+            reservationSchedulingEnabled);
     }
 
     ExecutorStateManagerActor(
@@ -294,7 +304,8 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         String jobClustersWithArtifactCachingEnabled,
         ResourceClusterActorMetrics metrics,
-        ExecuteStageRequestFactory executeStageRequestFactory
+        ExecuteStageRequestFactory executeStageRequestFactory,
+        boolean reservationSchedulingEnabled
     ) {
         this.delegate = delegate;
         this.clock = clock;
@@ -309,6 +320,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
         this.metrics = metrics;
         this.executeStageRequestFactory = executeStageRequestFactory;
+        this.reservationSchedulingEnabled = reservationSchedulingEnabled;
         this.activeDisableTaskExecutorsByAttributesRequests = new HashSet<>();
         this.disabledTaskExecutors = new HashSet<>();
         this.jobArtifactsToCache = new HashSet<>();

@@ -100,6 +100,7 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
             .match(UpsertReservation.class, this::onUpsertReservation)
             .match(CancelReservation.class, this::onCancelReservation)
             .match(GetPendingReservationsView.class, this::onGetPendingReservationsView)
+            .match(GetPendingReservationsForScaler.class, this::onGetPendingReservationsForScaler)
             .match(MarkReady.class, message -> onMarkReady())
             .match(ProcessReservationsTick.class, message -> onProcessReservationsTick(false))
             .match(ResourceClusterActor.ForceProcessReservationsTick.class, message -> onProcessReservationsTick(true))
@@ -219,6 +220,44 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
             PendingReservationsView.builder()
                 .ready(ready)
                 .groups(groups)
+                .build(),
+            self());
+    }
+
+    /**
+     * Handler for scaler integration - returns pending reservations with actual SchedulingConstraints.
+     */
+    private void onGetPendingReservationsForScaler(GetPendingReservationsForScaler request) {
+        if (!ready) {
+            sender().tell(
+                PendingReservationsForScalerResponse.builder()
+                    .ready(false)
+                    .build(),
+                self());
+            return;
+        }
+
+        List<PendingReservationInfoSnapshot> reservationInfos = new ArrayList<>();
+
+        for (ConstraintGroup group : reservationsByConstraint.values()) {
+            // Get a sample reservation from this group to extract SchedulingConstraints
+            Optional<Reservation> sampleReservation = group.peekTop();
+            if (sampleReservation.isEmpty()) {
+                continue;
+            }
+
+            reservationInfos.add(PendingReservationInfoSnapshot.builder()
+                .canonicalConstraintKey(group.getCanonicalConstraintKey())
+                .schedulingConstraints(sampleReservation.get().getSchedulingConstraints())  // Actual constraints!
+                .totalRequestedWorkers(group.getTotalRequestedWorkers())
+                .reservationCount(group.size())
+                .build());
+        }
+
+        sender().tell(
+            PendingReservationsForScalerResponse.builder()
+                .ready(true)
+                .reservations(reservationInfos)
                 .build(),
             self());
     }
@@ -523,6 +562,36 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         INSTANCE
     }
 
+    /**
+     * Request for pending reservations with full scheduling constraints (for scaler integration).
+     */
+    enum GetPendingReservationsForScaler {
+        INSTANCE
+    }
+
+    /**
+     * Response containing pending reservations with actual SchedulingConstraints.
+     */
+    @Value
+    @Builder
+    public static class PendingReservationsForScalerResponse {
+        boolean ready;
+        @Builder.Default
+        List<PendingReservationInfoSnapshot> reservations = Collections.emptyList();
+    }
+
+    /**
+     * Snapshot of pending reservation info including actual SchedulingConstraints.
+     */
+    @Value
+    @Builder
+    public static class PendingReservationInfoSnapshot {
+        String canonicalConstraintKey;
+        SchedulingConstraints schedulingConstraints;
+        int totalRequestedWorkers;
+        int reservationCount;
+    }
+
     private static final class ConstraintGroup {
         private final String canonicalConstraintKey;
         private final NavigableSet<Reservation> queue;
@@ -573,6 +642,10 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
 
         int size() {
             return queue.size();
+        }
+
+        int getTotalRequestedWorkers() {
+            return totalRequestedWorkers;
         }
     }
 
