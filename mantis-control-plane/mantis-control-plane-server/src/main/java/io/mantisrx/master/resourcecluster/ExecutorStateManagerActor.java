@@ -22,6 +22,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskE
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetBusyTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageWithReservationsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetDisabledTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTaskExecutorsRequest;
@@ -369,6 +370,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             .match(GetUnregisteredTaskExecutorsRequest.class, req -> onGetTaskExecutors(req, ExecutorStateManager.unregistered))
             .match(GetActiveJobsRequest.class, this::onGetActiveJobs)
             .match(GetClusterUsageRequest.class, this::onGetClusterUsage)
+            .match(GetClusterUsageWithReservationsRequest.class, this::onGetClusterUsageWithReservations)  // NEW
             .match(GetClusterIdleInstancesRequest.class, this::onGetClusterIdleInstancesRequest)
             .match(GetAssignedTaskExecutorRequest.class, this::onGetAssignedTaskExecutorRequest)
             .match(MarkExecutorTaskCancelledRequest.class, this::onMarkExecutorTaskCancelledRequest)
@@ -815,6 +817,15 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
 
     private void onGetClusterUsage(GetClusterUsageRequest req) {
         sender().tell(this.delegate.getClusterUsage(req), self());
+    }
+
+    private void onGetClusterUsageWithReservations(GetClusterUsageWithReservationsRequest req) {
+        sender().tell(
+            this.delegate.getClusterUsageWithReservations(
+                req.getClusterID(),
+                req.getGroupKeyFunc(),
+                req.getPendingReservations()),
+            self());
     }
 
     private void onGetClusterIdleInstancesRequest(GetClusterIdleInstancesRequest req) {
