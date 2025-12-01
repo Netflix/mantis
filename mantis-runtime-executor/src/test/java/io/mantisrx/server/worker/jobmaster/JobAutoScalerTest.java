@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import io.mantisrx.common.SystemParameters;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.descriptor.JobScalingRule;
@@ -45,6 +46,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -58,6 +60,11 @@ import rx.functions.Func1;
 public class JobAutoScalerTest {
 
     private static final Logger logger = LoggerFactory.getLogger(JobAutoScalerTest.class);
+
+    @BeforeClass
+    public static void setup() {
+        System.setProperty(SystemParameters.JOB_AUTOSCALE_APPLY_INITIAL_COOLDOWN_PARAM, "false");
+    }
 
     @Test
     public void testScaleUp() throws InterruptedException {
