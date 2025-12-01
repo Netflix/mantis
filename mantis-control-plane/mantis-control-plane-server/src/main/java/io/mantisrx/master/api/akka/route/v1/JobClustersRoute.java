@@ -467,17 +467,28 @@ public class JobClustersRoute extends BaseRoute {
         return parameterOptional("user", user -> {
             logger.info("DELETE /api/v1/jobClusters/{} called", clusterName);
 
-            String userStr = user.orElse(null);
-            if (Strings.isNullOrEmpty(userStr)) {
-                return complete(StatusCodes.BAD_REQUEST, "Missing required parameter 'user'");
-            } else {
-                return completeAsync(
-                        jobClusterRouteHandler.delete(new DeleteJobClusterRequest(userStr, clusterName)),
-                        resp -> complete(StatusCodes.ACCEPTED, ""),
-                        HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE,
-                        HttpRequestMetrics.HttpVerb.DELETE
+            CompletionStage<JobClusterManagerProto.DeleteJobClusterResponse> deleteResponse;
+
+            if (user.isEmpty()) {
+                CompletableFuture<JobClusterManagerProto.DeleteJobClusterResponse> resp = new CompletableFuture<>();
+                resp.complete(
+                    new JobClusterManagerProto.DeleteJobClusterResponse(
+                        -1L,
+                        BaseResponse.ResponseCode.CLIENT_ERROR,
+                        "Missing required query parameter 'user'"
+                    )
                 );
+                deleteResponse = resp;
+            } else {
+                deleteResponse = jobClusterRouteHandler.delete(new DeleteJobClusterRequest(user.get(), clusterName));
             }
+
+            return completeAsync(
+                deleteResponse,
+                resp -> complete(StatusCodes.NO_CONTENT, ""),
+                HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE,
+                HttpRequestMetrics.HttpVerb.DELETE
+            );
         });
     }
 
