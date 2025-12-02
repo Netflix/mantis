@@ -536,13 +536,20 @@ public class JobAutoScaler implements Service {
       private final int stage;
       private final StageScalingPolicy scalingPolicy;
       private final StageScaler scaler;
-      private volatile long lastScaledAt = 0L;
+      private volatile long lastScaledAt;
 
       private StageScaleOperator(int stage, StageScalingPolicy stageScalingPolicy, String scalerId, Context context) {
         this.stage = stage;
         this.scalingPolicy = stageScalingPolicy;
         this.scaler = new StageScaler(stage, this.scalingPolicy, scalerId, context);
-        logger.info("cooldownSecs set to {}", stageScalingPolicy.getCoolDownSecs());
+        
+        boolean applyInitialCooldown = Boolean.parseBoolean(
+            Optional.ofNullable(MantisProperties.getProperty(SystemParameters.JOB_AUTOSCALE_APPLY_INITIAL_COOLDOWN_PARAM))
+                .orElse("true"));
+        this.lastScaledAt = applyInitialCooldown ? System.currentTimeMillis() : 0L;
+        
+        logger.info("cooldownSecs set to {}, applyInitialCooldown={}", 
+            stageScalingPolicy.getCoolDownSecs(), applyInitialCooldown);
       }
 
 

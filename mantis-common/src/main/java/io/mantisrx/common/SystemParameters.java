@@ -29,6 +29,7 @@ public final class SystemParameters {
 
     public static final String JOB_AUTOSCALE_V2_ENABLED_PARAM = "mantis.job.autoscale.v2.enabled";
     public static final String JOB_AUTOSCALE_V2_LOADER_CONFIG_PARAM = "mantis.job.autoscale.v2.loader.config";
+    public static final String JOB_AUTOSCALE_APPLY_INITIAL_COOLDOWN_PARAM = "mantis.job.autoscale.apply.initial.cooldown";
 
 
     @Deprecated
