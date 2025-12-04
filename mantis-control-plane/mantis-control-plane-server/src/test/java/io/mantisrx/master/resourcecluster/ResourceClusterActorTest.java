@@ -763,14 +763,16 @@ public class ResourceClusterActorTest {
 
         resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION);
 
-        Thread.sleep(500);
-        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
+        Thread.sleep(100);
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty());
+        Thread.sleep(100);
         assertTrue(resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get().isDisabled());
 
-        resourceCluster.disconnectTaskExecutor(new TaskExecutorDisconnection(TASK_EXECUTOR_ID, CLUSTER_ID)).get();
-        resourceCluster.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get();
+        resourceCluster.disconnectTaskExecutor(new TaskExecutorDisconnection(TASK_EXECUTOR_ID, CLUSTER_ID));
+        Thread.sleep(100);
+        resourceCluster.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available()));
 
-        Thread.sleep(500);
+        Thread.sleep(100);
         assertTrue(resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get().isDisabled());
     }
 }

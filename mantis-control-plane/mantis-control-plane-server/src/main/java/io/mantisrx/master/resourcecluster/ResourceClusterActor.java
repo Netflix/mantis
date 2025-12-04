@@ -327,6 +327,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                     metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetClusterUsageRequest.class,
                     metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(GetReservationAwareClusterUsageRequest.class,
+                    metrics.withTracking(this::onGetReservationAwareClusterUsage))
                 .match(GetClusterIdleInstancesRequest.class,
                     metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetAssignedTaskExecutorRequest.class,
@@ -386,6 +388,64 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         executorStateManagerActor.forward(message, getContext());
     }
 
+    /**
+     * Handler for reservation-aware cluster usage request.
+     * Two-phase approach:
+     * 1. Ask ReservationRegistryActor for pending reservations with actual SchedulingConstraints
+     * 2. Forward to ExecutorStateManagerActor with the enriched reservation info
+     */
+    private void onGetReservationAwareClusterUsage(GetReservationAwareClusterUsageRequest request) {
+        final ActorRef originalSender = sender();
+
+        if (reservationRegistryActor == null) {
+            log.warn("ReservationRegistryActor not initialized; falling back to regular usage request");
+            sender().tell(new Status.Failure(new IllegalStateException("reservationRegistryActor not available")), self());
+            return;
+        }
+
+        // Phase 1: Get pending reservations with actual constraints from ReservationRegistryActor
+        FutureConverters.toJava(Patterns.ask(
+                reservationRegistryActor,
+                ReservationRegistryActor.GetPendingReservationsForScaler.INSTANCE,
+                Duration.ofSeconds(5).toMillis()))
+            .thenApply(result -> (ReservationRegistryActor.PendingReservationsForScalerResponse) result)
+            .whenComplete((reservationsResponse, error) -> {
+                if (error != null) {
+                    log.error("Failed to get pending reservations for usage request", error);
+                    // Fall back to regular usage request without reservations
+                    sender().tell(
+                        new Status.Failure(new RuntimeException("Failed to get pending reservations for usage", error)),
+                        self());
+                } else {
+                    // Phase 2: Convert to PendingReservationInfo and forward to ExecutorStateManagerActor
+                    if (!reservationsResponse.isReady()) {
+                        sender().tell(
+                            new Status.Failure(new IllegalStateException("Reservation registry is not ready")),
+                            self());
+                        return;
+                    }
+
+                    List<PendingReservationInfo> pendingReservations =
+                        reservationsResponse.getReservations().stream()
+                        .map(snapshot -> PendingReservationInfo.builder()
+                            .canonicalConstraintKey(snapshot.getCanonicalConstraintKey())
+                            .schedulingConstraints(snapshot.getSchedulingConstraints())
+                            .totalRequestedWorkers(snapshot.getTotalRequestedWorkers())
+                            .reservationCount(snapshot.getReservationCount())
+                            .build())
+                        .collect(Collectors.toList());
+
+                    log.debug("Forwarding usage request with {} pending reservation groups", pendingReservations.size());
+
+                    executorStateManagerActor.tell(
+                        new GetClusterUsageWithReservationsRequest(
+                            request.getClusterID(),
+                            request.getGroupKeyFunc(),
+                            pendingReservations),
+                        originalSender);
+                }
+            });
+    }
 
     private void syncExecutorJobArtifactsCache() {
         if (executorStateManagerActor == null) {

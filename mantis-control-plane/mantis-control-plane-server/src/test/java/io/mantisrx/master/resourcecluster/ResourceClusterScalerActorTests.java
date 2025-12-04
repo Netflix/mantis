@@ -28,6 +28,7 @@ import akka.actor.Props;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetReservationAwareClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ClusterAvailabilityRule;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.GetRuleSetRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.GetRuleSetResponse;
@@ -447,5 +448,365 @@ public class ResourceClusterScalerActorTests {
                     .type(ScaleType.ScaleDown)
                     .build()),
             decision);
+    }
+
+    @Test
+    public void testReservationAwareScalerSendsReservationAwareRequest() {
+        final Props props =
+            ResourceClusterScalerActor.props(
+                CLUSTER_ID,
+                Clock.systemDefaultZone(),
+                Duration.ofSeconds(1),
+                Duration.ofSeconds(2),
+                this.storageProvider,
+                hostActorProbe.getRef(),
+                clusterActorProbe.getRef(),
+                true); // reservationSchedulingEnabled = true
+
+        scalerActor = actorSystem.actorOf(props);
+
+        // Should receive GetReservationAwareClusterUsageRequest instead of GetClusterUsageRequest
+        GetReservationAwareClusterUsageRequest req =
+            clusterActorProbe.expectMsgClass(GetReservationAwareClusterUsageRequest.class);
+        assertEquals(CLUSTER_ID, req.getClusterID());
+        assertNotNull(req.getGroupKeyFunc());
+    }
+
+    @Test
+    public void testRuleScaleUpWithPendingReservations() {
+        String skuId = "small";
+        ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
+            ResourceClusterScaleSpec.builder()
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
+                .coolDownSecs(0)
+                .maxIdleToKeep(10)
+                .minIdleToKeep(5)
+                .minSize(11)
+                .maxSize(15)
+                .build(),
+            Clock.fixed(Instant.MIN, ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
+
+        // Case 1: idleCount (7) > minIdleToKeep (5), but effectiveIdleCount (7-3=4) < minIdleToKeep
+        // Should scale up because effective idle is below threshold
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId)
+            .idleCount(7)
+            .totalCount(10)
+            .pendingReservationCount(3)
+            .build();
+        Optional<ScaleDecision> decision = rule.apply(usage);
+
+        // effectiveIdleCount = 7 - 3 = 4 < minIdleToKeep (5)
+        // step = (3 + 5 - 7) = 1
+        // newSize = min(10 + 1, 15) = 11
+        int expectedSize = 11;
+        assertEquals(
+            Optional.of(
+                ScaleDecision.builder()
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
+                    .desireSize(expectedSize)
+                    .minSize(expectedSize)
+                    .maxSize(expectedSize)
+                    .type(ScaleType.ScaleUp)
+                    .build()),
+            decision);
+    }
+
+    @Test
+    public void testRuleScaleUpWithLargePendingReservations() {
+        String skuId = "small";
+        ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
+            ResourceClusterScaleSpec.builder()
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
+                .coolDownSecs(0)
+                .maxIdleToKeep(10)
+                .minIdleToKeep(5)
+                .minSize(11)
+                .maxSize(15)
+                .build(),
+            Clock.fixed(Instant.MIN, ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
+
+        // Case: idleCount (5) = minIdleToKeep (5), but pendingReservations (8) > 0
+        // effectiveIdleCount = max(0, 5 - 8) = 0 < minIdleToKeep (5)
+        // Should scale up significantly to cover pending reservations
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId)
+            .idleCount(5)
+            .totalCount(10)
+            .pendingReservationCount(8)
+            .build();
+        Optional<ScaleDecision> decision = rule.apply(usage);
+
+        // effectiveIdleCount = max(0, 5 - 8) = 0 < minIdleToKeep (5)
+        // step = (8 + 5 - 5) = 8
+        // newSize = min(10 + 8, 15) = 15 (hits max)
+        int expectedSize = 15;
+        assertEquals(
+            Optional.of(
+                ScaleDecision.builder()
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
+                    .desireSize(expectedSize)
+                    .minSize(expectedSize)
+                    .maxSize(expectedSize)
+                    .type(ScaleType.ScaleUp)
+                    .build()),
+            decision);
+    }
+
+    @Test
+    public void testRuleNoScaleDownWithPendingReservations() {
+        String skuId = "small";
+        ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
+            ResourceClusterScaleSpec.builder()
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
+                .coolDownSecs(0)
+                .maxIdleToKeep(10)
+                .minIdleToKeep(5)
+                .minSize(11)
+                .maxSize(15)
+                .build(),
+            Clock.fixed(Instant.MIN, ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
+
+        // Case: idleCount (15) > maxIdleToKeep (10), but effectiveIdleCount (15-6=9) < maxIdleToKeep
+        // Should NOT scale down because effective idle is below max threshold
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId)
+            .idleCount(15)
+            .totalCount(20)
+            .pendingReservationCount(6)
+            .build();
+        Optional<ScaleDecision> decision = rule.apply(usage);
+
+        // effectiveIdleCount = 15 - 6 = 9 < maxIdleToKeep (10)
+        // Should not scale down
+        assertEquals(Optional.empty(), decision);
+    }
+
+    @Test
+    public void testRuleScaleDownWithPendingReservations() {
+        String skuId = "small";
+        ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
+            ResourceClusterScaleSpec.builder()
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
+                .coolDownSecs(0)
+                .maxIdleToKeep(10)
+                .minIdleToKeep(5)
+                .minSize(11)
+                .maxSize(15)
+                .build(),
+            Clock.fixed(Instant.MIN, ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
+
+        // Case: idleCount (18), pendingReservations (2)
+        // effectiveIdleCount = 18 - 2 = 16 > maxIdleToKeep (10)
+        // Should scale down because effective idle exceeds max threshold
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId)
+            .idleCount(18)
+            .totalCount(20)
+            .pendingReservationCount(2)
+            .build();
+        Optional<ScaleDecision> decision = rule.apply(usage);
+
+        // effectiveIdleCount = 18 - 2 = 16 > maxIdleToKeep (10)
+        // step = 16 - 10 = 6
+        // newSize = max(20 - 6, 11) = 14
+        int expectedSize = 14;
+        assertEquals(
+            Optional.of(
+                ScaleDecision.builder()
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
+                    .desireSize(expectedSize)
+                    .minSize(expectedSize)
+                    .maxSize(expectedSize)
+                    .type(ScaleType.ScaleDown)
+                    .build()),
+            decision);
+    }
+
+    @Test
+    public void testRuleEffectiveIdleCountCalculation() {
+        String skuId = "small";
+        ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
+            ResourceClusterScaleSpec.builder()
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
+                .coolDownSecs(0)
+                .maxIdleToKeep(10)
+                .minIdleToKeep(5)
+                .minSize(11)
+                .maxSize(15)
+                .build(),
+            Clock.fixed(Instant.MIN, ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
+
+        // Test edge case: pendingReservationCount > idleCount
+        // effectiveIdleCount should be max(0, idleCount - pendingReservationCount) = 0
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId)
+            .idleCount(3)
+            .totalCount(10)
+            .pendingReservationCount(5) // More pending than idle
+            .build();
+
+        // Verify effectiveIdleCount calculation
+        assertEquals(0, usage.getEffectiveIdleCount());
+
+        // Should scale up because effectiveIdleCount (0) < minIdleToKeep (5)
+        Optional<ScaleDecision> decision = rule.apply(usage);
+
+        // step = (5 + 5 - 3) = 7
+        // newSize = min(10 + 7, 15) = 15
+        int expectedSize = 15;
+        assertEquals(
+            Optional.of(
+                ScaleDecision.builder()
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
+                    .desireSize(expectedSize)
+                    .minSize(expectedSize)
+                    .maxSize(expectedSize)
+                    .type(ScaleType.ScaleUp)
+                    .build()),
+            decision);
+    }
+
+    @Test
+    public void testRuleBackwardCompatibilityNoPendingReservations() {
+        String skuId = "small";
+        ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
+            ResourceClusterScaleSpec.builder()
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
+                .coolDownSecs(0)
+                .maxIdleToKeep(10)
+                .minIdleToKeep(5)
+                .minSize(11)
+                .maxSize(15)
+                .build(),
+            Clock.fixed(Instant.MIN, ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
+
+        // Test backward compatibility: pendingReservationCount = 0 (default)
+        // Should behave exactly like legacy code
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId)
+            .idleCount(4)
+            .totalCount(10)
+            // pendingReservationCount defaults to 0
+            .build();
+
+        assertEquals(4, usage.getEffectiveIdleCount()); // Should equal idleCount when no pending
+
+        Optional<ScaleDecision> decision = rule.apply(usage);
+
+        // Should scale up: idleCount (4) < minIdleToKeep (5)
+        int expectedSize = 11;
+        assertEquals(
+            Optional.of(
+                ScaleDecision.builder()
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
+                    .desireSize(expectedSize)
+                    .minSize(expectedSize)
+                    .maxSize(expectedSize)
+                    .type(ScaleType.ScaleUp)
+                    .build()),
+            decision);
+    }
+
+    @Test
+    public void testRuleScaleUpCalculationAccountsForPendingReservations() {
+        String skuId = "small";
+        ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
+            ResourceClusterScaleSpec.builder()
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
+                .coolDownSecs(0)
+                .maxIdleToKeep(10)
+                .minIdleToKeep(5)
+                .minSize(11)
+                .maxSize(20) // Increased max to test calculation
+                .build(),
+            Clock.fixed(Instant.MIN, ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
+
+        // Test the scale up calculation formula:
+        // step = (pendingReservations + minIdleToKeep - actualIdleCount)
+        // newSize = min(totalCount + step, maxSize)
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId)
+            .idleCount(2) // actualIdleCount
+            .totalCount(10)
+            .pendingReservationCount(5) // pendingReservations
+            .build();
+
+        Optional<ScaleDecision> decision = rule.apply(usage);
+
+        // effectiveIdleCount = max(0, 2 - 5) = 0 < minIdleToKeep (5)
+        // step = (5 + 5 - 2) = 8
+        // newSize = min(10 + 8, 20) = 18
+        int expectedSize = 18;
+        assertEquals(
+            Optional.of(
+                ScaleDecision.builder()
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
+                    .desireSize(expectedSize)
+                    .minSize(expectedSize)
+                    .maxSize(expectedSize)
+                    .type(ScaleType.ScaleUp)
+                    .build()),
+            decision);
+    }
+
+    @Test
+    public void testRuleNoOpWhenEffectiveIdleInRange() {
+        String skuId = "small";
+        ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
+            ResourceClusterScaleSpec.builder()
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
+                .coolDownSecs(0)
+                .maxIdleToKeep(10)
+                .minIdleToKeep(5)
+                .minSize(11)
+                .maxSize(15)
+                .build(),
+            Clock.fixed(Instant.MIN, ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
+
+        // Case: effectiveIdleCount is within range [minIdleToKeep, maxIdleToKeep]
+        // idleCount (8), pendingReservations (2)
+        // effectiveIdleCount = 8 - 2 = 6, which is between 5 and 10
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId)
+            .idleCount(8)
+            .totalCount(12)
+            .pendingReservationCount(2)
+            .build();
+
+        Optional<ScaleDecision> decision = rule.apply(usage);
+
+        // Should not scale (no op)
+        assertEquals(Optional.empty(), decision);
     }
 }

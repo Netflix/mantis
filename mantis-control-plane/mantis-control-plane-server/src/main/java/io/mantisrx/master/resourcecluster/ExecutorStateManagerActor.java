@@ -899,7 +899,9 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         publishResourceClusterMetricBySKU(
             new TaskExecutorsList(this.delegate.getTaskExecutors(ExecutorStateManager.isAssigned)),
             ResourceClusterActorMetrics.NUM_ASSIGNED_TE);
-        sender().tell(Ack.getInstance(), self());
+        // Note: Not sending Ack here since this message is triggered by a timer
+        // and no actor is waiting for the response. Sending Ack to timer-originated
+        // messages results in dead letters.
     }
 
     private void publishResourceClusterMetricBySKU(TaskExecutorsList taskExecutorsList, String metricName) {

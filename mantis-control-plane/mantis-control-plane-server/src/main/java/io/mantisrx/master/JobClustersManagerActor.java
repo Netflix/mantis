@@ -406,15 +406,18 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                             logger.info("JobClusterManagerActor transitioning to initialized behavior");
                             getContext().become(initializedBehavior);
 
-                            // Mark all reservation registries as ready
+                            // Mark all reservation registries as ready.
+                            // This step is redundant in current setup as resource cluster actors won't be created till
+                            // the job cluster level init finish and there is nothing at this point of startup to send
+                            // markReady signal to. Consider whether to keep this logic as future-proof in case the
+                            // lifecycle between job clusters and resource clusters changed.
                             if (mantisSchedulerFactory != null) {
                                 mantisSchedulerFactory.markAllRegistriesReady()
                                     .whenComplete((ack, ex) -> {
                                         if (ex != null) {
-                                            // right now this rely on registry's self-triggering to be ready.
                                             logger.error("Failed to mark reservation registries as ready", ex);
                                         } else {
-                                            logger.info("All reservation registries marked ready");
+                                            logger.info("All existing reservation registries marked ready");
                                         }
                                     });
                             }

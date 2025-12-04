@@ -344,11 +344,7 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
 
     @Override
     public CompletableFuture<Ack> markRegistryReady() {
-        // MarkReady is forwarded by ResourceClusterActor to ReservationRegistryActor
-        // We need to send it through a wrapper that includes clusterID so the manager can route it
-        // For now, send it directly - ResourceClusterActor handles MarkReady messages
-        // The manager actor will need to be updated to route MarkReady to the correct cluster
-        // TODO: Update ResourceClustersManagerActor to handle MarkReady routing
+        // MarkReady is broadcast to all cluster actors by ResourceClustersManagerActor
         return Patterns
             .ask(resourceClusterManagerActor, MarkReady.INSTANCE, askTimeout)
             .thenApply(Ack.class::cast)
@@ -357,14 +353,26 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
 
     @Override
     public CompletableFuture<Ack> upsertReservation(UpsertReservation request) {
-        return Patterns.ask(resourceClusterManagerActor, request, askTimeout)
+        return Patterns.ask(
+                resourceClusterManagerActor,
+                ResourceClustersManagerActor.UpsertReservationRequest.builder()
+                    .clusterID(clusterID)
+                    .upsertReservation(request)
+                    .build(),
+                askTimeout)
             .thenApply(Ack.class::cast)
             .toCompletableFuture();
     }
 
     @Override
     public CompletableFuture<Ack> cancelReservation(CancelReservation request) {
-        return Patterns.ask(resourceClusterManagerActor, request, askTimeout)
+        return Patterns.ask(
+                resourceClusterManagerActor,
+                ResourceClustersManagerActor.CancelReservationRequest.builder()
+                    .clusterID(clusterID)
+                    .cancelReservation(request)
+                    .build(),
+                askTimeout)
             .thenApply(Ack.class::cast)
             .toCompletableFuture();
     }

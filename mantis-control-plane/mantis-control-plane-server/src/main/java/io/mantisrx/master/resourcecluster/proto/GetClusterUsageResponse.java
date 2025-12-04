@@ -47,6 +47,5 @@ public class GetClusterUsageResponse {
         public int getEffectiveIdleCount() {
             return Math.max(0, idleCount - pendingReservationCount);
         }
-        //todo: update scaler logic to include full pending state.
     }
 }
