@@ -38,6 +38,8 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import io.mantisrx.server.master.ExecuteStageRequestFactory;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
@@ -161,6 +163,8 @@ public class ResourceClusterActorClusterUsageAkkaTest {
 
     @Before
     public void setupActor() throws Exception {
+        MasterConfiguration masterConfig = mock(MasterConfiguration.class);
+        ExecuteStageRequestFactory executeStageRequestFactory = new ExecuteStageRequestFactory(masterConfig);
         final Props props =
             ResourceClusterActor.props(
                 CLUSTER_ID,
@@ -176,7 +180,9 @@ public class ResourceClusterActorClusterUsageAkkaTest {
                 "",
                 false,
                 ImmutableMap.of("jdk", "8"),
-                new CpuWeightedFitnessCalculator());
+                new CpuWeightedFitnessCalculator(),
+                executeStageRequestFactory,
+                false);
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =

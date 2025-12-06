@@ -16,10 +16,16 @@
 
 package io.mantisrx.master.resourcecluster;
 
+import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.api.Tag;
+import com.netflix.spectator.api.Timer;
 import io.mantisrx.common.WorkerConstants;
+import io.mantisrx.common.metrics.spectator.MetricId;
+import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.BestFit;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.PendingReservationInfo;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatchAssignmentRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
@@ -30,6 +36,7 @@ import io.mantisrx.master.scheduler.FitnessCalculator;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
@@ -45,6 +52,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -54,6 +62,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,7 +76,11 @@ import org.apache.commons.math3.util.Precision;
 
 @Slf4j
 public class ExecutorStateManagerImpl implements ExecutorStateManager {
+    private static final String METRIC_GROUP_ID = "ExecutorStateManager";
+
     private final Map<TaskExecutorID, TaskExecutorState> taskExecutorStateMap = new HashMap<>();
+    private final Registry registry;
+    private final Timer clusterUsageWithReservationsTimer;
     Cache<String, JobRequirements> pendingJobRequests = CacheBuilder.newBuilder()
         .maximumSize(1000)
         .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -125,31 +138,41 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
 
     private final AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook;
 
+    // NEW: Flag to enable reservation-aware usage computation
+    private final boolean reservationSchedulingEnabled;
+
     ExecutorStateManagerImpl(Map<String, String> schedulingAttributes) {
-        this.schedulingAttributes = schedulingAttributes;
-        this.fitnessCalculator = new CpuWeightedFitnessCalculator();
-        this.schedulerLeaseExpirationDuration = Duration.ofMillis(100);
-        this.availableTaskExecutorMutatorHook = null;
+        this(schedulingAttributes, new CpuWeightedFitnessCalculator(), Duration.ofMillis(100), null, false);
     }
 
     ExecutorStateManagerImpl(
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
         Duration schedulerLeaseExpirationDuration) {
-        this.schedulingAttributes = schedulingAttributes;
-        this.fitnessCalculator = fitnessCalculator;
-        this.schedulerLeaseExpirationDuration = schedulerLeaseExpirationDuration;
-        this.availableTaskExecutorMutatorHook = null;
+        this(schedulingAttributes, fitnessCalculator, schedulerLeaseExpirationDuration, null, false);
     }
 
     ExecutorStateManagerImpl(Map<String, String> schedulingAttributes,
                              FitnessCalculator fitnessCalculator,
                              Duration schedulerLeaseExpirationDuration,
                              AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook) {
+        this(schedulingAttributes, fitnessCalculator, schedulerLeaseExpirationDuration, availableTaskExecutorMutatorHook, false);
+    }
+
+    ExecutorStateManagerImpl(Map<String, String> schedulingAttributes,
+                             FitnessCalculator fitnessCalculator,
+                             Duration schedulerLeaseExpirationDuration,
+                             AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook,
+                             boolean reservationSchedulingEnabled) {
         this.schedulingAttributes = schedulingAttributes;
         this.fitnessCalculator = fitnessCalculator;
         this.schedulerLeaseExpirationDuration = schedulerLeaseExpirationDuration;
         this.availableTaskExecutorMutatorHook = availableTaskExecutorMutatorHook;
+        this.reservationSchedulingEnabled = reservationSchedulingEnabled;
+        this.registry = SpectatorRegistryFactory.getRegistry();
+        this.clusterUsageWithReservationsTimer = registry.timer(
+            new MetricId(METRIC_GROUP_ID, "clusterUsageWithReservationsLatency", Tag.of("class", "ExecutorStateManagerImpl"))
+                .getSpectatorId(registry));
     }
 
     @Override
@@ -522,6 +545,214 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
         GetClusterUsageResponse res = resBuilder.build();
         log.info("Usage result: {}", res);
         return res;
+    }
+
+    @Override
+    public GetClusterUsageResponse getClusterUsageWithReservations(
+            ClusterID clusterID,
+            Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc,
+            List<PendingReservationInfo> pendingReservations) {
+
+        final long startNanos = System.nanoTime();
+        try {
+            // Step 1: Compute base usage by SKU (idle count, total count)
+            // Note: We do NOT use pendingJobRequests cache here because:
+            // - When reservation scheduling is enabled, pending reservations already contain the demand info
+            // - pendingJobRequests would be duplicate/conflicting information
+            // - pendingJobRequests is only used in the legacy getClusterUsage() path
+            Map<String, Pair<Integer, Integer>> usageByGroupKey = computeBaseUsage(groupKeyFunc);
+
+            // Step 2: Map pending reservations to SKU keys using actual SchedulingConstraints
+            Map<String, Integer> reservationCountBySku = mapReservationsToSku(pendingReservations, groupKeyFunc);
+
+            // Step 3: Build response with merged counts
+            GetClusterUsageResponseBuilder resBuilder = GetClusterUsageResponse.builder().clusterID(clusterID);
+
+            // Collect all SKU keys (from both current usage and reservations)
+            Set<String> allSkuKeys = new HashSet<>();
+            allSkuKeys.addAll(usageByGroupKey.keySet());
+            allSkuKeys.addAll(reservationCountBySku.keySet());
+
+            for (String skuKey : allSkuKeys) {
+                Pair<Integer, Integer> usage = usageByGroupKey.getOrDefault(skuKey, Pair.of(0, 0));
+                int pendingFromReservations = reservationCountBySku.getOrDefault(skuKey, 0);
+
+                resBuilder.usage(UsageByGroupKey.builder()
+                    .usageGroupKey(skuKey)
+                    .idleCount(usage.getLeft())  // No pendingJobRequests deduction - reservations are the source of truth
+                    .totalCount(usage.getRight())
+                    .pendingReservationCount(pendingFromReservations)
+                    .build());
+            }
+
+            GetClusterUsageResponse res = resBuilder.build();
+            log.info("Usage result with reservations: {}", res);
+            return res;
+        } finally {
+            clusterUsageWithReservationsTimer.record(System.nanoTime() - startNanos, TimeUnit.NANOSECONDS);
+        }
+    }
+
+    /**
+     * Compute base usage by SKU (idle count, total count).
+     *
+     * @param groupKeyFunc Function to extract SKU key from TaskExecutorRegistration
+     * @return Map of SKU key to (idleCount, totalCount)
+     */
+    private Map<String, Pair<Integer, Integer>> computeBaseUsage(
+            Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc) {
+
+        Map<String, Pair<Integer, Integer>> usageByGroupKey = new HashMap<>();
+
+        taskExecutorStateMap.forEach((key, value) -> {
+            if (value == null || value.getRegistration() == null) {
+                return;
+            }
+
+            Optional<String> groupKeyO = groupKeyFunc.apply(value.getRegistration());
+            if (!groupKeyO.isPresent()) {
+                return;
+            }
+
+            String groupKey = groupKeyO.get();
+            Pair<Integer, Integer> kvState = Pair.of(
+                value.isAvailable() && !value.isDisabled() ? 1 : 0,
+                value.isRegistered() ? 1 : 0);
+
+            usageByGroupKey.merge(groupKey, kvState,
+                (prev, curr) -> Pair.of(prev.getLeft() + curr.getLeft(), prev.getRight() + curr.getRight()));
+        });
+
+        return usageByGroupKey;
+    }
+
+    /**
+     * Map pending reservations to SKU keys using actual SchedulingConstraints.
+     * Uses findBestGroupForUsage with real constraints - NO PARSING NEEDED!
+     *
+     * @param pendingReservations Pending reservations with actual SchedulingConstraints
+     * @param groupKeyFunc Function to extract SKU key from TaskExecutorRegistration
+     * @return Map of SKU key to pending reservation worker count
+     */
+    private Map<String, Integer> mapReservationsToSku(
+            List<PendingReservationInfo> pendingReservations,
+            Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc) {
+
+        Map<String, Integer> reservationCountBySku = new HashMap<>();
+
+        if (pendingReservations == null || pendingReservations.isEmpty()) {
+            return reservationCountBySku;
+        }
+
+        for (PendingReservationInfo reservation : pendingReservations) {
+            int totalRequestedWorkers = reservation.getTotalRequestedWorkers();
+            if (totalRequestedWorkers <= 0) {
+                continue;
+            }
+
+            // Use actual SchedulingConstraints directly - no parsing needed!
+            SchedulingConstraints constraints = reservation.getSchedulingConstraints();
+            Optional<TaskExecutorGroupKey> bestGroup = findBestGroupForUsage(constraints);
+
+            if (bestGroup.isPresent()) {
+                // Map TaskExecutorGroupKey to SKU using sample TE
+                Optional<String> skuKey = mapGroupKeyToSkuViaGroupKeyFunc(bestGroup.get(), groupKeyFunc);
+                skuKey.ifPresent(sku ->
+                    reservationCountBySku.merge(sku, totalRequestedWorkers, Integer::sum));
+
+                log.debug("Mapped reservation {} ({} workers) to SKU {} via group {}",
+                    reservation.getCanonicalConstraintKey(),
+                    totalRequestedWorkers,
+                    skuKey.orElse("unknown"),
+                    bestGroup.get());
+            } else {
+                log.error("Cannot map reservation constraints {} to any TaskExecutorGroup; " +
+                         "{} pending workers will not be counted in scaling",
+                         constraints, totalRequestedWorkers);
+                //todo add metrics
+            }
+        }
+
+        return reservationCountBySku;
+    }
+
+    /**
+     * Find the best matching TaskExecutorGroupKey for given SchedulingConstraints.
+     * This is a relaxed version of findBestGroup - it doesn't require available TEs,
+     * just finds which group would be used for scheduling.
+     *
+     * Reuses existing matching logic from findBestGroupBySizeNameMatch and
+     * findBestGroupByFitnessCalculator but without availability requirements.
+     *
+     * @param constraints The actual SchedulingConstraints from the reservation
+     * @return Optional TaskExecutorGroupKey that would match these constraints
+     */
+    private Optional<TaskExecutorGroupKey> findBestGroupForUsage(SchedulingConstraints constraints) {
+        // Try size name match first (same logic as findBestGroupBySizeNameMatch)
+        Optional<TaskExecutorGroupKey> bySizeName = executorsByGroup.keySet().stream()
+            .filter(group -> group.getSizeName().isPresent())
+            .filter(group -> constraints.getSizeName().isPresent())
+            .filter(group -> group.getSizeName().get().equalsIgnoreCase(constraints.getSizeName().get()))
+            .filter(group -> areSchedulingAttributeConstraintsSatisfied(constraints, group.getSchedulingAttributes()))
+            .findFirst();
+
+        if (bySizeName.isPresent()) {
+            return bySizeName;
+        }
+
+        // Fall back to fitness calculator (same logic as findBestGroupByFitnessCalculator)
+        if (constraints.getMachineDefinition() != null) {
+            return executorsByGroup.keySet().stream()
+                // Filter out if both sizeName exist and are different
+                .filter(group -> {
+                    Optional<String> teGroupSizeName = group.getSizeName();
+                    Optional<String> requestSizeName = constraints.getSizeName();
+                    return !(teGroupSizeName.isPresent() && requestSizeName.isPresent()
+                        && !teGroupSizeName.get().equalsIgnoreCase(requestSizeName.get()));
+                })
+                // Verify scheduling attribute constraints
+                .filter(group -> areSchedulingAttributeConstraintsSatisfied(constraints, group.getSchedulingAttributes()))
+                // Calculate fitness and filter positive scores
+                .map(group -> Pair.of(group,
+                    fitnessCalculator.calculate(constraints.getMachineDefinition(), group.getMachineDefinition())))
+                .filter(pair -> pair.getRight() > 0)
+                // Get highest fitness score
+                .max(Comparator.comparingDouble(Pair::getRight))
+                .map(Pair::getLeft);
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Map a TaskExecutorGroupKey to SKU key using the provided groupKeyFunc.
+     * Finds the first TE from the group with a valid state and registration for mapping.
+     *
+     * @param groupKey The TaskExecutorGroupKey to map
+     * @param groupKeyFunc Function to extract SKU key from TaskExecutorRegistration
+     * @return Optional SKU key
+     */
+    private Optional<String> mapGroupKeyToSkuViaGroupKeyFunc(
+            TaskExecutorGroupKey groupKey,
+            Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc) {
+
+        NavigableSet<TaskExecutorHolder> holders = executorsByGroup.get(groupKey);
+        if (holders == null || holders.isEmpty()) {
+            log.debug("No TaskExecutors found for group {}", groupKey);
+            return Optional.empty();
+        }
+
+        // Find the first holder with valid state and registration
+        for (TaskExecutorHolder holder : holders) {
+            TaskExecutorState state = taskExecutorStateMap.get(holder.getId());
+            if (state != null && state.getRegistration() != null) {
+                // Apply the same groupKeyFunc that scaler uses
+                return groupKeyFunc.apply(state.getRegistration());
+            }
+        }
+
+        log.debug("No TaskExecutor with valid registration found for group {}", groupKey);
+        return Optional.empty();
     }
 
     /**

@@ -27,6 +27,7 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetReservationAwareClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
@@ -61,6 +62,44 @@ import lombok.extern.slf4j.Slf4j;
  * [Notes] There can be two communication model between the scaler actor and resource cluster actor. If the state is
  * pushed from resource cluster actor to the scaler actor, the downside is we need to ensure all changes are properly
  * handled and can trigger the push, while pulling state from scaler actor requires explicit timer firing.
+ *
+ * <h2>Reservation-Aware Scaling Data Flow</h2>
+ * When {@code reservationSchedulingEnabled} is true, the scaler uses a reservation-aware flow to factor
+ * pending reservations into scaling decisions:
+ *
+ * <pre>
+ * ScalerActor.onTriggerClusterUsageRequest()
+ *    │
+ *    └─ (reservationEnabled=true) ──&gt; GetReservationAwareClusterUsageRequest
+ *                                         │
+ *                                         ▼
+ *    ResourceClusterActor.onGetReservationAwareClusterUsage()
+ *        │
+ *        ├─ Phase 1: Ask ReservationRegistryActor.GetPendingReservationsForScaler
+ *        │           → PendingReservationsForScalerResponse (with SchedulingConstraints)
+ *        │
+ *        └─ Phase 2: Forward GetClusterUsageWithReservationsRequest to ESMActor
+ *                         │
+ *                         ▼
+ *    ExecutorStateManagerActor.onGetClusterUsageWithReservations()
+ *        │
+ *        └─ delegate.getClusterUsageWithReservations()
+ *            → GetClusterUsageResponse (with pendingReservationCount per SKU)
+ *                         │
+ *                         ▼
+ *    ScalerActor.onGetClusterUsageResponse()
+ *        │
+ *        └─ ClusterAvailabilityRule.apply(usage)
+ *            │
+ *            ├─ effectiveIdleCount = idleCount - pendingReservationCount
+ *            ├─ Scale Down: Only if effectiveIdleCount &gt; maxIdleToKeep
+ *            └─ Scale Up: If effectiveIdleCount &lt; minIdleToKeep OR pendingReservations &gt; 0
+ * </pre>
+ *
+ * <p>This ensures the cluster proactively scales up to meet pending reservation demand and avoids
+ * premature scale-down when idle TEs are about to be consumed by pending reservations.</p>
+ * <p>Include inflight reservation can potentially cause double booking (reservation + assigned but not yet
+ * signaled TEs. For now tolerate this via scale down later to avoid extra complexity in state.</p>
  */
 @Slf4j
 public class ResourceClusterScalerActor extends AbstractActorWithTimers {
@@ -86,6 +125,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private final Counter numReachScaleMinLimit;
     private final Counter numScaleRuleTrigger;
 
+    private final boolean reservationSchedulingEnabled;
+
     public static Props props(
         ClusterID clusterId,
         Clock clock,
@@ -93,7 +134,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         Duration ruleRefreshThreshold,
         IMantisPersistenceProvider storageProvider,
         ActorRef resourceClusterHostActor,
-        ActorRef resourceClusterActor) {
+        ActorRef resourceClusterActor,
+        boolean reservationSchedulingEnabled) {
         return Props.create(
             ResourceClusterScalerActor.class,
             clusterId,
@@ -102,7 +144,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             ruleRefreshThreshold,
             storageProvider,
             resourceClusterHostActor,
-            resourceClusterActor);
+            resourceClusterActor,
+            reservationSchedulingEnabled);
     }
 
     public ResourceClusterScalerActor(
@@ -112,7 +155,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         Duration ruleRefreshThreshold,
         IMantisPersistenceProvider storageProvider,
         ActorRef resourceClusterHostActor,
-        ActorRef resourceClusterActor) {
+        ActorRef resourceClusterActor,
+        boolean reservationSchedulingEnabled) {
         this.clusterId = clusterId;
         this.resourceClusterActor = resourceClusterActor;
         this.resourceClusterHostActor = resourceClusterHostActor;
@@ -120,6 +164,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.clock = clock;
         this.scalerPullThreshold = scalerPullThreshold;
         this.ruleSetRefreshThreshold = ruleRefreshThreshold;
+        this.reservationSchedulingEnabled = reservationSchedulingEnabled;
 
         MetricGroupId metricGroupId = new MetricGroupId(
             "ResourceClusterScalerActor",
@@ -267,10 +312,20 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             log.info("{} scaler is disabled due to no rules", this.clusterId);
             return;
         }
-        this.resourceClusterActor.tell(
-            new GetClusterUsageRequest(
-                this.clusterId, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
-            self());
+
+        if (reservationSchedulingEnabled) {
+            // Use reservation-aware usage request to factor in pending reservations
+            this.resourceClusterActor.tell(
+                new GetReservationAwareClusterUsageRequest(
+                    this.clusterId, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+                self());
+        } else {
+            // Legacy behavior without reservation awareness
+            this.resourceClusterActor.tell(
+                new GetClusterUsageRequest(
+                    this.clusterId, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+                self());
+        }
     }
 
     private void onTriggerClusterRuleRefreshRequest(TriggerClusterRuleRefreshRequest req) {
@@ -441,15 +496,29 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
         public Optional<ScaleDecision> apply(UsageByGroupKey usage) {
             Optional<ScaleDecision> decision = Optional.empty();
-            if (usage.getIdleCount() > scaleSpec.getMaxIdleToKeep()) {
+
+            // Use effective idle count that accounts for pending reservations
+            int effectiveIdleCount = usage.getEffectiveIdleCount();
+            int actualIdleCount = usage.getIdleCount();
+            int pendingReservations = usage.getPendingReservationCount();
+
+            log.debug("Evaluating scale rule for SKU {}: idle={}, effectiveIdle={}, pending={}, total={}",
+                usage.getUsageGroupKey(),
+                usage.getIdleCount(),
+                effectiveIdleCount,
+                pendingReservations,
+                usage.getTotalCount());
+
+            // SCALE DOWN: Only if effective idle (after reservations) exceeds max
+            if (effectiveIdleCount > scaleSpec.getMaxIdleToKeep()) {
                 // Cool down check: for scaling down we want to wait 5x the nominal cool down period
                 if (isLastActionOlderThan(scaleSpec.getCoolDownSecs() * 5)) {
                     log.debug("Scale Down CoolDown skip: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
                     return Optional.empty();
                 }
 
-                // too many idle agents, scale down.
-                int step = usage.getIdleCount() - scaleSpec.getMaxIdleToKeep();
+                // too many idle agents (accounting for pending reservations), scale down.
+                int step = effectiveIdleCount - scaleSpec.getMaxIdleToKeep();
                 int newSize = Math.max(
                     usage.getTotalCount() - step, this.scaleSpec.getMinSize());
                 decision = Optional.of(
@@ -462,15 +531,17 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         .type(newSize == usage.getTotalCount() ? ScaleType.NoOpReachMin : ScaleType.ScaleDown)
                         .build());
             }
-            else if (usage.getIdleCount() < scaleSpec.getMinIdleToKeep()) {
+            // SCALE UP: If real idle is below min
+            else if (effectiveIdleCount < scaleSpec.getMinIdleToKeep()) {
                 // Cool down check
                 if (isLastActionOlderThan(scaleSpec.getCoolDownSecs())) {
                     log.debug("Scale Up CoolDown skip: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
                     return Optional.empty();
                 }
 
-                // scale up
-                int step = scaleSpec.getMinIdleToKeep() - usage.getIdleCount();
+                // Scale up to cover both idle deficit and pending reservations
+                int step = (pendingReservations + scaleSpec.getMinIdleToKeep() - actualIdleCount) ;
+
                 int newSize = Math.min(
                     usage.getTotalCount() + step, this.scaleSpec.getMaxSize());
                 decision = Optional.of(
@@ -484,8 +555,12 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         .build());
             }
 
-            log.info("Scale Decision for {}-{}: {}",
-                this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId(), decision);
+            log.info("Scale Decision for {}-{}: {} (effectiveIdle={}, pending={})",
+                this.scaleSpec.getClusterId(),
+                this.scaleSpec.getSkuId(),
+                decision,
+                effectiveIdleCount,
+                pendingReservations);
 
             // reset last action only if we decided to scale up or down
             if (decision.isPresent() && (decision.get().type.equals(ScaleType.ScaleDown) || decision.get().type.equals(ScaleType.ScaleUp))) {

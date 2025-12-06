@@ -16,34 +16,28 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import static java.util.stream.Collectors.groupingBy;
+import static akka.pattern.Patterns.pipe;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
-import akka.actor.OneForOneStrategy;
 import akka.actor.Props;
 import akka.actor.Status;
 import akka.actor.SupervisorStrategy;
-import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
-import com.netflix.spectator.api.Tag;
 import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
-import io.mantisrx.common.WorkerConstants;
+import io.mantisrx.common.akka.MantisActorSupervisorStrategy;
+import io.mantisrx.master.resourcecluster.ExecutorStateManagerActor.RefreshTaskExecutorJobArtifactCache;
+import io.mantisrx.master.resourcecluster.ExecutorStateManagerActor.UpdateDisabledState;
+import io.mantisrx.master.resourcecluster.ExecutorStateManagerActor.UpdateJobArtifactsToCache;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
-import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.*;
 import io.mantisrx.master.scheduler.FitnessCalculator;
-import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorNotFoundException;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
@@ -52,21 +46,19 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Occupied;
+import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
-import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.Comparators;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-import io.vavr.Tuple;
+
 import java.io.IOException;
-import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,7 +69,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
@@ -87,6 +78,9 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.flink.runtime.rpc.RpcService;
+import akka.pattern.Patterns;
+import scala.Option;
+import scala.compat.java8.FutureConverters;
 
 /**
  * Akka actor implementation of ResourceCluster.
@@ -98,23 +92,9 @@ import org.apache.flink.runtime.rpc.RpcService;
 @ToString(of = {"clusterID"})
 @Slf4j
 public class ResourceClusterActor extends AbstractActorWithTimers {
-    /**
-     * For ResourceClusterActor instances, we need to ensure they are always running after encountering error so that
-     * TaskExecutors can still remain connected. If there is a fatal error that needs to be escalated to terminate the
-     * whole system/leader you can define a fatal exception type and override its behavior to
-     * SupervisorStrategy.escalate() instead.
-     */
-    private static SupervisorStrategy resourceClusterActorStrategy =
-        new OneForOneStrategy(
-            3,
-            Duration.ofSeconds(60),
-            DeciderBuilder
-                .match(Exception.class, e -> SupervisorStrategy.restart())
-                .build());
-
     @Override
     public SupervisorStrategy supervisorStrategy() {
-        return resourceClusterActorStrategy;
+        return MantisActorSupervisorStrategy.getInstance().create();
     }
 
     private final Duration heartbeatTimeout;
@@ -127,9 +107,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     private final RpcService rpcService;
     private final ClusterID clusterID;
     private final MantisJobStore mantisJobStore;
-    private final Set<DisableTaskExecutorsRequest> activeDisableTaskExecutorsByAttributesRequests;
-    private final Set<TaskExecutorID> disabledTaskExecutors;
     private final JobMessageRouter jobMessageRouter;
+    private final ExecuteStageRequestFactory executeStageRequestFactory;
 
     private final ResourceClusterActorMetrics metrics;
 
@@ -139,6 +118,14 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     private final String jobClustersWithArtifactCachingEnabled;
 
     private final boolean isJobArtifactCachingEnabled;
+
+    private final String reservationRegistryActorName;
+    private ActorRef reservationRegistryActor;
+
+    private final String executorStateManagerActorName;
+    private ActorRef executorStateManagerActor;
+
+    private final boolean reservationSchedulingEnabled;
 
     static Props props(
         final ClusterID clusterID,
@@ -155,7 +142,9 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
-        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook
+        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook,
+        ExecuteStageRequestFactory executeStageRequestFactory,
+        boolean reservationSchedulingEnabled
     ) {
         return Props.create(
             ResourceClusterActor.class,
@@ -173,7 +162,9 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             isJobArtifactCachingEnabled,
             schedulingAttributes,
             fitnessCalculator,
-            availableTaskExecutorMutatorHook
+            availableTaskExecutorMutatorHook,
+            executeStageRequestFactory,
+            reservationSchedulingEnabled
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -191,7 +182,9 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         String jobClustersWithArtifactCachingEnabled,
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
-        FitnessCalculator fitnessCalculator
+        FitnessCalculator fitnessCalculator,
+        ExecuteStageRequestFactory executeStageRequestFactory,
+        boolean reservationSchedulingEnabled
     ) {
         return Props.create(
             ResourceClusterActor.class,
@@ -209,7 +202,9 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             isJobArtifactCachingEnabled,
             schedulingAttributes,
             fitnessCalculator,
-            null
+            null,
+            executeStageRequestFactory,
+            reservationSchedulingEnabled
         ).withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -228,7 +223,9 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         boolean isJobArtifactCachingEnabled,
         Map<String, String> schedulingAttributes,
         FitnessCalculator fitnessCalculator,
-        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook) {
+        AvailableTaskExecutorMutatorHook availableTaskExecutorMutatorHook,
+        ExecuteStageRequestFactory executeStageRequestFactory,
+        boolean reservationSchedulingEnabled) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -240,15 +237,17 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         this.rpcService = rpcService;
         this.jobMessageRouter = jobMessageRouter;
         this.mantisJobStore = mantisJobStore;
-        this.activeDisableTaskExecutorsByAttributesRequests = new HashSet<>();
-        this.disabledTaskExecutors = new HashSet<>();
+        this.executeStageRequestFactory = executeStageRequestFactory;
         this.maxJobArtifactsToCache = maxJobArtifactsToCache;
         this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
+        this.reservationSchedulingEnabled = reservationSchedulingEnabled;
 
         this.executorStateManager = new ExecutorStateManagerImpl(
-            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration, availableTaskExecutorMutatorHook);
+            schedulingAttributes, fitnessCalculator, this.schedulerLeaseExpirationDuration, availableTaskExecutorMutatorHook, reservationSchedulingEnabled);
 
         this.metrics = new ResourceClusterActorMetrics();
+        this.reservationRegistryActorName = buildReservationRegistryActorName(clusterID);
+        this.executorStateManagerActorName = buildExecutorStateManagerActorName(clusterID);
     }
 
     @Override
@@ -260,18 +259,42 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 "resourceCluster",
                 clusterID.getResourceID())));
 
-        fetchJobArtifactsToCache();
-
-        List<DisableTaskExecutorsRequest> activeRequests =
-            mantisJobStore.loadAllDisableTaskExecutorsRequests(clusterID);
-        for (DisableTaskExecutorsRequest request : activeRequests) {
-            onNewDisableTaskExecutorsRequest(request);
+        Option<ActorRef> existingRegistry = getContext().child(reservationRegistryActorName);
+        if (existingRegistry.isDefined()) {
+            reservationRegistryActor = existingRegistry.get();
+        } else {
+            Props registryProps = ReservationRegistryActor.props(this.clusterID, clock, null, null, null, metrics);
+            reservationRegistryActor = getContext().actorOf(registryProps, reservationRegistryActorName);
         }
 
-        timers().startTimerWithFixedDelay(
-            String.format("periodic-disabled-task-executors-test-for-%s", clusterID.getResourceID()),
-            new CheckDisabledTaskExecutors("periodic"),
-            disabledTaskExecutorsCheckInterval);
+        Option<ActorRef> existingExecutorStateManager = getContext().child(executorStateManagerActorName);
+        if (existingExecutorStateManager.isDefined()) {
+            executorStateManagerActor = existingExecutorStateManager.get();
+        } else {
+            if (!(executorStateManager instanceof ExecutorStateManagerImpl)) {
+                throw new IllegalStateException("ExecutorStateManager is not an instance of ExecutorStateManagerImpl");
+            }
+            Props esmProps = ExecutorStateManagerActor.props(
+                (ExecutorStateManagerImpl) executorStateManager,
+                clock,
+                rpcService,
+                jobMessageRouter,
+                mantisJobStore,
+                heartbeatTimeout,
+                assignmentTimeout,
+                disabledTaskExecutorsCheckInterval,
+                clusterID,
+                isJobArtifactCachingEnabled,
+                jobClustersWithArtifactCachingEnabled,
+                metrics,
+                executeStageRequestFactory,
+                reservationSchedulingEnabled);
+            executorStateManagerActor = getContext().actorOf(esmProps, executorStateManagerActorName);
+        }
+
+        syncExecutorJobArtifactsCache();
+
+        fetchJobArtifactsToCache();
 
         timers().startTimerWithFixedDelay(
             "periodic-resource-overview-metrics-publisher",
@@ -284,50 +307,154 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         return
             ReceiveBuilder
                 .create()
+                .match(UpsertReservation.class, this::forwardToReservationRegistry)
+                .match(CancelReservation.class, this::forwardToReservationRegistry)
+                .match(GetPendingReservationsView.class, this::forwardToReservationRegistry)
+                .match(MarkReady.class, this::forwardToReservationRegistry)
                 .match(GetRegisteredTaskExecutorsRequest.class,
-                    req -> {
-                        sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isRegistered)), self());
-                    })
-                .match(GetBusyTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isBusy)), self()))
-                .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isAvailable)), self()))
-                .match(GetDisabledTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isDisabled)), self()))
-                .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.unregistered)), self()))
-                .match(GetActiveJobsRequest.class, this::getActiveJobs)
-                .match(GetTaskExecutorStatusRequest.class, this::getTaskExecutorStatus)
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(GetBusyTaskExecutorsRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(GetAvailableTaskExecutorsRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(GetDisabledTaskExecutorsRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(GetUnregisteredTaskExecutorsRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(GetActiveJobsRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(GetTaskExecutorStatusRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(GetClusterUsageRequest.class,
-                    metrics.withTracking(req ->
-                        sender().tell(this.executorStateManager.getClusterUsage(req), self())))
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(GetReservationAwareClusterUsageRequest.class,
+                    metrics.withTracking(this::onGetReservationAwareClusterUsage))
                 .match(GetClusterIdleInstancesRequest.class,
-                    metrics.withTracking(req ->
-                            sender().tell(onGetClusterIdleInstancesRequest(req), self())))
-                .match(GetAssignedTaskExecutorRequest.class, this::onAssignedTaskExecutorRequest)
-                .match(MarkExecutorTaskCancelledRequest.class, this::onMarkExecutorTaskCancelledRequest)
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(GetAssignedTaskExecutorRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(MarkExecutorTaskCancelledRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
-                .match(TaskExecutorAssignmentTimeout.class, this::onTaskExecutorAssignmentTimeout)
-                .match(TaskExecutorRegistration.class, metrics.withTracking(this::onTaskExecutorRegistration))
-                .match(InitializeTaskExecutorRequest.class, metrics.withTracking(this::onTaskExecutorInitialization))
-                .match(TaskExecutorHeartbeat.class, metrics.withTracking(this::onHeartbeat))
-                .match(TaskExecutorStatusChange.class, this::onTaskExecutorStatusChange)
-                .match(TaskExecutorDisconnection.class, metrics.withTracking(this::onTaskExecutorDisconnection))
-                .match(HeartbeatTimeout.class, metrics.withTracking(this::onTaskExecutorHeartbeatTimeout))
-                .match(TaskExecutorBatchAssignmentRequest.class, metrics.withTracking(this::onTaskExecutorBatchAssignmentRequest))
-                .match(ResourceOverviewRequest.class, this::onResourceOverviewRequest)
-                .match(TaskExecutorInfoRequest.class, this::onTaskExecutorInfoRequest)
-                .match(TaskExecutorGatewayRequest.class, metrics.withTracking(this::onTaskExecutorGatewayRequest))
-                .match(DisableTaskExecutorsRequest.class, this::onNewDisableTaskExecutorsRequest)
-                .match(CheckDisabledTaskExecutors.class, this::findAndMarkDisabledTaskExecutors)
-                .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
-                .match(GetTaskExecutorWorkerMappingRequest.class, req -> sender().tell(getTaskExecutorWorkerMapping(req.getAttributes()), self()))
-                .match(PublishResourceOverviewMetricsRequest.class, this::onPublishResourceOverviewMetricsRequest)
-                .match(CacheJobArtifactsOnTaskExecutorRequest.class, metrics.withTracking(this::onCacheJobArtifactsOnTaskExecutorRequest))
+                .match(TaskExecutorRegistration.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(InitializeTaskExecutorRequest.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TaskExecutorHeartbeat.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TaskExecutorStatusChange.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TaskExecutorDisconnection.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TaskExecutorBatchAssignmentRequest.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(ResourceOverviewRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TaskExecutorInfoRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TaskExecutorGatewayRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(DisableTaskExecutorsRequest.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(CheckDisabledTaskExecutors.class, metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(GetTaskExecutorWorkerMappingRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(PublishResourceOverviewMetricsRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(CacheJobArtifactsOnTaskExecutorRequest.class, metrics.withTracking(req ->
+                    pipe(
+                        FutureConverters.toJava(Patterns.ask(
+                            executorStateManagerActor,
+                            req,
+                            assignmentTimeout.toMillis())),
+                        getContext().dispatcher())
+                        .to(sender(), self())))
                 .match(AddNewJobArtifactsToCacheRequest.class, this::onAddNewJobArtifactsToCacheRequest)
                 .match(RemoveJobArtifactsToCacheRequest.class, this::onRemoveJobArtifactsToCacheRequest)
                 .match(GetJobArtifactsToCacheRequest.class, req -> sender().tell(new ArtifactList(new ArrayList<>(jobArtifactsToCache)), self()))
                 .build();
     }
 
+    private void forwardToReservationRegistry(Object message) {
+        if (reservationRegistryActor == null) {
+            log.warn("Reservation registry actor not initialized; dropping {}", message);
+            sender().tell(new Status.Failure(new IllegalStateException("reservation registry not available")), self());
+            return;
+        }
+        // TODO (reservation-registry): job actor and scheduler interactions will route through this bridge.
+        reservationRegistryActor.forward(message, getContext());
+    }
 
+    private void forwardToExecutorStateManager(Object message) {
+        if (executorStateManagerActor == null) {
+            log.warn("ExecutorStateManagerActor not initialized; dropping {}", message);
+            sender().tell(new Status.Failure(new IllegalStateException("executor state manager actor not available")), self());
+            return;
+        }
+        executorStateManagerActor.forward(message, getContext());
+    }
+
+    /**
+     * Handler for reservation-aware cluster usage request.
+     * Two-phase approach:
+     * 1. Ask ReservationRegistryActor for pending reservations with actual SchedulingConstraints
+     * 2. Forward to ExecutorStateManagerActor with the enriched reservation info
+     */
+    private void onGetReservationAwareClusterUsage(GetReservationAwareClusterUsageRequest request) {
+        final ActorRef originalSender = sender();
+
+        if (reservationRegistryActor == null) {
+            log.warn("ReservationRegistryActor not initialized; falling back to regular usage request");
+            sender().tell(new Status.Failure(new IllegalStateException("reservationRegistryActor not available")), self());
+            return;
+        }
+
+        // Phase 1: Get pending reservations with actual constraints from ReservationRegistryActor
+        FutureConverters.toJava(Patterns.ask(
+                reservationRegistryActor,
+                ReservationRegistryActor.GetPendingReservationsForScaler.INSTANCE,
+                Duration.ofSeconds(5).toMillis()))
+            .thenApply(result -> (ReservationRegistryActor.PendingReservationsForScalerResponse) result)
+            .whenComplete((reservationsResponse, error) -> {
+                if (error != null) {
+                    log.error("Failed to get pending reservations for usage request", error);
+                    // Fall back to regular usage request without reservations
+                    sender().tell(
+                        new Status.Failure(new RuntimeException("Failed to get pending reservations for usage", error)),
+                        self());
+                } else {
+                    // Phase 2: Convert to PendingReservationInfo and forward to ExecutorStateManagerActor
+                    if (!reservationsResponse.isReady()) {
+                        sender().tell(
+                            new Status.Failure(new IllegalStateException("Reservation registry is not ready")),
+                            self());
+                        return;
+                    }
+
+                    List<PendingReservationInfo> pendingReservations =
+                        reservationsResponse.getReservations().stream()
+                        .map(snapshot -> PendingReservationInfo.builder()
+                            .canonicalConstraintKey(snapshot.getCanonicalConstraintKey())
+                            .schedulingConstraints(snapshot.getSchedulingConstraints())
+                            .totalRequestedWorkers(snapshot.getTotalRequestedWorkers())
+                            .reservationCount(snapshot.getReservationCount())
+                            .build())
+                        .collect(Collectors.toList());
+
+                    log.debug("Forwarding usage request with {} pending reservation groups", pendingReservations.size());
+
+                    executorStateManagerActor.tell(
+                        new GetClusterUsageWithReservationsRequest(
+                            request.getClusterID(),
+                            request.getGroupKeyFunc(),
+                            pendingReservations),
+                        originalSender);
+                }
+            });
+    }
+
+    private void syncExecutorJobArtifactsCache() {
+        if (executorStateManagerActor == null) {
+            return;
+        }
+        executorStateManagerActor.tell(
+            new UpdateJobArtifactsToCache(new HashSet<>(jobArtifactsToCache)),
+            self());
+    }
 
     private void onAddNewJobArtifactsToCacheRequest(AddNewJobArtifactsToCacheRequest req) {
         try {
@@ -340,6 +467,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
 
                     jobArtifactsToCache.addAll(newArtifacts);
                     mantisJobStore.addNewJobArtifactsToCache(req.getClusterID(), ImmutableList.copyOf(jobArtifactsToCache));
+                    syncExecutorJobArtifactsCache();
                     refreshTaskExecutorJobArtifactCache();
                 } else {
                     log.warn("Cannot enable caching for artifacts {}. Max number ({}) of job artifacts to cache reached.", newArtifacts, maxJobArtifactsToCache);
@@ -358,15 +486,18 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void refreshTaskExecutorJobArtifactCache() {
-        // TODO: implement rate control to confirm we are not overwhelming the TEs with excessive caching requests
-        getTaskExecutors(ExecutorStateManager.isAvailable).getTaskExecutors().forEach(taskExecutorID ->
-            self().tell(new CacheJobArtifactsOnTaskExecutorRequest(taskExecutorID, clusterID), self()));
+        if (executorStateManagerActor == null) {
+            log.warn("ExecutorStateManagerActor not initialized; skipping artifact cache refresh");
+            return;
+        }
+        executorStateManagerActor.tell(new RefreshTaskExecutorJobArtifactCache(), self());
     }
 
     private void onRemoveJobArtifactsToCacheRequest(RemoveJobArtifactsToCacheRequest req) {
         try {
             mantisJobStore.removeJobArtifactsToCache(req.getClusterID(), req.getArtifacts());
             req.artifacts.forEach(jobArtifactsToCache::remove);
+            syncExecutorJobArtifactsCache();
             sender().tell(Ack.getInstance(), self());
         } catch (IOException e) {
             log.warn("Cannot remove job artifacts {} to cache in cluster: {}", req.getArtifacts(), req.getClusterID(), e);
@@ -379,566 +510,9 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 .stream()
                 .map(ArtifactID::of)
                 .forEach(jobArtifactsToCache::add);
+            syncExecutorJobArtifactsCache();
         } catch (IOException e) {
             log.warn("Cannot refresh job artifacts to cache in cluster: {}", clusterID, e);
-        }
-    }
-
-    private GetClusterIdleInstancesResponse onGetClusterIdleInstancesRequest(GetClusterIdleInstancesRequest req) {
-        log.info("Computing idle instance list: {}", req);
-        if (!req.getClusterID().equals(this.clusterID)) {
-            throw new RuntimeException(String.format("Mismatch cluster ids %s, %s", req.getClusterID(), this.clusterID));
-        }
-
-        List<TaskExecutorID> instanceList = this.executorStateManager.getIdleInstanceList(req);
-
-        GetClusterIdleInstancesResponse res = GetClusterIdleInstancesResponse.builder()
-            .instanceIds(instanceList)
-            .clusterId(this.clusterID)
-            .skuId(req.getSkuId())
-            .build();
-        log.info("Return idle instance list: {}", res);
-        return res;
-    }
-
-    private TaskExecutorsList getTaskExecutors(Predicate<Entry<TaskExecutorID, TaskExecutorState>> predicate) {
-        return new TaskExecutorsList(this.executorStateManager.getTaskExecutors(predicate));
-    }
-
-    private void getActiveJobs(GetActiveJobsRequest req) {
-        List<String> pagedList = this.executorStateManager.getActiveJobs(req);
-
-        PagedActiveJobOverview res =
-            new PagedActiveJobOverview(
-                pagedList,
-                req.getStartingIndex().orElse(0) + pagedList.size()
-            );
-
-        log.info("Returning getActiveJobs res starting at {}: {}", req.getStartingIndex(), res.getActiveJobs().size());
-        sender().tell(res, self());
-    }
-
-    private void onTaskExecutorInfoRequest(TaskExecutorInfoRequest request) {
-        if (request.getTaskExecutorID() != null) {
-            TaskExecutorState state =
-                    this.executorStateManager.getIncludeArchived(request.getTaskExecutorID());
-            if (state != null && state.getRegistration() != null) {
-                sender().tell(state.getRegistration(), self());
-            } else {
-                sender().tell(new Status.Failure(new Exception(String.format("No task executor state for %s",
-                        request.getTaskExecutorID()))), self());
-            }
-        } else {
-            Optional<TaskExecutorRegistration> taskExecutorRegistration =
-                this.executorStateManager
-                    .findFirst(
-                        kv -> kv.getValue().getRegistration() != null &&
-                            kv.getValue().getRegistration().getHostname().equals(request.getHostName()))
-                    .map(Entry::getValue)
-                    .map(TaskExecutorState::getRegistration);
-            if (taskExecutorRegistration.isPresent()) {
-                sender().tell(taskExecutorRegistration.get(), self());
-            } else {
-                sender().tell(new Status.Failure(new Exception(String.format("Unknown task executor for hostname %s", request.getHostName()))), self());
-            }
-        }
-    }
-
-    private void onAssignedTaskExecutorRequest(GetAssignedTaskExecutorRequest request) {
-        Optional<TaskExecutorID> matchedTaskExecutor =
-            this.executorStateManager.findFirst(
-                e -> e.getValue().isRunningOrAssigned(request.getWorkerId())).map(Entry::getKey);
-
-        if (matchedTaskExecutor.isPresent()) {
-            sender().tell(matchedTaskExecutor.get(), self());
-        } else {
-            sender().tell(new Status.Failure(new TaskNotFoundException(request.getWorkerId())),
-                self());
-        }
-    }
-
-    private void onMarkExecutorTaskCancelledRequest(MarkExecutorTaskCancelledRequest request) {
-        Optional<Entry<TaskExecutorID, TaskExecutorState>> matchedTaskExecutor =
-            this.executorStateManager.findFirst(e -> e.getValue().isRunningOrAssigned(request.getWorkerId()));
-
-        if (matchedTaskExecutor.isPresent()) {
-            log.info("Setting executor {} to cancelled workerID: {}", matchedTaskExecutor.get().getKey(), request);
-            matchedTaskExecutor.get().getValue().setCancelledWorkerOnTask(request.getWorkerId());
-            sender().tell(Ack.getInstance(), self());
-        } else {
-            log.info("Cannot find executor to mark worker {} as cancelled", request);
-            sender().tell(new Status.Failure(new TaskNotFoundException(request.getWorkerId())), self());
-        }
-    }
-
-    private void onTaskExecutorGatewayRequest(TaskExecutorGatewayRequest request) {
-        TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
-        if (state == null) {
-            sender().tell(new NullPointerException("Null TaskExecutorState for: " + request.getTaskExecutorID()), self());
-        } else {
-            try {
-                if (state.isRegistered()) {
-                    sender().tell(state.getGatewayAsync(), self());
-                } else {
-                    sender().tell(
-                        new Status.Failure(new IllegalStateException("Unregistered TaskExecutor: " + request.getTaskExecutorID())),
-                        self());
-                }
-            } catch (Exception e) {
-                log.error("onTaskExecutorGatewayRequest error: {}", request, e);
-                metrics.incrementCounter(
-                    ResourceClusterActorMetrics.TE_CONNECTION_FAILURE,
-                    TagList.create(ImmutableMap.of(
-                        "resourceCluster",
-                        clusterID.getResourceID(),
-                        "taskExecutor",
-                        request.getTaskExecutorID().getResourceId())));
-            }
-        }
-    }
-
-    // custom equals function to check if the existing set already has the request under consideration.
-    private boolean addNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest newRequest) {
-        if (newRequest.isRequestByAttributes()) {
-            log.info("Req with attributes {}", newRequest);
-            for (DisableTaskExecutorsRequest existing: activeDisableTaskExecutorsByAttributesRequests) {
-                if (existing.targetsSameTaskExecutorsAs(newRequest)) {
-                    return false;
-                }
-            }
-
-            Preconditions.checkState(activeDisableTaskExecutorsByAttributesRequests.add(newRequest), "activeDisableTaskExecutorRequests cannot contain %s", newRequest);
-            return true;
-        } else if (newRequest.getTaskExecutorID().isPresent() && !disabledTaskExecutors.contains(newRequest.getTaskExecutorID().get())) {
-            log.info("Req with id {}", newRequest);
-            disabledTaskExecutors.add(newRequest.getTaskExecutorID().get());
-            return true;
-        }
-        log.info("No Req {}", newRequest);
-        return false;
-    }
-
-    private void onNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
-        ActorRef sender = sender();
-        if (addNewDisableTaskExecutorsRequest(request)) {
-            try {
-                log.info("New req to add {}", request);
-                // store the request in a persistent store in order to retrieve it if the node goes down
-                mantisJobStore.storeNewDisabledTaskExecutorsRequest(request);
-                // figure out the time to expire the current request
-                Duration toExpiry = Comparators.max(Duration.between(clock.instant(), request.getExpiry()), Duration.ZERO);
-                // setup a timer to clear it after a given period
-                getTimers().startSingleTimer(
-                    getExpiryKeyFor(request),
-                    new ExpireDisableTaskExecutorsRequest(request),
-                    toExpiry);
-                findAndMarkDisabledTaskExecutorsFor(request);
-                sender.tell(Ack.getInstance(), self());
-            } catch (IOException e) {
-                sender().tell(new Status.Failure(e), self());
-            }
-        } else {
-            sender.tell(Ack.getInstance(), self());
-        }
-    }
-
-    private String getExpiryKeyFor(DisableTaskExecutorsRequest request) {
-        return "ExpireDisableTaskExecutorsRequest-" + request;
-    }
-
-    private void findAndMarkDisabledTaskExecutorsFor(DisableTaskExecutorsRequest request) {
-        if (request.isRequestByAttributes()) {
-            findAndMarkDisabledTaskExecutors(new CheckDisabledTaskExecutors("new_request"));
-        } else if (request.getTaskExecutorID().isPresent()) {
-            final TaskExecutorID taskExecutorID = request.getTaskExecutorID().get();
-            final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
-            if (state == null) {
-                // If the TE is unknown by mantis, delete it from state
-                disabledTaskExecutors.remove(taskExecutorID);
-                self().tell(new ExpireDisableTaskExecutorsRequest(request), self());
-            } else {
-                log.info("Marking task executor {} as disabled", taskExecutorID);
-                state.onNodeDisabled();
-            }
-        }
-    }
-
-    private void findAndMarkDisabledTaskExecutors(CheckDisabledTaskExecutors r) {
-        log.info(
-            "Checking disabled task executors for Cluster {} because of {}. Current disabled request size: {}",
-            clusterID.getResourceID(), r.getReason(), activeDisableTaskExecutorsByAttributesRequests.size());
-        final Instant now = clock.instant();
-        for (DisableTaskExecutorsRequest request : activeDisableTaskExecutorsByAttributesRequests) {
-            if (request.isExpired(now)) {
-                self().tell(new ExpireDisableTaskExecutorsRequest(request), self());
-            } else {
-                // go and mark all task executors that match the filter as disabled
-                this.executorStateManager.getActiveExecutorEntry().forEach(idAndState -> {
-                    if (request.covers(idAndState.getValue().getRegistration())) {
-                        if (idAndState.getValue().onNodeDisabled()) {
-                            log.info("Marking task executor {} as disabled", idAndState.getKey());
-                        }
-                    }
-                });
-            }
-        }
-    }
-
-    private void onDisableTaskExecutorsRequestExpiry(ExpireDisableTaskExecutorsRequest request) {
-        try {
-            log.debug("Expiring Disable Task Executors Request {}", request.getRequest());
-            getTimers().cancel(getExpiryKeyFor(request.getRequest()));
-            if (activeDisableTaskExecutorsByAttributesRequests.remove(request.getRequest()) || (request.getRequest().getTaskExecutorID().isPresent() && disabledTaskExecutors.remove(request.getRequest().getTaskExecutorID().get()))) {
-                mantisJobStore.deleteExpiredDisableTaskExecutorsRequest(request.getRequest());
-            }
-
-            // also re-enable the node if the state is still valid.
-            if (request.getRequest().getTaskExecutorID().isPresent()) {
-                final TaskExecutorState state = this.executorStateManager.get(
-                    request.getRequest().getTaskExecutorID().get());
-                if (state != null) {
-                    state.onNodeEnabled();
-                }
-            }
-        } catch (Exception e) {
-            log.error("Failed to delete expired {}", request.getRequest(), e);
-        }
-    }
-
-    private Map<TaskExecutorID, WorkerId> getTaskExecutorWorkerMapping(Map<String, String> attributes) {
-        final Map<TaskExecutorID, WorkerId> result = new HashMap<>();
-        this.executorStateManager.getActiveExecutorEntry().forEach(idAndState -> {
-            if (idAndState.getValue().getRegistration() != null && idAndState.getValue().getRegistration().containsAttributes(attributes)) {
-                if (idAndState.getValue().isRunningTask()) {
-                    result.put(idAndState.getKey(), idAndState.getValue().getWorkerId());
-                }
-            }
-        });
-        return result;
-    }
-
-    private void onTaskExecutorInitialization(InitializeTaskExecutorRequest request) {
-        log.info("Initializing taskExecutor {} for the resource cluster {}", request.getTaskExecutorID(), this);
-        ActorRef sender = sender();
-        try {
-            TaskExecutorRegistration registration =
-                mantisJobStore.getTaskExecutor(request.getTaskExecutorID());
-            setupTaskExecutorStateIfNecessary(request.getTaskExecutorID());
-            self().tell(registration, self());
-            self().tell(
-                new TaskExecutorStatusChange(
-                    registration.getTaskExecutorID(),
-                    registration.getClusterID(),
-                    TaskExecutorReport.occupied(request.getWorkerId())),
-                self());
-            sender.tell(Ack.getInstance(), self());
-        } catch (Exception e) {
-            log.error("Failed to initialize taskExecutor {}; all retries exhausted", request.getTaskExecutorID(), e);
-            sender.tell(new Status.Failure(e), self());
-        }
-    }
-
-    private void onTaskExecutorRegistration(TaskExecutorRegistration registration) {
-        setupTaskExecutorStateIfNecessary(registration.getTaskExecutorID());
-        log.info("Request for registering on resource cluster {}: {}.", this, registration);
-        try {
-            final TaskExecutorID taskExecutorID = registration.getTaskExecutorID();
-            final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
-            boolean stateChange = state.onRegistration(registration);
-            mantisJobStore.storeNewTaskExecutor(registration);
-            if (stateChange) {
-                if (state.isAvailable()) {
-                    this.executorStateManager.tryMarkAvailable(taskExecutorID);
-                }
-                // check if the task executor has been marked as 'Disabled'
-                if (isTaskExecutorDisabled(registration)) {
-                    log.info("Newly registered task executor {} was already marked for disabling.", registration.getTaskExecutorID());
-                    state.onNodeDisabled();
-                }
-                updateHeartbeatTimeout(registration.getTaskExecutorID());
-            }
-            log.info("Successfully registered {} with the resource cluster {}", registration.getTaskExecutorID(), this);
-            if (!jobArtifactsToCache.isEmpty() && isJobArtifactCachingEnabled) {
-                self().tell(new CacheJobArtifactsOnTaskExecutorRequest(taskExecutorID, clusterID), self());
-            }
-            sender().tell(Ack.getInstance(), self());
-        } catch (Exception e) {
-            sender().tell(new Status.Failure(e), self());
-        }
-    }
-
-    private boolean isTaskExecutorDisabled(TaskExecutorRegistration registration) {
-        for (DisableTaskExecutorsRequest request: activeDisableTaskExecutorsByAttributesRequests) {
-            if (request.covers(registration)) {
-                return true;
-            }
-        }
-        return disabledTaskExecutors.contains(registration.getTaskExecutorID());
-    }
-
-    private void onHeartbeat(TaskExecutorHeartbeat heartbeat) {
-        log.debug("Received heartbeat {} from task executor {}", heartbeat, heartbeat.getTaskExecutorID());
-        setupTaskExecutorStateIfNecessary(heartbeat.getTaskExecutorID());
-        try {
-            final TaskExecutorID taskExecutorID = heartbeat.getTaskExecutorID();
-            final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
-            if (state.getRegistration() == null || !state.isRegistered()) {
-                TaskExecutorRegistration registration = this.mantisJobStore.getTaskExecutor(heartbeat.getTaskExecutorID());
-                if (registration != null) {
-                    log.debug("Found registration {} for task executor {}", registration, heartbeat.getTaskExecutorID());
-                    Preconditions.checkState(state.onRegistration(registration));
-
-                    // check if the task executor has been marked as 'Disabled'
-                    if (isTaskExecutorDisabled(registration)) {
-                        log.info("Reconnected task executor {} was already marked for disabling.", registration.getTaskExecutorID());
-                        state.onNodeDisabled();
-                    }
-                } else {
-//                  TODO(sundaram): add a metric
-                    log.warn("Received heartbeat from unknown task executor {}", heartbeat.getTaskExecutorID());
-                    sender().tell(new Status.Failure(new TaskExecutorNotFoundException(taskExecutorID)), self());
-                    return;
-                }
-            } else {
-                log.debug("Found registration {} for registered task executor {}",
-                    state.getRegistration(), heartbeat.getTaskExecutorID());
-            }
-            boolean stateChange = state.onHeartbeat(heartbeat);
-            if (stateChange && state.isAvailable()) {
-                this.executorStateManager.tryMarkAvailable(taskExecutorID);
-            }
-
-            updateHeartbeatTimeout(heartbeat.getTaskExecutorID());
-            log.debug("Successfully processed heartbeat {} from task executor {}", heartbeat, heartbeat.getTaskExecutorID());
-            sender().tell(Ack.getInstance(), self());
-        } catch (Exception e) {
-            sender().tell(new Status.Failure(e), self());
-        }
-    }
-
-    private void onTaskExecutorStatusChange(TaskExecutorStatusChange statusChange) {
-        setupTaskExecutorStateIfNecessary(statusChange.getTaskExecutorID());
-        try {
-            final TaskExecutorID taskExecutorID = statusChange.getTaskExecutorID();
-            final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
-            boolean stateChange = state.onTaskExecutorStatusChange(statusChange);
-            if (stateChange) {
-                if (state.isAvailable()) {
-                    this.executorStateManager.tryMarkAvailable(taskExecutorID);
-                } else {
-                    this.executorStateManager.tryMarkUnavailable(taskExecutorID);
-                }
-            }
-
-            updateHeartbeatTimeout(statusChange.getTaskExecutorID());
-            sender().tell(Ack.getInstance(), self());
-        } catch (IllegalStateException e) {
-            sender().tell(new Status.Failure(e), self());
-        }
-    }
-
-    private void onTaskExecutorBatchAssignmentRequest(TaskExecutorBatchAssignmentRequest request) {
-        Optional<BestFit> matchedExecutors = this.executorStateManager.findBestFit(request);
-
-        if (matchedExecutors.isPresent()) {
-            log.info("Matched all executors {} for request {}", matchedExecutors.get(), request);
-            matchedExecutors.get().getBestFit().forEach((allocationRequest, taskExecutorToState) -> assignTaskExecutor(
-                allocationRequest, taskExecutorToState.getLeft(), taskExecutorToState.getRight(), request));
-            sender().tell(new TaskExecutorsAllocation(matchedExecutors.get().getRequestToTaskExecutorMap()), self());
-        } else {
-            request.allocationRequests.forEach(req -> metrics.incrementCounter(
-                ResourceClusterActorMetrics.NO_RESOURCES_AVAILABLE,
-                createTagListFrom(req)));
-            sender().tell(new Status.Failure(new NoResourceAvailableException(
-                String.format("No resource available for request %s: resource overview: %s", request,
-                    getResourceOverview()))), self());
-        }
-    }
-
-    private void assignTaskExecutor(TaskExecutorAllocationRequest allocationRequest, TaskExecutorID taskExecutorID, TaskExecutorState taskExecutorState, TaskExecutorBatchAssignmentRequest request) {
-        if(shouldCacheJobArtifacts(allocationRequest)) {
-            self().tell(new AddNewJobArtifactsToCacheRequest(clusterID, Collections.singletonList(allocationRequest.getJobMetadata().getJobArtifact())), self());
-        }
-
-        taskExecutorState.onAssignment(allocationRequest.getWorkerId());
-        // let's give some time for the assigned executor to be scheduled work. otherwise, the assigned executor
-        // will be returned back to the pool.
-        getTimers().startSingleTimer(
-            "Assignment-" + taskExecutorID.toString(),
-            new TaskExecutorAssignmentTimeout(taskExecutorID),
-            assignmentTimeout);
-    }
-
-    private void onTaskExecutorAssignmentTimeout(TaskExecutorAssignmentTimeout request) {
-        TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
-        if (state == null) {
-            log.error("TaskExecutor lost during task assignment: {}", request);
-        }
-        else if (state.isRunningTask()) {
-            log.debug("TaskExecutor {} entered running state already; no need to act", request.getTaskExecutorID());
-        } else {
-            try
-            {
-                boolean stateChange = state.onUnassignment();
-                if (stateChange) {
-                    this.executorStateManager.tryMarkAvailable(request.getTaskExecutorID());
-                }
-            } catch (IllegalStateException e) {
-                if (state.isRegistered()) {
-                    log.error("Failed to un-assign registered taskExecutor {}", request.getTaskExecutorID(), e);
-                } else {
-                    log.debug("Failed to un-assign unRegistered taskExecutor {}", request.getTaskExecutorID(), e);
-                }
-            }
-        }
-    }
-
-    private void onResourceOverviewRequest(ResourceOverviewRequest request) {
-        sender().tell(getResourceOverview(), self());
-    }
-
-    private void onPublishResourceOverviewMetricsRequest(PublishResourceOverviewMetricsRequest request) {
-        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.isRegistered), ResourceClusterActorMetrics.NUM_REGISTERED_TE);
-        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.isBusy), ResourceClusterActorMetrics.NUM_BUSY_TE);
-        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.isAvailable), ResourceClusterActorMetrics.NUM_AVAILABLE_TE);
-        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.isDisabled), ResourceClusterActorMetrics.NUM_DISABLED_TE);
-        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.unregistered), ResourceClusterActorMetrics.NUM_UNREGISTERED_TE);
-        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.isAssigned), ResourceClusterActorMetrics.NUM_ASSIGNED_TE);
-    }
-
-    private void publishResourceClusterMetricBySKU(TaskExecutorsList taskExecutorsList, String metricName) {
-        try {
-            taskExecutorsList.getTaskExecutors()
-                .stream()
-                .map(this::getTaskExecutorState)
-                .filter(Objects::nonNull)
-                .map(TaskExecutorState::getRegistration)
-                .filter(Objects::nonNull)
-                .filter(registration -> registration.getTaskExecutorContainerDefinitionId().isPresent() && registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).isPresent())
-                .collect(groupingBy(registration -> Tuple.of(registration.getTaskExecutorContainerDefinitionId().get(), registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).get()), Collectors.counting()))
-                .forEach((keys, count) -> metrics.setGauge(
-                    metricName,
-                    count,
-                    TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "sku", keys._1.getResourceID(), "autoScaleGroup", keys._2))));
-        } catch (Exception e) {
-            log.warn("Error while publishing resource cluster metrics by sku. RC: {}, Metric: {}.", clusterID.getResourceID(), metricName, e);
-        }
-    }
-
-    private ResourceOverview getResourceOverview() {
-        return this.executorStateManager.getResourceOverview();
-    }
-
-    private void getTaskExecutorStatus(GetTaskExecutorStatusRequest req) {
-        TaskExecutorID taskExecutorID = req.getTaskExecutorID();
-        final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
-        if (state == null) {
-            log.info("Unknown executorID: {}", taskExecutorID);
-            getSender().tell(
-                new Status.Failure(new TaskExecutorNotFoundException(taskExecutorID)),
-                self());
-        }
-        else {
-            getSender().tell(
-                new TaskExecutorStatus(
-                    state.getRegistration(),
-                    state.isRegistered(),
-                    state.isRunningTask(),
-                    state.isAssigned(),
-                    state.isDisabled(),
-                    state.getWorkerId(),
-                    state.getLastActivity().toEpochMilli(),
-                    state.getCancelledWorkerId()),
-                self());
-        }
-    }
-
-    @Nullable
-    private TaskExecutorState getTaskExecutorState(TaskExecutorID taskExecutorID) {
-        return this.executorStateManager.get(taskExecutorID);
-    }
-
-    private void onTaskExecutorDisconnection(TaskExecutorDisconnection disconnection) {
-        setupTaskExecutorStateIfNecessary(disconnection.getTaskExecutorID());
-        try {
-            disconnectTaskExecutor(disconnection.getTaskExecutorID());
-            sender().tell(Ack.getInstance(), self());
-        } catch (IllegalStateException e) {
-            sender().tell(new Status.Failure(e), self());
-        }
-    }
-
-    private void disconnectTaskExecutor(TaskExecutorID taskExecutorID) {
-        final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
-        boolean stateChange = state.onDisconnection();
-        if (stateChange) {
-            this.executorStateManager.archive(taskExecutorID);
-            getTimers().cancel(getHeartbeatTimerFor(taskExecutorID));
-        }
-    }
-
-    private String getHeartbeatTimerFor(TaskExecutorID taskExecutorID) {
-        return "Heartbeat-" + taskExecutorID.toString();
-    }
-
-    private void onTaskExecutorHeartbeatTimeout(HeartbeatTimeout timeout) {
-        setupTaskExecutorStateIfNecessary(timeout.getTaskExecutorID());
-        try {
-            metrics.incrementCounter(
-                ResourceClusterActorMetrics.HEARTBEAT_TIMEOUT,
-                TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "taskExecutorID", timeout.getTaskExecutorID().getResourceId())));
-            log.info("heartbeat timeout received for {}", timeout.getTaskExecutorID());
-            final TaskExecutorID taskExecutorID = timeout.getTaskExecutorID();
-            final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
-            if (state.getLastActivity().compareTo(timeout.getLastActivity()) <= 0) {
-                log.info("Disconnecting task executor {}", timeout.getTaskExecutorID());
-                disconnectTaskExecutor(timeout.getTaskExecutorID());
-            }
-
-        } catch (IllegalStateException e) {
-            sender().tell(new Status.Failure(e), self());
-        }
-    }
-
-    private void setupTaskExecutorStateIfNecessary(TaskExecutorID taskExecutorID) {
-        this.executorStateManager
-            .trackIfAbsent(taskExecutorID, TaskExecutorState.of(clock, rpcService, jobMessageRouter));
-    }
-
-    private void updateHeartbeatTimeout(TaskExecutorID taskExecutorID) {
-        final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
-        getTimers().startSingleTimer(
-            getHeartbeatTimerFor(taskExecutorID),
-            new HeartbeatTimeout(taskExecutorID, state.getLastActivity()),
-            heartbeatTimeout);
-    }
-
-    private void onCacheJobArtifactsOnTaskExecutorRequest(CacheJobArtifactsOnTaskExecutorRequest request) {
-        TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
-        if (state != null && state.isRegistered()) {
-            try {
-                // TODO(fdichiara): store URI directly to avoid remapping for each TE
-                state.getGatewayAsync()
-                    .thenComposeAsync(taskExecutorGateway ->
-                        taskExecutorGateway.cacheJobArtifacts(new CacheJobArtifactsRequest(
-                            jobArtifactsToCache
-                                .stream()
-                                .map(artifactID -> URI.create(artifactID.getResourceID()))
-                                .collect(Collectors.toList()))))
-                    .whenComplete((res, throwable) -> {
-                        if (throwable != null) {
-                            log.error("failed to cache artifact on {}", request.getTaskExecutorID(), throwable);
-                        }
-                        else {
-                            log.debug("Acked from cacheJobArtifacts for {}", request.getTaskExecutorID());
-                        }
-                    });
-            } catch (Exception ex) {
-                log.warn("Failed to cache job artifacts in task executor {}", request.getTaskExecutorID(), ex);
-            }
-        }
-        else {
-            log.debug("no valid TE state for CacheJobArtifactsOnTaskExecutorRequest: {}", request);
         }
     }
 
@@ -947,47 +521,13 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
      * (this is to reduce the work in master) and if the job cluster is enabled (via config
      * for now)
      */
-    private boolean shouldCacheJobArtifacts(TaskExecutorAllocationRequest allocationRequest) {
-        final WorkerId workerId = allocationRequest.getWorkerId();
-        final boolean isFirstWorkerOfFirstStage = allocationRequest.getStageNum() == 1 && workerId.getWorkerIndex() == 0;
-        if (isFirstWorkerOfFirstStage) {
-            final Set<String> jobClusters = getJobClustersWithArtifactCachingEnabled();
-            return jobClusters.contains(workerId.getJobCluster());
-        }
-        return false;
-    }
-
-    private Set<String> getJobClustersWithArtifactCachingEnabled() {
-        return new HashSet<>(Arrays.asList(jobClustersWithArtifactCachingEnabled.split(",")));
-    }
-
     /**
      * Creates a list of tags from the provided TaskExecutorAllocationRequest.
      * The list includes resource cluster, workerId, jobCluster, and either sizeName or cpuCores and memoryMB
      * based on whether sizeName is present in the request's constraints.
      *
-     * @param req The task executor allocation request from which the tag list will be generated.
-     *
      * @return An iterable list of tags created from the task executor allocation request.
      */
-    private Iterable<Tag> createTagListFrom(TaskExecutorAllocationRequest req) {
-        // Basic tags that will always be included
-        ImmutableMap.Builder<String, String> tagsBuilder = ImmutableMap.<String, String>builder()
-            .put("resourceCluster", clusterID.getResourceID())
-            .put("workerId", req.getWorkerId().getId())
-            .put("jobCluster", req.getWorkerId().getJobCluster());
-
-        // Add the sizeName tag if it exists, otherwise add the cpuCores and memoryMB tags
-        if (req.getConstraints().getSizeName().isPresent()) {
-            tagsBuilder.put("sizeName", req.getConstraints().getSizeName().get());
-        } else {
-            tagsBuilder.put("cpuCores", String.valueOf(req.getConstraints().getMachineDefinition().getCpuCores()))
-                .put("memoryMB", String.valueOf(req.getConstraints().getMachineDefinition().getMemoryMB()));
-        }
-
-        return TagList.create(tagsBuilder.build());
-    }
-
     @Value
     static class HeartbeatTimeout {
 
@@ -999,6 +539,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     public static class TaskExecutorBatchAssignmentRequest {
         Set<TaskExecutorAllocationRequest> allocationRequests;
         ClusterID clusterID;
+        Reservation reservation;
 
         public Map<SchedulingConstraints, List<TaskExecutorAllocationRequest>> getGroupedBySchedulingConstraints() {
             return allocationRequests
@@ -1009,16 +550,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         public String getJobId() {
             return allocationRequests.iterator().next().getWorkerId().getJobId();
         }
-    }
-
-    @Value
-    static class TaskExecutorAssignmentTimeout {
-        TaskExecutorID taskExecutorID;
-    }
-
-    @Value
-    static class ExpireDisableTaskExecutorsRequest {
-        DisableTaskExecutorsRequest request;
     }
 
     @Value
@@ -1124,6 +655,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class TaskExecutorsAllocation {
         Map<TaskExecutorAllocationRequest, TaskExecutorID> allocations;
+        Reservation reservation;
     }
 
     @Value
@@ -1137,8 +669,43 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
     }
 
+    /**
+     * Request from ScalerActor to get cluster usage with pending reservation counts.
+     * This triggers a two-phase query: first to ReservationRegistryActor, then to ExecutorStateManagerActor.
+     */
     @Value
-    private static class CheckDisabledTaskExecutors {
+    static class GetReservationAwareClusterUsageRequest {
+        ClusterID clusterID;
+        Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
+    }
+
+    /**
+     * Pending reservation info with actual SchedulingConstraints (not just constraint key string).
+     * This avoids the need to parse constraint keys back into machine definitions.
+     */
+    @Value
+    @Builder
+    static class PendingReservationInfo {
+        String canonicalConstraintKey;
+        SchedulingConstraints schedulingConstraints;  // Actual constraints - no parsing needed!
+        int totalRequestedWorkers;
+        int reservationCount;
+    }
+
+    /**
+     * Internal message to pass pending reservations from ReservationRegistryActor
+     * to ExecutorStateManagerActor for final usage computation.
+     * Contains actual SchedulingConstraints for direct matching.
+     */
+    @Value
+    static class GetClusterUsageWithReservationsRequest {
+        ClusterID clusterID;
+        Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
+        List<PendingReservationInfo> pendingReservations;
+    }
+
+    @Value
+    static class CheckDisabledTaskExecutors {
         String reason;
     }
 
@@ -1148,7 +715,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     @Value
-    private static class PublishResourceOverviewMetricsRequest {
+    static class PublishResourceOverviewMetricsRequest {
     }
 
     @Value
@@ -1213,6 +780,45 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                     e -> e.getValue().getKey()
                 ));
         }
+    }
+
+    /**
+     * Reservation value objects are now in MantisResourceClusterReservationProto.
+     * These classes are shared between ResourceClusterActor, ReservationRegistryActor,
+     * MantisScheduler, and JobActor.
+     */
+
+    @Value
+    @Builder
+    static class PendingReservationsView {
+        boolean ready;
+        @Builder.Default
+        Map<String, PendingReservationGroupView> groups = Collections.emptyMap();
+    }
+
+    @Value
+    @Builder
+    static class PendingReservationGroupView {
+        String canonicalConstraintKey;
+        int reservationCount;
+        int totalRequestedWorkers;
+        @Builder.Default
+        List<ReservationRegistryActor.ReservationSnapshot> reservations = Collections.emptyList();
+    }
+
+    // CancelReservation, CancelReservationAck, UpsertReservation, and MarkReady
+    // are now in MantisResourceClusterReservationProto
+
+    enum ProcessReservationsTick {
+        INSTANCE
+    }
+
+    enum ForceProcessReservationsTick {
+        INSTANCE
+    }
+
+    enum GetPendingReservationsView {
+        INSTANCE
     }
 
 
@@ -1348,11 +954,31 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         }
     }
 
-    private Predicate<Entry<TaskExecutorID, TaskExecutorState>> filterByAttrs(HasAttributes hasAttributes) {
-        if (hasAttributes.getAttributes().isEmpty()) {
-            return e -> true;
-        } else {
-            return e -> e.getValue().containsAttributes(hasAttributes.getAttributes());
+    private static String buildReservationRegistryActorName(ClusterID clusterID) {
+        String resourceId = clusterID != null ? clusterID.getResourceID() : "";
+        if (resourceId == null) {
+            resourceId = "";
         }
+        String sanitized = resourceId.replaceAll("[^a-zA-Z0-9-_]", "_");
+        if (sanitized.isEmpty()) {
+            sanitized = "default";
+        } else if (sanitized.charAt(0) == '$') {
+            sanitized = "_" + sanitized.substring(1);
+        }
+        return "reservationRegistry-" + sanitized;
+    }
+
+    private static String buildExecutorStateManagerActorName(ClusterID clusterID) {
+        String resourceId = clusterID != null ? clusterID.getResourceID() : "";
+        if (resourceId == null) {
+            resourceId = "";
+        }
+        String sanitized = resourceId.replaceAll("[^a-zA-Z0-9-_]", "_");
+        if (sanitized.isEmpty()) {
+            sanitized = "default";
+        } else if (sanitized.charAt(0) == '$') {
+            sanitized = "_" + sanitized.substring(1);
+        }
+        return "executorStateManager-" + sanitized;
     }
 }
