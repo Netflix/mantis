@@ -149,7 +149,8 @@ public class TaskExecutorReconnectionIntegrationTest {
                 false,
                 ImmutableMap.of(),
                 new CpuWeightedFitnessCalculator(),
-                null);
+                null,
+                false);
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =
