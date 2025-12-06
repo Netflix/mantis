@@ -42,7 +42,11 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoR
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsAllocation;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsList;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.QueueClusterRuleRefreshRequest;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.MarkReady;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservation;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservationAck;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -194,11 +198,12 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
             .thenApply(ArtifactList::getArtifacts);
     }
 
+    // todo: deprecate
     @Override
     public CompletableFuture<Map<TaskExecutorAllocationRequest, TaskExecutorID>> getTaskExecutorsFor(Set<TaskExecutorAllocationRequest> allocationRequests) {
         return
             Patterns
-                .ask(resourceClusterManagerActor, new TaskExecutorBatchAssignmentRequest(allocationRequests, clusterID), askTimeout)
+                .ask(resourceClusterManagerActor, new TaskExecutorBatchAssignmentRequest(allocationRequests, clusterID, null), askTimeout)
                 .thenApply(TaskExecutorsAllocation.class::cast)
                 .toCompletableFuture()
                 .thenApply(l -> l.getAllocations());
@@ -335,5 +340,40 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
                 .ask(resourceClusterManagerActor, new GetTaskExecutorWorkerMappingRequest(attributes), askTimeout)
                 .thenApply(obj -> (Map<TaskExecutorID, WorkerId>) obj)
                 .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> markRegistryReady() {
+        // MarkReady is broadcast to all cluster actors by ResourceClustersManagerActor
+        return Patterns
+            .ask(resourceClusterManagerActor, MarkReady.INSTANCE, askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> upsertReservation(UpsertReservation request) {
+        return Patterns.ask(
+                resourceClusterManagerActor,
+                ResourceClustersManagerActor.UpsertReservationRequest.builder()
+                    .clusterID(clusterID)
+                    .upsertReservation(request)
+                    .build(),
+                askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> cancelReservation(CancelReservation request) {
+        return Patterns.ask(
+                resourceClusterManagerActor,
+                ResourceClustersManagerActor.CancelReservationRequest.builder()
+                    .clusterID(clusterID)
+                    .cancelReservation(request)
+                    .build(),
+                askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
     }
 }

@@ -16,8 +16,12 @@
 
 package io.mantisrx.server.master.scheduler;
 
+import io.mantisrx.common.Ack;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservation;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
 import io.mantisrx.server.core.domain.WorkerId;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 
 public interface MantisScheduler {
@@ -83,4 +87,22 @@ public interface MantisScheduler {
      * the worker is assigned, then return true; otherwise, return false.
      */
     boolean schedulerHandlesAllocationRetries();
+
+    /**
+     * Insert or update a reservation for workers.
+     * @param request The reservation request (reuses existing UpsertReservation class)
+     * @return Future that completes when the reservation is accepted
+     */
+    default CompletableFuture<Ack> upsertReservation(UpsertReservation request) {
+        throw new UnsupportedOperationException("Reservation-based scheduling not supported");
+    }
+
+    /**
+     * Cancel all pending reservations for a given job stage.
+     * @param request The cancel request (reuses existing CancelReservation class)
+     * @return Future containing acknowledgement
+     */
+    default CompletableFuture<Ack> cancelReservation(CancelReservation request) {
+        throw new UnsupportedOperationException("Reservation-based scheduling not supported");
+    }
 }

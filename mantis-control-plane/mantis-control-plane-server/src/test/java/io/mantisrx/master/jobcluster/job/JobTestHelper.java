@@ -18,10 +18,14 @@ package io.mantisrx.master.jobcluster.job;
 
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -66,6 +70,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import javax.annotation.Nullable;
 import org.junit.Test;
@@ -518,5 +523,21 @@ public class JobTestHelper {
 
         assertEquals(1, JobHelper.calculateRuntimeDuration(10, startedAt));
 
+    }
+
+    /**
+     * Creates a properly mocked MantisScheduler that supports the reservation API.
+     * The mock returns successful CompletableFuture for upsertReservation and cancelReservation calls.
+     * This is required for tests after switching to reservation-based scheduling.
+     *
+     * @return A mocked MantisScheduler with reservation API support
+     */
+    public static MantisScheduler createMockScheduler() {
+        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+        // Mock reservation API to return successful CompletableFuture
+        when(schedulerMock.upsertReservation(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        when(schedulerMock.cancelReservation(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        return schedulerMock;
     }
 }

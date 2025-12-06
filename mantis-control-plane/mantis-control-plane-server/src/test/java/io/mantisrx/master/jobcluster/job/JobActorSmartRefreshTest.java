@@ -18,6 +18,7 @@ package io.mantisrx.master.jobcluster.job;
 
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -27,6 +28,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import io.mantisrx.common.Ack;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
@@ -58,6 +60,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -130,8 +133,7 @@ public class JobActorSmartRefreshTest {
             .build();
 
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
-        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+        MantisScheduler schedulerMock = createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
@@ -235,8 +237,7 @@ public class JobActorSmartRefreshTest {
             .build();
 
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
-        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+        MantisScheduler schedulerMock = createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
@@ -388,8 +389,7 @@ public class JobActorSmartRefreshTest {
             .build();
 
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
-        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+        MantisScheduler schedulerMock = createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         // Create a custom event publisher to capture WorkerListChangedEvents
@@ -522,8 +522,7 @@ public class JobActorSmartRefreshTest {
             .build();
 
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
-        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+        MantisScheduler schedulerMock = createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         MantisJobMetadataImpl mantisJobMetaData = createJobMetadata(clusterName, jobDefn);
@@ -775,8 +774,7 @@ public class JobActorSmartRefreshTest {
             .build();
 
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
-        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+        MantisScheduler schedulerMock = createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         MantisJobMetadataImpl mantisJobMetaData = createJobMetadata(clusterName, jobDefn);
@@ -872,8 +870,7 @@ public class JobActorSmartRefreshTest {
             .build();
 
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
-        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+        MantisScheduler schedulerMock = createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         MantisJobMetadataImpl mantisJobMetaData = createJobMetadata(clusterName, jobDefn);
@@ -966,8 +963,7 @@ public class JobActorSmartRefreshTest {
             .build();
 
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
-        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+        MantisScheduler schedulerMock = createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         MantisJobMetadataImpl mantisJobMetaData = createJobMetadata(clusterName, jobDefn);
@@ -1044,8 +1040,7 @@ public class JobActorSmartRefreshTest {
             .build();
 
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
-        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+        MantisScheduler schedulerMock = createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         MantisJobMetadataImpl mantisJobMetaData = createJobMetadata(clusterName, jobDefn);
@@ -1148,6 +1143,19 @@ public class JobActorSmartRefreshTest {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    /**
+     * Helper method to create a properly mocked MantisScheduler that supports reservation API.
+     * The mock returns successful CompletableFuture for upsertReservation calls.
+     */
+    private MantisScheduler createMockScheduler() {
+        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(true);
+        // Mock reservation API to return successful CompletableFuture
+        when(schedulerMock.upsertReservation(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        when(schedulerMock.cancelReservation(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        return schedulerMock;
     }
 
     private static void assertNotNull(String message, Object object) {

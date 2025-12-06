@@ -31,6 +31,8 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 
+import static akka.pattern.Patterns.pipe;
+
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
@@ -100,7 +102,19 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.scheduler.*;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservation;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationKey;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationPriority;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationPriority.PriorityType;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
+import io.mantisrx.server.master.scheduler.BatchScheduleRequest;
+import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.scheduler.ScheduleRequest;
+import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
+import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
@@ -114,6 +128,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -131,6 +147,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
     private static final String CHECK_HB_TIMER_KEY = "CHECK_HB";
     private static final String REFRESH_SEND_STAGE_ASSIGNEMNTS_KEY = "REFRESH_SEND_STAGE_ASSIGNMENTS";
+    private static final String DELAYED_RESERVATION_TIMER_PREFIX = "DELAYED_RESERVATION_";
+    private static final String RESERVATION_RETRY_TIMER_PREFIX = "RESERVATION_RETRY_";
+    private static final int MAX_RESERVATION_UPSERT_RETRIES = 3;
+    private static final long RESERVATION_RETRY_BASE_DELAY_MS = 1000; // 1 second base delay with exponential backoff
     private static final Logger LOGGER = LoggerFactory.getLogger(JobActor.class);
     private static final double DEFAULT_JOB_MASTER_CORES = 1;
     private static final double DEFAULT_JOB_MASTER_MEM = 1024;
@@ -146,6 +166,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final Counter numSchedulingChangesRefreshed;
     private final Counter numMissingWorkerPorts;
     private final Counter numPeriodicRefreshSkipped;
+    private final Counter numReservationUpsertRetries;
+    private final Counter numReservationUpsertFailures;
 
     /**
      * Behavior after being initialized.
@@ -275,6 +297,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .addCounter("numMissingWorkerPorts")
                 .addCounter("numWorkerMissingHeartbeat")
                 .addCounter("numPeriodicRefreshSkipped")
+                .addCounter("numReservationUpsertRetries")
+                .addCounter("numReservationUpsertFailures")
                 .build();
         this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
         this.numWorkerResubmissions = metrics.getCounter("numWorkerResubmissions");
@@ -284,6 +308,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.numSchedulingChangesRefreshed = metrics.getCounter("numSchedulingChangesRefreshed");
         this.numMissingWorkerPorts = metrics.getCounter("numMissingWorkerPorts");
         this.numPeriodicRefreshSkipped = metrics.getCounter("numPeriodicRefreshSkipped");
+        this.numReservationUpsertRetries = metrics.getCounter("numReservationUpsertRetries");
+        this.numReservationUpsertFailures = metrics.getCounter("numReservationUpsertFailures");
     }
 
     /**
@@ -326,6 +352,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             this.mantisScheduler,
             isSubmit,
             ConfigurationProvider.getConfig().isBatchSchedulingEnabled(),
+            ConfigurationProvider.getConfig().isReservationSchedulingEnabled(),
             this.metrics);
 
         long checkAgainInSeconds = getWorkerTimeoutSecs();
@@ -629,6 +656,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
                 .match(IJobClusterScalerRuleData.class, this::onScalerRuleDataUpdate)
                 .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class,  this::onGetJobScalerRuleStreamRequest)
+                .match(JobProto.DelayedReservationRequest.class, this::onDelayedReservationRequest)
+                .match(JobProto.ReservationUpsertResult.class, this::onReservationUpsertResult)
+                .match(JobProto.ReservationRetryRequest.class, this::onReservationRetryRequest)
 
             // EXPECTED MESSAGES END//
                 // UNEXPECTED MESSAGES BEGIN //
@@ -672,6 +702,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
                 .match(IJobClusterScalerRuleData.class, this::onScalerRuleDataUpdate)
                 .match(JobClusterScalerRuleProto.GetJobScalerRuleStreamRequest.class,  this::onGetJobScalerRuleStreamRequest)
+                .match(JobProto.DelayedReservationRequest.class, this::onDelayedReservationRequest)
+                .match(JobProto.ReservationUpsertResult.class, this::onReservationUpsertResult)
+                .match(JobProto.ReservationRetryRequest.class, this::onReservationRetryRequest)
 
             // EXPECTED MESSAGES END//
 
@@ -943,6 +976,73 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     @Override
     public void onSendWorkerAssignments(final JobProto.SendWorkerAssignementsIfChanged r) {
         this.workerManager.refreshAndSendWorkerAssignments();
+    }
+
+    /**
+     * Handle delayed reservation request that was scheduled via timer.
+     * This processes the reservation request when the readyAt time is reached.
+     */
+    public void onDelayedReservationRequest(final JobProto.DelayedReservationRequest r) {
+        LOGGER.info("Processing delayed reservation request for {} workers (priority={})",
+                r.workerRequests.size(), r.priorityType);
+        // Cast to WorkerManager since we know it's always that implementation
+        ((WorkerManager) workerManager).queueWorkersViaReservation(r.workerRequests, r.priorityType);
+    }
+
+    /**
+     * Handle the result of a reservation upsert operation piped back from the scheduler.
+     * On success: logs completion. On failure: schedules retry with exponential backoff.
+     * Uses actor timers for retry scheduling so they are automatically cancelled when the actor stops.
+     */
+    public void onReservationUpsertResult(final JobProto.ReservationUpsertResult result) {
+        if (result.success) {
+            LOGGER.debug("Reservation upsert succeeded for job {} stage {} (attempt {})",
+                    jobId, result.stageNum, result.attemptNumber);
+            return;
+        }
+
+        // Handle failure
+        LOGGER.warn("Reservation upsert failed for job {} stage {} (attempt {})",
+                jobId, result.stageNum, result.attemptNumber, result.error);
+
+        if (result.attemptNumber < MAX_RESERVATION_UPSERT_RETRIES) {
+            // Schedule retry with exponential backoff using actor timers
+            // Actor timers are automatically cancelled when the actor stops
+            long delayMs = RESERVATION_RETRY_BASE_DELAY_MS * (1L << (result.attemptNumber - 1));
+
+            LOGGER.info("Scheduling retry for job {} stage {} in {}ms (attempt {}/{})",
+                    jobId, result.stageNum, delayMs, result.attemptNumber + 1, MAX_RESERVATION_UPSERT_RETRIES);
+
+            String timerKey = RESERVATION_RETRY_TIMER_PREFIX + result.stageNum + "_" + result.attemptNumber;
+            getTimers().startSingleTimer(
+                    timerKey,
+                    new JobProto.ReservationRetryRequest(
+                            result.workerRequests,
+                            result.priorityType,
+                            result.stageNum,
+                            result.attemptNumber + 1),
+                    Duration.ofMillis(delayMs));
+        } else {
+            LOGGER.error("Reservation upsert failed after {} attempts for job {} stage {}",
+                    MAX_RESERVATION_UPSERT_RETRIES, jobId, result.stageNum, result.error);
+            numReservationUpsertFailures.increment();
+            eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(ERROR,
+                    String.format("Failed to create reservation for stage %d after %d attempts: %s",
+                            result.stageNum, MAX_RESERVATION_UPSERT_RETRIES,
+                            result.error != null ? result.error.getMessage() : "unknown error"),
+                    getJobId(), getJobState()));
+        }
+    }
+
+    /**
+     * Handle retry request for reservation upsert after delay.
+     */
+    public void onReservationRetryRequest(final JobProto.ReservationRetryRequest request) {
+        LOGGER.info("Processing reservation retry for job {} stage {} (attempt {}/{})",
+                jobId, request.stageNum, request.attemptNumber, MAX_RESERVATION_UPSERT_RETRIES);
+        numReservationUpsertRetries.increment();
+        ((WorkerManager) workerManager).upsertReservationForStage(
+                request.workerRequests, request.priorityType, request.stageNum, request.attemptNumber);
     }
 
     public void onScalerRuleDataUpdate(final IJobClusterScalerRuleData ruleData) {
@@ -1281,6 +1381,37 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         return false;
     }
 
+    /**
+     * Schedule a delayed reservation request using Akka timer.
+     * Called by WorkerManager when workers need to be queued with a delay.
+     */
+    private void scheduleDelayedReservationTimer(
+            final List<IMantisWorkerMetadata> workerRequests,
+            final PriorityType priorityType,
+            final long readyAt) {
+        long delayMs = readyAt - System.currentTimeMillis();
+        if (delayMs <= 0) {
+            // Already past readyAt, queue immediately
+            // Cast to WorkerManager since we know it's always that implementation
+            ((WorkerManager) workerManager).queueWorkersViaReservation(workerRequests, priorityType);
+            return;
+        }
+
+        // Cast to WorkerManager to access delayedReservationTimerCounter
+        WorkerManager wm = (WorkerManager) workerManager;
+        String timerKey = DELAYED_RESERVATION_TIMER_PREFIX + (++wm.delayedReservationTimerCounter);
+        JobProto.DelayedReservationRequest delayedRequest = new JobProto.DelayedReservationRequest(
+                workerRequests, priorityType);
+
+        LOGGER.info("Scheduling delayed reservation for {} workers (priority={}) in {}ms",
+                workerRequests.size(), priorityType, delayMs);
+
+        getTimers().startSingleTimer(
+                timerKey,
+                delayedRequest,
+                Duration.ofMillis(delayMs));
+    }
+
     /*package protected*/
 
     /**
@@ -1425,8 +1556,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private volatile long lastWorkerTransitionTime = 0;
 
         private final boolean batchSchedulingEnabled;
+        private final boolean useReservationScheduling;
         private final Counter numWorkerStuckInAccepted;
         private final Counter numWorkerMissingHeartbeat;
+        private long delayedReservationTimerCounter = 0;
 
         /**
          * Creates an instance of this class.
@@ -1435,11 +1568,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
          * @param migrationConfig
          * @param scheduler
          * @param isSubmit
+         * @param batchSchedulingEnabled
+         * @param useReservationScheduling
+         * @param metrics
          * @throws Exception
          */
         WorkerManager(
                 IMantisJobManager jobMgr, WorkerMigrationConfig migrationConfig, MantisScheduler scheduler,
-                boolean isSubmit, boolean batchSchedulingEnabled, Metrics metrics) throws Exception {
+                boolean isSubmit, boolean batchSchedulingEnabled, boolean useReservationScheduling, Metrics metrics) throws Exception {
 
             this.numWorkerStuckInAccepted = metrics.getCounter("numWorkerStuckInAccepted");
             this.numWorkerMissingHeartbeat = metrics.getCounter("numWorkerMissingHeartbeat");
@@ -1448,6 +1584,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             this.scheduler = scheduler;
             this.jobMgr = jobMgr;
             this.batchSchedulingEnabled = batchSchedulingEnabled;
+            this.useReservationScheduling = useReservationScheduling;
             migrationStrategy = MigrationStrategyFactory.getStrategy(jobId.getId(), migrationConfig);
             int noOfStages = mantisJobMetaData.getStageMetadata().size();
             if (noOfStages == 1) {
@@ -1541,7 +1678,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             }
 
             if (JobState.isAcceptedState(mantisJobMetaData.getState()) && !workersToSubmit.isEmpty()) {
-                queueTasks(workersToSubmit, empty());
+                queueWorkers(workersToSubmit, PriorityType.NEW_JOB, empty());
             }
 
             // queue a refresh check after re-init workers.
@@ -1679,12 +1816,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 markStageAssignmentsChanged(true);
 
                 if (!workers.isEmpty()) {
-                    // queue to scheduler
-                    if (batchSchedulingEnabled) {
-                        queueTasks(workers, empty());
-                    } else {
-                        workers.forEach(this::queueTask);
-                    }
+                    // Always batch queue workers (batchSchedulingEnabled only affects legacy scheduler behavior)
+                    queueWorkers(workers, PriorityType.NEW_JOB, empty());
                 }
             } catch (Exception e) {
                 LOGGER.error("Error {} storing workers of job {}", e.getMessage(), jobId.getId(), e);
@@ -1692,7 +1825,51 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             }
         }
 
-        private void queueTasks(final List<IMantisWorkerMetadata> workerRequests, final Optional<Long> readyAt) {
+        /**
+         * Unified method to queue workers for scheduling.
+         * Routes to reservation-based or legacy scheduler based on configuration.
+         * For reservation-based scheduling with readyAt, schedules a timer to delay the request.
+         *
+         * @param workerRequests List of workers to queue
+         * @param priorityType Priority for reservation-based scheduling (ignored for legacy)
+         * @param readyAt Optional ready time - for legacy: sets ready time; for reservation: delays request until readyAt
+         */
+        private void queueWorkers(
+                final List<IMantisWorkerMetadata> workerRequests,
+                final PriorityType priorityType,
+                final Optional<Long> readyAt) {
+            if (useReservationScheduling) {
+                if (readyAt.isPresent() && readyAt.get() > System.currentTimeMillis()) {
+                    // Schedule delayed reservation request via timer
+                    scheduleDelayedReservation(workerRequests, priorityType, readyAt.get());
+                } else {
+                    // Queue immediately
+                    queueWorkersViaReservation(workerRequests, priorityType);
+                }
+            } else {
+                queueWorkersViaLegacyScheduler(workerRequests, readyAt);
+            }
+        }
+
+        /**
+         * Schedule a delayed reservation request using Akka timer.
+         * The reservation will be submitted when readyAt time is reached.
+         */
+        private void scheduleDelayedReservation(
+                final List<IMantisWorkerMetadata> workerRequests,
+                final PriorityType priorityType,
+                final long readyAt) {
+            // Delegate to JobActor to schedule the timer
+            JobActor.this.scheduleDelayedReservationTimer(workerRequests, priorityType, readyAt);
+        }
+
+        /**
+         * Queue workers using legacy batch scheduler.
+         * readyAt is used to set when workers are ready for scheduling (for rate limiting).
+         */
+        private void queueWorkersViaLegacyScheduler(
+                final List<IMantisWorkerMetadata> workerRequests,
+                final Optional<Long> readyAt) {
             final List<ScheduleRequest> scheduleRequests = workerRequests
                 .stream()
                 .map(wR -> createSchedulingRequest(wR, readyAt))
@@ -1705,8 +1882,119 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             }
         }
 
+        /**
+         * Queue workers via reservation system using shared proto classes directly.
+         * Groups workers by stage and creates reservations per stage.
+         * Priority determines scheduling order: REPLACE > SCALE > NEW_JOB
+         */
+        void queueWorkersViaReservation(
+                final List<IMantisWorkerMetadata> workerRequests,
+                final PriorityType priorityType) {
+            // Group by stage - reservation system operates at stage level
+            Map<Integer, List<IMantisWorkerMetadata>> byStage = workerRequests.stream()
+                .collect(Collectors.groupingBy(IMantisWorkerMetadata::getStageNum));
+
+            for (Map.Entry<Integer, List<IMantisWorkerMetadata>> entry : byStage.entrySet()) {
+                int stageNum = entry.getKey();
+                List<IMantisWorkerMetadata> stageWorkers = entry.getValue();
+
+                if (stageWorkers.isEmpty()) {
+                    continue;
+                }
+
+                upsertReservationForStage(stageWorkers, priorityType, stageNum, 1);
+            }
+        }
+
+        /**
+         * Upsert reservation for a single stage with retry support.
+         * Uses Akka pipe pattern to send result back to actor for proper async handling.
+         * On failure, the actor schedules a retry with exponential backoff up to MAX_RESERVATION_UPSERT_RETRIES.
+         */
+        void upsertReservationForStage(
+                final List<IMantisWorkerMetadata> stageWorkers,
+                final PriorityType priorityType,
+                final int stageNum,
+                final int attemptNumber) {
+            // Get stage target size from metadata or use current worker count
+            Optional<IMantisStageMetadata> stageMetaOp = mantisJobMetaData.getStageMetadata(stageNum);
+            if (stageMetaOp.isEmpty()) {
+                LOGGER.error("Stage {} not found while creating reservation request", stageNum);
+                return;
+            }
+
+            int stageTargetSize = stageMetaOp.map(IMantisStageMetadata::getNumWorkers).orElse(stageWorkers.size());
+
+            // Create ScheduleRequests once for all workers - reuse for both constraints and allocation requests
+            List<ScheduleRequest> scheduleRequests = stageWorkers.stream()
+                .map(wm -> createSchedulingRequest(wm, Optional.empty()))
+                .toList();
+
+            // Extract scheduling constraints from first request (all workers in same stage share constraints)
+            SchedulingConstraints schedulingConstraints = scheduleRequests.get(0).getSchedulingConstraints();
+
+            // Create allocation requests from the schedule requests
+            Set<TaskExecutorAllocationRequest> allocationRequests = scheduleRequests.stream()
+                .map(sr -> TaskExecutorAllocationRequest.of(
+                    sr.getWorkerId(),
+                    sr.getSchedulingConstraints(),
+                    sr.getJobMetadata(),
+                    sr.getStageNum()))
+                .collect(Collectors.toSet());
+
+            // Build reservation request using shared UpsertReservation class
+            UpsertReservation request = UpsertReservation.builder()
+                .reservationKey(MantisResourceClusterReservationProto.ReservationKey.builder()
+                    .jobId(jobId.getId())
+                    .stageNumber(stageNum)
+                    .build())
+                .schedulingConstraints(schedulingConstraints)
+                .allocationRequests(allocationRequests)
+                .stageTargetSize(stageTargetSize)
+                .priority(buildPriority(priorityType))
+                .build();
+
+            LOGGER.info("Upserting reservation for job {} stage {} with {} workers (priority={}, attempt={})",
+                jobId, stageNum, allocationRequests.size(), priorityType, attemptNumber);
+
+            // Use Akka pipe pattern: transform the future result to a message and pipe it to self
+            // This ensures proper actor message handling instead of callback-based state mutation
+            java.util.concurrent.CompletableFuture<JobProto.ReservationUpsertResult> resultFuture =
+                scheduler.upsertReservation(request)
+                    .handle((ack, ex) -> {
+                        if (ex != null) {
+                            return JobProto.ReservationUpsertResult.failure(
+                                stageWorkers, priorityType, stageNum, attemptNumber, ex);
+                        } else {
+                            return JobProto.ReservationUpsertResult.success(
+                                stageWorkers, priorityType, stageNum, attemptNumber);
+                        }
+                    });
+
+            pipe(resultFuture, getContext().getDispatcher()).to(getContext().getSelf());
+        }
+
+        /**
+         * Build priority using shared ReservationPriority class.
+         * Priority tier is derived from job duration type.
+         */
+        private ReservationPriority buildPriority(PriorityType type) {
+            // Get tier from job SLA (durationType ordinal gives tier)
+            int tier = mantisJobMetaData.getJobDefinition().getJobSla().getDurationType().ordinal();
+
+            return ReservationPriority.builder()
+                .type(type)
+                .tier(tier)
+                .timestamp(System.currentTimeMillis())
+                .build();
+        }
+
+        /**
+         * Queue a single worker for scheduling.
+         * Convenience method that wraps single worker in a list.
+         */
         private void queueTask(final IMantisWorkerMetadata workerRequest) {
-            queueTasks(Collections.singletonList(workerRequest), empty());
+            queueWorkers(Collections.singletonList(workerRequest), PriorityType.NEW_JOB, empty());
         }
 
         private ScheduleRequest createSchedulingRequest(
@@ -1895,7 +2183,30 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         @Override
         public void shutdown() {
-            scheduler.unscheduleJob(jobId.getId());
+            if (useReservationScheduling) {
+                // Cancel all pending reservations for each stage using shared CancelReservation class
+                for (IMantisStageMetadata stage : mantisJobMetaData.getStageMetadata().values()) {
+                    CancelReservation cancelRequest = CancelReservation.builder()
+                        .reservationKey(ReservationKey.builder()
+                            .jobId(jobId.getId())
+                            .stageNumber(stage.getStageNum())
+                            .build())
+                        .build();
+
+                    scheduler.cancelReservation(cancelRequest)
+                        .whenComplete((resp, ex) -> {
+                            if (ex != null) {
+                                LOGGER.warn("Failed to cancel reservation for job {} stage {}",
+                                    jobId, stage.getStageNum(), ex);
+                            } else {
+                                LOGGER.debug("Cancelled reservation for job {} stage {}",
+                                    jobId, stage.getStageNum());
+                            }
+                        });
+                }
+            } else {
+                scheduler.unscheduleJob(jobId.getId());
+            }
             // if workers have not already completed
             if (!allWorkerCompleted()) {
                 // kill workers
@@ -2202,7 +2513,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         @Override
         public void processEvent(WorkerEvent event, JobState jobState) {
             try {
-
                 Optional<IMantisStageMetadata> stageMetaOp = getStageForWorker(event);
                 if (!stageMetaOp.isPresent()) {
                     terminateUnknownWorkerIfNonTerminal(event);
@@ -2283,8 +2593,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                     if (!(event instanceof WorkerHeartbeat)) {
                         // Use immediate refresh for terminal worker events in running jobs for faster recovery
-                        boolean immediateRefresh = (event instanceof WorkerTerminate || 
-                                                   WorkerState.isTerminalState(wm.getState())) 
+                        boolean immediateRefresh = (event instanceof WorkerTerminate ||
+                                                   WorkerState.isTerminalState(wm.getState()))
                                                    && jobState == JobState.Launched;
                         markStageAssignmentsChanged(immediateRefresh);
                     }
@@ -2444,13 +2754,18 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         oldWorkerMetadata.getWorkerId(),
                         Optional.ofNullable(oldWorkerMetadata.getSlave()));
 
-                long workerResubmitTime = resubmitRateLimiter.getWorkerResubmitTime(
-                        newWorker.getMetadata().getWorkerId(), stageMeta.getStageNum());
-                Optional<Long> delayDuration = of(workerResubmitTime);
                 // publish a refresh before enqueuing new Task to Scheduler
                 markStageAssignmentsChanged(true);
                 // queue the new worker for execution
-                queueTasks(Collections.singletonList(newWorker.getMetadata()), delayDuration);
+                // Use REPLACE priority (highest) for worker resubmission in reservation system
+                // apply rate limiting delay
+                long workerResubmitTime = resubmitRateLimiter.getWorkerResubmitTime(
+                    newWorker.getMetadata().getWorkerId(), stageMeta.getStageNum());
+                Optional<Long> readyAt = of(workerResubmitTime);
+                queueWorkers(
+                    Collections.singletonList(newWorker.getMetadata()),
+                    PriorityType.REPLACE,
+                    readyAt);
                 LOGGER.info("Worker {} successfully queued for scheduling", newWorker);
                 numWorkerResubmissions.increment();
             } else {
@@ -2502,6 +2817,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             getJobId(), getJobState()));
                     throw new RuntimeException(error);
                 }
+                List<IMantisWorkerMetadata> workerRequests = new ArrayList<>();
                 if (newNumWorkerCount > oldNumWorkers) {
                     for (int i = 0; i < newNumWorkerCount - oldNumWorkers; i++) {
                         try {
@@ -2510,7 +2826,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             IMantisWorkerMetadata workerRequest = addWorker(schedInfo, stageMetaData.getStageNum(),
                                     newWorkerIndex);
                             jobStore.storeNewWorker(workerRequest);
-                            queueTask(workerRequest);
+                            markStageAssignmentsChanged(true);
+                            workerRequests.add(workerRequest);
                         } catch (Exception e) {
                             // creating a worker failed but expected no of workers was set successfully,
                             // during heartbeat check we will
@@ -2518,6 +2835,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             LOGGER.warn("Exception adding new worker for {}", stageMetaData.getJobId().getId(), e);
                         }
                     }
+                    // Queue all new workers
+                    // Use SCALE priority (medium) for scaling operations in reservation system
+                    queueWorkers(workerRequests, PriorityType.SCALE, empty());
                 } else {
                     //  potential bulk removal opportunity?
                     for (int i = 0; i < oldNumWorkers - newNumWorkerCount; i++) {

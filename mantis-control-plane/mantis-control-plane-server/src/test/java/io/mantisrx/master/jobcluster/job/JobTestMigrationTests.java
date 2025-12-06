@@ -42,6 +42,9 @@ import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.common.Ack;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservation;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
 import io.mantisrx.server.master.scheduler.BatchScheduleRequest;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
@@ -49,6 +52,7 @@ import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
@@ -213,6 +217,16 @@ public class JobTestMigrationTests {
         @Override
         public boolean schedulerHandlesAllocationRetries(){
             return false;
+        }
+
+        @Override
+        public CompletableFuture<Ack> upsertReservation(UpsertReservation request) {
+            return CompletableFuture.completedFuture(Ack.getInstance());
+        }
+
+        @Override
+        public CompletableFuture<Ack> cancelReservation(CancelReservation request) {
+            return CompletableFuture.completedFuture(Ack.getInstance());
         }
     }
 

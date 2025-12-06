@@ -160,7 +160,7 @@ public class JobClusterManagerAkkaTest {
     public void setupState() {
         jobStoreMock = mock(MantisJobStore.class);
         schedulerMockFactory = mock(MantisSchedulerFactory.class);
-        schedulerMock = mock(MantisScheduler.class);
+        schedulerMock = JobTestHelper.createMockScheduler();
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreMock,
