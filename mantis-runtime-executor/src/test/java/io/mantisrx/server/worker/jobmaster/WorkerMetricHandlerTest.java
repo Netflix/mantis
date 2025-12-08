@@ -82,6 +82,7 @@ public class WorkerMetricHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
 
         final AutoScaleMetricsConfig aggregationConfig = new AutoScaleMetricsConfig();
+        final int testMetricsIntervalSecs = 1; // Use 1 second for tests instead of default 30
 
         final List<JobAutoScaler.Event> events = new ArrayList<>();
         final WorkerMetricHandler workerMetricHandler = new WorkerMetricHandler(jobId, new Observer<JobAutoScaler.Event>() {
@@ -105,14 +106,14 @@ public class WorkerMetricHandlerTest {
                 }
                 latch.countDown();
             }
-        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
+        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT, testMetricsIntervalSecs);
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
 
         // Purposely create a new String for jobId
         metricDataObserver.onNext(new MetricData(new String(jobId), stage, workerIdx, workerNum, DATA_DROP_METRIC_GROUP, gauges));
 
-        assertTrue(latch.await(30 + 5/* leeway */, TimeUnit.SECONDS));
+        assertTrue(latch.await(testMetricsIntervalSecs + 2/* leeway */, TimeUnit.SECONDS));
 
     }
 
@@ -153,6 +154,7 @@ public class WorkerMetricHandlerTest {
         final CountDownLatch latch = new CountDownLatch(2);
 
         final AutoScaleMetricsConfig aggregationConfig = new AutoScaleMetricsConfig(Collections.singletonMap(testMetricGroup, Collections.singletonMap(testMetricName, AutoScaleMetricsConfig.AggregationAlgo.AVERAGE)));
+        final int testMetricsIntervalSecs = 1; // Use 1 second for tests instead of default 30
 
         final WorkerMetricHandler workerMetricHandler = new WorkerMetricHandler(jobId, new Observer<JobAutoScaler.Event>() {
             @Override
@@ -179,7 +181,7 @@ public class WorkerMetricHandlerTest {
                 }
                 latch.countDown();
             }
-        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
+        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT, testMetricsIntervalSecs);
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
 
@@ -188,7 +190,7 @@ public class WorkerMetricHandlerTest {
         metricDataObserver.onNext(new MetricData(jobId, stage, workerIdx, workerNum, testMetricGroup, gauges1));
         metricDataObserver.onNext(new MetricData(jobId, stage, workerIdx + 1, workerNum + 1, testMetricGroup, gauges2));
 
-        assertTrue(latch.await(30 + 5/* leeway */, TimeUnit.SECONDS));
+        assertTrue(latch.await(testMetricsIntervalSecs + 2/* leeway */, TimeUnit.SECONDS));
     }
 
     @Test
@@ -253,6 +255,7 @@ public class WorkerMetricHandlerTest {
 
 
         final AutoScaleMetricsConfig aggregationConfig = new AutoScaleMetricsConfig();
+        final int testMetricsIntervalSecs = 1; // Use 1 second for tests instead of default 30
         final WorkerMetricHandler workerMetricHandler = new WorkerMetricHandler(jobId, new Observer<JobAutoScaler.Event>() {
             @Override
             public void onCompleted() {
@@ -274,7 +277,7 @@ public class WorkerMetricHandlerTest {
                 }
                 autoScaleLatch.countDown();
             }
-        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
+        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT, testMetricsIntervalSecs);
 
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
@@ -288,8 +291,8 @@ public class WorkerMetricHandlerTest {
             metricDataObserver.onNext(new MetricData(jobId, stage, workerIdx + 2, workerNum + 2,
                     DATA_DROP_METRIC_GROUP, zeroDropGauges));
         }
-        assertTrue(resubmitLatch.await(30, TimeUnit.SECONDS));
-        assertTrue(autoScaleLatch.await(30 + 5/* leeway */, TimeUnit.SECONDS));
+        assertTrue(resubmitLatch.await(testMetricsIntervalSecs + 2/* leeway */, TimeUnit.SECONDS));
+        assertTrue(autoScaleLatch.await(testMetricsIntervalSecs + 2/* leeway */, TimeUnit.SECONDS));
     }
 
     @Test
@@ -309,6 +312,7 @@ public class WorkerMetricHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
 
         final AutoScaleMetricsConfig aggregationConfig = new AutoScaleMetricsConfig();
+        final int testMetricsIntervalSecs = 1; // Use 1 second for tests instead of default 30
 
         final WorkerMetricHandler workerMetricHandler = new WorkerMetricHandler(jobId, new Observer<JobAutoScaler.Event>() {
             @Override
@@ -330,7 +334,7 @@ public class WorkerMetricHandlerTest {
                     latch.countDown();
                 }
             }
-        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT);
+        }, mockMasterClientApi, aggregationConfig, JobAutoscalerManager.DEFAULT, testMetricsIntervalSecs);
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
 
@@ -363,6 +367,6 @@ public class WorkerMetricHandlerTest {
                 new GaugeMeasurement(DROPPED_COUNTER_METRIC_NAME, 5.0));
         metricDataObserver.onNext(new MetricData(sourceJobId, stage, 1, 2, "ServerSentEventRequestHandler:clientId=" + jobId + ":sockAddr=/2.2.2.2", gauges));
 
-        assertTrue(latch.await(30 + 5/* leeway */, TimeUnit.SECONDS));
+        assertTrue(latch.await(testMetricsIntervalSecs + 2/* leeway */, TimeUnit.SECONDS));
     }
 }
