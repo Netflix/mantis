@@ -79,7 +79,8 @@ public class JobClusterProtoAdapter {
                 jd.getMigrationConfig(),
                 jd.getIsReadyForJobMaster(),
                 jd.getParameters(),
-                processLabels(jd)
+                processLabels(jd),
+                njd.getJobPrincipal()
         )
 
         , "user"
@@ -200,7 +201,8 @@ public class JobClusterProtoAdapter {
                 jd.getMigrationConfig(),
                 jd.getIsReadyForJobMaster(),
                 jd.getParameters(),
-                processLabels(jd)
+                processLabels(jd),
+            njd.getJobPrincipal()
         ),
 
         "user");

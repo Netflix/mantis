@@ -21,6 +21,7 @@ import com.netflix.fenzo.triggers.TriggerOperator;
 import com.netflix.fenzo.triggers.exceptions.SchedulerException;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobOwner;
+import io.mantisrx.runtime.JobPrincipal;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.NamedJobDefinition;
 import io.mantisrx.runtime.WorkerMigrationConfig;
@@ -55,6 +56,7 @@ public class NamedJob {
     private volatile boolean isActive = true;
     private MantisJobOperations jobOps;
     private List<Label> labels;
+    private JobPrincipal jobPrincipal;
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public NamedJob(@JsonProperty("jobOps") MantisJobOperations jobOps, @JsonProperty("name") String name,
@@ -64,7 +66,8 @@ public class NamedJob {
                     @JsonProperty("disabled") boolean disabled,
                     @JsonProperty("isReadyForJobMaster") boolean isReadyForJobMaster,
                     @JsonProperty("migrationConfig") WorkerMigrationConfig migrationConfig,
-                    @JsonProperty("labels") List<Label> labels) {
+                    @JsonProperty("labels") List<Label> labels,
+                    @JsonProperty("jobPrincipal") JobPrincipal jobPrincipal) {
 
         this.jobOps = jobOps;
         this.name = name;
@@ -88,6 +91,7 @@ public class NamedJob {
         this.parameters = parameters;
         this.owner = owner;
         this.lastJobCount = lastJobCount;
+        this.jobPrincipal = jobPrincipal;
         if (jars != null) {
             this.jars.addAll(jars);
         }
@@ -110,7 +114,7 @@ public class NamedJob {
         return "NamedJob [name=" + name + ", jars=" + jars + ", owner=" + owner + ", sla=" + sla + ", parameters="
                 + parameters + ", isReadyForJobMaster=" + isReadyForJobMaster + ", migrationConfig=" + migrationConfig
                 + ", lastJobCount=" + lastJobCount + ", disabled=" + disabled + ", isActive=" + isActive + ", labels="
-                + labels + "]";
+                + labels + ", jobPrincipal=" + jobPrincipal + "]";
     }
 
     /* package */ void setJobOps(MantisJobOperations jobOps) {
@@ -185,6 +189,14 @@ public class NamedJob {
 
     public void setMigrationConfig(final WorkerMigrationConfig migrationConfig) {
         this.migrationConfig = migrationConfig;
+    }
+
+    public JobPrincipal getJobPrincipal() {
+        return jobPrincipal;
+    }
+
+    public void setJobPrincipal(JobPrincipal jobPrincipal) {
+        this.jobPrincipal = jobPrincipal;
     }
 
     @JsonIgnore
