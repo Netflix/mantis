@@ -21,6 +21,7 @@ import io.mantisrx.common.Label;
 import io.mantisrx.master.jobcluster.LabelManager.SystemLabels;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.runtime.JobOwner;
+import io.mantisrx.runtime.JobPrincipal;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
@@ -49,6 +50,7 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
     private final List<Parameter> parameters;
     private final List<Label> labels;
     private boolean isReadyForJobMaster = false;
+    private final JobPrincipal jobPrincipal;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -61,7 +63,8 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
                                     @JsonProperty("isReadyForJobMaster") boolean isReadyForJobMaster,
                                     @JsonProperty("parameters") List<Parameter> parameters,
                                     @JsonProperty("labels") List<Label> labels,
-                                    @JsonProperty("isDisabled") boolean isDisabled
+                                    @JsonProperty("isDisabled") boolean isDisabled,
+                                    @JsonProperty("jobPrincipal") JobPrincipal jobPrincipal
     ) {
         Preconditions.checkNotNull(jobClusterConfigs);
         Preconditions.checkArgument(!jobClusterConfigs.isEmpty());
@@ -87,6 +90,7 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
                         l.getName().equalsIgnoreCase(SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label)),
                 "Missing required label: " + SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label);
         }
+        this.jobPrincipal = jobPrincipal;
     }
 
     public JobClusterDefinitionImpl(String name,
@@ -97,8 +101,8 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
         WorkerMigrationConfig migrationConfig,
         boolean isReadyForJobMaster,
         List<Parameter> parameters,
-        List<Label> labels) {
-        this(name, jobClusterConfigs, owner, user, sla, migrationConfig, isReadyForJobMaster, parameters, labels, false);
+        List<Label> labels, JobPrincipal jobPrincipal) {
+        this(name, jobClusterConfigs, owner, user, sla, migrationConfig, isReadyForJobMaster, parameters, labels, false, jobPrincipal);
     }
 
     /* (non-Javadoc)
@@ -177,6 +181,11 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
     }
 
     @Override
+    public JobPrincipal getJobPrincipal() {
+        return this.jobPrincipal;
+    }
+
+    @Override
     public String toString() {
         return "JobClusterDefinitionImpl{" +
                 "name='" + name + '\'' +
@@ -188,6 +197,7 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
                 ", jobClusterConfigs=" + jobClusterConfigs +
                 ", parameters=" + parameters +
                 ", labels=" + labels +
+                ", jobPrincipal=" + jobPrincipal +
                 '}';
     }
 
@@ -204,13 +214,14 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
                 Objects.equals(migrationConfig, that.migrationConfig) &&
                 Objects.equals(jobClusterConfigs, that.jobClusterConfigs) &&
                 Objects.equals(parameters, that.parameters) &&
-                Objects.equals(labels, that.labels);
+                Objects.equals(labels, that.labels) &&
+                Objects.equals(jobPrincipal, that.jobPrincipal);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(name, user, owner, sla, migrationConfig, isReadyForJobMaster, jobClusterConfigs, parameters, labels);
+        return Objects.hash(name, user, owner, sla, migrationConfig, isReadyForJobMaster, jobClusterConfigs, parameters, labels, jobPrincipal);
     }
 
 
@@ -331,6 +342,7 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
         List<Parameter> parameters = Lists.newArrayList();
         List<Label> labels = Lists.newArrayList();
         boolean isDisabled = false;
+        JobPrincipal jobPrincipal = null;
 
         public Builder() {}
 
@@ -407,6 +419,11 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
             return this;
         }
 
+        public Builder withJobPrincipal(JobPrincipal jobPrincipal) {
+            this.jobPrincipal = jobPrincipal;
+            return this;
+        }
+
         public Builder from(IJobClusterDefinition defn) {
             migrationConfig = defn.getWorkerMigrationConfig();
             name = defn.getName();
@@ -423,6 +440,7 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
                 }
             }
             //defn.getJobClusterConfigs().forEach(jobClusterConfigs::add);
+            jobPrincipal = defn.getJobPrincipal();
             return this;
         }
 
@@ -448,6 +466,7 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
             this.owner = newDefn.getOwner();
             this.isReadyForJobMaster = newDefn.getIsReadyForJobMaster();
             this.name = oldDefn.getName();
+            this.jobPrincipal = newDefn.getJobPrincipal();
             return this;
         }
 
@@ -467,7 +486,8 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
                 isReadyForJobMaster,
                 parameters,
                 labels,
-                isDisabled);
+                isDisabled,
+                jobPrincipal);
         }
 
     }

@@ -18,6 +18,7 @@ package io.mantisrx.server.master.domain;
 
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobOwner;
+import io.mantisrx.runtime.JobPrincipal;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.parameter.Parameter;
 import java.util.List;
@@ -49,4 +50,5 @@ public interface IJobClusterDefinition {
 
     enum CronPolicy {KEEP_EXISTING, KEEP_NEW}
 
+    JobPrincipal getJobPrincipal();
 }

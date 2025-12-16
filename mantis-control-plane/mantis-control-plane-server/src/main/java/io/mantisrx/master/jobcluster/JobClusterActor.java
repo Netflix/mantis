@@ -1368,6 +1368,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .withIsReadyForJobMaster(jobClusterMetadata.getJobClusterDefinition().getIsReadyForJobMaster())
                 .withJars(jobClusterMetadata.getJobClusterDefinition().getJobClusterConfigs())
                 .withJobOwner(jobClusterMetadata.getJobClusterDefinition().getOwner())
+                .withJobPrincipal(jobClusterMetadata.getJobClusterDefinition().getJobPrincipal())
                 .withLabels(jobClusterMetadata.getJobClusterDefinition().getLabels())
                 .withLastJobCount(jobClusterMetadata.getLastJobCount())
                 .withSla(jobClusterMetadata.getJobClusterDefinition().getSLA())

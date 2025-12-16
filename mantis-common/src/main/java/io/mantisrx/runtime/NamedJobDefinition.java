@@ -18,6 +18,7 @@ package io.mantisrx.runtime;
 
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonInclude;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 
 
@@ -25,13 +26,17 @@ public class NamedJobDefinition {
 
     private final MantisJobDefinition jobDefinition;
     private final JobOwner owner;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final JobPrincipal jobPrincipal;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public NamedJobDefinition(@JsonProperty("jobDefinition") MantisJobDefinition jobDefinition,
-                              @JsonProperty("owner") JobOwner owner) {
+                              @JsonProperty("owner") JobOwner owner,
+                              @JsonProperty("jobPrincipal") JobPrincipal jobPrincipal) {
         this.jobDefinition = jobDefinition;
         this.owner = owner;
+        this.jobPrincipal = jobPrincipal;
     }
 
     public MantisJobDefinition getJobDefinition() {
@@ -42,11 +47,16 @@ public class NamedJobDefinition {
         return owner;
     }
 
+    public JobPrincipal getJobPrincipal() {
+        return jobPrincipal;
+    }
+
     @Override
     public String toString() {
         return "NamedJobDefinition{" +
                 "jobDefinition=" + jobDefinition +
                 ", owner=" + owner +
+                ", jobPrincipal=" + jobPrincipal +
                 '}';
     }
 
