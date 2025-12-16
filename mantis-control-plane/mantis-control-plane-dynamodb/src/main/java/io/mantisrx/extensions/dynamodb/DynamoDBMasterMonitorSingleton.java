@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 import rx.subjects.BehaviorSubject;
 
 class DynamoDBMasterMonitorSingleton {
-    private static final Logger logger = LoggerFactory.getLogger(DynamoDBMasterMonitor.class);
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDBMasterMonitorSingleton.class);
 
 
     private final ThreadFactory monitorThreadFactory = r -> {
@@ -70,6 +70,7 @@ class DynamoDBMasterMonitorSingleton {
     private final Counter leaderChangedCounter;
     private final Counter refreshedLeaderCounter;
     private final Counter getCurrentLeaderCounter;
+    private final Counter monitorExceptionCounter;
 
     private static volatile DynamoDBMasterMonitorSingleton instance = null;
 
@@ -117,6 +118,7 @@ class DynamoDBMasterMonitorSingleton {
             .addCounter("refreshed_leader")
             .addCounter("leader_changed")
             .addCounter("get_current_leader")
+            .addCounter("monitor_exception")
             .build();
         Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
 
@@ -126,12 +128,20 @@ class DynamoDBMasterMonitorSingleton {
         this.refreshedLeaderCounter = metrics.getCounter("refreshed_leader");
         this.leaderChangedCounter = metrics.getCounter("leader_changed");
         this.getCurrentLeaderCounter = metrics.getCounter("get_current_leader");
+        this.monitorExceptionCounter = metrics.getCounter("monitor_exception");
     }
 
     public void start() {
         logger.info("starting leader monitor");
         leaderMonitor.scheduleAtFixedRate(
-                this::getCurrentLeader, 0, pollInterval.toMillis(), TimeUnit.MILLISECONDS);
+                () -> {
+                    try {
+                        getCurrentLeader();
+                    } catch (Throwable t) {
+                        logger.error("Exception caught in scheduled master monitor task.", t);
+                        monitorExceptionCounter.increment();
+                    }
+                }, 0, pollInterval.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     void shutdown() {

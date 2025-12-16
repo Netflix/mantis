@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import javax.swing.SingleSelectionModel;
 import org.skife.config.Config;
 import org.skife.config.ConfigurationObjectFactory;
 import org.slf4j.Logger;
@@ -44,7 +43,7 @@ import software.amazon.awssdk.services.sts.model.Credentials;
 public class DynamoDBClientSingleton {
     public static final String DYNAMO_DB_PROPERTIES_KEY = "mantis.ext.dynamodb.properties.file";
 
-    private static final Logger logger = LoggerFactory.getLogger(SingleSelectionModel.class);
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDBClientSingleton.class);
     private static AmazonDynamoDBLockClient instanceLockClient;
     private static DynamoDbClient instanceClient;
     private static String partitionKey;
