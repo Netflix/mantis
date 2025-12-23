@@ -34,6 +34,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorWo
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.InitializeTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.MarkExecutorTaskCancelledRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TerminateWorkerRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.RemoveJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatchAssignmentRequest;
@@ -170,6 +171,17 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
             .ask(
                 resourceClusterManagerActor,
                 new MarkExecutorTaskCancelledRequest(clusterID, workerId),
+                askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> terminateWorker(WorkerId workerId) {
+        return Patterns
+            .ask(
+                resourceClusterManagerActor,
+                new TerminateWorkerRequest(clusterID, workerId),
                 askTimeout)
             .thenApply(Ack.class::cast)
             .toCompletableFuture();

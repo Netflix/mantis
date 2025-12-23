@@ -337,6 +337,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                     metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(MarkExecutorTaskCancelledRequest.class,
                     metrics.withTracking(this::forwardToExecutorStateManager))
+                .match(TerminateWorkerRequest.class,
+                    metrics.withTracking(this::forwardToExecutorStateManager))
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
                 .match(TaskExecutorRegistration.class, metrics.withTracking(this::forwardToExecutorStateManager))
@@ -736,6 +738,13 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     @Builder
     static class MarkExecutorTaskCancelledRequest {
+        ClusterID clusterID;
+        WorkerId workerId;
+    }
+
+    @Value
+    @Builder
+    static class TerminateWorkerRequest {
         ClusterID clusterID;
         WorkerId workerId;
     }

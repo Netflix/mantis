@@ -32,6 +32,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTa
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.HeartbeatTimeout;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.InitializeTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.MarkExecutorTaskCancelledRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TerminateWorkerRequest;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.PublishResourceOverviewMetricsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.RemoveJobArtifactsToCacheRequest;
@@ -374,6 +375,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             .match(GetClusterIdleInstancesRequest.class, this::onGetClusterIdleInstancesRequest)
             .match(GetAssignedTaskExecutorRequest.class, this::onGetAssignedTaskExecutorRequest)
             .match(MarkExecutorTaskCancelledRequest.class, this::onMarkExecutorTaskCancelledRequest)
+            .match(TerminateWorkerRequest.class, this::onTerminateWorkerRequest)
             .match(ResourceOverviewRequest.class, this::onResourceOverviewRequest)
             .match(GetTaskExecutorWorkerMappingRequest.class, this::onGetTaskExecutorWorkerMappingRequest)
             .match(PublishResourceOverviewMetricsRequest.class, this::onPublishResourceOverviewMetricsRequest)
@@ -389,26 +391,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
     }
 
     private void onTaskExecutorInitialization(InitializeTaskExecutorRequest request) {
-        log.info("Initializing taskExecutor {} for the resource cluster {}", request.getTaskExecutorID(), clusterID);
-        try {
-            TaskExecutorRegistration registration =
-                mantisJobStore.getTaskExecutor(request.getTaskExecutorID());
-            if (registration == null) {
-                sender().tell(new Status.Failure(new TaskExecutorNotFoundException(request.getTaskExecutorID())), self());
-                return;
-            }
-            handleTaskExecutorRegistration(registration);
-            self().tell(
-                new TaskExecutorStatusChange(
-                    registration.getTaskExecutorID(),
-                    registration.getClusterID(),
-                    TaskExecutorReport.occupied(request.getWorkerId())),
-                self());
-            sender().tell(Ack.getInstance(), self());
-        } catch (Exception e) {
-            log.error("Failed to initialize taskExecutor {}; all retries exhausted", request.getTaskExecutorID(), e);
-            sender().tell(new Status.Failure(e), self());
-        }
+        log.debug("[Noop] InitializeTaskExecutorRequest {} for the resource cluster {}", request, clusterID);
     }
 
     private void onTaskExecutorRegistration(TaskExecutorRegistration registration) {
@@ -865,6 +848,36 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             sender().tell(Ack.getInstance(), self());
         } else {
             log.info("Cannot find executor to mark worker {} as cancelled", request);
+            sender().tell(new Status.Failure(new TaskNotFoundException(request.getWorkerId())), self());
+        }
+    }
+
+    private void onTerminateWorkerRequest(TerminateWorkerRequest request) {
+        Optional<Entry<TaskExecutorID, TaskExecutorState>> matchedTaskExecutor =
+            this.delegate.findFirst(e -> e.getValue().isRunningOrAssigned(request.getWorkerId()));
+
+        if (matchedTaskExecutor.isPresent()) {
+            TaskExecutorID taskExecutorID = matchedTaskExecutor.get().getKey();
+            TaskExecutorState state = matchedTaskExecutor.get().getValue();
+            log.info("Proactively terminating worker {} on executor {}", request.getWorkerId(), taskExecutorID);
+
+            // Mark as cancelled in state
+            state.setCancelledWorkerOnTask(request.getWorkerId());
+
+            // Proactively call cancelTask on gateway
+            state.getGatewayAsync().thenAccept(gateway -> {
+                gateway.cancelTask(request.getWorkerId())
+                    .whenComplete((ack, throwable) -> {
+                        if (throwable != null) {
+                            log.warn("Failed to proactively cancel task {} on executor {}", request.getWorkerId(), taskExecutorID, throwable);
+                        } else {
+                            log.info("Successfully proactively cancelled task {} on executor {}", request.getWorkerId(), taskExecutorID);
+                        }
+                    });
+            });
+            sender().tell(Ack.getInstance(), self());
+        } else {
+            log.info("Cannot find executor to proactively terminate worker {}", request.getWorkerId());
             sender().tell(new Status.Failure(new TaskNotFoundException(request.getWorkerId())), self());
         }
     }
