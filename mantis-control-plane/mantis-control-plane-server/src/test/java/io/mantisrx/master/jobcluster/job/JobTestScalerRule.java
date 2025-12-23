@@ -110,7 +110,7 @@ public class JobTestScalerRule {
             .build();
 
         String clusterName = "testScalerRuleStreamSubject";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
 

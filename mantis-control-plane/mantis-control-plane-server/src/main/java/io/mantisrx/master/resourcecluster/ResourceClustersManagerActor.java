@@ -33,14 +33,21 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTask
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.MarkExecutorTaskCancelledRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TerminateWorkerRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.RemoveJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatchAssignmentRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetPendingReservationsView;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetReservationAwareClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.QueueClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.MarkReady;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservation;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
+import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -77,6 +84,7 @@ class ResourceClustersManagerActor extends AbstractActor {
     private final ActorRef resourceClusterHostActor;
     private final IMantisPersistenceProvider mantisPersistenceProvider;
     private final JobMessageRouter jobMessageRouter;
+    private final ExecuteStageRequestFactory executeStageRequestFactory;
 
     public static Props props(
         MasterConfiguration masterConfiguration,
@@ -111,6 +119,7 @@ class ResourceClustersManagerActor extends AbstractActor {
         this.resourceClusterHostActor = resourceClusterHostActorRef;
         this.mantisPersistenceProvider = mantisPersistenceProvider;
         this.jobMessageRouter = jobMessageRouter;
+        this.executeStageRequestFactory = new ExecuteStageRequestFactory(masterConfiguration);
 
         this.resourceClusterActorMap = new HashMap<>();
     }
@@ -131,6 +140,7 @@ class ResourceClustersManagerActor extends AbstractActor {
                 .match(GetActiveJobsRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
                 .match(GetAssignedTaskExecutorRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
                 .match(MarkExecutorTaskCancelledRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
+                .match(TerminateWorkerRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
 
                 .match(TaskExecutorRegistration.class, registration ->
                     getRCActor(registration.getClusterID()).forward(registration, context()))
@@ -162,6 +172,20 @@ class ResourceClustersManagerActor extends AbstractActor {
                     getRCScalerActor(req.getClusterID()).forward(req, context()))
                 .match(SetResourceClusterScalerStatusRequest.class, req ->
                     getRCScalerActor(req.getClusterID()).forward(req, context()))
+                .match(UpsertReservationRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(req.getUpsertReservation(), context()))
+                .match(CancelReservationRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(req.getCancelReservation(), context()))
+                .match(GetPendingReservationsViewRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(GetPendingReservationsView.INSTANCE, context()))
+                .match(GetReservationAwareClusterUsageRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(req, context()))
+                .match(MarkReady.class, markReady -> {
+                    // Broadcast MarkReady to all cluster actors
+                    resourceClusterActorMap.values().forEach(holder ->
+                        holder.getResourceClusterActor().forward(markReady, context()));
+                    sender().tell(io.mantisrx.common.Ack.getInstance(), self());
+                })
                 .build();
     }
 
@@ -184,7 +208,9 @@ class ResourceClustersManagerActor extends AbstractActor {
                     masterConfiguration.isJobArtifactCachingEnabled(),
                     masterConfiguration.getSchedulingConstraints(),
                     masterConfiguration.getFitnessCalculator(),
-                    masterConfiguration.getAvailableTaskExecutorMutatorHook()),
+                    masterConfiguration.getAvailableTaskExecutorMutatorHook(),
+                    executeStageRequestFactory,
+                    masterConfiguration.isReservationSchedulingEnabled()),
                 "ResourceClusterActor-" + clusterID.getResourceID());
         log.info("Created resource cluster actor for {}", clusterID);
         return clusterActor;
@@ -201,7 +227,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                     Duration.ofSeconds(masterConfiguration.getScalerRuleSetRefreshThresholdInSecs()),
                     this.mantisPersistenceProvider,
                     this.resourceClusterHostActor,
-                    rcActor
+                    rcActor,
+                    masterConfiguration.isReservationSchedulingEnabled()
                 ),
                 "ResourceClusterScalerActor-" + clusterID.getResourceID());
         log.info("Created resource cluster scaler actor for {}", clusterID);
@@ -257,5 +284,34 @@ class ResourceClustersManagerActor extends AbstractActor {
     static class ActorHolder {
         ActorRef resourceClusterActor;
         ActorRef resourceClusterScalerActor;
+    }
+
+    /**
+     * Wrapper message for UpsertReservation that includes ClusterID for routing.
+     */
+    @Value
+    @Builder
+    public static class UpsertReservationRequest {
+        ClusterID clusterID;
+        UpsertReservation upsertReservation;
+    }
+
+    /**
+     * Wrapper message for CancelReservation that includes ClusterID for routing.
+     */
+    @Value
+    @Builder
+    public static class CancelReservationRequest {
+        ClusterID clusterID;
+        CancelReservation cancelReservation;
+    }
+
+    /**
+     * Wrapper message for GetPendingReservationsView that includes ClusterID for routing.
+     */
+    @Value
+    @Builder
+    public static class GetPendingReservationsViewRequest {
+        ClusterID clusterID;
     }
 }

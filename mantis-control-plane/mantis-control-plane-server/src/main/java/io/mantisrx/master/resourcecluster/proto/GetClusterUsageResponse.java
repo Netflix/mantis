@@ -36,5 +36,16 @@ public class GetClusterUsageResponse {
         String usageGroupKey;
         int idleCount;
         int totalCount;
+
+        @Builder.Default
+        int pendingReservationCount = 0;
+
+        /**
+         * Effective idle count accounting for pending reservations.
+         * If pending reservations exist, those "idle" TEs will soon be consumed.
+         */
+        public int getEffectiveIdleCount() {
+            return Math.max(0, idleCount - pendingReservationCount);
+        }
     }
 }

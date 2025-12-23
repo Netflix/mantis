@@ -373,7 +373,7 @@ public class JobClusterAkkaTest {
         try {
             TestKit probe = new TestKit(system);
             String clusterName = "testJobClusterEnable";
-            MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
             String jobId = clusterName + "-1";
             JobDefinition jobDefn = createJob(clusterName);
@@ -455,7 +455,7 @@ public class JobClusterAkkaTest {
         labels.add(l);
         String clusterName = "testJobClusterUpdateAndDelete";
         String artifactName = "myart";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, labels);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -522,7 +522,7 @@ public class JobClusterAkkaTest {
         Label l = new Label("labelname","labelvalue");
         labels.add(l);
         String clusterName = "testJobClusterUpdateFailsIfArtifactNotUnique";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, labels);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -550,7 +550,7 @@ public class JobClusterAkkaTest {
         Label l = new Label("labelname","labelvalue");
         labels.add(l);
         String clusterName = "testJobClusterDeleteFailsIfJobsActive";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, labels);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -587,7 +587,7 @@ public class JobClusterAkkaTest {
         Label l = new Label("labelname","labelvalue");
         labels.add(l);
         String clusterName = "testJobClusterDeletePurgesCompletedJobs";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, labels);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -630,7 +630,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         CountDownLatch storeCompletedCalled = new CountDownLatch(1);
         String clusterName = "testJobClusterDisable";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -725,7 +725,7 @@ public class JobClusterAkkaTest {
     public void testJobClusterSLAUpdate() throws Exception  {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterSLAUpdate";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -758,7 +758,7 @@ public class JobClusterAkkaTest {
     public void testJobClusterMigrationConfigUpdate() throws Exception  {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterMigrationConfigUpdate";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -825,7 +825,7 @@ public class JobClusterAkkaTest {
     public void testJobClusterArtifactUpdate() throws Exception  {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterArtifactUpdate";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -864,7 +864,7 @@ public class JobClusterAkkaTest {
     public void testJobClusterArtifactUpdateNotUniqueFails() throws Exception  {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterArtifactUpdateNotUniqueFails";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -901,7 +901,7 @@ public class JobClusterAkkaTest {
     public void testJobClusterArtifactUpdateMultipleTimes() throws Exception  {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterArtifactUpdateMultipleTimes";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -968,7 +968,7 @@ public class JobClusterAkkaTest {
 
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterInvalidSLAUpdateIgnored";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -1003,7 +1003,7 @@ public class JobClusterAkkaTest {
     public void testJobClusterLabelsUpdate() throws Exception  {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterLabelsUpdate";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
 
@@ -1059,7 +1059,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmit() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmit";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -1097,7 +1097,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmitWithNoJarAndSchedInfo() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithNoJarAndSchedInfo";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -1150,7 +1150,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithVersionAndNoSchedInfo";
         String artifactName = "myart2";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -1258,7 +1258,7 @@ public class JobClusterAkkaTest {
     public void testJobComplete() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobComplete";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -1297,7 +1297,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobKillTriggersSLAToLaunchNew";
         MantisSchedulerFactory schedulerMockFactory = mock(MantisSchedulerFactory.class);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
@@ -1353,7 +1353,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitTriggersSLAToKillOld";
         MantisSchedulerFactory schedulerMockFactory = mock(MantisSchedulerFactory.class);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
@@ -1436,7 +1436,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmitTriggersSLAToKillOldHandlesErrors() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitTriggersSLAToKillOldHandlesErrors";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         SLA sla = new SLA(1,1,null,null);
@@ -1519,7 +1519,7 @@ public class JobClusterAkkaTest {
     public void testCronTriggersSLAToKillOld() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitTriggersSLAToKillOld";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         SLA sla = new SLA(1,1,"0/1 * * * * ?",IJobClusterDefinition.CronPolicy.KEEP_NEW);
@@ -1570,7 +1570,7 @@ public class JobClusterAkkaTest {
     public void testInvalidCronDefined() {
         TestKit probe = new TestKit(system);
         String clusterName = "testInvalidCronSubmit";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         SLA sla = new SLA(1,1,"a b * * * * * * *",IJobClusterDefinition.CronPolicy.KEEP_NEW);
@@ -1581,7 +1581,7 @@ public class JobClusterAkkaTest {
     public void testInvalidCronSLAUpdate() throws Exception  {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterInvalidSLAUpdateIgnored";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -1616,7 +1616,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmitWithUnique() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithUnique";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -1665,7 +1665,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmitWithoutInheritInstance() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithInheritInstance";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -1717,7 +1717,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmitWithInheritInstanceFlagsSingleStage() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithInheritInstance";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -1773,7 +1773,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmitWithInheritInstanceFlagsMultiStage() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithInheritInstance";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         // default job with 3 stage == (2 worker)
@@ -1851,7 +1851,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmitWithInheritInstanceFlagsScaled() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithInheritInstance";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         // default job with 3 stage == (2 worker)
@@ -1927,7 +1927,7 @@ public class JobClusterAkkaTest {
     public void testQuickJobSubmit() {
         TestKit probe = new TestKit(system);
         String clusterName = "testQuickJobSubmit";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -1968,7 +1968,7 @@ public class JobClusterAkkaTest {
     public void testQuickJobSubmitWithNoSchedInfoInPreviousJob() {
         TestKit probe = new TestKit(system);
         String clusterName = "testQuickJobSubmitWithNoSchedInfoInPreviousJob";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -2019,7 +2019,7 @@ public class JobClusterAkkaTest {
     public void testJobSubmitWithNoSchedInfoUsesJobClusterValues() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithNoSchedInfoUsesJobClusterValues";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         List<Label> clusterLabels = new ArrayList<>();
@@ -2100,7 +2100,7 @@ public class JobClusterAkkaTest {
     public void testQuickJobSubmitWithNoPreviousHistoryFails() {
         TestKit probe = new TestKit(system);
         String clusterName = "testQuickJobSubmitWithNoPreviousHistoryFails";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -2129,7 +2129,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         try {
             String clusterName = "testUpdateJobClusterArtifactWithAutoSubmit";
-            MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
             // when running concurrently with testGetJobDetailsForArchivedJob the following mock return is needed to avoid null pointer exception.
@@ -2205,7 +2205,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         try {
             String clusterName = "testJobSubmitFails";
-            MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
             final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
             Mockito.doThrow(Exception.class).when(jobStoreMock).storeNewJob(any());
@@ -2241,7 +2241,7 @@ public class JobClusterAkkaTest {
     public void testCreateScalerRuleFromEmpty() {
         TestKit probe = new TestKit(system);
         String clusterName = "testCreateScalerRuleFromEmpty";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -2274,7 +2274,7 @@ public class JobClusterAkkaTest {
         String clusterName = "testCreateAddAndDeleteRules";
 
         // Mocks for dependencies.
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         // Create a fake job cluster definition.
@@ -2384,7 +2384,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testDeleteScalerRule";
 
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
 
@@ -2486,7 +2486,7 @@ public class JobClusterAkkaTest {
     public void testGetLastSubmittedJobSubject() {
         TestKit probe = new TestKit(system);
         String clusterName = "testGetLastSubmittedJobSubject";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -2542,7 +2542,7 @@ public class JobClusterAkkaTest {
     public void testGetLastSubmittedJobSubjectWithWrongClusterNameFails() {
         TestKit probe = new TestKit(system);
         String clusterName = "testGetLastSubmittedJobSubjectWithWrongClusterNameFails";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -2585,8 +2585,8 @@ public class JobClusterAkkaTest {
     public void testListArchivedWorkers() {
         TestKit probe = new TestKit(system);
         String clusterName = "testListArchivedWorkers";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
-        MantisScheduler scheduler = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+        MantisScheduler scheduler = JobTestHelper.createMockScheduler();
 
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -2644,7 +2644,7 @@ public class JobClusterAkkaTest {
         String clusterName = "testZombieWorkerKilledOnMessage";
         TestKit probe = new TestKit(system);
         MantisSchedulerFactory schedulerMockFactory = mock(MantisSchedulerFactory.class);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
@@ -2678,7 +2678,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testZombieWorkerTerminateEventIgnored";
         MantisSchedulerFactory schedulerMockFactory = mock(MantisSchedulerFactory.class);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
@@ -2705,7 +2705,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testResubmitWorker";
         MantisSchedulerFactory schedulerMockFactory = mock(MantisSchedulerFactory.class);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
@@ -2764,7 +2764,7 @@ public class JobClusterAkkaTest {
         try {
             String clusterName = "testScaleStage";
             MantisSchedulerFactory schedulerMockFactory = mock(MantisSchedulerFactory.class);
-            MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
             when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
@@ -2832,7 +2832,7 @@ public class JobClusterAkkaTest {
     public void testGetJobDetailsForArchivedJob() {
         TestKit probe = new TestKit(system);
         String clusterName = "testGetJobDetailsForArchivedJob";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -2885,7 +2885,7 @@ public class JobClusterAkkaTest {
     public void testListJobIdsForCluster() throws InvalidJobException {
         TestKit probe = new TestKit(system);
         String clusterName = "testListJobsForCluster";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -2993,7 +2993,7 @@ public class JobClusterAkkaTest {
     public void testListJobsForCluster() throws InvalidJobException, InterruptedException {
         TestKit probe = new TestKit(system);
         String clusterName = "testListJobsForCluster";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
         ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -3168,7 +3168,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testListJobWithLabelMatch";
         try {
-            MantisScheduler schedulerMock = mock(MantisScheduler.class);
+            MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
             final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
             ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
@@ -3268,7 +3268,7 @@ public class JobClusterAkkaTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testLostWorkerGetsReplaced";
         MantisSchedulerFactory schedulerMockFactory = mock(MantisSchedulerFactory.class);
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         //MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);

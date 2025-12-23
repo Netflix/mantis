@@ -17,13 +17,17 @@
 package io.mantisrx.master.scheduler;
 
 import akka.actor.ActorRef;
+import io.mantisrx.common.Ack;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservation;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
 import io.mantisrx.server.master.scheduler.BatchScheduleRequest;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class FakeMantisScheduler implements MantisScheduler {
 
@@ -68,5 +72,17 @@ public class FakeMantisScheduler implements MantisScheduler {
     @Override
     public boolean schedulerHandlesAllocationRetries() {
         return false;
+    }
+
+    @Override
+    public CompletableFuture<Ack> upsertReservation(UpsertReservation request) {
+        // Fake implementation - immediately return success
+        return CompletableFuture.completedFuture(Ack.getInstance());
+    }
+
+    @Override
+    public CompletableFuture<Ack> cancelReservation(CancelReservation request) {
+        // Fake implementation - immediately return success
+        return CompletableFuture.completedFuture(Ack.getInstance());
     }
 }

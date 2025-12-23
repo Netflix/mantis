@@ -180,7 +180,7 @@ public class WorkerRegistryV2Test {
                         new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
                 .build();
         String clusterName = "testJobScaleUp";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, eventPublisher);
@@ -232,7 +232,7 @@ public class WorkerRegistryV2Test {
                         new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
                 .build();
         String clusterName = "testJobScaleDown";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
 
@@ -288,7 +288,7 @@ public class WorkerRegistryV2Test {
                         new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
                 .build();
         String clusterName = "testJobShutdown";
-        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
 

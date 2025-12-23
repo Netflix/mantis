@@ -386,6 +386,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("true")
     boolean getSchedulerHandlesAllocationRetries();
 
+    @Config("mantis.scheduling.reservation.enabled")
+    @Default("true")
+    boolean isReservationSchedulingEnabled();
+
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());
     }

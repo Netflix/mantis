@@ -19,15 +19,19 @@ package io.mantisrx.master.resourcecluster;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.BestFit;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.PendingReservationInfo;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatchAssignmentRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
@@ -68,6 +72,20 @@ interface ExecutorStateManager {
     ResourceOverview getResourceOverview();
 
     GetClusterUsageResponse getClusterUsage(GetClusterUsageRequest req);
+
+    /**
+     * Compute cluster usage with pending reservation counts.
+     * Uses actual SchedulingConstraints from reservations to map them to SKUs.
+     *
+     * @param clusterID The cluster ID
+     * @param groupKeyFunc Function to extract SKU key from TaskExecutorRegistration
+     * @param pendingReservations Pending reservations with actual SchedulingConstraints
+     * @return Usage response with pending reservation counts per SKU
+     */
+    GetClusterUsageResponse getClusterUsageWithReservations(
+        ClusterID clusterID,
+        Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc,
+        List<PendingReservationInfo> pendingReservations);
 
     List<TaskExecutorID> getIdleInstanceList(GetClusterIdleInstancesRequest req);
 

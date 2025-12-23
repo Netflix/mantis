@@ -55,9 +55,14 @@ class ResourceClusterActorMetrics {
     public static final String HEARTBEAT_TIMEOUT = "taskExecutorHeartbeatTimeout";
 
     public static final String TE_CONNECTION_FAILURE = "taskExecutorConnectionFailure";
+    public static final String TASK_EXECUTOR_ASSIGNMENT_FAILURE = "taskExecutorAssignmentFailure";
 
     public static final String RC_ACTOR_RESTART = "resourceClusterActorRestart";
     public static final String MAX_JOB_ARTIFACTS_TO_CACHE_REACHED = "maxJobArtifactsToCacheReached";
+    public static final String RESERVATION_PROCESSED = "reservationProcessed";
+    public static final String RESERVATION_UPSERTED = "reservationUpserted";
+    public static final String RESERVATION_INFLIGHT_TIMEOUT = "reservationInFlightTimeout";
+    public static final String CLUSTER_USAGE_WITH_RESERVATIONS_LATENCY = "clusterUsageWithReservationsLatency";
 
     private final Registry registry;
     private final Map<Class<?>, Tuple2<Counter, Timer>> messageMetrics;
@@ -105,6 +110,11 @@ class ResourceClusterActorMetrics {
     public void incrementCounter(final String metric, final Iterable<Tag> tags) {
         registry.counter(new MetricId(METRIC_GROUP_ID, metric, tags).getSpectatorId(registry))
             .increment();
+    }
+
+    public void recordTimer(final String metric, final long nanos, final Iterable<Tag> tags) {
+        registry.timer(new MetricId(METRIC_GROUP_ID, metric, tags).getSpectatorId(registry))
+            .record(nanos, TimeUnit.NANOSECONDS);
     }
 
     public <P> FI.UnitApply<P> withTracking(final FI.UnitApply<P> apply) {

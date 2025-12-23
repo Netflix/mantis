@@ -17,6 +17,7 @@
 package io.mantisrx.server.master.scheduler;
 
 import akka.actor.ActorSystem;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.config.MasterConfiguration;
@@ -24,6 +25,7 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,33 +44,48 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
 
     @Override
     public MantisScheduler forClusterID(ClusterID clusterID) {
-        if (clusterID != null) {
-            if (Strings.isNullOrEmpty(clusterID.getResourceID())) {
-                log.error("Received empty resource id: {}", clusterID);
-                throw new RuntimeException("Empty resourceID in clusterID for MantisScheduler");
-            }
+        if (clusterID == null || Strings.isNullOrEmpty(clusterID.getResourceID())) {
+            throw new RuntimeException("Invalid clusterID for MantisScheduler");
+        }
+        return actorRefMap.computeIfAbsent(clusterID, this::createScheduler);
+    }
 
-            return
-                actorRefMap.computeIfAbsent(
-                    clusterID,
-                    (cid) -> {
-                        log.info("Created scheduler actor for cluster: {}",
-                            clusterID.getResourceID());
-                        return new ResourceClusterAwareScheduler(actorSystem.actorOf(
-                            ResourceClusterAwareSchedulerActor.props(
-                                masterConfiguration.getSchedulerMaxRetries(),
-                                masterConfiguration.getSchedulerMaxRetries(),
-                                masterConfiguration.getSchedulerIntervalBetweenRetries(),
-                                resourceClusters.getClusterFor(cid),
-                                executeStageRequestFactory,
-                                jobMessageRouter,
-                                metricsRegistry),
-                            "scheduler-for-" + cid.getResourceID()),
-                            masterConfiguration.getSchedulerHandlesAllocationRetries());
-                    });
+    private MantisScheduler createScheduler(ClusterID clusterID) {
+        log.info("Creating scheduler for cluster: {} (reservationEnabled={})",
+            clusterID.getResourceID(),
+            masterConfiguration.isReservationSchedulingEnabled());
+
+        if (masterConfiguration.isReservationSchedulingEnabled()) {
+            return new ResourceClusterReservationAwareScheduler(
+                resourceClusters.getClusterFor(clusterID));
         } else {
-            log.error("Scheduler gets unexpected null clusterID");
-            throw new RuntimeException("invalid null clusterID.");
+            return new ResourceClusterAwareScheduler(actorSystem.actorOf(
+                ResourceClusterAwareSchedulerActor.props(
+                    masterConfiguration.getSchedulerMaxRetries(),
+                    masterConfiguration.getSchedulerMaxRetries(),
+                    masterConfiguration.getSchedulerIntervalBetweenRetries(),
+                    resourceClusters.getClusterFor(clusterID),
+                    executeStageRequestFactory,
+                    jobMessageRouter,
+                    metricsRegistry),
+                "scheduler-for-" + clusterID.getResourceID()),
+                masterConfiguration.getSchedulerHandlesAllocationRetries());
+        }
+    }
+
+    /**
+     * Mark all reservation registries as ready after master initialization.
+     * Should be called after all jobs have been recovered.
+     *
+     * @return Future that completes when all registries are ready
+     */
+    public CompletableFuture<Ack> markAllRegistriesReady() {
+        if (masterConfiguration.isReservationSchedulingEnabled()) {
+            log.info("Marking all reservation registries as ready");
+            return resourceClusters.markAllRegistriesReady();
+        } else {
+            log.debug("Reservation scheduling disabled, skipping markAllRegistriesReady");
+            return CompletableFuture.completedFuture(Ack.getInstance());
         }
     }
 }
