@@ -33,6 +33,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTask
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.MarkExecutorTaskCancelledRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.TerminateWorkerRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.RemoveJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorBatchAssignmentRequest;
@@ -139,6 +140,7 @@ class ResourceClustersManagerActor extends AbstractActor {
                 .match(GetActiveJobsRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
                 .match(GetAssignedTaskExecutorRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
                 .match(MarkExecutorTaskCancelledRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
+                .match(TerminateWorkerRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
 
                 .match(TaskExecutorRegistration.class, registration ->
                     getRCActor(registration.getClusterID()).forward(registration, context()))

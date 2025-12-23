@@ -89,12 +89,11 @@ public class ResourceClusterReservationAwareScheduler implements MantisScheduler
 
     @Override
     public void unscheduleAndTerminateWorker(WorkerId workerId, Optional<String> hostname) {
-        // Still needed for terminating running workers
         log.info("Terminating worker {}", workerId);
-        resourceCluster.markTaskExecutorWorkerCancelled(workerId)
+        resourceCluster.terminateWorker(workerId)
             .whenComplete((ack, ex) -> {
                 if (ex != null) {
-                    log.warn("Failed to mark worker {} as cancelled", workerId, ex);
+                    log.warn("Failed to request worker termination {}", workerId, ex);
                 }
             });
     }
@@ -108,13 +107,13 @@ public class ResourceClusterReservationAwareScheduler implements MantisScheduler
     @Override
     public void initializeRunningWorker(ScheduleRequest scheduleRequest, String hostname, String hostID) {
         // Still needed for leader switch recovery
-        log.info("Initializing running worker {} on host {}", scheduleRequest.getWorkerId(), hostname);
-        resourceCluster.initializeTaskExecutor(TaskExecutorID.of(hostID), scheduleRequest.getWorkerId())
-            .whenComplete((ack, ex) -> {
-                if (ex != null) {
-                    log.warn("Failed to initialize running worker {}", scheduleRequest.getWorkerId(), ex);
-                }
-            });
+        log.debug("[Noop] Initializing running worker {}", scheduleRequest.getWorkerId());
+//        resourceCluster.initializeTaskExecutor(TaskExecutorID.of(hostID), scheduleRequest.getWorkerId())
+//            .whenComplete((ack, ex) -> {
+//                if (ex != null) {
+//                    log.warn("Failed to initialize running worker {}", scheduleRequest.getWorkerId(), ex);
+//                }
+//            });
     }
 }
 

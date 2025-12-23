@@ -1658,6 +1658,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                         ScheduleRequest scheduleRequest = createSchedulingRequest(wm, empty());
 
+                        // todo: in reservation path this should be removed.
                         scheduler.initializeRunningWorker(scheduleRequest, wm.getSlave(), wm.getSlaveID());
                     } else if (wm.getState().equals(WorkerState.Accepted)) {
 
@@ -2193,10 +2194,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             .build())
                         .build();
 
+                    //todo: do we need more handling around reservation cancellation error?
                     scheduler.cancelReservation(cancelRequest)
                         .whenComplete((resp, ex) -> {
                             if (ex != null) {
-                                LOGGER.warn("Failed to cancel reservation for job {} stage {}",
+                                LOGGER.error("Failed to cancel reservation for job {} stage {}",
                                     jobId, stage.getStageNum(), ex);
                             } else {
                                 LOGGER.debug("Cancelled reservation for job {} stage {}",
@@ -2520,6 +2522,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 }
                 // If worker cannot be scheduled currently, then put it back on the queue with delay and don't update
                 // its state
+                // todo WorkerUnscheduleable should be deprecated in reservation path.
                 if (event instanceof WorkerUnscheduleable) {
                     scheduler.updateWorkerSchedulingReadyTime(
                             event.getWorkerId(),
@@ -2606,7 +2609,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     if (allWorkerStarted()) {
                         allWorkersStarted = true;
                         jobMgr.onAllWorkersStarted();
-                        scheduler.unscheduleJob(jobId.getId());
                         markStageAssignmentsChanged(true);
                     } else if (allWorkerCompleted()) {
                         LOGGER.info("Job {} All workers completed1", jobId);

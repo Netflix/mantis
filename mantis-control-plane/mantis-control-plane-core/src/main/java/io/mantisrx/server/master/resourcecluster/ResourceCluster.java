@@ -101,6 +101,8 @@ public interface ResourceCluster extends ResourceClusterGateway {
 
     CompletableFuture<Ack> markTaskExecutorWorkerCancelled(WorkerId workerId);
 
+    CompletableFuture<Ack> terminateWorker(WorkerId workerId);
+
     CompletableFuture<Ack> removeJobArtifactsToCache(List<ArtifactID> artifacts);
 
     CompletableFuture<List<ArtifactID>> getJobArtifactsToCache();
