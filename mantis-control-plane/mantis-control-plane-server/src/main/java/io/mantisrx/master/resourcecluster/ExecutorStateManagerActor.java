@@ -392,7 +392,45 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
     }
 
     private void onTaskExecutorInitialization(InitializeTaskExecutorRequest request) {
-        log.debug("[Noop] InitializeTaskExecutorRequest {} for the resource cluster {}", request, clusterID);
+        log.debug("InitializeTaskExecutorRequest {} for the resource cluster {}", request, clusterID);
+        setupTaskExecutorStateIfNecessary(request.getTaskExecutorID());
+        try {
+            final TaskExecutorID taskExecutorID = request.getTaskExecutorID();
+            final TaskExecutorState state = this.delegate.get(taskExecutorID);
+            if (state.getRegistration() == null || !state.isRegistered()) {
+                TaskExecutorRegistration registration = this.mantisJobStore.getTaskExecutor(taskExecutorID);
+                if (registration != null) {
+                    log.debug("Found registration {} for task executor {}", registration, taskExecutorID);
+                    Preconditions.checkState(state.onRegistration(registration));
+                    if (isTaskExecutorDisabled(registration)) {
+                        log.info("Reconnected task executor {} was already marked for disabling.", registration.getTaskExecutorID());
+                        state.onNodeDisabled();
+                    }
+                } else {
+                    log.warn("Received initialization from unknown task executor {}", taskExecutorID);
+                    sender().tell(new Status.Failure(new TaskExecutorNotFoundException(taskExecutorID)), self());
+                    return;
+                }
+            }
+
+            boolean stateChange = state.onTaskExecutorStatusChange(
+                new TaskExecutorStatusChange(
+                    taskExecutorID,
+                    clusterID,
+                    TaskExecutorReport.occupied(request.getWorkerId())));
+            if (stateChange) {
+                if (state.isAvailable()) {
+                    this.delegate.tryMarkAvailable(taskExecutorID);
+                } else {
+                    this.delegate.tryMarkUnavailable(taskExecutorID);
+                }
+            }
+
+            updateHeartbeatTimeout(taskExecutorID);
+            sender().tell(Ack.getInstance(), self());
+        } catch (Exception e) {
+            sender().tell(new Status.Failure(e), self());
+        }
     }
 
     private void onTaskExecutorRegistration(TaskExecutorRegistration registration) {
