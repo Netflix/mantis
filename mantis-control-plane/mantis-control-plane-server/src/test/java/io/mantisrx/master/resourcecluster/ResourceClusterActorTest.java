@@ -269,9 +269,8 @@ public class ResourceClusterActorTest {
         doReturn(ImmutableList.of())
             .when(mantisJobStore)
             .getJobArtifactsToCache(CLUSTER_ID);
-        doReturn(TASK_EXECUTOR_REGISTRATION)
-            .when(mantisJobStore)
-            .getTaskExecutor(TASK_EXECUTOR_ID);
+        when(mantisJobStore.getTaskExecutor(TASK_EXECUTOR_ID))
+            .thenReturn(TASK_EXECUTOR_REGISTRATION);
 
         assertEquals(
             Ack.getInstance(),
@@ -316,9 +315,8 @@ public class ResourceClusterActorTest {
         doReturn(ImmutableList.of())
             .when(mantisJobStore)
             .getJobArtifactsToCache(CLUSTER_ID);
-        doReturn(TASK_EXECUTOR_REGISTRATION)
-            .when(mantisJobStore)
-            .getTaskExecutor(TASK_EXECUTOR_ID);
+        when(mantisJobStore.getTaskExecutor(ArgumentMatchers.any(TaskExecutorID.class)))
+            .thenReturn(TASK_EXECUTOR_REGISTRATION);
         assertEquals(
             Ack.getInstance(),
             resourceCluster.initializeTaskExecutor(TASK_EXECUTOR_ID, WORKER_ID).get());
@@ -549,9 +547,8 @@ public class ResourceClusterActorTest {
         assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
 
         // re-register TE
-        doReturn(new TaskExecutorRegistration(TASK_EXECUTOR_ID, CLUSTER_ID, "", "", null, MACHINE_DEFINITION, ATTRIBUTES))
-            .when(mantisJobStore)
-            .getTaskExecutor(TASK_EXECUTOR_ID);
+        when(mantisJobStore.getTaskExecutor(TASK_EXECUTOR_ID))
+            .thenReturn(new TaskExecutorRegistration(TASK_EXECUTOR_ID, CLUSTER_ID, "", "", null, MACHINE_DEFINITION, ATTRIBUTES));
         assertEquals(Ack.getInstance(),
             resourceCluster
                 .heartBeatFromTaskExecutor(
@@ -802,7 +799,7 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testTaskExecutorIsDisabledEvenAfterRestart() throws Exception {
-        doReturn(TASK_EXECUTOR_REGISTRATION).when(mantisJobStore).getTaskExecutor(TASK_EXECUTOR_ID);
+        when(mantisJobStore.getTaskExecutor(TASK_EXECUTOR_ID)).thenReturn(TASK_EXECUTOR_REGISTRATION);
         doReturn(ImmutableList.of()).when(mantisJobStore).getJobArtifactsToCache(CLUSTER_ID);
 
         resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION);

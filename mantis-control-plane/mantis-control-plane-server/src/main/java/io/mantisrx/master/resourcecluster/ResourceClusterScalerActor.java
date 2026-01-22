@@ -309,7 +309,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private void onTriggerClusterUsageRequest(TriggerClusterUsageRequest req) {
         log.trace("Requesting cluster usage: {}", this.clusterId);
         if (this.skuToRuleMap.isEmpty()) {
-            log.info("{} scaler is disabled due to no rules", this.clusterId);
+            log.debug("{} scaler is disabled due to no rules", this.clusterId);
             return;
         }
 
