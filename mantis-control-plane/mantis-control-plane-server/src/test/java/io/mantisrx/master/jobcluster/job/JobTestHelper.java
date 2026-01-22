@@ -19,6 +19,9 @@ package io.mantisrx.master.jobcluster.job;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -538,6 +541,13 @@ public class JobTestHelper {
         // Mock reservation API to return successful CompletableFuture
         when(schedulerMock.upsertReservation(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         when(schedulerMock.cancelReservation(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        // Mock void methods - using doNothing() for void returns
+        doNothing().when(schedulerMock).scheduleWorkers(any());
+        doNothing().when(schedulerMock).unscheduleJob(anyString());
+        doNothing().when(schedulerMock).unscheduleWorker(any(), any());
+        doNothing().when(schedulerMock).unscheduleAndTerminateWorker(any(), any());
+        doNothing().when(schedulerMock).updateWorkerSchedulingReadyTime(any(), anyLong());
+        doNothing().when(schedulerMock).initializeRunningWorker(any(), anyString(), anyString());
         return schedulerMock;
     }
 }

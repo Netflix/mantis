@@ -2813,8 +2813,8 @@ public class JobClusterAkkaTest {
 
             verify(jobStoreMock, times(3)).updateJob(any());
 
-            // initial worker and scale up worker
-            verify(schedulerMock, times(2)).scheduleWorkers(any());
+            // Verify reservation API: stage 0 initial, stage 1 initial, and stage 1 scale up
+            verify(schedulerMock, times(3)).upsertReservation(any());
 
 
 
@@ -3335,8 +3335,10 @@ public class JobClusterAkkaTest {
                 System.out.println("worker -> " + worker.getMetadata());
             }
 
-            // 2 initial schedules and 1 replacement
-            verify(schedulerMock, timeout(1_000).times(2)).scheduleWorkers(any());
+            // Verify reservation API: 1 initial upsert and 1 replacement upsert
+            verify(schedulerMock, timeout(1_000).times(2)).upsertReservation(any());
+            // Verify worker termination
+            verify(schedulerMock, timeout(1_000).times(1)).unscheduleAndTerminateWorker(any(), any());
 
             // archive worker should get called once for the dead worker
             //	verify(jobStoreMock, timeout(1_000).times(1)).archiveWorker(any());
