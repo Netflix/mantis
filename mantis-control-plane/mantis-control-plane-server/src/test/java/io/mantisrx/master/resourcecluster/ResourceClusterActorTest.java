@@ -192,18 +192,24 @@ public class ResourceClusterActorTest {
     }
 
     @Before
-    public void setupRpcService() throws Exception {
+    public void setupTest() throws Exception {
+        setupRpcService();
+        setupActor();
+    }
+
+    private void setupRpcService() throws Exception {
         rpcService.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
         mantisJobStore = mock(MantisJobStore.class);
         jobMessageRouter = mock(JobMessageRouter.class);
-        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.any()))
-            .thenReturn(ImmutableList.of());
-        when(mantisJobStore.getJobArtifactsToCache(ArgumentMatchers.any()))
-            .thenReturn(ImmutableList.of());
+        doReturn(ImmutableList.of())
+            .when(mantisJobStore)
+            .loadAllDisableTaskExecutorsRequests(CLUSTER_ID);
+        doReturn(ImmutableList.of())
+            .when(mantisJobStore)
+            .getJobArtifactsToCache(CLUSTER_ID);
     }
 
-    @Before
-    public void setupActor() {
+    private void setupActor() {
         MasterConfiguration masterConfig = mock(MasterConfiguration.class);
         when(masterConfig.getTimeoutSecondsToReportStart()).thenReturn(1);
         ExecuteStageRequestFactory executeStageRequestFactory = new ExecuteStageRequestFactory(masterConfig);
@@ -232,7 +238,7 @@ public class ResourceClusterActorTest {
                 resourceClusterActor,
                 Duration.ofSeconds(15),
                 CLUSTER_ID,
-                new LongDynamicProperty(propertiesLoader, "rate.limite.perSec", 10000L));
+                new LongDynamicProperty(propertiesLoader, "resourcecluster.gateway.maxConcurrentRequests.test", 100000L));
     }
 
     @Test
@@ -257,10 +263,15 @@ public class ResourceClusterActorTest {
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getRegisteredTaskExecutors().get());
 
-        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
-            .thenReturn(ImmutableList.of());
-        when(mantisJobStore.getJobArtifactsToCache(ArgumentMatchers.eq(CLUSTER_ID))).thenReturn(ImmutableList.of());
-        when(mantisJobStore.getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID))).thenReturn(TASK_EXECUTOR_REGISTRATION);
+        doReturn(ImmutableList.of())
+            .when(mantisJobStore)
+            .loadAllDisableTaskExecutorsRequests(CLUSTER_ID);
+        doReturn(ImmutableList.of())
+            .when(mantisJobStore)
+            .getJobArtifactsToCache(CLUSTER_ID);
+        doReturn(TASK_EXECUTOR_REGISTRATION)
+            .when(mantisJobStore)
+            .getTaskExecutor(TASK_EXECUTOR_ID);
 
         assertEquals(
             Ack.getInstance(),
@@ -299,10 +310,15 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testInitializationAfterRestart() throws Exception {
-        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
-            .thenReturn(ImmutableList.of());
-        when(mantisJobStore.getJobArtifactsToCache(ArgumentMatchers.eq(CLUSTER_ID))).thenReturn(ImmutableList.of());
-        when(mantisJobStore.getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID))).thenReturn(TASK_EXECUTOR_REGISTRATION);
+        doReturn(ImmutableList.of())
+            .when(mantisJobStore)
+            .loadAllDisableTaskExecutorsRequests(CLUSTER_ID);
+        doReturn(ImmutableList.of())
+            .when(mantisJobStore)
+            .getJobArtifactsToCache(CLUSTER_ID);
+        doReturn(TASK_EXECUTOR_REGISTRATION)
+            .when(mantisJobStore)
+            .getTaskExecutor(TASK_EXECUTOR_ID);
         assertEquals(
             Ack.getInstance(),
             resourceCluster.initializeTaskExecutor(TASK_EXECUTOR_ID, WORKER_ID).get());
@@ -319,7 +335,12 @@ public class ResourceClusterActorTest {
                         TASK_EXECUTOR_ID,
                         CLUSTER_ID,
                         TaskExecutorReport.available())).get());
-        final Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION), null, 0));
+        final Set<TaskExecutorAllocationRequest> requests = Collections.singleton(
+            TaskExecutorAllocationRequest.of(
+                WORKER_ID,
+                SchedulingConstraints.of(MACHINE_DEFINITION),
+                JOB_METADATA,
+                0));
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -416,7 +437,12 @@ public class ResourceClusterActorTest {
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID_3, TASK_EXECUTOR_ID_2), idleInstancesResponse.getInstanceIds());
         assertEquals(CONTAINER_DEF_ID_2, idleInstancesResponse.getSkuId());
 
-        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION_2), null, 0));
+        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(
+            TaskExecutorAllocationRequest.of(
+                WORKER_ID,
+                SchedulingConstraints.of(MACHINE_DEFINITION_2),
+                JOB_METADATA,
+                0));
         assertEquals(
             TASK_EXECUTOR_ID_3,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -451,7 +477,12 @@ public class ResourceClusterActorTest {
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), idleInstancesResponse.getInstanceIds());
         assertEquals(CONTAINER_DEF_ID_1, idleInstancesResponse.getSkuId());
 
-        requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION), null, 0));
+        requests = Collections.singleton(
+            TaskExecutorAllocationRequest.of(
+                WORKER_ID,
+                SchedulingConstraints.of(MACHINE_DEFINITION),
+                JOB_METADATA,
+                0));
         assertEquals(
             TASK_EXECUTOR_ID_2,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -518,8 +549,9 @@ public class ResourceClusterActorTest {
         assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
 
         // re-register TE
-        when(mantisJobStore.getTaskExecutor(Matchers.eq(TASK_EXECUTOR_ID)))
-            .thenReturn(new TaskExecutorRegistration(TASK_EXECUTOR_ID, CLUSTER_ID, "", "", null, MACHINE_DEFINITION, ATTRIBUTES));
+        doReturn(new TaskExecutorRegistration(TASK_EXECUTOR_ID, CLUSTER_ID, "", "", null, MACHINE_DEFINITION, ATTRIBUTES))
+            .when(mantisJobStore)
+            .getTaskExecutor(TASK_EXECUTOR_ID);
         assertEquals(Ack.getInstance(),
             resourceCluster
                 .heartBeatFromTaskExecutor(
@@ -571,7 +603,9 @@ public class ResourceClusterActorTest {
             }
 
             expectedTaskExecutorIds.add(taskExecutorID);
-            requests.add(TaskExecutorAllocationRequest.of(workerId, SchedulingConstraints.of(MACHINE_DEFINITION), null, 0));
+            JobMetadata jobMetadata =
+                new JobMetadata(workerId.getJobId(), null, null, 1, "testuser", null, ImmutableList.of(), -1, -1, -1);
+            requests.add(TaskExecutorAllocationRequest.of(workerId, SchedulingConstraints.of(MACHINE_DEFINITION), jobMetadata, 0));
         }
         assertEquals(
             expectedTaskExecutorIds,
@@ -702,7 +736,12 @@ public class ResourceClusterActorTest {
             resourceCluster.heartBeatFromTaskExecutor(
                 new TaskExecutorHeartbeat(TASK_EXECUTOR_ID_2, CLUSTER_ID, TaskExecutorReport.available())).get());
         resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
-        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION), null, 0));
+        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(
+            TaskExecutorAllocationRequest.of(
+                WORKER_ID,
+                SchedulingConstraints.of(MACHINE_DEFINITION),
+                JOB_METADATA,
+                0));
         assertEquals(
             TASK_EXECUTOR_ID_2,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -737,7 +776,12 @@ public class ResourceClusterActorTest {
                 new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).join());
 
 
-        final Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION), null, 0));
+        final Set<TaskExecutorAllocationRequest> requests = Collections.singleton(
+            TaskExecutorAllocationRequest.of(
+                WORKER_ID,
+                SchedulingConstraints.of(MACHINE_DEFINITION),
+                JOB_METADATA,
+                0));
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -758,8 +802,8 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testTaskExecutorIsDisabledEvenAfterRestart() throws Exception {
-        doReturn(TASK_EXECUTOR_REGISTRATION).when(mantisJobStore).getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID));
-        doReturn(ImmutableList.of()).when(mantisJobStore).getJobArtifactsToCache(ArgumentMatchers.eq(CLUSTER_ID));
+        doReturn(TASK_EXECUTOR_REGISTRATION).when(mantisJobStore).getTaskExecutor(TASK_EXECUTOR_ID);
+        doReturn(ImmutableList.of()).when(mantisJobStore).getJobArtifactsToCache(CLUSTER_ID);
 
         resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION);
 
