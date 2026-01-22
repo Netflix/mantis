@@ -118,6 +118,7 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
             log.info("{}: Reservation registry marked ready; pending reservations={}", this.clusterID, reservationsByKey.size());
             // Cancel the auto-mark-ready timer since we're now ready
             getTimers().cancel(TIMER_KEY_AUTO_MARK_READY);
+            publishPendingReservationCountGauge();
         }
         sender().tell(Ack.getInstance(), self());
         triggerForcedProcessingLoop();
@@ -127,6 +128,7 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         if (!ready) {
             ready = true;
             log.info("{}: Reservation registry auto-marked ready; pending reservations={}", this.clusterID, reservationsByKey.size());
+            publishPendingReservationCountGauge();
             triggerForcedProcessingLoop();
         } else {
             log.debug("{}: Auto-mark-ready timer fired but registry is already ready; ignoring", this.clusterID);
@@ -188,6 +190,7 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
 
         log.info("{}: Upserted reservation {} (priority={}, requestedWorkers={})",
             this.clusterID, key, reservation.getPriority(), reservation.getRequestedWorkersCount());
+        publishPendingReservationCountGauge();
         sender().tell(Ack.getInstance(), self());
         triggerProcessingLoop();
     }
@@ -197,6 +200,7 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         if (existingReservations != null && !existingReservations.isEmpty()) {
             new ArrayList<>(existingReservations).forEach(this::removeEntryAndClearInFlight);
             log.info("{}: Cancelled reservation {}", this.clusterID, cancel.getReservationKey());
+            publishPendingReservationCountGauge();
             sender().tell(Ack.getInstance(), self());
             triggerForcedProcessingLoop();
         } else {
@@ -352,9 +356,7 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
                     "resourceCluster",
                     clusterID.getResourceID(),
                     "jobId",
-                    reservation.getKey().getJobId(),
-                    "constraintKey",
-                    constraintKey)));
+                    reservation.getKey().getJobId())));
 
             inFlightReservations.put(constraintKey, reservation);
             inFlightReservationRequestTimestamps.put(constraintKey, clock.instant());
@@ -402,8 +404,27 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         log.info("{}: Received batch assignment result for reservation {} (constraintKey={})",
             this.clusterID, reservation.getKey(), constraintKey);
 
+        // Record reservation fulfillment latency
+        long createdAtMillis = reservation.getCreatedAt();
+        long fulfillmentDurationNanos = Duration.between(
+            Instant.ofEpochMilli(createdAtMillis),
+            clock.instant()
+        ).toNanos();
+
+        metrics.recordTimer(
+            ResourceClusterActorMetrics.RESERVATION_FULFILLMENT_LATENCY,
+            fulfillmentDurationNanos,
+            TagList.create(ImmutableMap.of(
+                "resourceCluster",
+                clusterID.getResourceID(),
+                "jobId",
+                reservation.getKey().getJobId(),
+                "priorityType",
+                reservation.getPriority().getType().name())));
+
         clearInFlightIfMatches(reservation);
         removeEntry(reservation);
+        publishPendingReservationCountGauge();
         triggerForcedProcessingLoop();
     }
 
@@ -515,6 +536,41 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
 
     private void triggerForcedProcessingLoop() {
         self().tell(ResourceClusterActor.ForceProcessReservationsTick.INSTANCE, self());
+    }
+
+    /**
+     * Publishes the current count of pending reservations as a gauge metric.
+     * Tracks both total pending reservations and breakdown by constraint group.
+     */
+    private void publishPendingReservationCountGauge() {
+        // Total pending reservations across all constraint-groups
+        int totalPendingCount = reservationsByKey.values().stream()
+            .mapToInt(List::size)
+            .sum();
+
+        metrics.setGauge(
+            ResourceClusterActorMetrics.NUM_PENDING_RESERVATIONS,
+            totalPendingCount,
+            TagList.create(ImmutableMap.of(
+                "resourceCluster",
+                clusterID.getResourceID())));
+
+        // Per-constraint-group pending count for more granular tracking
+        reservationsByConstraint.forEach((constraintKey, group) -> {
+            // Truncate constraintKey to 12 chars max to avoid high cardinality issues
+            String truncatedKey = constraintKey.length() > 12
+                ? constraintKey.substring(0, 12)
+                : constraintKey;
+
+            metrics.setGauge(
+                ResourceClusterActorMetrics.NUM_PENDING_RESERVATIONS,
+                group.size(),
+                TagList.create(ImmutableMap.of(
+                    "resourceCluster",
+                    clusterID.getResourceID(),
+                    "constraintKey",
+                    truncatedKey)));
+        });
     }
 
     private static String canonicalize(@Nullable SchedulingConstraints constraints) {

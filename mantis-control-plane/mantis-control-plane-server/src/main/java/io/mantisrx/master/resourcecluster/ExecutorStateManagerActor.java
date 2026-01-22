@@ -387,6 +387,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
             .match(UpdateJobArtifactsToCache.class, this::onUpdateJobArtifactsToCache)
             .match(DisableTaskExecutorsRequest.class, this::onNewDisableTaskExecutorsRequest)
+            .match(Ack.class, ack -> log.debug("Received ack from {}", sender()))
             .build();
     }
 
@@ -433,6 +434,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             final TaskExecutorID taskExecutorID = heartbeat.getTaskExecutorID();
             final TaskExecutorState state = this.delegate.get(taskExecutorID);
             if (state.getRegistration() == null || !state.isRegistered()) {
+                //todo: consider move this to a bulk read op to reduce total TE size IO operations.
                 TaskExecutorRegistration registration = this.mantisJobStore.getTaskExecutor(heartbeat.getTaskExecutorID());
                 if (registration != null) {
                     log.debug("Found registration {} for task executor {}", registration, heartbeat.getTaskExecutorID());
