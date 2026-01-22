@@ -20,9 +20,11 @@ import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.Optional;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,6 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Action0;
+import rx.functions.Func1;
 
 
 public class ConnectionManager<T> {
@@ -46,9 +49,13 @@ public class ConnectionManager<T> {
     private Action0 doOnZeroConnections;
     private Lock connectionState = new ReentrantLock();
     private AtomicBoolean subscribed = new AtomicBoolean();
+    private final Func1<String, Optional<ProactiveRouter<T>>> routerFactory;
 
     public ConnectionManager(MetricsRegistry metricsRegistry,
-                             Action0 doOnFirstConnection, Action0 doOnZeroConnections) {
+                             Action0 doOnFirstConnection,
+                             Action0 doOnZeroConnections,
+                             Func1<String, Optional<ProactiveRouter<T>>> routerFactory) {
+        this.routerFactory = routerFactory;
         this.doOnFirstConnection = doOnFirstConnection;
         this.doOnZeroConnections = doOnZeroConnections;
         this.metricsRegistry = metricsRegistry;
@@ -119,11 +126,13 @@ public class ConnectionManager<T> {
             String groupId = connection.getGroupId();
             ConnectionGroup<T> current = managedConnections.get(groupId);
             if (current == null) {
-                ConnectionGroup<T> newGroup = new ConnectionGroup<T>(groupId);
+                Optional<ProactiveRouter<T>> groupRouter = routerFactory.call(groupId);
+                ConnectionGroup<T> newGroup = new ConnectionGroup<T>(groupId, groupRouter);
                 current = managedConnections.putIfAbsent(groupId, newGroup);
                 if (current == null) {
                     current = newGroup;
                     metricsRegistry.registerAndGet(current.getMetrics());
+                    groupRouter.ifPresent(router -> metricsRegistry.registerAndGet(router.getMetrics()));
                 }
             }
             current.addConnection(connection);
@@ -164,19 +173,6 @@ public class ConnectionManager<T> {
             doOnZeroConnections.call();
             logger.info("Completed callback when active connections is zero");
 
-        }
-    }
-
-    public Set<AsyncConnection<T>> connections() {
-        connectionState.lock();
-        try {
-            Set<AsyncConnection<T>> connections = new HashSet<>();
-            for (ConnectionGroup<T> group : managedConnections.values()) {
-                connections.addAll(group.getConnections());
-            }
-            return connections;
-        } finally {
-            connectionState.unlock();
         }
     }
 
