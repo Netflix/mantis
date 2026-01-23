@@ -199,6 +199,7 @@ public class ResourceClusterActorTest {
 
     private void setupRpcService() throws Exception {
         rpcService.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
+        when(gateway.submitTask(ArgumentMatchers.any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         mantisJobStore = mock(MantisJobStore.class);
         jobMessageRouter = mock(JobMessageRouter.class);
         doReturn(ImmutableList.of())
@@ -528,6 +529,11 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testAssignmentTimeout() throws Exception {
+        // Override the default submitTask mock to return a hanging future that never completes
+        // This simulates a task executor that times out during assignment
+        CompletableFuture<Ack> hangingFuture = new CompletableFuture<>();
+        when(gateway.submitTask(ArgumentMatchers.any())).thenReturn(hangingFuture);
+
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
         assertEquals(Ack.getInstance(),
             resourceCluster
@@ -545,6 +551,9 @@ public class ResourceClusterActorTest {
 
         assertEquals(ImmutableList.of(), resourceCluster.getRegisteredTaskExecutors().get());
         assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
+
+        // Restore the submitTask mock to return a completed future for re-registration
+        when(gateway.submitTask(ArgumentMatchers.any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
 
         // re-register TE
         when(mantisJobStore.getTaskExecutor(TASK_EXECUTOR_ID))
