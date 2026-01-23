@@ -17,7 +17,9 @@
 package io.mantisrx.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertThrows;
 
 import akka.actor.ActorRef;
@@ -62,6 +64,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.junit.AfterClass;
@@ -157,6 +160,7 @@ public class ResourceClusterActorClusterUsageAkkaTest {
     @Before
     public void setupRpcService() {
         rpcService.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
+        when(gateway.submitTask(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         mantisJobStore = mock(MantisJobStore.class);
         jobMessageRouter = mock(JobMessageRouter.class);
     }
