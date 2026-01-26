@@ -17,6 +17,10 @@
 package io.mantisrx.master.api.akka.payloads;
 
 public class JobClusterPayloads {
+
+    public static final String CLUSTER_NAME = "sine-function";
+    public static final String CLUSTER_NAME_WITH_PRINCIPAL = "sine-function-with-principal";
+
     public static final String JOB_CLUSTER_CREATE = "{\"jobDefinition\":{\"name\":\"sine-function\","
         + "\"user\":\"nmahilani\",\"jobJarFileLocation\":\"https://mantis.staging.us-east-1.prod.netflix.net/mantis-artifacts/mantis-examples-sine-function-0.2.9.zip\"," +
         "\"version\":\"0.2.9 2018-05-29 16:12:56\",\"schedulingInfo\":{\"stages\":{" +
@@ -118,4 +122,24 @@ public class JobClusterPayloads {
                                                     "\"scalingPolicy\":{\"stage\":1,\"min\":1,\"max\":10,\"increment\":2,\"decrement\":1,\"coolDownSecs\":600," +
                                                     "\"strategies\":{\"CPU\":{\"reason\":\"CPU\",\"scaleDownBelowPct\":15,\"scaleUpAbovePct\":75,\"rollingCount\":{\"count\":12,\"of\":20}}},\"enabled\":true}," +
                                                     "\"softConstraints\":[\"M4Cluster\"],\"hardConstraints\":[]}}},\"parameters\":[{\"name\":\"useRandom\",\"value\":\"True\"}, {\"name\":\"periodInSeconds\",\"value\":2}],\"isReadyForJobMaster\":true}";
+
+    // Test payload WITH principal field (for backward compatibility testing)
+    public static final String JOB_CLUSTER_CREATE_WITH_PRINCIPAL = "{\"jobDefinition\":{\"name\":\"sine-function-with-principal\","
+        + "\"user\":\"test\",\"jobJarFileLocation\":\"https://mantis.staging.us-east-1.prod.netflix.net/mantis-artifacts/mantis-examples-sine-function-0.2.9.zip\"," +
+        "\"version\":\"0.2.9 2018-05-29 16:12:56\",\"schedulingInfo\":{\"stages\":{" +
+        "\"1\":{\"numberOfInstances\":\"1\",\"machineDefinition\":{\"cpuCores\":\"1\",\"memoryMB\":\"1024\",\"diskMB\":\"1024\",\"networkMbps\":\"128\",\"numPorts\":\"1\"},\"scalable\":true," +
+        "\"scalingPolicy\":{\"stage\":1,\"min\":\"1\",\"max\":\"10\",\"increment\":\"2\",\"decrement\":\"1\",\"coolDownSecs\":\"600\"," +
+        "\"strategies\":{\"CPU\":{\"reason\":\"CPU\",\"scaleDownBelowPct\":\"15\",\"scaleUpAbovePct\":\"75\",\"rollingCount\":{\"count\":\"12\",\"of\":\"20\"}}},\"enabled\":true},\"softConstraints\":[],\"hardConstraints\":[]}}}," +
+        "\"parameters\":[],\"labels\":[{\"name\":\"_mantis.user\",\"value\":\"test\"},{\"name\":\"_mantis.ownerEmail\",\"value\":\"test@netflix.com\"},{\"name\":\"_mantis.jobType\",\"value\":\"other\"},{\"name\":\"_mantis.criticality\",\"value\":\"low\"},{\"name\":\"_mantis.artifact.version\",\"value\":\"0.2.9\"}]," +
+        "\"migrationConfig\":{\"strategy\":\"PERCENTAGE\",\"configString\":\"{\\\"percentToMove\\\":25,\\\"intervalMs\\\":60000}\"},\"slaMin\":\"0\",\"slaMax\":\"0\",\"deploymentStrategy\":{\"resourceClusterId\":\"mantisagent\"},\"cronSpec\":null,\"cronPolicy\":\"KEEP_EXISTING\",\"isReadyForJobMaster\":true}," +
+        "\"owner\":{\"contactEmail\":\"test@netflix.com\",\"description\":\"\",\"name\":\"Test\",\"repo\":\"\",\"teamName\":\"\"}," +
+        "\"jobPrincipal\":{\"email\":\"mantis-group@netflix.com\",\"type\":\"GROUP\"}}";
+
+    public static String getJobClusterCreatePayload(String clusterName) {
+        if (clusterName.equals(CLUSTER_NAME_WITH_PRINCIPAL)) {
+            return JOB_CLUSTER_CREATE_WITH_PRINCIPAL;
+        } else {
+            return JOB_CLUSTER_CREATE;
+        }
+    }
 }

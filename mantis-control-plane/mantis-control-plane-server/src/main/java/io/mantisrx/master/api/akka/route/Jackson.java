@@ -125,9 +125,10 @@ public class Jackson {
                                try {
                                    return fromJSON(mapper, s, expectedType);
                                } catch (IOException e) {
-                                   logger.warn("cannot unmarshal json", e);
-                                   throw new IllegalArgumentException("cannot unmarshall Json as " +
-                                                                      expectedType.getSimpleName());
+                                   // Extract the root cause message for better error reporting
+                                   String errorMessage = e.getMessage();
+                                   logger.warn(e.getMessage());
+                                   throw new IllegalArgumentException(errorMessage);
                                }
                            });
     }
@@ -140,10 +141,10 @@ public class Jackson {
                                try {
                                    return fromJSON(mapper, s, expectedType);
                                } catch (IOException e) {
-                                   logger.warn("cannot unmarshal json", e);
-                                   throw new IllegalArgumentException("cannot unmarshall Json as " +
-                                                                      expectedType.getType()
-                                                                                  .getTypeName());
+                                   // Extract the root cause message for better error reporting
+                                   String errorMessage = e.getMessage();
+                                   logger.warn(errorMessage);
+                                   throw new IllegalArgumentException(errorMessage);
                                }
                            });
     }

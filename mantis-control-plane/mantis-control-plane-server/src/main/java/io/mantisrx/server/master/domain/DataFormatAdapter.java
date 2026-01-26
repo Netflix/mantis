@@ -90,7 +90,8 @@ public class DataFormatAdapter {
                 jobCluster.isDisabled(),
                 jobCluster.getJobClusterDefinition().getIsReadyForJobMaster(),
                 jobCluster.getJobClusterDefinition().getWorkerMigrationConfig(),
-                jobCluster.getJobClusterDefinition().getLabels());
+                jobCluster.getJobClusterDefinition().getLabels(),
+                jobCluster.getJobClusterDefinition().getJobPrincipal());
     }
 
     public static NamedJob.CompletedJob convertCompletedJobToNamedJobCompletedJob(JobClusterDefinitionImpl.CompletedJob cJob) {
@@ -118,6 +119,7 @@ public class DataFormatAdapter {
                         .withParameters(nJob.getParameters())
                         .withJobClusterConfigs(DataFormatAdapter.convertJarsToJobClusterConfigs(nJob.getJars()))
                         .withIsDisabled(nJob.getDisabled())
+                        .withJobPrincipal(nJob.getJobPrincipal())
                         .build())
                 .build();
 

@@ -19,6 +19,7 @@ package io.mantisrx.master.jobcluster;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobOwner;
+import io.mantisrx.runtime.JobPrincipal;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
@@ -28,6 +29,7 @@ import io.mantisrx.server.master.store.NamedJob;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonInclude;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.util.List;
@@ -49,12 +51,15 @@ public class MantisJobClusterMetadataView {
     private final boolean cronActive;
     @JsonIgnore
     private final String latestVersion;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final JobPrincipal jobPrincipal;
 
     @JsonCreator
     public MantisJobClusterMetadataView(@JsonProperty("name") String name, @JsonProperty("jars") List<NamedJob.Jar> jars, @JsonProperty("sla") NamedJob.SLA sla,
                                         @JsonProperty("parameters") List<Parameter> parameters, @JsonProperty("owner") JobOwner owner, @JsonProperty("lastJobCount") long lastJobCount,
                                         @JsonProperty("disabled") boolean disabled, @JsonProperty("isReadyForJobMaster") boolean isReadyForJobMaster, @JsonProperty("migrationConfig") WorkerMigrationConfig migrationConfig,
-                                        @JsonProperty("labels") List<Label> labels, @JsonProperty("cronActive") boolean cronActive, @JsonProperty("latestVersion") String latestVersion) {
+                                        @JsonProperty("labels") List<Label> labels, @JsonProperty("cronActive") boolean cronActive, @JsonProperty("latestVersion") String latestVersion,
+                                        @JsonProperty("jobPrincipal") JobPrincipal jobPrincipal) {
         this.name = name;
         this.jars = jars;
         this.sla = sla;
@@ -67,6 +72,7 @@ public class MantisJobClusterMetadataView {
         this.labels = labels;
         this.cronActive = cronActive;
         this.latestVersion = latestVersion;
+        this.jobPrincipal = jobPrincipal;
     }
 
     public String getName() {
@@ -117,6 +123,10 @@ public class MantisJobClusterMetadataView {
         return latestVersion;
     }
 
+    public JobPrincipal getJobPrincipal() {
+        return jobPrincipal;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -133,13 +143,14 @@ public class MantisJobClusterMetadataView {
                 Objects.equals(owner, that.owner) &&
                 Objects.equals(migrationConfig, that.migrationConfig) &&
                 Objects.equals(labels, that.labels) &&
-                Objects.equals(latestVersion, that.latestVersion);
+                Objects.equals(latestVersion, that.latestVersion) &&
+                Objects.equals(jobPrincipal, that.jobPrincipal);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(name, jars, sla, parameters, owner, lastJobCount, disabled, isReadyForJobMaster, migrationConfig, labels, cronActive, latestVersion);
+        return Objects.hash(name, jars, sla, parameters, owner, lastJobCount, disabled, isReadyForJobMaster, migrationConfig, labels, cronActive, latestVersion, jobPrincipal);
     }
 
     @Override
@@ -157,6 +168,7 @@ public class MantisJobClusterMetadataView {
                 ", labels=" + labels +
                 ", cronActive=" + cronActive +
                 ", latestVersion='" + latestVersion + '\'' +
+                ", jobPrincipal=" + jobPrincipal +
                 '}';
     }
 
@@ -173,6 +185,7 @@ public class MantisJobClusterMetadataView {
         private  List<Label> labels = Lists.newArrayList();
         private  boolean cronActive = false;
         private String latestVersion;
+        private JobPrincipal jobPrincipal = null;
 
         public Builder() {
 
@@ -239,13 +252,18 @@ public class MantisJobClusterMetadataView {
             return this;
         }
 
+        public Builder withJobPrincipal(JobPrincipal jobPrincipal) {
+            this.jobPrincipal = jobPrincipal;
+            return this;
+        }
+
         public MantisJobClusterMetadataView build() {
             Preconditions.checkNotNull(name, "name cannot be null");
             Preconditions.checkNotNull(jars, "Jars cannot be null");
             Preconditions.checkArg(!jars.isEmpty(),"Jars cannot be empty");
             Preconditions.checkNotNull(latestVersion, "version cannot be null");
 
-            return new MantisJobClusterMetadataView(name,jars,sla,parameters,owner,lastJobCount,disabled,isReadyForJobMaster,migrationConfig,labels,cronActive,latestVersion);
+            return new MantisJobClusterMetadataView(name,jars,sla,parameters,owner,lastJobCount,disabled,isReadyForJobMaster,migrationConfig,labels,cronActive,latestVersion,jobPrincipal);
         }
 
     }

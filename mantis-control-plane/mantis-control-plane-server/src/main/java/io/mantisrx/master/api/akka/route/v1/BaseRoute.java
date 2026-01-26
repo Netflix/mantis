@@ -34,6 +34,8 @@ import akka.http.javadsl.server.ExceptionHandler;
 import akka.http.javadsl.server.RequestContext;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
+import akka.http.javadsl.server.RejectionHandler;
+import akka.http.javadsl.server.ValidationRejection;
 import akka.http.javadsl.server.directives.RouteAdapter;
 import akka.japi.JavaPartialFunction;
 import akka.japi.pf.PFBuilder;
@@ -131,11 +133,30 @@ abstract class BaseRoute extends AllDirectives {
                         })
                 .build();
 
+        final RejectionHandler jsonRejectionHandler = RejectionHandler
+                .newBuilder()
+                .handle(
+                        ValidationRejection.class,
+                        rejection -> {
+                            logger.warn("Malformed request content: {}", rejection.message());
+                            return complete(
+                                    StatusCodes.BAD_REQUEST,
+                                    HttpEntities.create(
+                                            ContentTypes.APPLICATION_JSON,
+                                            generateFailureResponsePayload(
+                                                    rejection.message(),
+                                                    -1))
+                            );
+                        })
+                .build();
+
         return respondWithHeaders(
                 DEFAULT_RESPONSE_HEADERS,
-                () -> handleExceptions(
-                        jsonExceptionHandler,
-                        () -> routeFilter.apply(this.constructRoutes())));
+                () -> handleRejections(
+                        jsonRejectionHandler,
+                        () -> handleExceptions(
+                                jsonExceptionHandler,
+                                () -> routeFilter.apply(this.constructRoutes()))));
 
     }
 
