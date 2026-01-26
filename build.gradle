@@ -189,6 +189,7 @@ subprojects {
         printAllReleasedArtifacts.dependsOn("${project.path}:printReleasedArtifact")
     }
 
+    // test tasks config
     task akkaTest(type: Test) {
         maxParallelForks = 1
         filter {
