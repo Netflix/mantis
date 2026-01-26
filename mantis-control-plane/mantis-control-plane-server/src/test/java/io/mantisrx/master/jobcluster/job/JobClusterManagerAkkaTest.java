@@ -45,8 +45,10 @@ import akka.testkit.javadsl.TestKit;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.WorkerPorts;
+import java.util.concurrent.CompletableFuture;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -160,8 +162,10 @@ public class JobClusterManagerAkkaTest {
     public void setupState() {
         jobStoreMock = mock(MantisJobStore.class);
         schedulerMockFactory = mock(MantisSchedulerFactory.class);
-        schedulerMock = mock(MantisScheduler.class);
+        schedulerMock = JobTestHelper.createMockScheduler();
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
+        when(schedulerMockFactory.forClusterID(any())).thenReturn(schedulerMock);
+        when(schedulerMockFactory.markAllRegistriesReady()).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreMock,
             eventPublisher,
@@ -640,12 +644,17 @@ public class JobClusterManagerAkkaTest {
         assertTrue(jobClusterResponse.getJobCluster().isPresent());
         assertEquals(clusterWithNoJob, jobClusterResponse.getJobCluster().get().getName());
 
-        // 1 running worker
-        verify(schedulerMock, timeout(100_1000).times(1)).initializeRunningWorker(any(), any(),
-            any());
+        // 1 running worker initialization
+        verify(schedulerMock, timeout(2_000).times(1)).initializeRunningWorker(any(), any(), any());
 
-        // 2 worker schedule requests
-        verify(schedulerMock, timeout(100_000).times(4)).scheduleWorkers(any());
+        // Verify reservation API: 4 upsertReservation calls (3 initial jobs + 1 after restart)
+        verify(schedulerMock, timeout(2_000).times(4)).upsertReservation(any());
+
+        // Verify cancelReservation for killed job
+        verify(schedulerMock, timeout(2_000).times(1)).cancelReservation(any());
+
+        // Verify worker termination
+        verify(schedulerMock, timeout(2_000).times(1)).unscheduleAndTerminateWorker(any(), any());
 
         try {
             Mockito.verify(jobStoreSpied).loadAllArchivedJobsAsync();
@@ -653,8 +662,7 @@ public class JobClusterManagerAkkaTest {
             Mockito.verify(jobStoreSpied).archiveWorker(any());
             Mockito.verify(jobStoreSpied).archiveJob(any());
         } catch (IOException e) {
-            e.printStackTrace();
-            fail();
+            fail(e.getMessage());
         }
 
 
@@ -822,9 +830,9 @@ public class JobClusterManagerAkkaTest {
                     1), jId);
             });
 
-        // Two schedules: one for the initial success, one for a resubmit from corrupted worker ports.
-        verify(schedulerMock, times(2)).scheduleWorkers(any());
-        // One unschedule from corrupted worker ID 1 (before the resubmit).
+        // Verify reservation API: 2 upsertReservation calls (1 initial job + 1 resubmit from corrupted worker ports)
+        verify(schedulerMock, times(2)).upsertReservation(any());
+        // One unschedule from corrupted worker ID 1 (before the resubmit)
         verify(schedulerMock, times(1)).unscheduleAndTerminateWorker(eq(workerId), any());
 
         try {

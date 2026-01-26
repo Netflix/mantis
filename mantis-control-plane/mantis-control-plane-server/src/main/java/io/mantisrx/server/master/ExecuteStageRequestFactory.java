@@ -18,9 +18,12 @@ package io.mantisrx.server.master;
 
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.master.config.MasterConfiguration;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import java.util.Optional;
+
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -51,5 +54,33 @@ public class ExecuteStageRequestFactory {
         Optional.empty(),
         scheduleRequest.getJobMetadata().getUser(),
         scheduleRequest.getJobMetadata().getJobVersion());
+  }
+
+  public ExecuteStageRequest of(
+      TaskExecutorRegistration matchedTaskExecutorInfo,
+      TaskExecutorAllocationRequest allocationRequest) {
+      Preconditions.checkNotNull(allocationRequest);
+      Preconditions.checkNotNull(allocationRequest.getJobMetadata());
+    return new ExecuteStageRequest(
+        allocationRequest.getWorkerId().getJobCluster(),
+        allocationRequest.getWorkerId().getJobId(),
+        allocationRequest.getWorkerId().getWorkerIndex(),
+        allocationRequest.getWorkerId().getWorkerNum(),
+        allocationRequest.getJobMetadata().getJobJarUrl(),
+        allocationRequest.getStageNum(),
+        allocationRequest.getJobMetadata().getTotalStages(),
+        matchedTaskExecutorInfo.getWorkerPorts().getPorts(),
+        masterConfiguration.getTimeoutSecondsToReportStart(),
+        matchedTaskExecutorInfo.getWorkerPorts().getMetricsPort(),
+        allocationRequest.getJobMetadata().getParameters(),
+        allocationRequest.getJobMetadata().getSchedulingInfo(),
+        allocationRequest.getDurationType(),
+        allocationRequest.getJobMetadata().getHeartbeatIntervalSecs(),
+        allocationRequest.getJobMetadata().getSubscriptionTimeoutSecs(),
+        allocationRequest.getJobMetadata().getMinRuntimeSecs() - (System.currentTimeMillis() - allocationRequest.getJobMetadata().getMinRuntimeSecs()),
+        matchedTaskExecutorInfo.getWorkerPorts(),
+        Optional.empty(),
+        allocationRequest.getJobMetadata().getUser(),
+        allocationRequest.getJobMetadata().getJobVersion());
   }
 }

@@ -17,6 +17,8 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.common.Ack;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservation;
+import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.worker.TaskExecutorGateway;
@@ -98,6 +100,8 @@ public interface ResourceCluster extends ResourceClusterGateway {
     CompletableFuture<Ack> addNewJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts);
 
     CompletableFuture<Ack> markTaskExecutorWorkerCancelled(WorkerId workerId);
+
+    CompletableFuture<Ack> terminateWorker(WorkerId workerId);
 
     CompletableFuture<Ack> removeJobArtifactsToCache(List<ArtifactID> artifacts);
 
@@ -192,10 +196,56 @@ public interface ResourceCluster extends ResourceClusterGateway {
     CompletableFuture<Map<TaskExecutorID, WorkerId>> getTaskExecutorWorkerMapping(
         Map<String, String> attributes);
 
+    /**
+     * Insert or update a reservation for workers in this cluster.
+     * Reuses the shared UpsertReservation class from MantisResourceClusterReservationProto.
+     *
+     * @param request The reservation request
+     * @return Future that completes when reservation is accepted
+     */
+    default CompletableFuture<Ack> upsertReservation(UpsertReservation request) {
+        throw new UnsupportedOperationException("Reservation not supported");
+    }
+
+    /**
+     * Cancel reservations for a job stage.
+     * Reuses the shared CancelReservation class from MantisResourceClusterReservationProto.
+     *
+     * @param request The cancellation request
+     * @return Future containing acknowledgement
+     */
+    default CompletableFuture<Ack> cancelReservation(CancelReservation request) {
+        throw new UnsupportedOperationException("Reservation not supported");
+    }
+
+    /**
+     * Mark the reservation registry as ready to process reservations.
+     * This should be called after master initialization is complete and all
+     * existing jobs have been recovered.
+     *
+     * @return Future that completes when the registry is marked ready
+     */
+    default CompletableFuture<Ack> markRegistryReady() {
+        throw new UnsupportedOperationException("Reservation not supported");
+    }
+
     class NoResourceAvailableException extends Exception {
+        @Nullable
+        private final String constraintKey;
 
         public NoResourceAvailableException(String message) {
             super(message);
+            this.constraintKey = null;
+        }
+
+        public NoResourceAvailableException(String message, @Nullable String constraintKey) {
+            super(message);
+            this.constraintKey = constraintKey;
+        }
+
+        @Nullable
+        public String getConstraintKey() {
+            return constraintKey;
         }
     }
 

@@ -249,10 +249,7 @@ public class JobWorker implements IMantisWorkerEventProcessor {
      *         our state doesn't match Mesos)
      */
     private boolean onWorkerLaunched(WorkerLaunched workerEvent) throws InvalidWorkerStateChangeException {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Processing for worker {} with id {}", workerEvent, metadata.getWorkerId());
-        }
-
+        LOGGER.info("JobActor: on WorkerLaunched for {} on {}", workerEvent, metadata.getWorkerId());
         setSlave(workerEvent.getHostname());
         addPorts(workerEvent.getPorts());
         setSlaveID(workerEvent.getVmId());

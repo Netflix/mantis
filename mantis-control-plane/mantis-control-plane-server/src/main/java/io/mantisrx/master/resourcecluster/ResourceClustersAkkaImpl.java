@@ -19,6 +19,7 @@ package io.mantisrx.master.resourcecluster;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.pattern.Patterns;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.server.core.utils.ConfigUtils;
@@ -75,6 +76,17 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
                 .toCompletableFuture()
                 .thenApply(ResourceClustersManagerActor.ClusterIdSet.class::cast)
                 .thenApply(clusterIdSet -> clusterIdSet.getClusterIDS());
+    }
+
+    @Override
+    public CompletableFuture<Ack> markAllRegistriesReady() {
+        // Send MarkReady to manager actor, which will broadcast to all cluster actors
+        return Patterns
+            .ask(resourceClustersManagerActor,
+                io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.MarkReady.INSTANCE,
+                askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
     }
 
     public static ResourceClusters load(
