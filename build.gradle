@@ -118,9 +118,9 @@ allprojects {
     }
 }
 
-def printAllReleasedArtifacts = project.tasks.create('printAllReleasedArtifacts')
-project.snapshot.configure { finalizedBy printAllReleasedArtifacts }
-project.tasks.named("build").configure { finalizedBy printAllReleasedArtifacts }
+// def printAllReleasedArtifacts = project.tasks.create('printAllReleasedArtifacts')
+// project.snapshot.configure { finalizedBy printAllReleasedArtifacts }
+// project.tasks.named("build").configure { finalizedBy printAllReleasedArtifacts }
 subprojects {
     apply plugin: 'java-library'
 
