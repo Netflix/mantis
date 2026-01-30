@@ -15,13 +15,9 @@
  */
 apply plugin: 'mantis'
 
-ext {
-    mqlVersion = '3.2.2'
-}
-
 dependencies {
     implementation project(":mantis-runtime")
     implementation project(":mantis-connectors:mantis-connector-kafka")
 
-    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    implementation "io.mantisrx:mql-jvm:$versions.mql"
 }
