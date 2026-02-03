@@ -966,20 +966,14 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private static String buildReservationRegistryActorName(ClusterID clusterID) {
-        String resourceId = clusterID != null ? clusterID.getResourceID() : "";
-        if (resourceId == null) {
-            resourceId = "";
-        }
-        String sanitized = resourceId.replaceAll("[^a-zA-Z0-9-_]", "_");
-        if (sanitized.isEmpty()) {
-            sanitized = "default";
-        } else if (sanitized.charAt(0) == '$') {
-            sanitized = "_" + sanitized.substring(1);
-        }
-        return "reservationRegistry-" + sanitized;
+        return buildActorName("reservationRegistry", clusterID);
     }
 
     private static String buildExecutorStateManagerActorName(ClusterID clusterID) {
+        return buildActorName("executorStateManager", clusterID);
+    }
+
+    private static String buildActorName(String prefix, ClusterID clusterID) {
         String resourceId = clusterID != null ? clusterID.getResourceID() : "";
         if (resourceId == null) {
             resourceId = "";
@@ -990,6 +984,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
         } else if (sanitized.charAt(0) == '$') {
             sanitized = "_" + sanitized.substring(1);
         }
-        return "executorStateManager-" + sanitized;
+        return prefix + "-" + sanitized;
     }
 }
