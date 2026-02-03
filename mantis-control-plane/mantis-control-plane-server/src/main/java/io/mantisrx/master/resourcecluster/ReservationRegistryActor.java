@@ -1,38 +1,46 @@
 package io.mantisrx.master.resourcecluster;
 
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.CancelReservation;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.MarkReady;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.Reservation;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationKey;
+import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
+
 import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
-import akka.pattern.Patterns;
+import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetPendingReservationsView;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.PendingReservationGroupView;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.PendingReservationsView;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ProcessReservationsTick;
-import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.*;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-
-import io.mantisrx.server.worker.TaskExecutorGateway;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import scala.compat.java8.FutureConverters;
-import com.netflix.spectator.api.TagList;
-import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-
-import static akka.pattern.Patterns.pipe;
 
 /**
  * Actor responsible for tracking and prioritizing reservations per scheduling constraint. The actor keeps all
@@ -282,15 +290,13 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         processReservation();
     }
 
-    /*
-    Main process logic for each sku (constraintKey) is:
-    - take the first item in queue and track it as inflight if inflight is empty.
-    - send batch allocation request for the inflight reservation (only trigger once when it's insert as inflight).
-    - process loop ends on the group. Rely on callback from allocation (ReservationAllocationResponse) to update inflight.
-    - once inflight gets allocated the reservation is considered done. Any worker task submit error or worker init
-        error is going to be tracked by JobActor worker level heartbeat timeout. This also requires the executorManager
-        to send JobActor worker state update when the TEs are leased for allocation. This allows the reservation
-        registry to be free from tracking those failure.
+    /**
+     * Main process logic for each SKU (constraintKey):
+     * 1. Take the first item in queue and track it as in-flight if in-flight is empty.
+     * 2. Send batch allocation request for the in-flight reservation (only trigger once when inserted as in-flight).
+     * 3. Process loop ends on the group. Rely on callback from allocation to update in-flight.
+     * 4. Once in-flight gets allocated the reservation is considered done. Worker task submit errors
+     *    are tracked by JobActor worker level heartbeat timeout.
      */
     private void processReservation() {
         if (!ready) {
@@ -300,96 +306,84 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
 
         for (ConstraintGroup group : reservationsByConstraint.values()) {
             String constraintKey = group.getCanonicalConstraintKey();
-            Reservation inFlight = inFlightReservations.get(constraintKey);
 
-            if (inFlight != null) {
-                // Check if the in-flight reservation has timed out and needs to be retried
-                Instant requestTimestamp = inFlightReservationRequestTimestamps.get(constraintKey);
-                if (requestTimestamp != null) {
-                    Duration timeSinceRequest = Duration.between(requestTimestamp, clock.instant());
-                    if (timeSinceRequest.compareTo(inFlightReservationTimeout) >= 0) {
-                        log.info("{}: In-flight reservation {} for constraint group {} has timed out ({}ms), retrying",
-                            this.clusterID, inFlight.getKey(), constraintKey, timeSinceRequest.toMillis());
-
-                        // Metric for inflight timeout
-                        metrics.incrementCounter(
-                            ResourceClusterActorMetrics.RESERVATION_INFLIGHT_TIMEOUT,
-                            TagList.create(ImmutableMap.of(
-                                "resourceCluster",
-                                clusterID.getResourceID(),
-                                "jobId",
-                                inFlight.getKey().getJobId())));
-
-                        // Clear the in-flight state to allow retry
-                        inFlightReservations.remove(constraintKey);
-                        inFlightReservationRequestTimestamps.remove(constraintKey);
-                        // Continue processing to retry the reservation
-                    } else {
-                        log.info("{} Skipping constraint group {} - already has in-flight reservation {} (waiting for {}ms)",
-                            this.clusterID,
-                            constraintKey,
-                            inFlight.getKey(),
-                            inFlightReservationTimeout.minus(timeSinceRequest).toMillis());
-                        continue;
-                    }
-                } else {
-                    log.info("{} Skipping constraint group {} - already has in-flight reservation {}",
-                        this.clusterID, constraintKey, inFlight.getKey());
-                    continue;
-                }
+            if (shouldSkipConstraintGroup(constraintKey)) {
+                continue;
             }
 
-            // the top reservation is only removed from group from upsert change and success batch assignment reply.
-            Optional<Reservation> topReservationO = group.peekTop();
-            if (topReservationO.isEmpty()) {
+            Optional<Reservation> topReservation = group.peekTop();
+            if (topReservation.isEmpty()) {
                 log.debug("{}: Skipping constraint group {} - no reservation to process", this.clusterID, constraintKey);
                 continue;
             }
 
-            log.info("{}: Sending batch assignment request for reservation {} in constraint group {}",
-                this.clusterID, topReservationO.get().getKey(), constraintKey);
-
-            Reservation reservation = topReservationO.get();
-            metrics.incrementCounter(
-                ResourceClusterActorMetrics.RESERVATION_PROCESSED,
-                TagList.create(ImmutableMap.of(
-                    "resourceCluster",
-                    clusterID.getResourceID(),
-                    "jobId",
-                    reservation.getKey().getJobId())));
-
-            inFlightReservations.put(constraintKey, reservation);
-            inFlightReservationRequestTimestamps.put(constraintKey, clock.instant());
-
-            ResourceClusterActor.TaskExecutorBatchAssignmentRequest request =
-                new ResourceClusterActor.TaskExecutorBatchAssignmentRequest(
-                    topReservationO.get().getAllocationRequests(),
-                    this.clusterID,
-                    topReservationO.get());
-
-            // todo: make ESM track allocation results. Dedupe on repeated requests and only clear after registry ack.
-            // todo: make batch request ack as reply. retry if allocation failed or inflight timeout.
-
-//            CompletionStage<ReservationAllocationResponse> askFut = FutureConverters.toJava(
-//                Patterns.ask(
-//                    getContext().parent(),
-//                    request,
-//                    this.inFlightReservationTimeout.toMillis()))
-//                .thenApply( res -> new ReservationAllocationResponse(
-//                    ((ResourceClusterActor.TaskExecutorsAllocation) res).getReservation(),
-//                    ((ResourceClusterActor.TaskExecutorsAllocation) res),
-//                    null))
-//                .exceptionally(failure -> new ReservationAllocationResponse(
-//                    topReservationO.get(), null, failure))
-//                ;
-//
-//            pipe(
-//                askFut,
-//                getContext().dispatcher())
-//                .to(self());
-
-            getContext().parent().tell(request, self());
+            sendBatchAssignmentRequest(constraintKey, topReservation.get());
         }
+    }
+
+    /**
+     * Checks if a constraint group should be skipped due to an existing in-flight reservation.
+     * Returns true if we should skip processing this group, false if we can proceed.
+     * Side effect: clears timed-out in-flight reservations.
+     */
+    private boolean shouldSkipConstraintGroup(String constraintKey) {
+        Reservation inFlight = inFlightReservations.get(constraintKey);
+        if (inFlight == null) {
+            return false;
+        }
+
+        Instant requestTimestamp = inFlightReservationRequestTimestamps.get(constraintKey);
+        if (requestTimestamp == null) {
+            log.info("{}: Skipping constraint group {} - already has in-flight reservation {}",
+                this.clusterID, constraintKey, inFlight.getKey());
+            return true;
+        }
+
+        Duration timeSinceRequest = Duration.between(requestTimestamp, clock.instant());
+        if (timeSinceRequest.compareTo(inFlightReservationTimeout) < 0) {
+            log.info("{}: Skipping constraint group {} - already has in-flight reservation {} (waiting for {}ms)",
+                this.clusterID,
+                constraintKey,
+                inFlight.getKey(),
+                inFlightReservationTimeout.minus(timeSinceRequest).toMillis());
+            return true;
+        }
+
+        // In-flight reservation has timed out - clear it and allow retry
+        log.info("{}: In-flight reservation {} for constraint group {} has timed out ({}ms), retrying",
+            this.clusterID, inFlight.getKey(), constraintKey, timeSinceRequest.toMillis());
+
+        metrics.incrementCounter(
+            ResourceClusterActorMetrics.RESERVATION_INFLIGHT_TIMEOUT,
+            TagList.create(ImmutableMap.of(
+                "resourceCluster", clusterID.getResourceID(),
+                "jobId", inFlight.getKey().getJobId())));
+
+        inFlightReservations.remove(constraintKey);
+        inFlightReservationRequestTimestamps.remove(constraintKey);
+        return false;
+    }
+
+    private void sendBatchAssignmentRequest(String constraintKey, Reservation reservation) {
+        log.info("{}: Sending batch assignment request for reservation {} in constraint group {}",
+            this.clusterID, reservation.getKey(), constraintKey);
+
+        metrics.incrementCounter(
+            ResourceClusterActorMetrics.RESERVATION_PROCESSED,
+            TagList.create(ImmutableMap.of(
+                "resourceCluster", clusterID.getResourceID(),
+                "jobId", reservation.getKey().getJobId())));
+
+        inFlightReservations.put(constraintKey, reservation);
+        inFlightReservationRequestTimestamps.put(constraintKey, clock.instant());
+
+        ResourceClusterActor.TaskExecutorBatchAssignmentRequest request =
+            new ResourceClusterActor.TaskExecutorBatchAssignmentRequest(
+                reservation.getAllocationRequests(),
+                this.clusterID,
+                reservation);
+
+        getContext().parent().tell(request, self());
     }
 
     private void onTaskExecutorBatchAssignmentResult(ResourceClusterActor.TaskExecutorsAllocation result) {
@@ -486,12 +480,12 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
     private void removeEntry(Reservation reservation) {
         LinkedList<Reservation> reservations = reservationsByKey.get(reservation.getKey());
         if (reservations != null) {
-            reservations.remove(reservation);
+            boolean removed = reservations.remove(reservation);
+            if (!removed) {
+                log.warn("Reservation not found in reservationsByKey for removal: {}", reservation);
+            }
             if (reservations.isEmpty()) {
                 reservationsByKey.remove(reservation.getKey());
-            }
-            else {
-                log.warn("reservation not found for removal: {}", reservation);
             }
         }
 
@@ -500,9 +494,6 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
             group.remove(reservation);
             if (group.isEmpty()) {
                 reservationsByConstraint.remove(group.getCanonicalConstraintKey());
-            }
-            else {
-                log.warn("reservation not found in group for removal: {}", reservation);
             }
         }
     }
