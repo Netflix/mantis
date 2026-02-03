@@ -167,7 +167,7 @@ class DynamoDBMasterMonitorSingleton {
 
     @SuppressWarnings("FutureReturnValueIgnored")
     private void getCurrentLeader() {
-        logger.info("attempting leader lookup");
+        logger.debug("attempting leader lookup");
         this.getCurrentLeaderCounter.increment();
         final Optional<LockItem> optionalLock = lockClient.getLock(partitionKey, Optional.empty());
         final MasterDescription nextDescription;
