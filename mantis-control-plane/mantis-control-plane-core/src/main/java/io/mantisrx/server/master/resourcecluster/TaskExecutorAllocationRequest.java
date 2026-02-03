@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.master.resourcecluster;
 
+import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
@@ -23,10 +24,21 @@ import lombok.AllArgsConstructor;
 import lombok.Value;
 
 @Value
-@AllArgsConstructor(staticName = "of")
+@AllArgsConstructor
 public class TaskExecutorAllocationRequest {
     WorkerId workerId;
     SchedulingConstraints constraints;
     JobMetadata jobMetadata;
     int stageNum;
+    long readyAt;
+    MantisJobDurationType durationType; //TODO: update job actor to fill these fields.
+
+    // Static factory method with defaults for backward compatibility
+    public static TaskExecutorAllocationRequest of(
+            WorkerId workerId,
+            SchedulingConstraints constraints,
+            JobMetadata jobMetadata,
+            int stageNum) {
+        return new TaskExecutorAllocationRequest(workerId, constraints, jobMetadata, stageNum, -1L, MantisJobDurationType.Perpetual);
+    }
 }

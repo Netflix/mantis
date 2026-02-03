@@ -17,7 +17,9 @@
 package io.mantisrx.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertThrows;
 
 import akka.actor.ActorRef;
@@ -38,6 +40,8 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
+import io.mantisrx.server.master.ExecuteStageRequestFactory;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
@@ -60,6 +64,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.junit.AfterClass;
@@ -155,12 +160,15 @@ public class ResourceClusterActorClusterUsageAkkaTest {
     @Before
     public void setupRpcService() {
         rpcService.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
+        when(gateway.submitTask(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         mantisJobStore = mock(MantisJobStore.class);
         jobMessageRouter = mock(JobMessageRouter.class);
     }
 
     @Before
     public void setupActor() throws Exception {
+        MasterConfiguration masterConfig = mock(MasterConfiguration.class);
+        ExecuteStageRequestFactory executeStageRequestFactory = new ExecuteStageRequestFactory(masterConfig);
         final Props props =
             ResourceClusterActor.props(
                 CLUSTER_ID,
@@ -177,7 +185,8 @@ public class ResourceClusterActorClusterUsageAkkaTest {
                 false,
                 ImmutableMap.of("jdk", "8"),
                 new CpuWeightedFitnessCalculator(),
-                null);
+                executeStageRequestFactory,
+                false);
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =

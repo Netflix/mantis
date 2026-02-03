@@ -20,7 +20,10 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.Assigned;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AvailabilityState;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.Pending;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.Running;
+import io.mantisrx.master.jobcluster.job.worker.WorkerState;
+import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
@@ -199,6 +202,14 @@ class TaskExecutorState {
         }
 
         TaskExecutorReport report = heartbeat.getTaskExecutorReport();
+        if (this.availabilityState instanceof Running && report instanceof Available) {
+            WorkerId runningWorkerId = this.availabilityState.getWorkerId();
+            if (runningWorkerId != null) {
+                log.warn("Heartbeat indicates available while running {}. Marking worker as lost.", runningWorkerId);
+                jobMessageRouter.routeWorkerEvent(
+                    new WorkerTerminate(runningWorkerId, WorkerState.Failed, JobCompletedReason.Lost));
+            }
+        }
         if (this.cancelledWorkerOnTask != null) {
             if (report instanceof Occupied && ((Occupied) report).getWorkerId().equals(this.cancelledWorkerOnTask)) {
                 log.warn("{} cancelled, request cancel on heartbeat.", this.cancelledWorkerOnTask);
