@@ -23,11 +23,14 @@ import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Func0;
@@ -43,10 +46,12 @@ public class ConnectionGroup<T> {
     private Counter successfulWrites;
     private Counter numSlotSwaps;
     private Counter failedWrites;
+    private final Optional<ProactiveRouter<T>> routerO;
 
-    public ConnectionGroup(String groupId) {
+    public ConnectionGroup(String groupId, Optional<ProactiveRouter<T>> routerO) {
         this.groupId = groupId;
         this.connections = new HashMap<>();
+        this.routerO = routerO;
 
         final String grpId = Optional.ofNullable(groupId).orElse("none");
         final BasicTag groupIdTag = new BasicTag(MantisMetricStringConstants.GROUP_ID_TAG, grpId);
@@ -93,6 +98,7 @@ public class ConnectionGroup<T> {
                     + " a new connection has already been swapped in the place of the old connection");
 
         }
+        this.routerO.ifPresent(router -> router.removeConnection(connection));
     }
 
     public synchronized void addConnection(AsyncConnection<T> connection) {
@@ -107,6 +113,7 @@ public class ConnectionGroup<T> {
             previousConnection.close();
             numSlotSwaps.increment();
         }
+        this.routerO.ifPresent(router -> router.addConnection(connection));
     }
 
     public synchronized boolean isEmpty() {
@@ -131,5 +138,12 @@ public class ConnectionGroup<T> {
     public String toString() {
         return "ConnectionGroup [groupId=" + groupId + ", connections="
                 + connections + "]";
+    }
+
+    public void route(List<T> chunks, Router<T> fallbackRouter) {
+        this.routerO.ifPresentOrElse(
+            router -> router.route(chunks),
+            () -> fallbackRouter.route(this.getConnections(), chunks)
+        );
     }
 }

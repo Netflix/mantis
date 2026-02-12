@@ -34,15 +34,13 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
      */
     ScalarToScalar(ScalarComputation<T, R> computation,
                    Config<T, R> config, final io.reactivex.netty.codec.Codec<T> inputCodec) {
-        super(config.description, NettyCodec.fromNetty(inputCodec), config.codec, config.inputStrategy, config.parameters, config.concurrency);
-        this.computation = computation;
-        this.inputStrategy = config.inputStrategy;
+        this(computation, config, NettyCodec.fromNetty(inputCodec));
     }
 
 
     public ScalarToScalar(ScalarComputation<T, R> computation,
                    Config<T, R> config, Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency);
+        super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency, config.useProactiveRouter);
         this.computation = computation;
         this.inputStrategy = config.inputStrategy;
         this.parameters = config.parameters;
@@ -68,6 +66,7 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
         // default input type is serial for 'collecting' use case
         private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
         private volatile int concurrency = StageConfig.DEFAULT_STAGE_CONCURRENCY;
+        private boolean useProactiveRouter = false;
 
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
@@ -115,6 +114,16 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
 
         public Config<T, R> withParameters(List<ParameterDefinition<?>> params) {
             this.parameters = params;
+            return this;
+        }
+
+        /**
+         * Configure this stage to use proactive routers for better connection management performance.
+         *
+         * @return this config for method chaining
+         */
+        public Config<T, R> withProactiveRouter() {
+            this.useProactiveRouter = true;
             return this;
         }
 

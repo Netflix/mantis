@@ -40,6 +40,9 @@ public abstract class StageConfig<T, R> {
     // number of inner observables processed
     private int concurrency = DEFAULT_STAGE_CONCURRENCY;
 
+    // determines whether to use proactive routers for better connection management performance
+    private boolean useProactiveRouter = false;
+
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy) {
         this(description, inputCodec, outputCodec, inputStrategy, Collections.emptyList(), DEFAULT_STAGE_CONCURRENCY);
@@ -52,7 +55,7 @@ public abstract class StageConfig<T, R> {
 
     public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params) {
-        this(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY);
+        this(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY, false);
     }
 
     public StageConfig(String description, Codec<T> inputCodec,
@@ -63,12 +66,18 @@ public abstract class StageConfig<T, R> {
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
                        int concurrency) {
-        this(description, null, inputCodec, outputCodec, inputStrategy, params, concurrency);
+        this(description, inputCodec, outputCodec, inputStrategy, params, concurrency, false);
+    }
+
+    public StageConfig(String description, Codec<T> inputCodec,
+                       Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
+                       int concurrency, boolean useProactiveRouter) {
+        this(description, null, inputCodec, outputCodec, inputStrategy, params, concurrency, useProactiveRouter);
     }
 
     public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
-                       int concurrency) {
+                       int concurrency, boolean useProactiveRouter) {
         this.description = description;
         this.inputKeyCodec = inputKeyCodec;
         this.inputCodec = inputCodec;
@@ -76,6 +85,7 @@ public abstract class StageConfig<T, R> {
         this.inputStrategy = inputStrategy;
         this.parameters = params;
         this.concurrency = concurrency;
+        this.useProactiveRouter = useProactiveRouter;
     }
 
     public String getDescription() {
@@ -107,6 +117,13 @@ public abstract class StageConfig<T, R> {
 
     public int getConcurrency() {
         return concurrency;
+    }
+
+    /**
+     * @return true if proactive routers should be used for this stage
+     */
+    public boolean shouldUseProactiveRouter() {
+        return useProactiveRouter;
     }
 
     public enum INPUT_STRATEGY {NONE_SPECIFIED, SERIAL, CONCURRENT}
