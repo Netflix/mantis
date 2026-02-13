@@ -110,6 +110,7 @@ run {
 }
 
 test {
+    maxHeapSize = '1g'
     maxParallelForks = 1
     retry {
         failOnPassedAfterRetry = false
