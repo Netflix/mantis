@@ -195,7 +195,7 @@ public class TaskExecutorReconnectionIntegrationTest {
             // This ensures the test setup is working correctly
 
             TaskExecutorRegistration registration = createRegistration(TASK_EXECUTOR_ID);
-            when(mantisJobStore.getTaskExecutor(TASK_EXECUTOR_ID)).thenReturn(registration);
+            doReturn(registration).when(mantisJobStore).getTaskExecutor(TASK_EXECUTOR_ID);
 
             // Register TaskExecutor
             assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(registration).get());
@@ -227,7 +227,7 @@ public class TaskExecutorReconnectionIntegrationTest {
             // an explicit disconnection event, but is detected through heartbeat state mismatch
 
             TaskExecutorRegistration registration = createRegistration(TASK_EXECUTOR_ID);
-            when(mantisJobStore.getTaskExecutor(TASK_EXECUTOR_ID)).thenReturn(registration);
+            doReturn(registration).when(mantisJobStore).getTaskExecutor(TASK_EXECUTOR_ID);
 
             // Step 1: Register and setup TaskExecutor with a running worker
             assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(registration).get());
