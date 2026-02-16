@@ -84,7 +84,8 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         this.metrics = Objects.requireNonNull(metrics, "metrics");
         this.reservationComparator = Comparator
             .comparing(Reservation::getPriority)
-            .thenComparingInt(System::identityHashCode);
+            .thenComparing(r -> r.getKey().getJobId())
+            .thenComparingInt(r -> r.getKey().getStageNumber());
         this.reservationsByKey = new HashMap<>();
         this.reservationsByConstraint = new HashMap<>();
         this.inFlightReservations = new HashMap<>();
@@ -426,10 +427,11 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
         String constraintKey = reservation.getCanonicalConstraintKey();
         Reservation inFlight = inFlightReservations.get(constraintKey);
 
-        if (inFlight != null && inFlight.equals(reservation)) {
+        if (inFlight != null) {
             inFlightReservations.remove(constraintKey);
             inFlightReservationRequestTimestamps.remove(constraintKey);
-            log.debug("{}: Cleared in-flight reservation for constraint group {}", this.clusterID, constraintKey);
+            log.debug("{}: Cleared in-flight reservation for constraint group {} (matched={})",
+                this.clusterID, constraintKey, inFlight.equals(reservation));
         }
     }
 

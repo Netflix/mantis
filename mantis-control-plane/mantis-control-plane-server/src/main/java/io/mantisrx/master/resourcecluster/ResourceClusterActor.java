@@ -417,13 +417,13 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 if (error != null) {
                     log.error("Failed to get pending reservations for usage request", error);
                     // Fall back to regular usage request without reservations
-                    sender().tell(
+                    originalSender.tell(
                         new Status.Failure(new RuntimeException("Failed to get pending reservations for usage", error)),
                         self());
                 } else {
                     // Phase 2: Convert to PendingReservationInfo and forward to ExecutorStateManagerActor
                     if (!reservationsResponse.isReady()) {
-                        sender().tell(
+                        originalSender.tell(
                             new Status.Failure(new IllegalStateException("Reservation registry is not ready")),
                             self());
                         return;

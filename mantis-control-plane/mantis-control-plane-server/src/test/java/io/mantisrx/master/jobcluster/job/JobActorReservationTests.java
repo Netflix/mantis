@@ -657,6 +657,87 @@ public class JobActorReservationTests {
     }
 
     // =====================================================
+    // Crash Recovery Tests
+    // =====================================================
+
+    /**
+     * Test that after a simulated registry crash (actor restart), JobActor
+     * re-sends reservation upserts when re-initialized with isSubmit=false.
+     */
+    @Test
+    public void testReservationRecoveryAfterRegistryCrash() throws Exception {
+        final TestKit probe = new TestKit(system);
+        String clusterName = "testReservationRecoveryAfterRegistryCrash";
+        SchedulingInfo sInfo = createSingleStageSchedulingInfo(2);
+
+        // Phase 1: Initial job submission (isSubmit=true)
+        MantisScheduler schedulerMock = createMockSchedulerWithSuccessfulReservation();
+        MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+        IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName, sInfo);
+        JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
+
+        MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
+                .withJobId(new JobId(clusterName, 1))
+                .withSubmittedAt(Instant.now())
+                .withJobState(JobState.Accepted)
+                .withNextWorkerNumToUse(1)
+                .withJobDefinition(jobDefn)
+                .build();
+
+        ActorRef jobActor = system.actorOf(JobActor.props(
+                jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock,
+                lifecycleEventPublisher, CostsCalculator.noop()));
+
+        // Initialize with isSubmit=true (initial submit)
+        jobActor.tell(new JobProto.InitJob(probe.getRef(), true), probe.getRef());
+        JobProto.JobInitialized initMsg = probe.expectMsgClass(Duration.ofSeconds(5), JobProto.JobInitialized.class);
+        assertEquals(SUCCESS, initMsg.responseCode);
+
+        // Verify initial reservation upsert called
+        verify(schedulerMock, timeout(5000).atLeastOnce()).upsertReservation(any(UpsertReservation.class));
+
+        ArgumentCaptor<UpsertReservation> initialCaptor = ArgumentCaptor.forClass(UpsertReservation.class);
+        verify(schedulerMock, atLeastOnce()).upsertReservation(initialCaptor.capture());
+
+        // Phase 2: Stop the job actor (simulating crash)
+        system.stop(jobActor);
+        Thread.sleep(500);
+
+        // Phase 3: Re-create JobActor simulating master recovery
+        MantisScheduler recoverySchedulerMock = createMockSchedulerWithSuccessfulReservation();
+
+        ActorRef recoveredJobActor = system.actorOf(JobActor.props(
+                jobClusterDefn, mantisJobMetaData, jobStoreMock, recoverySchedulerMock,
+                lifecycleEventPublisher, CostsCalculator.noop()));
+
+        // Initialize with isSubmit=false (recovery path)
+        recoveredJobActor.tell(new JobProto.InitJob(probe.getRef(), false), probe.getRef());
+        JobProto.JobInitialized recoveryInitMsg = probe.expectMsgClass(Duration.ofSeconds(5), JobProto.JobInitialized.class);
+        assertEquals(SUCCESS, recoveryInitMsg.responseCode);
+
+        // Phase 4: Verify recovery re-sends reservations
+        verify(recoverySchedulerMock, timeout(5000).atLeastOnce()).upsertReservation(any(UpsertReservation.class));
+
+        ArgumentCaptor<UpsertReservation> recoveryCaptor = ArgumentCaptor.forClass(UpsertReservation.class);
+        verify(recoverySchedulerMock, atLeastOnce()).upsertReservation(recoveryCaptor.capture());
+
+        // Verify the recovery reservation has workers for the correct job
+        String jobId = clusterName + "-1";
+        UpsertReservation recoveryReservation = recoveryCaptor.getAllValues().stream()
+                .filter(r -> r.getReservationKey().getStageNumber() == 1)
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull("Recovery should re-send reservation for stage 1", recoveryReservation);
+        assertEquals(jobId, recoveryReservation.getReservationKey().getJobId());
+        assertEquals(2, recoveryReservation.getAllocationRequests().size());
+
+        log.info("Verified crash recovery: reservation re-sent with {} allocation requests",
+                recoveryReservation.getAllocationRequests().size());
+    }
+
+    // =====================================================
     // Helper Methods
     // =====================================================
 

@@ -25,10 +25,12 @@ import static org.mockito.Mockito.when;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Status;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetReservationAwareClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
@@ -670,6 +672,62 @@ public class ReservationScalerIntegrationTests {
         assertEquals(CLUSTER_ID, scaleRequest.getClusterId());
         assertEquals(SKU_SMALL, scaleRequest.getSkuId());
         assertEquals(5, scaleRequest.getDesireSize());
+    }
+
+    /**
+     * Tests that when the reservation registry is NOT ready, a direct
+     * {@link GetReservationAwareClusterUsageRequest} sent to the ResourceClusterActor
+     * results in a {@link Status.Failure} being delivered back to the original sender.
+     *
+     * This verifies the B1 fix: the {@code originalSender} captured before the async
+     * callback is used (instead of {@code sender()}) so the failure reaches the correct
+     * recipient.
+     */
+    @Test
+    public void testNotReadySendsFailureToOriginalSender() throws Exception {
+        // Setup: create ResourceClusterActor with reservation scheduling enabled
+        resourceClusterActor = createResourceClusterActor();
+        Thread.sleep(500); // Allow child actors to initialize
+
+        // Register a few TEs so the actor is functional
+        for (int i = 0; i < 3; i++) {
+            registerTaskExecutor(resourceClusterActor, TaskExecutorID.of("te-small-" + i),
+                MACHINE_DEFINITION_SMALL, SKU_SMALL.getResourceID());
+        }
+
+        // Mark TEs as available
+        for (int i = 0; i < 3; i++) {
+            resourceClusterActor.tell(
+                new io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat(
+                    TaskExecutorID.of("te-small-" + i), CLUSTER_ID, TaskExecutorReport.available()),
+                testProbe.getRef());
+            testProbe.expectMsgClass(Duration.ofSeconds(5), Ack.class);
+        }
+
+        // Deliberately do NOT mark reservation registry as ready
+
+        // Create a separate probe that will act as the "original sender"
+        TestKit directProbe = new TestKit(actorSystem);
+
+        // Send GetReservationAwareClusterUsageRequest directly from directProbe
+        resourceClusterActor.tell(
+            new GetReservationAwareClusterUsageRequest(
+                CLUSTER_ID,
+                ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            directProbe.getRef());
+
+        // The reservation registry is not ready, so the ResourceClusterActor should
+        // send Status.Failure back to the original sender (directProbe).
+        // Before the B1 fix, sender() in the async callback could resolve to deadLetters
+        // instead of the original sender, causing the failure to be lost.
+        Status.Failure failure = directProbe.expectMsgClass(
+            Duration.ofSeconds(10), Status.Failure.class);
+
+        assertNotNull("Failure message should not be null", failure);
+        assertNotNull("Failure should contain a cause", failure.cause());
+        assertTrue("Failure cause should indicate registry not ready",
+            failure.cause().getMessage().contains("not ready")
+            || failure.cause().getMessage().contains("not available"));
     }
 }
 

@@ -1046,6 +1046,99 @@ public class ReservationRegistryActorTest {
         stopActor(registry);
     }
 
+    @Test
+    public void shouldOrderReservationsDeterministicallyByJobId() {
+        TestKit probe = new TestKit(system);
+        ActorRef registry = system.actorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, PROCESS_INTERVAL, null, null, new ResourceClusterActorMetrics()));
+
+        SchedulingConstraints constraints = constraints("sku-ordering", Collections.emptyMap());
+
+        // Upsert 3 reservations with identical priority timestamps but different jobIds
+        ReservationKey keyC = ReservationKey.builder().jobId("job-c").stageNumber(1).build();
+        upsert(registry, probe, keyC, constraints, 1, 1, BASE_INSTANT.toEpochMilli());
+
+        ReservationKey keyA = ReservationKey.builder().jobId("job-a").stageNumber(1).build();
+        upsert(registry, probe, keyA, constraints, 1, 1, BASE_INSTANT.toEpochMilli());
+
+        ReservationKey keyB = ReservationKey.builder().jobId("job-b").stageNumber(1).build();
+        upsert(registry, probe, keyB, constraints, 1, 1, BASE_INSTANT.toEpochMilli());
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        registry.tell(GetPendingReservationsView.INSTANCE, probe.getRef());
+        PendingReservationsView view = probe.expectMsgClass(PendingReservationsView.class);
+
+        PendingReservationGroupView group = view.getGroups().get(canonicalKeyFor(constraints));
+        assertNotNull(group);
+        assertEquals(3, group.getReservations().size());
+
+        // Since all have the same priority, thenComparing by jobId should sort them alphabetically
+        assertEquals("job-a", group.getReservations().get(0).getReservationKey().getJobId());
+        assertEquals("job-b", group.getReservations().get(1).getReservationKey().getJobId());
+        assertEquals("job-c", group.getReservations().get(2).getReservationKey().getJobId());
+
+        stopActor(registry);
+    }
+
+    /**
+     * D4 fix: When an in-flight reservation completes, the in-flight entry should be cleared
+     * unconditionally by constraint key, allowing other reservations in the same constraint
+     * group to proceed. This verifies that clearInFlightIfMatches matches by constraint key
+     * alone (not full equals), so a second reservation in the same group can go in-flight
+     * after the first completes.
+     */
+    @Test
+    public void shouldClearInFlightAfterReservationUpdate() {
+        TestKit probe = new TestKit(system);
+        TestKit parent = new TestKit(system);
+        ActorRef registry = parent.childActorOf(ReservationRegistryActor.props(TEST_CLUSTER_ID, FIXED_CLOCK, Duration.ofMillis(100), null, null, new ResourceClusterActorMetrics()));
+
+        SchedulingConstraints constraints = constraints("sku-inflight-update", Collections.emptyMap());
+
+        // Two reservations with same constraint key but different reservation keys
+        ReservationKey key1 = ReservationKey.builder().jobId("job-update-1").stageNumber(1).build();
+        ReservationKey key2 = ReservationKey.builder().jobId("job-update-2").stageNumber(1).build();
+
+        WorkerId worker1 = WorkerId.fromIdUnsafe("job-update-1-worker-0-1");
+        WorkerId worker2 = WorkerId.fromIdUnsafe("job-update-2-worker-0-1");
+
+        TaskExecutorAllocationRequest req1 = createAllocationRequest(worker1, constraints, 1);
+        TaskExecutorAllocationRequest req2 = createAllocationRequest(worker2, constraints, 1);
+
+        upsertWithAllocations(registry, probe, key1, constraints, Set.of(req1), 1, BASE_INSTANT.toEpochMilli());
+        upsertWithAllocations(registry, probe, key2, constraints, Set.of(req2), 1, BASE_INSTANT.plusSeconds(1).toEpochMilli());
+
+        registry.tell(MarkReady.INSTANCE, probe.getRef());
+        probe.expectMsg(Ack.getInstance());
+
+        // First reservation goes in-flight (batch request sent to parent)
+        TaskExecutorBatchAssignmentRequest firstRequest = parent.expectMsgClass(
+            Duration.ofSeconds(2), TaskExecutorBatchAssignmentRequest.class);
+        assertNotNull(firstRequest);
+        Reservation completedReservation = firstRequest.getReservation();
+
+        // While first is in-flight, upsert an UPDATE for key1 with different worker count
+        // This changes the registry entry but not the in-flight entry
+        WorkerId worker1b = WorkerId.fromIdUnsafe("job-update-1-worker-0-2");
+        TaskExecutorAllocationRequest req1b = createAllocationRequest(worker1b, constraints, 1);
+        upsertWithAllocations(registry, probe, key1, constraints, Set.of(req1, req1b), 2, BASE_INSTANT.toEpochMilli());
+
+        // Simulate allocation result for the ORIGINAL reservation (stale version)
+        TaskExecutorsAllocation allocation = new TaskExecutorsAllocation(Collections.emptyMap(), completedReservation);
+        registry.tell(allocation, probe.getRef());
+
+        // Force a processing tick - the in-flight should be cleared, allowing key2 to proceed
+        registry.tell(ResourceClusterActor.ForceProcessReservationsTick.INSTANCE, probe.getRef());
+
+        // Verify the second reservation can now go in-flight
+        TaskExecutorBatchAssignmentRequest secondRequest = parent.expectMsgClass(
+            Duration.ofSeconds(2), TaskExecutorBatchAssignmentRequest.class);
+        assertNotNull(secondRequest);
+
+        stopActor(registry);
+    }
+
     private static void stopActor(ActorRef actor) {
         TestKit watcher = new TestKit(system);
         watcher.watch(actor);
