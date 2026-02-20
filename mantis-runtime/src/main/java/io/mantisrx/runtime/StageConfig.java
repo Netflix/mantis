@@ -21,6 +21,7 @@ import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.util.Collections;
 import java.util.List;
+import rx.internal.util.RxRingBuffer;
 
 
 public abstract class StageConfig<T, R> {
@@ -39,6 +40,9 @@ public abstract class StageConfig<T, R> {
     // this number determines the number of New Threads created for concurrent Stage processing irrespective of the
     // number of inner observables processed
     private int concurrency = DEFAULT_STAGE_CONCURRENCY;
+
+    // buffer size for observeOn scheduler, defaults to RxRingBuffer.SIZE
+    private final int bufferSize;
 
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy) {
@@ -69,6 +73,12 @@ public abstract class StageConfig<T, R> {
     public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
                        int concurrency) {
+        this(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, concurrency, RxRingBuffer.SIZE);
+    }
+
+    public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
+                       Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
+                       int concurrency, int bufferSize) {
         this.description = description;
         this.inputKeyCodec = inputKeyCodec;
         this.inputCodec = inputCodec;
@@ -76,6 +86,7 @@ public abstract class StageConfig<T, R> {
         this.inputStrategy = inputStrategy;
         this.parameters = params;
         this.concurrency = concurrency;
+        this.bufferSize = bufferSize;
     }
 
     public String getDescription() {
@@ -107,6 +118,10 @@ public abstract class StageConfig<T, R> {
 
     public int getConcurrency() {
         return concurrency;
+    }
+
+    public int getBufferSize() {
+        return bufferSize;
     }
 
     public enum INPUT_STRATEGY {NONE_SPECIFIED, SERIAL, CONCURRENT}
