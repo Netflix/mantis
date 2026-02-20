@@ -165,7 +165,8 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
                 .numQueueConsumers(numConsumerThreads())
                 .useSpscQueue(useSpsc())
                 .maxChunkTimeMSec(getBatchInterval())
-                .maxNotWritableTimeSec(maxNotWritableTimeSec());
+                .maxNotWritableTimeSec(maxNotWritableTimeSec())
+                .firstConnectionCallback(context::activateEagerSubscription);
             if (predicate != null) {
                 config.predicate(predicate.getPredicate());
             }
