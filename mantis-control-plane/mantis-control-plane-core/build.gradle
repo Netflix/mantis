@@ -32,6 +32,7 @@ dependencies {
     api "org.skife.config:config-magic:$configMagicVersion"
     api libraries.flinkRpcApi
     api libraries.flinkCore
+    api libraries.flinkShadedNetty
     implementation libraries.commonsIo
     implementation libraries.vavr
     compileOnly libraries.jsr305
