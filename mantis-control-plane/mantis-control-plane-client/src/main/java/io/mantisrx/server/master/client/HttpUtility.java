@@ -60,7 +60,7 @@ import rx.functions.Func1;
                                             throws Exception {
                                         if (msg instanceof HttpRequest) {
                                             HttpRequest request = (HttpRequest) msg;
-                                            uri = request.getUri();
+                                            uri = request.uri();
                                             logger.info("Sending request on channel id: " + ctx.channel().toString() +
                                                     ", request URI: " + uri);
                                         }
