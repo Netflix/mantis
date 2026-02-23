@@ -173,22 +173,6 @@ subprojects {
         options.compilerArgs << "-Xlint:deprecation"
     }
 
-    // project.plugins.withType(MavenPublishPlugin) {
-    //     def printReleasedArtifact = project.tasks.create('printReleasedArtifact')
-    //     printReleasedArtifact.doLast {
-    //         def file1 = file("${buildDir}/tmp/publishNebulaPublicationToNetflixOSSRepository/maven-metadata.xml")
-    //         def file2 = file("${buildDir}/tmp/publishNebulaPublicationToNetflixOSSRepository/snapshot-maven-metadata.xml")
-    //         def xmlText = file1.exists() ? file1.text : (file2.exists() ? file2.text : "file not found")
-    //         logger.quiet("maven-metadata.xml prefix: ${xmlText.take(100)}")
-    //         def xml = new XmlParser(false, false).parseText(xmlText)
-    //         def snapshotVersion = xml.versioning.snapshotVersions.snapshotVersion[0].'value'.text()
-    //         logger.lifecycle("${project.group}:${project.name}:${snapshotVersion}")
-    //         file("${project.rootProject.buildDir}/versions.txt").append("${project.group}:${project.name}:${snapshotVersion}" + '\n')
-    //     }
-
-    //     printAllReleasedArtifacts.dependsOn("${project.path}:printReleasedArtifact")
-    // }
-
     // test tasks config
     task akkaTest(type: Test) {
         maxParallelForks = 1
