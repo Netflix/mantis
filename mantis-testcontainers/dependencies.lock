@@ -56,7 +56,7 @@
             "locked": "0.4.19.1"
         },
         "com.squareup.okhttp3:okhttp": {
-            "locked": "5.0.0-alpha.14"
+            "locked": "5.3.2"
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
@@ -127,7 +127,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.13.0"
+            "locked": "2.14.0"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -187,13 +187,13 @@
             "locked": "1.7.0"
         },
         "org.testcontainers:testcontainers": {
-            "locked": "1.18.3"
+            "locked": "1.21.4"
         },
         "org.xerial.snappy:snappy-java": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testRuntimeClasspath": {
@@ -237,7 +237,7 @@
             "locked": "0.3.1"
         },
         "com.squareup.okhttp3:okhttp": {
-            "locked": "5.0.0-alpha.14"
+            "locked": "5.3.2"
         },
         "commons-io:commons-io": {
             "firstLevelTransitive": [
@@ -329,7 +329,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.13.0"
+            "locked": "2.14.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -400,13 +400,13 @@
             "locked": "1.7.0"
         },
         "org.testcontainers:testcontainers": {
-            "locked": "1.18.3"
+            "locked": "1.21.4"
         },
         "org.xerial.snappy:snappy-java": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     }
 }

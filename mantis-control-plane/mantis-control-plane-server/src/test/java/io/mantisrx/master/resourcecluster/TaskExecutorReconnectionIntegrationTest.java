@@ -19,6 +19,7 @@ package io.mantisrx.master.resourcecluster;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -44,6 +45,8 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.ExecuteStageRequestFactory;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
@@ -125,13 +128,16 @@ public class TaskExecutorReconnectionIntegrationTest {
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
 
         // Setup required mocks for the MantisJobStore
-        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(any()))
-            .thenReturn(ImmutableList.of());
-        when(mantisJobStore.getJobArtifactsToCache(any()))
-            .thenReturn(ImmutableList.of());
+        doReturn(ImmutableList.of())
+            .when(mantisJobStore)
+            .loadAllDisableTaskExecutorsRequests(CLUSTER_ID);
+        doReturn(ImmutableList.of())
+            .when(mantisJobStore)
+            .getJobArtifactsToCache(CLUSTER_ID);
 
-        LongDynamicProperty checkForDisabledExecutorsInterval =
-            new LongDynamicProperty(propertiesLoader, "mantis.resourcecluster.disabledtaskexecutors.intervalms", Duration.ofSeconds(10).toMillis());
+        MasterConfiguration masterConfig = mock(MasterConfiguration.class);
+        when(masterConfig.getTimeoutSecondsToReportStart()).thenReturn(1);
+        ExecuteStageRequestFactory executeStageRequestFactory = new ExecuteStageRequestFactory(masterConfig);
 
         final Props props =
             ResourceClusterActor.props(
@@ -149,7 +155,8 @@ public class TaskExecutorReconnectionIntegrationTest {
                 false,
                 ImmutableMap.of(),
                 new CpuWeightedFitnessCalculator(),
-                null);
+                executeStageRequestFactory,
+                false);
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =
@@ -157,7 +164,7 @@ public class TaskExecutorReconnectionIntegrationTest {
                 resourceClusterActor,
                 Duration.ofSeconds(15),
                 CLUSTER_ID,
-                new LongDynamicProperty(propertiesLoader, "rate.limite.perSec", 10000L));
+                new LongDynamicProperty(propertiesLoader, "resourcecluster.gateway.maxConcurrentRequests.test", 100000L));
     }
 
     @Test
@@ -188,7 +195,7 @@ public class TaskExecutorReconnectionIntegrationTest {
             // This ensures the test setup is working correctly
 
             TaskExecutorRegistration registration = createRegistration(TASK_EXECUTOR_ID);
-            when(mantisJobStore.getTaskExecutor(TASK_EXECUTOR_ID)).thenReturn(registration);
+            doReturn(registration).when(mantisJobStore).getTaskExecutor(TASK_EXECUTOR_ID);
 
             // Register TaskExecutor
             assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(registration).get());
@@ -220,7 +227,7 @@ public class TaskExecutorReconnectionIntegrationTest {
             // an explicit disconnection event, but is detected through heartbeat state mismatch
 
             TaskExecutorRegistration registration = createRegistration(TASK_EXECUTOR_ID);
-            when(mantisJobStore.getTaskExecutor(TASK_EXECUTOR_ID)).thenReturn(registration);
+            doReturn(registration).when(mantisJobStore).getTaskExecutor(TASK_EXECUTOR_ID);
 
             // Step 1: Register and setup TaskExecutor with a running worker
             assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(registration).get());
@@ -267,7 +274,7 @@ public class TaskExecutorReconnectionIntegrationTest {
             } catch (AssertionError e) {
                 log.error("NOTE: TaskExecutor crash detection via heartbeat mismatch did not trigger WorkerTerminate event. " +
                                    "This may indicate the feature is not fully implemented yet: {}", e.getMessage());
-                fail();
+                fail(); //todo flaky test
             }
 
             // Step 4: Verify TaskExecutor is available after heartbeat

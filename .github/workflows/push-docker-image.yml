@@ -1,12 +1,6 @@
 name: "Publish Docker images to Docker Registry"
 
 on:
-  pull_request:
-    paths:
-      - ./mantis-control-plane/mantis-control-plane-server/build.gradle
-      - ./mantis-server/mantis-server-agent/build.gradle
-      - ./mantis-examples/mantis-examples-mantis-publish-sample/build.gradle
-      - .github/workflows/push-docker-image.yml
   push:
     tags:
       - v*.*.*
