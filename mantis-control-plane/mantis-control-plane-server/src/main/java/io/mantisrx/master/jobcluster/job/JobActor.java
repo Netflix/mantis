@@ -114,7 +114,6 @@ import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
-import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
@@ -2520,22 +2519,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     terminateUnknownWorkerIfNonTerminal(event);
                     return;
                 }
-                // If worker cannot be scheduled currently, then put it back on the queue with delay and don't update
-                // its state
-                // todo WorkerUnscheduleable should be deprecated in reservation path.
-                if (event instanceof WorkerUnscheduleable) {
-                    scheduler.updateWorkerSchedulingReadyTime(
-                            event.getWorkerId(),
-                            resubmitRateLimiter.getWorkerResubmitTime(
-                                    event.getWorkerId(),
-                                    stageMetaOp.get().getStageNum()));
-                    eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(
-                            LifecycleEventsProto.StatusEvent.StatusEventType.ERROR,
-                            "rate limiting: no resources to fit worker",
-                            ((WorkerUnscheduleable) event).getStageNum(), event.getWorkerId(), WorkerState.Accepted));
-                    return;
-                }
-
                 MantisStageMetadataImpl stageMeta = (MantisStageMetadataImpl) stageMetaOp.get();
 
                 // Check if stage worker state (worker index -> worker number) is consistent with the worker event.
