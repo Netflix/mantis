@@ -63,7 +63,6 @@ public class JobWorker implements IMantisWorkerEventProcessor {
     private final Counter numWorkerLaunched;
     private final Counter numWorkerTerminated;
     private final Counter numWorkerLaunchFailed;
-    private final Counter numWorkerUnschedulable;
     private final Counter numWorkersDisabledVM;
     private final Counter numHeartBeatsReceived;
     private final Gauge lastWorkerLaunchToStartMillis;
@@ -85,7 +84,6 @@ public class JobWorker implements IMantisWorkerEventProcessor {
                 .addCounter("numWorkerLaunched")
                 .addCounter("numWorkerTerminated")
                 .addCounter("numWorkerLaunchFailed")
-                .addCounter("numWorkerUnschedulable")
                 .addCounter("numWorkersDisabledVM")
                 .addCounter("numHeartBeatsReceived")
                 .addGauge("lastWorkerLaunchToStartMillis")
@@ -95,7 +93,6 @@ public class JobWorker implements IMantisWorkerEventProcessor {
         this.numWorkerLaunched = metrics.getCounter("numWorkerLaunched");
         this.numWorkerTerminated = metrics.getCounter("numWorkerTerminated");
         this.numWorkerLaunchFailed = metrics.getCounter("numWorkerLaunchFailed");
-        this.numWorkerUnschedulable = metrics.getCounter("numWorkerUnschedulable");
         this.numWorkersDisabledVM = metrics.getCounter("numWorkersDisabledVM");
         this.numHeartBeatsReceived = metrics.getCounter("numHeartBeatsReceived");
         this.lastWorkerLaunchToStartMillis = metrics.getGauge("lastWorkerLaunchToStartMillis");
@@ -176,8 +173,6 @@ public class JobWorker implements IMantisWorkerEventProcessor {
             persistStateRequired = onWorkerLaunched((WorkerLaunched) workerEvent);
         } else if (workerEvent instanceof WorkerLaunchFailed) {
             persistStateRequired = onWorkerLaunchFailed((WorkerLaunchFailed) workerEvent);
-        } else if (workerEvent instanceof WorkerUnscheduleable) {
-            persistStateRequired = onWorkerUnscheduleable((WorkerUnscheduleable) workerEvent);
         } else if (workerEvent instanceof WorkerResourceStatus) {
             persistStateRequired = onWorkerResourceStatus((WorkerResourceStatus) workerEvent);
         } else if (workerEvent instanceof WorkerHeartbeat) {
@@ -371,13 +366,6 @@ public class JobWorker implements IMantisWorkerEventProcessor {
                 StatusEvent.StatusEventType.ERROR,
             "worker launch failed, reason: " + workerEvent.getErrorMessage(), workerEvent.getStageNum(),
                 workerEvent.getWorkerId(), WorkerState.Failed));
-        return true;
-    }
-
-    private boolean onWorkerUnscheduleable(WorkerUnscheduleable workerEvent) {
-        // we shouldn't reach here for Worker Unscheduleable events, as Job Actor would update the readyAt time
-        // in the JobActor on receiving this event
-        numWorkerUnschedulable.increment();
         return true;
     }
 
