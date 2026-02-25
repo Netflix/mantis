@@ -316,8 +316,8 @@ public class ResourceClusterActorTest {
         doReturn(ImmutableList.of())
             .when(mantisJobStore)
             .getJobArtifactsToCache(CLUSTER_ID);
-        when(mantisJobStore.getTaskExecutor(ArgumentMatchers.any(TaskExecutorID.class)))
-            .thenReturn(TASK_EXECUTOR_REGISTRATION);
+        doReturn(TASK_EXECUTOR_REGISTRATION)
+            .when(mantisJobStore).getTaskExecutor(ArgumentMatchers.any(TaskExecutorID.class));
         assertEquals(
             Ack.getInstance(),
             resourceCluster.initializeTaskExecutor(TASK_EXECUTOR_ID, WORKER_ID).get());
