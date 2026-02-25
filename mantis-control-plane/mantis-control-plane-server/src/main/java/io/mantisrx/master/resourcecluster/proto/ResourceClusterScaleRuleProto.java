@@ -104,6 +104,7 @@ public class ResourceClusterScaleRuleProto {
         @NonNull
         List<ArtifactID> artifacts;
 
+        @JsonCreator
         public JobArtifactsToCacheRequest(@JsonProperty("clusterID") ClusterID clusterID, @JsonProperty("artifacts") List<ArtifactID> artifacts) {
             super();
             Preconditions.checkNotNull(clusterID, "clusterID cannot be null");
