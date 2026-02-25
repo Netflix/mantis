@@ -51,6 +51,7 @@ class ResourceClusterActorMetrics {
     public static final String RESERVATION_PROCESSED = "reservationProcessed";
     public static final String RESERVATION_UPSERTED = "reservationUpserted";
     public static final String RESERVATION_INFLIGHT_TIMEOUT = "reservationInFlightTimeout";
+    public static final String RESERVATION_PROCESSING_SKIPPED = "reservationProcessingSkipped";
     public static final String NUM_PENDING_RESERVATIONS = "numPendingReservations";
     public static final String RESERVATION_FULFILLMENT_LATENCY = "reservationFulfillmentLatency";
 

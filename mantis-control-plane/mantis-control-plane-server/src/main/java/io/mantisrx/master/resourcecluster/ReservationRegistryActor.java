@@ -335,23 +335,33 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
 
         Instant requestTimestamp = inFlightReservationRequestTimestamps.get(constraintKey);
         if (requestTimestamp == null) {
-            log.info("{}: Skipping constraint group {} - already has in-flight reservation {}",
+            log.debug("{}: Skipping constraint group {} - already has in-flight reservation {}",
                 this.clusterID, constraintKey, inFlight.getKey());
+            metrics.incrementCounter(
+                ResourceClusterActorMetrics.RESERVATION_PROCESSING_SKIPPED,
+                TagList.create(ImmutableMap.of(
+                    "resourceCluster", clusterID.getResourceID(),
+                    "reason", "inFlightNoTimestamp")));
             return true;
         }
 
         Duration timeSinceRequest = Duration.between(requestTimestamp, clock.instant());
         if (timeSinceRequest.compareTo(inFlightReservationTimeout) < 0) {
-            log.info("{}: Skipping constraint group {} - already has in-flight reservation {} (waiting for {}ms)",
+            log.debug("{}: Skipping constraint group {} - already has in-flight reservation {} (waiting for {}ms)",
                 this.clusterID,
                 constraintKey,
                 inFlight.getKey(),
                 inFlightReservationTimeout.minus(timeSinceRequest).toMillis());
+            metrics.incrementCounter(
+                ResourceClusterActorMetrics.RESERVATION_PROCESSING_SKIPPED,
+                TagList.create(ImmutableMap.of(
+                    "resourceCluster", clusterID.getResourceID(),
+                    "reason", "inFlightWaiting")));
             return true;
         }
 
         // In-flight reservation has timed out - clear it and allow retry
-        log.info("{}: In-flight reservation {} for constraint group {} has timed out ({}ms), retrying",
+        log.debug("{}: In-flight reservation {} for constraint group {} has timed out ({}ms), retrying",
             this.clusterID, inFlight.getKey(), constraintKey, timeSinceRequest.toMillis());
 
         metrics.incrementCounter(

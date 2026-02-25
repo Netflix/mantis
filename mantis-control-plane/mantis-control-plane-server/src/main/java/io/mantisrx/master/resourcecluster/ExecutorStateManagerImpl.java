@@ -863,7 +863,7 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
      *         If no suitable key is found, it returns an empty Optional.
      */
     private Optional<TaskExecutorGroupKey> findBestGroupByFitnessCalculator(SchedulingConstraints requestedConstraints) {
-        log.info("Falling back to find best group by fitness calculator for constraints: {}", requestedConstraints);
+        log.debug("Falling back to find best group by fitness calculator for constraints: {}", requestedConstraints);
         log.debug("All present executor groups: {}", executorsByGroup.keySet());
 
         // Filter and sort Task Executor Group Keys based on fitness score
