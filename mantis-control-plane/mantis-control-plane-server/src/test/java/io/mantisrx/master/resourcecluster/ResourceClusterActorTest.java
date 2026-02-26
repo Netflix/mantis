@@ -87,6 +87,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.ExceptionUtils;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -195,6 +196,13 @@ public class ResourceClusterActorTest {
     public void setupTest() throws Exception {
         setupRpcService();
         setupActor();
+    }
+
+    @After
+    public void teardownTest() {
+        if (resourceClusterActor != null) {
+            actorSystem.stop(resourceClusterActor);
+        }
     }
 
     private void setupRpcService() throws Exception {
