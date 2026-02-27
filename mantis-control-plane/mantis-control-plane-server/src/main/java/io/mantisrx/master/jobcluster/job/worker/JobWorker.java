@@ -27,6 +27,7 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.Timer;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -45,6 +46,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +68,8 @@ public class JobWorker implements IMantisWorkerEventProcessor {
     private final Counter numWorkersDisabledVM;
     private final Counter numHeartBeatsReceived;
     private final Gauge lastWorkerLaunchToStartMillis;
+    private final Timer workerAcceptedToLaunchedMs;
+    private final Timer workerAcceptedToStartedMs;
 
     /**
      * Creates an instance of JobWorker.
@@ -87,6 +91,8 @@ public class JobWorker implements IMantisWorkerEventProcessor {
                 .addCounter("numWorkersDisabledVM")
                 .addCounter("numHeartBeatsReceived")
                 .addGauge("lastWorkerLaunchToStartMillis")
+                .addTimer("workerAcceptedToLaunchedMs")
+                .addTimer("workerAcceptedToStartedMs")
                 .build();
 
         this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
@@ -96,6 +102,8 @@ public class JobWorker implements IMantisWorkerEventProcessor {
         this.numWorkersDisabledVM = metrics.getCounter("numWorkersDisabledVM");
         this.numHeartBeatsReceived = metrics.getCounter("numHeartBeatsReceived");
         this.lastWorkerLaunchToStartMillis = metrics.getGauge("lastWorkerLaunchToStartMillis");
+        this.workerAcceptedToLaunchedMs = metrics.getTimer("workerAcceptedToLaunchedMs");
+        this.workerAcceptedToStartedMs = metrics.getTimer("workerAcceptedToStartedMs");
     }
 
     public IMantisWorkerMetadata getMetadata() {
@@ -257,6 +265,14 @@ public class JobWorker implements IMantisWorkerEventProcessor {
         }
         numWorkerLaunched.increment();
 
+        final long acceptedAt = metadata.getAcceptedAt();
+        if (acceptedAt > 0) {
+            final long schedulingLatency = workerEvent.getEventTimeMs() - acceptedAt;
+            if (schedulingLatency > 0) {
+                workerAcceptedToLaunchedMs.record(schedulingLatency, TimeUnit.MILLISECONDS);
+            }
+        }
+
         try {
             eventPublisher.publishStatusEvent(new WorkerStatusEvent(
                     StatusEvent.StatusEventType.INFO,
@@ -331,6 +347,13 @@ public class JobWorker implements IMantisWorkerEventProcessor {
             } else {
                 LOGGER.info("Unexpected error when computing startlatency for {} start time {} launch time {}",
                         workerEvent.getWorkerId().getId(), workerEvent.getEventTimeMs(), metadata.getLaunchedAt());
+            }
+            final long acceptedAt = metadata.getAcceptedAt();
+            if (acceptedAt > 0) {
+                final long fullStartupLatency = workerEvent.getEventTimeMs() - acceptedAt;
+                if (fullStartupLatency > 0) {
+                    workerAcceptedToStartedMs.record(fullStartupLatency, TimeUnit.MILLISECONDS);
+                }
             }
             LOGGER.info("Job {} Worker {} started ", metadata.getJobId(), metadata.getWorkerId());
             eventPublisher.publishStatusEvent(new WorkerStatusEvent(
