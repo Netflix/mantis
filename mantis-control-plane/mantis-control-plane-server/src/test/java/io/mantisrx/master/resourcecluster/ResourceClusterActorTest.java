@@ -28,6 +28,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.actor.Status.Failure;
+import akka.pattern.Patterns;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
@@ -85,6 +86,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.ExceptionUtils;
 import org.junit.After;
@@ -199,9 +201,11 @@ public class ResourceClusterActorTest {
     }
 
     @After
-    public void teardownTest() {
+    public void teardownTest() throws Exception {
         if (resourceClusterActor != null) {
-            actorSystem.stop(resourceClusterActor);
+            Patterns.gracefulStop(resourceClusterActor, java.time.Duration.ofSeconds(5))
+                .toCompletableFuture()
+                .get(5, TimeUnit.SECONDS);
         }
     }
 
