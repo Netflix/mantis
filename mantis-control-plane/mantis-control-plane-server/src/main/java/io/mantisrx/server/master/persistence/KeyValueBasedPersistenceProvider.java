@@ -70,6 +70,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -136,8 +138,10 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     private final LifecycleEventPublisher eventPublisher;
     private final Counter noWorkersFoundCounter;
     private final Counter staleWorkersFoundCounter;
+    private final Counter staleWorkerArchivedCounter;
     private final Counter workersFoundCounter;
     private final Counter failedToLoadJobCounter;
+    private final ExecutorService staleWorkerArchiver;
 
     public KeyValueBasedPersistenceProvider(IKeyValueStore kvStore, LifecycleEventPublisher eventPublisher) {
         this.kvStore = kvStore;
@@ -146,6 +150,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
             .id("storage")
             .addCounter("noWorkersFound")
             .addCounter("staleWorkerFound")
+            .addCounter("staleWorkerArchived")
             .addCounter("workersFound")
             .addCounter("failedToLoadJobCount")
             .build();
@@ -153,8 +158,15 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         m = MetricsRegistry.getInstance().registerAndGet(m);
         this.noWorkersFoundCounter = m.getCounter("noWorkersFound");
         this.staleWorkersFoundCounter = m.getCounter("staleWorkerFound");
+        this.staleWorkerArchivedCounter = m.getCounter("staleWorkerArchived");
         this.workersFoundCounter = m.getCounter("workersFound");
         this.failedToLoadJobCounter = m.getCounter("failedToLoadJobCount");
+
+        this.staleWorkerArchiver = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "stale-worker-archiver");
+            t.setDaemon(true);
+            return t;
+        });
     }
 
     protected String getJobMetadataFieldName() {
@@ -415,16 +427,36 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                 }
 
                 workersFoundCounter.increment();
-                for (MantisWorkerMetadataWritable workerMeta : workersByJobId.get(jobId)) {
-                    // If there are duplicate workers on the same stage index, only attach the one with latest
-                    // worker number. The stale workers will not present in the stage metadata thus gets terminated
-                    // when it sends heartbeats to its JobActor.
-                    MantisWorkerMetadata existedWorker =
-                        jobMeta.tryAddOrReplaceWorker(workerMeta.getStageNum(), workerMeta);
-                    if (existedWorker != null) {
-                        logger.error("Encountered duplicate worker {} when adding {}", existedWorker, workerMeta);
+
+                // Pre-group workers by (stageNum, workerIndex), keeping only the highest workerNumber.
+                // Workers with lower workerNumber at the same index are stale and will be archived.
+                List<MantisWorkerMetadataWritable> allWorkers = workersByJobId.get(jobId);
+                Map<String, MantisWorkerMetadataWritable> winnersByIndex = new HashMap<>();
+                List<MantisWorkerMetadataWritable> staleWorkers = new ArrayList<>();
+
+                for (MantisWorkerMetadataWritable workerMeta : allWorkers) {
+                    String indexKey = workerMeta.getStageNum() + "-" + workerMeta.getWorkerIndex();
+                    MantisWorkerMetadataWritable existing = winnersByIndex.get(indexKey);
+                    if (existing == null) {
+                        winnersByIndex.put(indexKey, workerMeta);
+                    } else if (workerMeta.getWorkerNumber() > existing.getWorkerNumber()) {
+                        staleWorkers.add(existing);
+                        winnersByIndex.put(indexKey, workerMeta);
+                    } else {
+                        staleWorkers.add(workerMeta);
+                    }
+                }
+
+                for (MantisWorkerMetadataWritable workerMeta : winnersByIndex.values()) {
+                    jobMeta.tryAddOrReplaceWorker(workerMeta.getStageNum(), workerMeta);
+                }
+
+                if (!staleWorkers.isEmpty()) {
+                    for (MantisWorkerMetadataWritable stale : staleWorkers) {
+                        logger.warn("Encountered stale duplicate worker {} for job {}", stale, jobId);
                         staleWorkersFoundCounter.increment();
                     }
+                    archiveStaleWorkersAsync(staleWorkers);
                 }
                 jobMetas.add(DataFormatAdapter.convertMantisJobWriteableToMantisJobMetadata(jobMeta, eventPublisher));
             } catch (Exception e) {
@@ -476,6 +508,34 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     @Override
     public void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException {
         MantisWorkerMetadataWritable worker = DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(mwmd);
+        String pkey = makeBucketizedPartitionKey(worker.getJobId(), worker.getWorkerNumber());
+        String skey = makeBucketizedSecondaryKey(worker.getStageNum(), worker.getWorkerIndex(), worker.getWorkerNumber());
+        kvStore.delete(WORKERS_NS, pkey, skey);
+        kvStore.upsert(ARCHIVED_WORKERS_NS, pkey, skey, mapper.writeValueAsString(worker), getArchiveDataTtlInMs());
+    }
+
+    /**
+     * Submits stale workers for async archival (delete from active, upsert to archive).
+     * Fire-and-forget; failures are logged but do not propagate.
+     */
+    void archiveStaleWorkersAsync(List<MantisWorkerMetadataWritable> staleWorkers) {
+        staleWorkerArchiver.submit(() -> {
+            int archived = 0;
+            for (MantisWorkerMetadataWritable worker : staleWorkers) {
+                try {
+                    archiveStaleWorker(worker);
+                    staleWorkerArchivedCounter.increment();
+                    archived++;
+                } catch (Exception e) {
+                    logger.warn("Failed to archive stale worker {} for job {}",
+                        worker.getWorkerNumber(), worker.getJobId(), e);
+                }
+            }
+            logger.info("Archived {}/{} stale workers", archived, staleWorkers.size());
+        });
+    }
+
+    private void archiveStaleWorker(MantisWorkerMetadataWritable worker) throws IOException {
         String pkey = makeBucketizedPartitionKey(worker.getJobId(), worker.getWorkerNumber());
         String skey = makeBucketizedSecondaryKey(worker.getStageNum(), worker.getWorkerIndex(), worker.getWorkerNumber());
         kvStore.delete(WORKERS_NS, pkey, skey);

@@ -19,7 +19,6 @@ package io.mantisrx.server.master.persistence;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
-import io.mantisrx.master.jobcluster.job.MantisStageMetadataImpl;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
@@ -217,15 +216,6 @@ public class MantisJobStore {
 
     public void updateWorker(IMantisWorkerMetadata worker) throws IOException {
         storageProvider.updateWorker(worker);
-    }
-
-    private void archiveWorkersIfAny(IMantisJobMetadata mjmd) throws IOException {
-        for (IMantisStageMetadata msmd : mjmd.getStageMetadata().values()) {
-            for (JobWorker removedWorker :
-                    ((MantisStageMetadataImpl) msmd).removeArchiveableWorkers()) {
-                archiveWorker(removedWorker.getMetadata());
-            }
-        }
     }
 
     public void archiveWorker(IMantisWorkerMetadata worker) throws IOException {
