@@ -73,7 +73,7 @@ import org.slf4j.LoggerFactory;
 /***
  * JobClustersRoute
  *  Defines the following end points:
- *  api/v1/jobsClusters                               (GET, POST)
+ *  api/v1/jobClusters                               (GET, POST)
  *  api/v1/jobClusters/{}/latestJobDiscoveryInfo      (GET)
  *  api/v1/jobClusters/{}                             (GET, POST, PUT, DELETE)
  *  api/v1/jobClusters/{}/scalerRules                 (GET, POST, DELETE)
