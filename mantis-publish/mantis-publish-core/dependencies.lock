@@ -31,7 +31,7 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.2.2"
+            "locked": "4.0.0-rc.10"
         },
         "org.projectlombok:lombok": {
             "locked": "1.18.36"
@@ -66,7 +66,7 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.2.2"
+            "locked": "4.0.0-rc.10"
         },
         "io.vavr:vavr": {
             "firstLevelTransitive": [
@@ -116,7 +116,7 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.2.2"
+            "locked": "4.0.0-rc.10"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -134,7 +134,7 @@
             "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
-            "locked": "5.19.0"
+            "locked": "5.21.0"
         },
         "org.projectlombok:lombok": {
             "locked": "1.18.36"
@@ -179,7 +179,7 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.2.2"
+            "locked": "4.0.0-rc.10"
         },
         "io.vavr:vavr": {
             "firstLevelTransitive": [
@@ -203,7 +203,7 @@
             "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
-            "locked": "5.19.0"
+            "locked": "5.21.0"
         },
         "org.slf4j:slf4j-api": {
             "locked": "1.7.36"
