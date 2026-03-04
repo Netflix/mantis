@@ -201,8 +201,21 @@ public class JobWorker implements IMantisWorkerEventProcessor {
             LOGGER.debug("on WorkerStatus for {}", workerEvent);
         }
         switch (workerEvent.getState()) {
-            case StartInitiated:
             case Started:
+                setState(workerEvent.getState(), workerEvent.getEventTimeMs(), workerEvent.getStatus().getReason());
+                final long acceptedAt = metadata.getAcceptedAt();
+                if (acceptedAt > 0) {
+                    final long fullStartupLatency = workerEvent.getEventTimeMs() - acceptedAt;
+                    if (fullStartupLatency > 0) {
+                        workerAcceptedToStartedMs.record(fullStartupLatency, TimeUnit.MILLISECONDS);
+                    }
+                }
+                eventPublisher.publishStatusEvent(new WorkerStatusEvent(
+                        StatusEvent.StatusEventType.INFO,
+                    "worker status update", metadata.getStageNum(), workerEvent.getWorkerId(),
+                        workerEvent.getState()));
+                return true;
+            case StartInitiated:
             case Completed:
             case Failed:
                 setState(workerEvent.getState(), workerEvent.getEventTimeMs(), workerEvent.getStatus().getReason());
