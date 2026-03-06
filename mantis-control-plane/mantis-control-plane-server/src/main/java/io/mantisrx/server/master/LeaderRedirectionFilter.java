@@ -85,7 +85,7 @@ public class LeaderRedirectionFilter extends AllDirectives {
             return extractUri(uri -> {
                 Uri redirectUri = uri.host(hostname).port(apiPort);
                 apiRedirectsToLeader.increment();
-                logger.info("redirecting request {} to leader", redirectUri.toString());
+                logger.info("redirecting request to leader: {}", redirectUri.toString());
                 return redirect(redirectUri, StatusCodes.FOUND);
             });
         }
