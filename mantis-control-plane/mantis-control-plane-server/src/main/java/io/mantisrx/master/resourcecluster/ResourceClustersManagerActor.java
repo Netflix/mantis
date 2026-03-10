@@ -20,6 +20,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
+import akka.actor.Terminated;
 import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.common.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
@@ -186,7 +187,41 @@ class ResourceClustersManagerActor extends AbstractActor {
                         holder.getResourceClusterActor().forward(markReady, context()));
                     sender().tell(io.mantisrx.common.Ack.getInstance(), self());
                 })
+                .match(Terminated.class, this::onChildTerminated)
                 .build();
+    }
+
+    private void onChildTerminated(Terminated terminated) {
+        ActorRef deadActor = terminated.getActor();
+        ClusterID affectedCluster = null;
+        ActorHolder affectedHolder = null;
+
+        java.util.Iterator<Map.Entry<ClusterID, ActorHolder>> it = resourceClusterActorMap.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<ClusterID, ActorHolder> entry = it.next();
+            ActorHolder holder = entry.getValue();
+            if (deadActor.equals(holder.getResourceClusterActor()) ||
+                deadActor.equals(holder.getResourceClusterScalerActor())) {
+                affectedCluster = entry.getKey();
+                affectedHolder = holder;
+                it.remove();
+                break;
+            }
+        }
+
+        if (affectedCluster != null) {
+            log.error("Watched actor {} terminated for cluster {}. Removed stale entry; "
+                + "will be recreated on next request via getOrCreateRCActors.",
+                deadActor, affectedCluster);
+            // Stop the surviving sibling so both get cleanly recreated together.
+            ActorRef survivor = deadActor.equals(affectedHolder.getResourceClusterActor())
+                ? affectedHolder.getResourceClusterScalerActor()
+                : affectedHolder.getResourceClusterActor();
+            getContext().unwatch(survivor);
+            getContext().stop(survivor);
+        } else {
+            log.warn("Received Terminated for unknown actor {}", deadActor);
+        }
     }
 
     private ActorRef createResourceClusterActorFor(ClusterID clusterID) {
