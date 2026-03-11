@@ -23,6 +23,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
 import akka.actor.SupervisorStrategy;
+import akka.actor.Terminated;
 import akka.japi.pf.ReceiveBuilder;
 import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
@@ -97,6 +98,13 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     @Override
     public SupervisorStrategy supervisorStrategy() {
         return MantisActorSupervisorStrategy.getInstance().create();
+    }
+
+    private static final Duration CHILD_RECREATE_DELAY = Duration.ofSeconds(10);
+
+    @Value
+    static class RecreateChildActor {
+        String actorName;
     }
 
     private final Duration heartbeatTimeout;
@@ -268,6 +276,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
             Props registryProps = ReservationRegistryActor.props(this.clusterID, clock, null, null, null, metrics);
             reservationRegistryActor = getContext().actorOf(registryProps, reservationRegistryActorName);
         }
+        getContext().watch(reservationRegistryActor);
 
         Option<ActorRef> existingExecutorStateManager = getContext().child(executorStateManagerActorName);
         if (existingExecutorStateManager.isDefined()) {
@@ -293,6 +302,7 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 reservationSchedulingEnabled);
             executorStateManagerActor = getContext().actorOf(esmProps, executorStateManagerActorName);
         }
+        getContext().watch(executorStateManagerActor);
 
         syncExecutorJobArtifactsCache();
 
@@ -370,6 +380,8 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(AddNewJobArtifactsToCacheRequest.class, this::onAddNewJobArtifactsToCacheRequest)
                 .match(RemoveJobArtifactsToCacheRequest.class, this::onRemoveJobArtifactsToCacheRequest)
                 .match(GetJobArtifactsToCacheRequest.class, req -> sender().tell(new ArtifactList(new ArrayList<>(jobArtifactsToCache)), self()))
+                .match(Terminated.class, this::onChildTerminated)
+                .match(RecreateChildActor.class, this::onRecreateChildActor)
                 .build();
     }
 
@@ -449,6 +461,103 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
                         originalSender);
                 }
             });
+    }
+
+    private void onChildTerminated(Terminated terminated) {
+        ActorRef deadActor = terminated.getActor();
+        String actorType;
+        if (deadActor.equals(executorStateManagerActor)) {
+            actorType = "executorStateManager";
+            log.error("{} terminated for cluster {}. Nulling ref and scheduling re-creation.",
+                actorType, clusterID);
+            executorStateManagerActor = null;
+            timers().startSingleTimer(
+                "recreate-esm-" + clusterID.getResourceID(),
+                new RecreateChildActor(executorStateManagerActorName),
+                CHILD_RECREATE_DELAY);
+        } else if (deadActor.equals(reservationRegistryActor)) {
+            actorType = "reservationRegistry";
+            log.error("{} terminated for cluster {}. Nulling ref and scheduling re-creation.",
+                actorType, clusterID);
+            reservationRegistryActor = null;
+            timers().startSingleTimer(
+                "recreate-rr-" + clusterID.getResourceID(),
+                new RecreateChildActor(reservationRegistryActorName),
+                CHILD_RECREATE_DELAY);
+        } else {
+            actorType = "unknown";
+            log.error("Received Terminated for unknown actor {} in cluster {}", deadActor, clusterID);
+        }
+        metrics.incrementCounter(
+            ResourceClusterActorMetrics.CHILD_ACTOR_TERMINATED,
+            TagList.create(ImmutableMap.of(
+                "resourceCluster", clusterID.getResourceID(),
+                "actorType", actorType)));
+    }
+
+    private void onRecreateChildActor(RecreateChildActor request) {
+        String actorName = request.getActorName();
+        // Check if actor already exists (e.g. from a race with restart)
+        Option<ActorRef> existing = getContext().child(actorName);
+        if (existing.isDefined()) {
+            log.info("Child actor {} already exists for cluster {}, skipping re-creation", actorName, clusterID);
+            if (actorName.equals(executorStateManagerActorName)) {
+                executorStateManagerActor = existing.get();
+                getContext().watch(executorStateManagerActor);
+            } else if (actorName.equals(reservationRegistryActorName)) {
+                reservationRegistryActor = existing.get();
+                getContext().watch(reservationRegistryActor);
+            }
+            return;
+        }
+
+        try {
+            if (actorName.equals(executorStateManagerActorName)) {
+                if (!(executorStateManager instanceof ExecutorStateManagerImpl)) {
+                    throw new IllegalStateException("ExecutorStateManager is not an instance of ExecutorStateManagerImpl");
+                }
+                Props esmProps = ExecutorStateManagerActor.props(
+                    (ExecutorStateManagerImpl) executorStateManager,
+                    clock,
+                    rpcService,
+                    jobMessageRouter,
+                    mantisJobStore,
+                    heartbeatTimeout,
+                    assignmentTimeout,
+                    disabledTaskExecutorsCheckInterval,
+                    clusterID,
+                    isJobArtifactCachingEnabled,
+                    jobClustersWithArtifactCachingEnabled,
+                    metrics,
+                    executeStageRequestFactory,
+                    reservationSchedulingEnabled);
+                executorStateManagerActor = getContext().actorOf(esmProps, executorStateManagerActorName);
+                getContext().watch(executorStateManagerActor);
+                syncExecutorJobArtifactsCache();
+                log.info("Successfully recreated ExecutorStateManagerActor for cluster {}", clusterID);
+                metrics.incrementCounter(
+                    ResourceClusterActorMetrics.CHILD_ACTOR_RECREATED,
+                    TagList.create(ImmutableMap.of(
+                        "resourceCluster", clusterID.getResourceID(),
+                        "actorType", "executorStateManager")));
+            } else if (actorName.equals(reservationRegistryActorName)) {
+                Props registryProps = ReservationRegistryActor.props(this.clusterID, clock, null, null, null, metrics);
+                reservationRegistryActor = getContext().actorOf(registryProps, reservationRegistryActorName);
+                getContext().watch(reservationRegistryActor);
+                log.info("Successfully recreated ReservationRegistryActor for cluster {}", clusterID);
+                metrics.incrementCounter(
+                    ResourceClusterActorMetrics.CHILD_ACTOR_RECREATED,
+                    TagList.create(ImmutableMap.of(
+                        "resourceCluster", clusterID.getResourceID(),
+                        "actorType", "reservationRegistry")));
+            }
+        } catch (Exception e) {
+            log.error("Failed to recreate child actor {} for cluster {}, scheduling retry", actorName, clusterID, e);
+            timers().startSingleTimer(
+                "recreate-retry-" + actorName,
+                new RecreateChildActor(actorName),
+                CHILD_RECREATE_DELAY);
+        }
     }
 
     private void syncExecutorJobArtifactsCache() {

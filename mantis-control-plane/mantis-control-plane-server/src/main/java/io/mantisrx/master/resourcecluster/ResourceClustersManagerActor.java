@@ -20,6 +20,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
+import akka.actor.Terminated;
 import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.common.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
@@ -60,6 +61,7 @@ import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
@@ -80,6 +82,10 @@ class ResourceClustersManagerActor extends AbstractActor {
 
     // Cluster Id to <ResourceClusterActor, ResourceClusterScalerActor> map.
     private final Map<ClusterID, ActorHolder> resourceClusterActorMap;
+
+    // Clusters where one child died and the sibling is being stopped.
+    // Entry is removed only after both actors are confirmed terminated.
+    private final Set<ClusterID> drainingClusters;
 
     private final ActorRef resourceClusterHostActor;
     private final IMantisPersistenceProvider mantisPersistenceProvider;
@@ -122,6 +128,7 @@ class ResourceClustersManagerActor extends AbstractActor {
         this.executeStageRequestFactory = new ExecuteStageRequestFactory(masterConfiguration);
 
         this.resourceClusterActorMap = new HashMap<>();
+        this.drainingClusters = new HashSet<>();
     }
 
     @Override
@@ -186,7 +193,43 @@ class ResourceClustersManagerActor extends AbstractActor {
                         holder.getResourceClusterActor().forward(markReady, context()));
                     sender().tell(io.mantisrx.common.Ack.getInstance(), self());
                 })
+                .match(Terminated.class, this::onChildTerminated)
                 .build();
+    }
+
+    private void onChildTerminated(Terminated terminated) {
+        ActorRef deadActor = terminated.getActor();
+
+        for (Map.Entry<ClusterID, ActorHolder> entry : resourceClusterActorMap.entrySet()) {
+            ActorHolder holder = entry.getValue();
+            if (!deadActor.equals(holder.getResourceClusterActor()) &&
+                !deadActor.equals(holder.getResourceClusterScalerActor())) {
+                continue;
+            }
+
+            ClusterID clusterID = entry.getKey();
+            if (drainingClusters.contains(clusterID)) {
+                // Second Terminated: the survivor we stopped has now fully terminated.
+                // Safe to remove — both actor names are freed.
+                drainingClusters.remove(clusterID);
+                resourceClusterActorMap.remove(clusterID);
+                log.info("Both actors terminated for cluster {}. Entry removed; "
+                    + "will be recreated on next request.", clusterID);
+            } else {
+                // First Terminated: stop the sibling but keep the entry until both are dead.
+                drainingClusters.add(clusterID);
+                ActorRef survivor = deadActor.equals(holder.getResourceClusterActor())
+                    ? holder.getResourceClusterScalerActor()
+                    : holder.getResourceClusterActor();
+                getContext().stop(survivor);
+                log.error("Actor {} terminated for cluster {}. Stopping sibling {}; "
+                    + "entry will be removed once both are terminated.",
+                    deadActor, clusterID, survivor);
+            }
+            return;
+        }
+
+        log.warn("Received Terminated for unknown actor {}", deadActor);
     }
 
     private ActorRef createResourceClusterActorFor(ClusterID clusterID) {

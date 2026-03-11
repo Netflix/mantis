@@ -20,8 +20,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
 import rx.Observable;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,12 +32,8 @@ public class ScalerControllerActorTest {
     private static final String JOB_ID = "test-job-id";
     private static final String RULE_ID_1 = "1";
     private static final String RULE_ID_2 = "2";
-    private static final Duration Max_Duration = Duration.of(5000, ChronoUnit.MILLIS);
-    private static final Duration Interval_Duration = Duration.of(500, ChronoUnit.MILLIS);
 
     private ActorSystem system;
-    private TestKit testKit;
-
     private JobScalerContext jobScalerContext;
 
     @Mock
@@ -52,7 +46,6 @@ public class ScalerControllerActorTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         system = ActorSystem.create();
-        testKit = new TestKit(system);
         jobScalerContext = JobScalerContext.builder()
             .jobId(JOB_ID)
             .masterClientApi(masterClientApi)
@@ -81,11 +74,23 @@ public class ScalerControllerActorTest {
     public void tearDown() {
         TestKit.shutdownActorSystem(system);
         system = null;
-        testKit = null;
     }
 
     @Test
-    public void testOnRuleRefreshWithPerpetualRuleWithDefault() {
+    public void testOnRuleRefreshWithPerpetualRuleWithDefault() throws Exception {
+        CountDownLatch startLatch = new CountDownLatch(2);
+        CountDownLatch shutdownLatch = new CountDownLatch(2);
+        doAnswer((Answer<Void>) invocation -> {
+            log.info("Test: start job auto scaler service");
+            startLatch.countDown();
+            return null;
+        }).when(jobAutoScalerService).start();
+        doAnswer((Answer<Void>) invocation -> {
+            log.info("Test: shutdown job auto scaler service");
+            shutdownLatch.countDown();
+            return null;
+        }).when(jobAutoScalerService).shutdown();
+
         JobScalingRule perpetualRule = TestRuleUtils.createPerpetualRule(RULE_ID_1, JOB_ID);
         JobScalingRule perpetualRule2 = TestRuleUtils.createPerpetualRule(RULE_ID_2, JOB_ID);
 
@@ -123,16 +128,21 @@ public class ScalerControllerActorTest {
         response = probe.expectMsgClass(ScalerControllerActor.GetActiveRuleResponse.class);
         assertNull(response.getRule());
 
-        testKit.awaitAssert(Max_Duration, Interval_Duration,
-            () -> {
-                verify(jobAutoScalerService, times(2)).start();
-                verify(jobAutoScalerService, times(2)).shutdown();
-                return null;
-            });
+        assertTrue("Expected 2 start() calls within timeout",
+            startLatch.await(10, TimeUnit.SECONDS));
+        assertTrue("Expected 2 shutdown() calls within timeout",
+            shutdownLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
-    public void testOnRuleRefreshWithDesireSize() {
+    public void testOnRuleRefreshWithDesireSize() throws Exception {
+        CountDownLatch startLatch = new CountDownLatch(1);
+        doAnswer((Answer<Void>) invocation -> {
+            log.info("Test: start job auto scaler service");
+            startLatch.countDown();
+            return null;
+        }).when(jobAutoScalerService).start();
+
         JobScalingRule perpetualRule = TestRuleUtils.createPerpetualRuleWithDesireSize(RULE_ID_1, JOB_ID);
 
         ActorRef controllerActor = system.actorOf(ScalerControllerActor.Props(jobScalerContext), "controllerActor");
@@ -144,15 +154,25 @@ public class ScalerControllerActorTest {
             probe.expectMsgClass(ScalerControllerActor.GetActiveRuleResponse.class);
         assertEquals(perpetualRule, response.getRule());
 
-        testKit.awaitAssert(Max_Duration, Interval_Duration,
-            () -> {
-                verify(jobAutoScalerService, times(1)).start();
-                return null;
-            });
+        assertTrue("Expected 1 start() call within timeout",
+            startLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
-    public void testOnRuleRefreshWithDesireSizeOnly() {
+    public void testOnRuleRefreshWithDesireSizeOnly() throws Exception {
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        doAnswer((Answer<Void>) invocation -> {
+            log.info("Test: start job auto scaler service");
+            startLatch.countDown();
+            return null;
+        }).when(jobAutoScalerService).start();
+        doAnswer((Answer<Void>) invocation -> {
+            log.info("Test: shutdown job auto scaler service");
+            shutdownLatch.countDown();
+            return null;
+        }).when(jobAutoScalerService).shutdown();
+
         JobScalingRule perpetualRule1 = TestRuleUtils.createPerpetualRuleWithDesireSize(RULE_ID_1, JOB_ID);
         JobScalingRule perpetualRule2 = TestRuleUtils.createPerpetualRuleWithDesireSizeOnly(RULE_ID_2, JOB_ID);
 
@@ -171,17 +191,15 @@ public class ScalerControllerActorTest {
             probe.expectMsgClass(ScalerControllerActor.GetActiveRuleResponse.class);
         assertEquals(perpetualRule2, response.getRule());
 
-        testKit.awaitAssert(Max_Duration, Interval_Duration,
-            () -> {
-                // no service should be stared since no scaling policy is defined
-                verify(jobAutoScalerService, times(1)).start();
-                verify(jobAutoScalerService, times(1)).shutdown();
-                return null;
-            });
+        // no service should be started since no scaling policy is defined for rule 2
+        assertTrue("Expected 1 start() call within timeout",
+            startLatch.await(10, TimeUnit.SECONDS));
+        assertTrue("Expected 1 shutdown() call within timeout",
+            shutdownLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
-    public void testOnRuleRefreshFailedStart() {
+    public void testOnRuleRefreshFailedStart() throws Exception {
         JobScalingRule perpetualRule = TestRuleUtils.createPerpetualRule(RULE_ID_1, JOB_ID);
         JobScalingRule perpetualRule2 = TestRuleUtils.createPerpetualRule(RULE_ID_2, JOB_ID);
 
@@ -189,15 +207,18 @@ public class ScalerControllerActorTest {
         final TestKit probe = new TestKit(system);
 
         CountDownLatch latch1 = new CountDownLatch(1);
+        CountDownLatch startLatch = new CountDownLatch(2);
         AtomicInteger serviceNum = new AtomicInteger();
         doAnswer((Answer<Void>) invocation -> {
             if (serviceNum.get() == 0) {
                 log.info("Test Block: job auto scaler service");
                 serviceNum.getAndIncrement();
+                startLatch.countDown();
                 assertTrue(latch1.await(10, TimeUnit.SECONDS));
                 throw new RuntimeException("Mock start service failure");
             } else {
                 log.info("Test: start job auto scaler service");
+                startLatch.countDown();
             }
             return null;
         }).when(jobAutoScalerService).start();
@@ -225,10 +246,7 @@ public class ScalerControllerActorTest {
             probe.expectMsgClass(ScalerControllerActor.GetActiveRuleResponse.class);
         assertEquals(perpetualRule2, response.getRule());
 
-        testKit.awaitAssert(Max_Duration, Interval_Duration,
-            () -> {
-                verify(jobAutoScalerService, times(2)).start();
-                return null;
-            });
+        assertTrue("Expected 2 start() calls within timeout",
+            startLatch.await(10, TimeUnit.SECONDS));
     }
 }

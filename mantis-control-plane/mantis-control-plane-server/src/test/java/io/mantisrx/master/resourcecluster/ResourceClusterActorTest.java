@@ -724,6 +724,10 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testIfDisabledTaskExecutorRequestsAreInitializedCorrectlyWhenTheControlPlaneStarts() throws Exception {
+        // Stop the @Before actor and wait for its async IO to complete before overriding mock
+        actorSystem.stop(resourceClusterActor);
+        Thread.sleep(200);
+
         when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
             .thenReturn(ImmutableList.of(
                 new DisableTaskExecutorsRequest(
@@ -732,8 +736,11 @@ public class ResourceClusterActorTest {
                     Instant.now().plus(Duration.ofDays(1)),
                     Optional.empty())));
 
-        actorSystem.stop(resourceClusterActor);
         setupActor();
+
+        // Disabled TEs are now loaded asynchronously via pipe on the io-dispatcher,
+        // so allow time for the future to complete and the result to be delivered.
+        Thread.sleep(500);
 
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
         assertEquals(
@@ -816,6 +823,62 @@ public class ResourceClusterActorTest {
         } catch (Exception e) {
             throw ExceptionUtils.stripCompletionException(e);
         }
+    }
+
+    @Test
+    public void testPreStartResilientToJobStoreFailure() throws Exception {
+        // Stop the @Before actor and wait for its async IO to complete before overriding mock
+        actorSystem.stop(resourceClusterActor);
+        Thread.sleep(200);
+
+        // Now safe to override the mock — no in-flight futures from the old actor
+        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
+            .thenThrow(new RuntimeException("DEADLINE_EXCEEDED: DGW timeout"));
+        doReturn(ImmutableList.of())
+            .when(mantisJobStore)
+            .getJobArtifactsToCache(CLUSTER_ID);
+
+        setupActor();
+
+        // Wait for the async load retry to be attempted
+        Thread.sleep(500);
+
+        // The actor should still be alive and functional despite the load failure
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getRegisteredTaskExecutors().get());
+    }
+
+    @Test
+    public void testPreStartRetriesAndSucceeds() throws Exception {
+        // Stop the @Before actor and wait for its async IO to complete before overriding mock
+        actorSystem.stop(resourceClusterActor);
+        Thread.sleep(200);
+
+        // First call fails, second call succeeds
+        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
+            .thenThrow(new RuntimeException("DEADLINE_EXCEEDED: DGW timeout"))
+            .thenReturn(ImmutableList.of(
+                new DisableTaskExecutorsRequest(
+                    ATTRIBUTES,
+                    CLUSTER_ID,
+                    Instant.now().plus(Duration.ofDays(1)),
+                    Optional.empty())));
+        doReturn(ImmutableList.of())
+            .when(mantisJobStore)
+            .getJobArtifactsToCache(CLUSTER_ID);
+
+        setupActor();
+
+        // Wait for retry (retry delay is 5s in production, but the actor processes the initial attempt immediately)
+        // The first attempt fails immediately via self-tell, then a timer-based retry is scheduled.
+        // In test, we wait long enough for the retry timer to fire.
+        Thread.sleep(6000);
+
+        // After successful retry, disabled TEs should be loaded
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(
+            new ResourceOverview(1, 0, 0, 0, 1),
+            resourceCluster.resourceOverview().get());
     }
 
     @Test

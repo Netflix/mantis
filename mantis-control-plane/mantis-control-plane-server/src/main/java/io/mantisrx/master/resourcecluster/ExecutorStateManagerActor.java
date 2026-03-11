@@ -1,9 +1,12 @@
 package io.mantisrx.master.resourcecluster;
 
+import static akka.pattern.Patterns.pipe;
+
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
+import akka.dispatch.MessageDispatcher;
 import com.netflix.spectator.api.Tag;
 import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
@@ -108,6 +111,27 @@ import org.apache.flink.runtime.rpc.RpcService;
  */
 @Slf4j
 public class ExecutorStateManagerActor extends AbstractActorWithTimers {
+
+    @Value
+    static class LoadDisabledTaskExecutorsResponse {
+        List<DisableTaskExecutorsRequest> requests;
+        int attempt;
+    }
+
+    @Value
+    static class LoadDisabledTaskExecutorsFailure {
+        int attempt;
+        Throwable cause;
+    }
+
+    @Value
+    static class RetryLoadDisabledTaskExecutors {
+        int attempt;
+    }
+
+    static final int MAX_INIT_LOAD_RETRIES = 5;
+    static final Duration INIT_LOAD_RETRY_DELAY = Duration.ofSeconds(5);
+    static final String BLOCKING_IO_DISPATCHER = "akka.actor.default-blocking-io-dispatcher";
 
     @Value
     static class ExpireDisableTaskExecutorsRequest {
@@ -337,16 +361,33 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        List<DisableTaskExecutorsRequest> activeRequests =
-            mantisJobStore.loadAllDisableTaskExecutorsRequests(clusterID);
-        for (DisableTaskExecutorsRequest request : activeRequests) {
-            onNewDisableTaskExecutorsRequest(request);
-        }
+        // Load disabled task executors asynchronously on the blocking-io-dispatcher
+        // to avoid blocking both preStart() and the actor thread.
+        // A blocking call in preStart() throws ActorInitializationException on timeout,
+        // causing permanent actor death with no restart.
+        startAsyncLoadDisabledTaskExecutors(0);
 
         timers().startTimerWithFixedDelay(
             String.format("periodic-disabled-task-executors-test-for-%s", clusterID.getResourceID()),
             new CheckDisabledTaskExecutors("periodic"),
             disabledTaskExecutorsCheckInterval);
+    }
+
+    private void startAsyncLoadDisabledTaskExecutors(int attempt) {
+        MessageDispatcher ioDispatcher = getContext().getSystem().dispatchers().lookup(BLOCKING_IO_DISPATCHER);
+        CompletableFuture<Object> future = CompletableFuture.supplyAsync(
+            () -> {
+                try {
+                    List<DisableTaskExecutorsRequest> requests =
+                        mantisJobStore.loadAllDisableTaskExecutorsRequests(clusterID);
+                    return (Object) new LoadDisabledTaskExecutorsResponse(requests, attempt);
+                } catch (IOException e) {
+                    throw new java.util.concurrent.CompletionException(e);
+                }
+            },
+            ioDispatcher)
+            .exceptionally(t -> new LoadDisabledTaskExecutorsFailure(attempt, t));
+        pipe(future, getContext().getDispatcher()).to(self());
     }
 
     @Override
@@ -387,6 +428,9 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
             .match(UpdateJobArtifactsToCache.class, this::onUpdateJobArtifactsToCache)
             .match(DisableTaskExecutorsRequest.class, this::onNewDisableTaskExecutorsRequest)
+            .match(LoadDisabledTaskExecutorsResponse.class, this::onLoadDisabledTaskExecutorsSuccess)
+            .match(LoadDisabledTaskExecutorsFailure.class, this::onLoadDisabledTaskExecutorsFailure)
+            .match(RetryLoadDisabledTaskExecutors.class, req -> startAsyncLoadDisabledTaskExecutors(req.getAttempt()))
             .match(Ack.class, ack -> log.debug("Received ack from {}", sender()))
             .build();
     }
@@ -1003,6 +1047,34 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         this.jobArtifactsToCache.addAll(update.getArtifacts());
     }
 
+    private void onLoadDisabledTaskExecutorsSuccess(LoadDisabledTaskExecutorsResponse response) {
+        log.info("Loaded {} disabled task executor requests for cluster {} (attempt {})",
+            response.getRequests().size(), clusterID, response.getAttempt() + 1);
+        for (DisableTaskExecutorsRequest disableRequest : response.getRequests()) {
+            restoreDisableTaskExecutorsRequest(disableRequest);
+        }
+    }
+
+    private void onLoadDisabledTaskExecutorsFailure(LoadDisabledTaskExecutorsFailure failure) {
+        metrics.incrementCounter(
+            ResourceClusterActorMetrics.EXECUTOR_STATE_MANAGER_INIT_FAILURE,
+            TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID())));
+        int nextAttempt = failure.getAttempt() + 1;
+        if (nextAttempt <= MAX_INIT_LOAD_RETRIES) {
+            log.error("Failed to load disabled task executors for cluster {} (attempt {}/{}), scheduling retry",
+                clusterID, failure.getAttempt() + 1, MAX_INIT_LOAD_RETRIES, failure.getCause());
+            // Schedule a timer that re-triggers the async load on the io-dispatcher.
+            timers().startSingleTimer(
+                "load-disabled-te-retry-" + clusterID.getResourceID(),
+                new RetryLoadDisabledTaskExecutors(nextAttempt),
+                INIT_LOAD_RETRY_DELAY);
+        } else {
+            log.error("Exhausted retries loading disabled task executors for cluster {} after {} attempts. "
+                + "Relying on periodic CheckDisabledTaskExecutors for eventual consistency.",
+                clusterID, MAX_INIT_LOAD_RETRIES, failure.getCause());
+        }
+    }
+
     // custom equals function to check if the existing set already has the request under consideration.
     private boolean addNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest newRequest) {
         if (newRequest.isRequestByAttributes()) {
@@ -1016,19 +1088,34 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             Preconditions.checkState(activeDisableTaskExecutorsByAttributesRequests.add(newRequest), "activeDisableTaskExecutorRequests cannot contain %s", newRequest);
             return true;
         } else if (newRequest.getTaskExecutorID().isPresent() && !disabledTaskExecutors.contains(newRequest.getTaskExecutorID().get())) {
-            log.info("Req with id {}", newRequest);
+            log.debug("DisableTaskExecutorsRequest with id {}", newRequest);
             disabledTaskExecutors.add(newRequest.getTaskExecutorID().get());
             return true;
         }
-        log.info("No Req {}", newRequest);
+        log.debug("skip DisableTaskExecutorsRequest Req {}", newRequest);
         return false;
+    }
+
+    /**
+     * Restore a disable request loaded from the store into in-memory state.
+     * Skips the store write since the request already exists in persistence.
+     */
+    private void restoreDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
+        if (addNewDisableTaskExecutorsRequest(request)) {
+            Duration toExpiry = Comparators.max(Duration.between(clock.instant(), request.getExpiry()), Duration.ZERO);
+            getTimers().startSingleTimer(
+                getExpiryKeyFor(request),
+                new ExpireDisableTaskExecutorsRequest(request),
+                toExpiry);
+            findAndMarkDisabledTaskExecutorsFor(request);
+        }
     }
 
     private void onNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
         ActorRef sender = sender();
         if (addNewDisableTaskExecutorsRequest(request)) {
             try {
-                log.info("New req to add {}", request);
+                log.info("New DisableTaskExecutorsRequest to add {}", request);
                 // store the request in a persistent store in order to retrieve it if the node goes down
                 mantisJobStore.storeNewDisabledTaskExecutorsRequest(request);
                 // figure out the time to expire the current request

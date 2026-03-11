@@ -55,6 +55,10 @@ class ResourceClusterActorMetrics {
     public static final String NUM_PENDING_RESERVATIONS = "numPendingReservations";
     public static final String RESERVATION_FULFILLMENT_LATENCY = "reservationFulfillmentLatency";
 
+    public static final String EXECUTOR_STATE_MANAGER_INIT_FAILURE = "executorStateManagerInitFailure";
+    public static final String CHILD_ACTOR_TERMINATED = "childActorTerminated";
+    public static final String CHILD_ACTOR_RECREATED = "childActorRecreated";
+
     private final Registry registry;
     private final ConcurrentHashMap<String, Tuple2<Counter, Timer>> messageMetrics;
     private final Tuple2<Counter, Timer> unknownMessageMetrics;
