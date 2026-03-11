@@ -1051,7 +1051,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         log.info("Loaded {} disabled task executor requests for cluster {} (attempt {})",
             response.getRequests().size(), clusterID, response.getAttempt() + 1);
         for (DisableTaskExecutorsRequest disableRequest : response.getRequests()) {
-            onNewDisableTaskExecutorsRequest(disableRequest);
+            restoreDisableTaskExecutorsRequest(disableRequest);
         }
     }
 
@@ -1088,19 +1088,34 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             Preconditions.checkState(activeDisableTaskExecutorsByAttributesRequests.add(newRequest), "activeDisableTaskExecutorRequests cannot contain %s", newRequest);
             return true;
         } else if (newRequest.getTaskExecutorID().isPresent() && !disabledTaskExecutors.contains(newRequest.getTaskExecutorID().get())) {
-            log.info("Req with id {}", newRequest);
+            log.debug("DisableTaskExecutorsRequest with id {}", newRequest);
             disabledTaskExecutors.add(newRequest.getTaskExecutorID().get());
             return true;
         }
-        log.info("No Req {}", newRequest);
+        log.debug("skip DisableTaskExecutorsRequest Req {}", newRequest);
         return false;
+    }
+
+    /**
+     * Restore a disable request loaded from the store into in-memory state.
+     * Skips the store write since the request already exists in persistence.
+     */
+    private void restoreDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
+        if (addNewDisableTaskExecutorsRequest(request)) {
+            Duration toExpiry = Comparators.max(Duration.between(clock.instant(), request.getExpiry()), Duration.ZERO);
+            getTimers().startSingleTimer(
+                getExpiryKeyFor(request),
+                new ExpireDisableTaskExecutorsRequest(request),
+                toExpiry);
+            findAndMarkDisabledTaskExecutorsFor(request);
+        }
     }
 
     private void onNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
         ActorRef sender = sender();
         if (addNewDisableTaskExecutorsRequest(request)) {
             try {
-                log.info("New req to add {}", request);
+                log.info("New DisableTaskExecutorsRequest to add {}", request);
                 // store the request in a persistent store in order to retrieve it if the node goes down
                 mantisJobStore.storeNewDisabledTaskExecutorsRequest(request);
                 // figure out the time to expire the current request
