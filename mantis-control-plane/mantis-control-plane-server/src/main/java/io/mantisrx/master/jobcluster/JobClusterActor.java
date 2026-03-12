@@ -1758,8 +1758,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         .forJob(jobDefinition)
                         .unscheduleAndTerminateWorker(r.getWorkerId(), host);
                 } else {
-                    logger.warn("Non-terminal Event from worker {} has no completed job. Sending event to default cluster", r.getWorkerId());
-                    mantisSchedulerFactory.forClusterID(null).unscheduleAndTerminateWorker(r.getWorkerId(), host);
+                    logger.warn("Non-terminal Event from worker {} has no completed job. "
+                        + "Unable to determine resource cluster; skipping unschedule. "
+                        + "Worker will be reaped by the normal reaper mechanism.", r.getWorkerId());
                 }
             } else {
                 logger.warn("Terminal Event from worker {} has no valid running job. Ignoring event ", r.getWorkerId());
