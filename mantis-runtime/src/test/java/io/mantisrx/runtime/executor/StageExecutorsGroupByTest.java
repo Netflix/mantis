@@ -53,8 +53,7 @@ public class StageExecutorsGroupByTest {
         PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
         int serverPort = portSelector.acquirePort();
 
-        WorkerPublisher producer = new WorkerPublisherRemoteObservable(serverPort, null,
-                Observable.just(1), null);
+        WorkerPublisher producer = new WorkerPublisherRemoteObservable(serverPort, null, null);
         // execute source
 
         BehaviorSubject<Integer> workersInStageOneObservable = BehaviorSubject.create(1);
@@ -152,8 +151,7 @@ public class StageExecutorsGroupByTest {
         };
 
         WorkerConsumer consumer = new WorkerConsumerRemoteObservable(null, staticEndpoints);
-        WorkerPublisher producer = new WorkerPublisherRemoteObservable(publishPort, null,
-                Observable.just(1), null);
+        WorkerPublisher producer = new WorkerPublisherRemoteObservable(publishPort, null, null);
         // execute source
         StageExecutors.executeIntermediate(consumer, stages.get(1), producer,
                 new Context());

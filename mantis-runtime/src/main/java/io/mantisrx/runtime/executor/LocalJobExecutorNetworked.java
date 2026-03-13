@@ -79,7 +79,7 @@ public class LocalJobExecutorNetworked {
         logger.debug("Creating source publisher on port " + port);
         WorkerPublisherRemoteObservable publisher
                 = new WorkerPublisherRemoteObservable<>(port,
-                null, Observable.just(workersAtNextStage * numPartitions), null); // name is set to null, defaul
+                null, null); // name is set to null, default
         // to start job
         StageExecutors.executeSource(index, source, stage, publisher, context, stageWorkersObservable);
     }
@@ -104,7 +104,7 @@ public class LocalJobExecutorNetworked {
         logger.debug("Creating intermediate publisher on port " + port);
         WorkerPublisherRemoteObservable intermediatePublisher
                 = new WorkerPublisherRemoteObservable<>(port,
-                null, Observable.just(workersAtNextStage * numPartitions), null); // name is null for local
+                null, null); // name is null for local
         StageExecutors.executeIntermediate(intermediateConsumer, stage, intermediatePublisher,
                 context);
     }
