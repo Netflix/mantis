@@ -749,6 +749,73 @@ public class ResourceClusterActorTest {
     }
 
     @Test
+    public void testMixedActiveAndExpiredDisableRequestsOnStartup() throws Exception {
+        // Stop the @Before actor and wait for its async IO to complete before overriding mock
+        actorSystem.stop(resourceClusterActor);
+        Thread.sleep(200);
+
+        DisableTaskExecutorsRequest activeRequest = new DisableTaskExecutorsRequest(
+            ATTRIBUTES,
+            CLUSTER_ID,
+            Instant.now().plus(Duration.ofDays(1)),
+            Optional.empty());
+        DisableTaskExecutorsRequest expiredRequest = new DisableTaskExecutorsRequest(
+            ATTRIBUTES2,
+            CLUSTER_ID,
+            Instant.now().minus(Duration.ofHours(1)),
+            Optional.empty());
+
+        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
+            .thenReturn(ImmutableList.of(activeRequest, expiredRequest));
+
+        setupActor();
+        Thread.sleep(500);
+
+        // Active request should still disable matching executors
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(
+            new ResourceOverview(1, 0, 0, 0, 1),
+            resourceCluster.resourceOverview().get());
+
+        // Expired request should have been batch-deleted asynchronously
+        verify(mantisJobStore).deleteExpiredDisableTaskExecutorsRequest(expiredRequest);
+    }
+
+    @Test
+    public void testHeartbeatSucceedsPromptlyWithManyExpiredDisableRequests() throws Exception {
+        // Stop the @Before actor and wait for its async IO to complete before overriding mock
+        actorSystem.stop(resourceClusterActor);
+        Thread.sleep(200);
+
+        // Create many expired disable requests to simulate accumulated stale data
+        List<DisableTaskExecutorsRequest> expiredRequests = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
+            expiredRequests.add(new DisableTaskExecutorsRequest(
+                ImmutableMap.of("attr" + i, "val" + i),
+                CLUSTER_ID,
+                Instant.now().minus(Duration.ofHours(1)),
+                Optional.empty()));
+        }
+
+        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
+            .thenReturn(expiredRequests);
+
+        setupActor();
+        Thread.sleep(500);
+
+        // Register and heartbeat should succeed promptly — the expired requests are deleted
+        // asynchronously off the actor thread, so the actor is not blocked.
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(
+            Ack.getInstance(),
+            resourceCluster.heartBeatFromTaskExecutor(
+                new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+        assertEquals(
+            new ResourceOverview(1, 1, 0, 0, 0),
+            resourceCluster.resourceOverview().get());
+    }
+
+    @Test
     public void testIfDisabledTaskExecutorsAreNotAvailableForScheduling() throws Exception {
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_2).get());
