@@ -1048,10 +1048,35 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
     }
 
     private void onLoadDisabledTaskExecutorsSuccess(LoadDisabledTaskExecutorsResponse response) {
-        log.info("Loaded {} disabled task executor requests for cluster {} (attempt {})",
-            response.getRequests().size(), clusterID, response.getAttempt() + 1);
-        for (DisableTaskExecutorsRequest disableRequest : response.getRequests()) {
-            restoreDisableTaskExecutorsRequest(disableRequest);
+        final Instant now = clock.instant();
+        final List<DisableTaskExecutorsRequest> activeRequests = new ArrayList<>();
+        final List<DisableTaskExecutorsRequest> expiredRequests = new ArrayList<>();
+
+        for (DisableTaskExecutorsRequest req : response.getRequests()) {
+            if (req.isExpired(now)) {
+                expiredRequests.add(req);
+            } else {
+                activeRequests.add(req);
+            }
+        }
+
+        log.info("Loaded {} disabled TE requests for cluster {} ({} active, {} expired, attempt {})",
+            response.getRequests().size(), clusterID,
+            activeRequests.size(), expiredRequests.size(), response.getAttempt() + 1);
+
+        // Restore active requests (set timers, add to in-memory state)
+        for (DisableTaskExecutorsRequest req : activeRequests) {
+            restoreActiveDisableRequest(req);
+        }
+
+        // Single check pass after all active requests are restored to mark disabled executors
+        if (!activeRequests.isEmpty()) {
+            self().tell(new CheckDisabledTaskExecutors("restore"), self());
+        }
+
+        // Async batch delete expired requests on io-dispatcher (no timers, no blocking)
+        if (!expiredRequests.isEmpty()) {
+            startAsyncDeleteExpiredRequests(expiredRequests);
         }
     }
 
@@ -1097,18 +1122,38 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
     }
 
     /**
-     * Restore a disable request loaded from the store into in-memory state.
-     * Skips the store write since the request already exists in persistence.
+     * Restore an active (non-expired) disable request loaded from the store into in-memory state.
+     * Only sets a timer for the remaining TTL. Does not self-tell CheckDisabledTaskExecutors
+     * per request — the caller sends a single check after all active requests are restored.
      */
-    private void restoreDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
+    private void restoreActiveDisableRequest(DisableTaskExecutorsRequest request) {
         if (addNewDisableTaskExecutorsRequest(request)) {
-            Duration toExpiry = Comparators.max(Duration.between(clock.instant(), request.getExpiry()), Duration.ZERO);
+            Duration toExpiry = Comparators.max(
+                Duration.between(clock.instant(), request.getExpiry()), Duration.ZERO);
             getTimers().startSingleTimer(
                 getExpiryKeyFor(request),
                 new ExpireDisableTaskExecutorsRequest(request),
                 toExpiry);
-            findAndMarkDisabledTaskExecutorsFor(request);
         }
+    }
+
+    /**
+     * Batch-delete expired disable requests asynchronously on the io-dispatcher.
+     * This avoids blocking the actor thread with synchronous store calls.
+     */
+    private void startAsyncDeleteExpiredRequests(List<DisableTaskExecutorsRequest> expired) {
+        MessageDispatcher ioDispatcher =
+            getContext().getSystem().dispatchers().lookup(BLOCKING_IO_DISPATCHER);
+        CompletableFuture.runAsync(() -> {
+            for (DisableTaskExecutorsRequest req : expired) {
+                try {
+                    mantisJobStore.deleteExpiredDisableTaskExecutorsRequest(req);
+                } catch (Exception e) {
+                    log.warn("Failed to delete expired disable request {}", req, e);
+                }
+            }
+            log.info("Async batch-deleted {} expired disable requests for cluster {}", expired.size(), clusterID);
+        }, ioDispatcher);
     }
 
     private void onNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
