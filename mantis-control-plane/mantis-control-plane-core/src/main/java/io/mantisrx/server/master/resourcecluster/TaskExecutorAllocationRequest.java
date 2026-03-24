@@ -42,16 +42,4 @@ public class TaskExecutorAllocationRequest {
         return new TaskExecutorAllocationRequest(workerId, constraints, jobMetadata, stageNum, -1L, durationType);
     }
 
-    /**
-     * @deprecated Use {@link #of(WorkerId, SchedulingConstraints, JobMetadata, int, MantisJobDurationType)} instead.
-     * This overload hardcodes durationType to Perpetual, which causes subscription timeout to not fire for Transient jobs.
-     */
-    @Deprecated
-    public static TaskExecutorAllocationRequest of(
-            WorkerId workerId,
-            SchedulingConstraints constraints,
-            JobMetadata jobMetadata,
-            int stageNum) {
-        return new TaskExecutorAllocationRequest(workerId, constraints, jobMetadata, stageNum, -1L, MantisJobDurationType.Perpetual);
-    }
 }

@@ -34,6 +34,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetPendingReserva
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.scheduler.CpuWeightedFitnessCalculator;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
@@ -186,7 +187,7 @@ public class ResourceClusterReservationSchedulerIntegrationTests {
         for (int i = 0; i < 3; i++) {
             WorkerId workerId = WorkerId.fromIdUnsafe(JOB_ID + "-worker-" + STAGE_NUMBER + "-" + i);
             allocationRequests.add(TaskExecutorAllocationRequest.of(
-                workerId, constraints, null, STAGE_NUMBER));
+                workerId, constraints, null, STAGE_NUMBER, MantisJobDurationType.Perpetual));
         }
 
         UpsertReservation upsertRequest = UpsertReservation.builder()
@@ -227,7 +228,7 @@ public class ResourceClusterReservationSchedulerIntegrationTests {
 
         WorkerId workerId = WorkerId.fromIdUnsafe(JOB_ID + "-worker-" + STAGE_NUMBER + "-0");
         allocationRequests.add(TaskExecutorAllocationRequest.of(
-            workerId, constraints, null, STAGE_NUMBER));
+            workerId, constraints, null, STAGE_NUMBER, MantisJobDurationType.Perpetual));
 
         UpsertReservation upsertRequest = UpsertReservation.builder()
             .reservationKey(ReservationKey.builder()
@@ -291,7 +292,7 @@ public class ResourceClusterReservationSchedulerIntegrationTests {
 
         WorkerId workerId1 = WorkerId.fromIdUnsafe("job-1-worker-1-0");
         allocationRequests1.add(TaskExecutorAllocationRequest.of(
-            workerId1, constraints, null, 1));
+            workerId1, constraints, null, 1, MantisJobDurationType.Perpetual));
 
         UpsertReservation request1 = UpsertReservation.builder()
             .reservationKey(ReservationKey.builder()
@@ -312,7 +313,7 @@ public class ResourceClusterReservationSchedulerIntegrationTests {
         Set<TaskExecutorAllocationRequest> allocationRequests2 = new HashSet<>();
         WorkerId workerId2 = WorkerId.fromIdUnsafe("job-2-worker-2-0");
         allocationRequests2.add(TaskExecutorAllocationRequest.of(
-            workerId2, constraints, null, 2));
+            workerId2, constraints, null, 2, MantisJobDurationType.Perpetual));
 
         UpsertReservation request2 = UpsertReservation.builder()
             .reservationKey(ReservationKey.builder()
@@ -393,7 +394,7 @@ public class ResourceClusterReservationSchedulerIntegrationTests {
         for (int i = 0; i < 2; i++) {
             WorkerId workerId = WorkerId.fromIdUnsafe(JOB_ID + "-worker-" + STAGE_NUMBER + "-" + i);
             allocationRequests.add(TaskExecutorAllocationRequest.of(
-                workerId, constraints, null, STAGE_NUMBER));
+                workerId, constraints, null, STAGE_NUMBER, MantisJobDurationType.Perpetual));
         }
 
         UpsertReservation upsertRequest = UpsertReservation.builder()
