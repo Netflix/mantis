@@ -193,7 +193,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             resourceCluster
                 .getTaskExecutorsFor(
                     Collections.singleton(TaskExecutorAllocationRequest.of(
-                        event.getRequest().getWorkerId(), event.getRequest().getSchedulingConstraints(), event.getRequest().getJobMetadata(), event.getRequest().getStageNum())))
+                        event.getRequest().getWorkerId(), event.getRequest().getSchedulingConstraints(), event.getRequest().getJobMetadata(), event.getRequest().getStageNum(), event.getRequest().getDurationType())))
                 .<Object>thenApply(allocation -> event.onAssignment(allocation.values().stream().findFirst().get()))
                 .exceptionally(event::onFailure);
 
@@ -404,7 +404,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             this.allocationRequestScheduleRequestMap = request
                 .getScheduleRequests()
                 .stream()
-                .map(req -> Pair.of(req, TaskExecutorAllocationRequest.of(req.getWorkerId(), req.getSchedulingConstraints(), req.getJobMetadata(), req.getStageNum())))
+                .map(req -> Pair.of(req, TaskExecutorAllocationRequest.of(req.getWorkerId(), req.getSchedulingConstraints(), req.getJobMetadata(), req.getStageNum(), req.getDurationType())))
                 .collect(Collectors.toMap(Pair::getRight, Pair::getLeft));
         }
 
