@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import org.junit.AfterClass;
@@ -833,7 +834,7 @@ public class ReservationRegistryActorTest {
         SchedulingConstraints constraints,
         int stageNum
     ) {
-        return TaskExecutorAllocationRequest.of(workerId, constraints, null, stageNum);
+        return TaskExecutorAllocationRequest.of(workerId, constraints, null, stageNum, MantisJobDurationType.Perpetual);
     }
 
     @Test

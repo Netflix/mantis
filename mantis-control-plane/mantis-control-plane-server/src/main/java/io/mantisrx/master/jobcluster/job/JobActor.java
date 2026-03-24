@@ -1939,7 +1939,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     sr.getWorkerId(),
                     sr.getSchedulingConstraints(),
                     sr.getJobMetadata(),
-                    sr.getStageNum()))
+                    sr.getStageNum(),
+                    sr.getDurationType()))
                 .collect(Collectors.toSet());
 
             // Build reservation request using shared UpsertReservation class

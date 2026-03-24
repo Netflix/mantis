@@ -37,6 +37,7 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.scheduler.CpuWeightedFitnessCalculator;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
@@ -247,7 +248,7 @@ public class ReservationScalerIntegrationTests {
         for (int i = 0; i < numWorkers; i++) {
             WorkerId workerId = WorkerId.fromIdUnsafe(jobId + "-worker-" + stageNum + "-" + i);
             allocationRequests.add(TaskExecutorAllocationRequest.of(
-                workerId, constraints, null, stageNum));
+                workerId, constraints, null, stageNum, MantisJobDurationType.Perpetual));
         }
 
         UpsertReservation upsert = UpsertReservation.builder()
