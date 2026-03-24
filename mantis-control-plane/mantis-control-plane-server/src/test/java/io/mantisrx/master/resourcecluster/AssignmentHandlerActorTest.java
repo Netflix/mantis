@@ -35,6 +35,7 @@ import io.mantisrx.master.resourcecluster.AssignmentHandlerActor.TaskExecutorAss
 import io.mantisrx.master.resourcecluster.AssignmentHandlerActor.TaskExecutorAssignmentRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
@@ -52,6 +53,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class AssignmentHandlerActorTest {
     private static ActorSystem actorSystem;
@@ -101,7 +103,8 @@ public class AssignmentHandlerActorTest {
             workerId,
             SchedulingConstraints.of(new MachineDefinition(1.0, 1024, 1024, 1024, 1)),
             null,
-            0
+            0,
+            MantisJobDurationType.Transient
         );
     }
 
@@ -132,6 +135,41 @@ public class AssignmentHandlerActorTest {
         // We verify the gateway interaction.
         probe.expectNoMessage(Duration.ofMillis(200));
         verify(taskExecutorGateway, times(1)).submitTask(any());
+    }
+
+    @Test
+    public void testDurationTypePropagatedToExecuteStageRequest() {
+        TestKit probe = new TestKit(actorSystem);
+        Props props = AssignmentHandlerActor.props(
+            clusterID,
+            jobMessageRouter,
+            Duration.ofSeconds(1),
+            executeStageRequestFactory
+        );
+        ActorRef parent = actorSystem.actorOf(Props.create(ForwarderParent.class, props, probe.getRef(), taskExecutorGateway));
+        ActorRef actor = probe.expectMsgClass(ActorRef.class);
+
+        when(taskExecutorGateway.submitTask(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+
+        TaskExecutorAllocationRequest allocationRequest = createAllocationRequest();
+        assertEquals(MantisJobDurationType.Transient, allocationRequest.getDurationType());
+
+        TaskExecutorAssignmentRequest request = TaskExecutorAssignmentRequest.of(
+            allocationRequest,
+            taskExecutorID,
+            createRegistration(),
+            CompletableFuture.completedFuture(taskExecutorGateway)
+        );
+
+        actor.tell(request, probe.getRef());
+        probe.expectNoMessage(Duration.ofMillis(200));
+
+        // Verify that executeStageRequestFactory.of() was called with the allocation request
+        // that has the correct durationType (Transient, not Perpetual)
+        ArgumentCaptor<TaskExecutorAllocationRequest> allocationCaptor =
+            ArgumentCaptor.forClass(TaskExecutorAllocationRequest.class);
+        verify(executeStageRequestFactory).of(any(TaskExecutorRegistration.class), allocationCaptor.capture());
+        assertEquals(MantisJobDurationType.Transient, allocationCaptor.getValue().getDurationType());
     }
 
     @Test
