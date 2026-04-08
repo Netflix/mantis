@@ -64,7 +64,11 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.master.jobcluster.HealthCheck;
+import io.mantisrx.master.jobcluster.WorkerLaunchHealthCheck;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -94,6 +98,7 @@ public class MasterApiAkkaService extends BaseService {
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
     private final HttpsConnectionContext httpsConnectionContext;
+    private final List<HealthCheck> healthChecks;
 
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
@@ -117,7 +122,8 @@ public class MasterApiAkkaService extends BaseService {
             mantisStorageProvider,
             lifecycleEventPublisher,
             leadershipManager,
-            null
+            null,
+            List.of()
         );
     }
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
@@ -131,6 +137,33 @@ public class MasterApiAkkaService extends BaseService {
                                 final LifecycleEventPublisher lifecycleEventPublisher,
                                 final ILeadershipManager leadershipManager,
                                 final HttpsConnectionContext httpsConnectionContext) {
+        this(
+            masterMonitor,
+            masterDescription,
+            jobClustersManagerActor,
+            statusEventBrokerActor,
+            resourceClusters,
+            resourceClustersHostManagerActor,
+            serverPort,
+            mantisStorageProvider,
+            lifecycleEventPublisher,
+            leadershipManager,
+            httpsConnectionContext,
+            List.of()
+        );
+    }
+    public MasterApiAkkaService(final MasterMonitor masterMonitor,
+                                final MasterDescription masterDescription,
+                                final ActorRef jobClustersManagerActor,
+                                final ActorRef statusEventBrokerActor,
+                                final ResourceClusters resourceClusters,
+                                final ActorRef resourceClustersHostManagerActor,
+                                final int serverPort,
+                                final IMantisPersistenceProvider mantisStorageProvider,
+                                final LifecycleEventPublisher lifecycleEventPublisher,
+                                final ILeadershipManager leadershipManager,
+                                final HttpsConnectionContext httpsConnectionContext,
+                                final List<HealthCheck> healthChecks) {
         super(true);
         Preconditions.checkNotNull(masterMonitor, "MasterMonitor");
         Preconditions.checkNotNull(masterDescription, "masterDescription");
@@ -149,6 +182,7 @@ public class MasterApiAkkaService extends BaseService {
         this.storageProvider = mantisStorageProvider;
         this.lifecycleEventPublisher = lifecycleEventPublisher;
         this.leadershipManager = leadershipManager;
+        this.healthChecks = healthChecks != null ? healthChecks : List.of();
         this.system = ActorSystem.create("MasterApiActorSystem");
         this.materializer = Materializer.createMaterializer(system);
         this.mantisMasterRoute = configureApiRoutes(this.system);
@@ -170,8 +204,13 @@ public class MasterApiAkkaService extends BaseService {
 
     private MantisMasterRoute configureApiRoutes(final ActorSystem actorSystem) {
         // Setup API routes
-        final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor);
         final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor);
+
+        final List<HealthCheck> allHealthChecks = new ArrayList<>();
+        allHealthChecks.add(new WorkerLaunchHealthCheck(jobRouteHandler));
+        allHealthChecks.addAll(this.healthChecks);
+
+        final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, allHealthChecks);
 
         final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(masterDescription);
         final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, actorSystem);

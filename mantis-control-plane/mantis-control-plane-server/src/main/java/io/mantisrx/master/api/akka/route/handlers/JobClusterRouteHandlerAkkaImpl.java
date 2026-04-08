@@ -23,13 +23,18 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
+import io.mantisrx.master.jobcluster.HealthCheck;
+import io.mantisrx.master.jobcluster.proto.HealthCheckResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,9 +45,15 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     private final ActorRef jobClustersManagerActor;
     private final Counter allJobClustersGET;
     private final Duration timeout;
+    private final List<HealthCheck> healthChecks;
 
     public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor) {
+        this(jobClusterManagerActor, List.of());
+    }
+
+    public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor, List<HealthCheck> healthChecks) {
         this.jobClustersManagerActor = jobClusterManagerActor;
+        this.healthChecks = healthChecks;
         long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
         this.timeout = Duration.ofMillis(timeoutMs);
         Metrics m = new Metrics.Builder()
@@ -176,5 +187,19 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
         CompletionStage<JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse> response = ask(jobClustersManagerActor, request, timeout)
             .thenApply(JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse.class::cast);
         return response;
+    }
+
+    @Override
+    public CompletionStage<HealthCheckResponse> healthCheck(
+            String clusterName, List<String> jobIds, Map<String, Object> context) {
+        return CompletableFuture.supplyAsync(() -> {
+            for (HealthCheck check : healthChecks) {
+                HealthCheckResponse result = check.check(clusterName, jobIds, context);
+                if (!result.isHealthy()) {
+                    return result;
+                }
+            }
+            return HealthCheckResponse.healthy(0L);
+        });
     }
 }
