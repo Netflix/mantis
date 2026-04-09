@@ -798,13 +798,13 @@ public class JobClustersRoute extends BaseRoute {
                     : null;
 
             Map<String, Object> context = new HashMap<>(params);
-
-            CompletionStage<HealthCheckResponse> response =
-                    jobClusterRouteHandler.healthCheck(clusterName, jobIds, context);
+            CompletionStage<HealthCheckResponse> response = jobClusterRouteHandler.healthCheck(clusterName, jobIds, context);
 
             return completeAsync(
                     response,
-                    resp -> complete(StatusCodes.OK, resp, Jackson.marshaller()),
+                    resp -> complete(
+                            resp.isHealthy() ? StatusCodes.OK : StatusCodes.SERVICE_UNAVAILABLE,
+                            resp, Jackson.marshaller()),
                     HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_HEALTHCHECK,
                     HttpRequestMetrics.HttpVerb.GET
             );

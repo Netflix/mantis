@@ -54,13 +54,13 @@ public class HealthCheckResponse extends BaseResponse {
 
     public static HealthCheckResponse unhealthyWorkers(long requestId, List<FailedWorker> failedWorkers) {
         return new HealthCheckResponse(
-                requestId, ResponseCode.SUCCESS, "unhealthy workers", false,
+                requestId, ResponseCode.SERVER_ERROR, "unhealthy workers", false,
                 new WorkerFailure(failedWorkers));
     }
 
     public static HealthCheckResponse unhealthyAlerts(long requestId, List<String> alerts) {
         return new HealthCheckResponse(
-                requestId, ResponseCode.SUCCESS, "alerts firing", false,
+                requestId, ResponseCode.SERVER_ERROR, "alerts firing", false,
                 new AlertFailure(alerts));
     }
 

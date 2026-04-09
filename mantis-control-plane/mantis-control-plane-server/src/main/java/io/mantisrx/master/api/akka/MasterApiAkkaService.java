@@ -65,10 +65,9 @@ import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.master.jobcluster.HealthCheck;
-import io.mantisrx.master.jobcluster.WorkerLaunchHealthCheck;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -182,7 +181,7 @@ public class MasterApiAkkaService extends BaseService {
         this.storageProvider = mantisStorageProvider;
         this.lifecycleEventPublisher = lifecycleEventPublisher;
         this.leadershipManager = leadershipManager;
-        this.healthChecks = healthChecks != null ? healthChecks : List.of();
+        this.healthChecks = Objects.requireNonNullElseGet(healthChecks, List::of);
         this.system = ActorSystem.create("MasterApiActorSystem");
         this.materializer = Materializer.createMaterializer(system);
         this.mantisMasterRoute = configureApiRoutes(this.system);
@@ -204,13 +203,8 @@ public class MasterApiAkkaService extends BaseService {
 
     private MantisMasterRoute configureApiRoutes(final ActorSystem actorSystem) {
         // Setup API routes
+        final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, this.healthChecks);
         final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor);
-
-        final List<HealthCheck> allHealthChecks = new ArrayList<>();
-        allHealthChecks.add(new WorkerLaunchHealthCheck(jobRouteHandler));
-        allHealthChecks.addAll(this.healthChecks);
-
-        final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, allHealthChecks);
 
         final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(masterDescription);
         final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, actorSystem);

@@ -32,6 +32,7 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.Disable
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterRequest;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobClusterRequest;
+import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckRequest;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobClusterResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
@@ -93,6 +94,7 @@ import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobHelper;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.master.jobcluster.proto.HealthCheckResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterArtifactRequest;
@@ -241,6 +243,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(EnableJobClusterRequest.class, this::onJobClusterEnable)
                 .match(DisableJobClusterRequest.class, this::onJobClusterDisable)
                 .match(GetJobClusterRequest.class, this::onJobClusterGet)
+                .match(HealthCheckRequest.class, this::onHealthCheck)
                 .match(ListCompletedJobsInClusterRequest.class, this::onJobListCompleted)
                 .match(GetLastSubmittedJobIdStreamRequest.class, this::onGetLastSubmittedJobIdSubject)
                 .match(ListArchivedWorkersRequest.class, this::onListArchivedWorkers)
@@ -559,6 +562,16 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             jobClusterInfo.get().jobClusterActor.forward(r, getContext());
         } else {
             sender.tell(new GetJobClusterResponse(r.requestId, CLIENT_ERROR_NOT_FOUND, "No such Job cluster " + r.getJobClusterName(), empty()), getSelf());
+        }
+    }
+
+    public void onHealthCheck(HealthCheckRequest r) {
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(r.getClusterName());
+        ActorRef sender = getSender();
+        if (jobClusterInfo.isPresent()) {
+            jobClusterInfo.get().jobClusterActor.forward(r, getContext());
+        } else {
+            sender.tell(new HealthCheckResponse(r.requestId, CLIENT_ERROR_NOT_FOUND, "No such Job cluster " + r.getClusterName(), false, null), getSelf());
         }
     }
     @Override

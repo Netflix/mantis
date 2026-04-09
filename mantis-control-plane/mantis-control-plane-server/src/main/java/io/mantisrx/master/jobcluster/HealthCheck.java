@@ -24,19 +24,29 @@ import java.util.Map;
  * Extension point for job cluster health checks. Implementations are composed into an ordered
  * list and executed sequentially — the chain stops at the first failure.
  *
- * <p>The {@code context} map carries caller-provided parameters (e.g., alert group names)
- * without the interface needing to know about caller-specific concepts.
+ * <p>Each implementation declares a {@link #contextId()} that acts as a namespace prefix.
+ * The handler extracts query params prefixed with this ID (e.g., {@code radar.alertGroups})
+ * and passes them to the check with the prefix stripped.
  */
 public interface HealthCheck {
+
+    /**
+     * Namespace prefix for context parameters belonging to this health check.
+     * For example, a check with contextId "radar" receives query params like
+     * {@code radar.alertGroups} as {@code alertGroups} in its context map.
+     *
+     * @return the context namespace, or empty string to receive unnamespaced params
+     */
+    String contextId();
 
     /**
      * Run a health check against the given job cluster.
      *
      * @param clusterName the job cluster name
      * @param jobIds specific job IDs to check, or empty to use the latest active job
-     * @param context arbitrary caller-provided parameters
+     * @param context parameters namespaced to this check (prefix already stripped)
      * @return a healthy response, or an unhealthy response with the appropriate {@link
      *     HealthCheckResponse.FailureReason}
      */
-    HealthCheckResponse check(String clusterName, List<String> jobIds, Map<String, Object> context);
+    HealthCheckResponse checkHealth(String clusterName, List<String> jobIds, Map<String, Object> context);
 }

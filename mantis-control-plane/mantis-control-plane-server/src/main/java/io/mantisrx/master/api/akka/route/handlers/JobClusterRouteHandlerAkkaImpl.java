@@ -31,10 +31,10 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateScheduli
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -192,14 +192,36 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     @Override
     public CompletionStage<HealthCheckResponse> healthCheck(
             String clusterName, List<String> jobIds, Map<String, Object> context) {
-        return CompletableFuture.supplyAsync(() -> {
-            for (HealthCheck check : healthChecks) {
-                HealthCheckResponse result = check.check(clusterName, jobIds, context);
-                if (!result.isHealthy()) {
-                    return result;
-                }
+        JobClusterManagerProto.HealthCheckRequest request =
+                new JobClusterManagerProto.HealthCheckRequest(clusterName, jobIds);
+        return ask(jobClustersManagerActor, request, timeout)
+                .thenApply(HealthCheckResponse.class::cast)
+                .thenApply(actorResponse -> {
+                    if (!actorResponse.isHealthy() || healthChecks.isEmpty()) {
+                        return actorResponse;
+                    }
+                    for (HealthCheck healthCheck : healthChecks) {
+                        Map<String, Object> scopedContext = extractContext(context, healthCheck.contextId());
+                        HealthCheckResponse result = healthCheck.checkHealth(clusterName, jobIds, scopedContext);
+                        if (!result.isHealthy()) {
+                            return result;
+                        }
+                    }
+                    return actorResponse;
+                });
+    }
+
+    private static Map<String, Object> extractContext(Map<String, Object> context, String contextId) {
+        if (contextId == null || contextId.isEmpty()) {
+            return context;
+        }
+        String prefix = contextId + ".";
+        Map<String, Object> scoped = new HashMap<>();
+        for (Map.Entry<String, Object> entry : context.entrySet()) {
+            if (entry.getKey().startsWith(prefix)) {
+                scoped.put(entry.getKey().substring(prefix.length()), entry.getValue());
             }
-            return HealthCheckResponse.healthy(0L);
-        });
+        }
+        return scoped;
     }
 }

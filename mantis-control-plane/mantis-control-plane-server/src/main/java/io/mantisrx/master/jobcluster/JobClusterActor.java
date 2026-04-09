@@ -61,8 +61,11 @@ import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
+import io.mantisrx.master.jobcluster.proto.HealthCheckResponse;
+import io.mantisrx.master.jobcluster.proto.HealthCheckResponse.FailedWorker;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterRequest;
@@ -118,6 +121,7 @@ import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
 import io.mantisrx.master.jobcluster.scaler.JobClusterScalerRuleDataFactory;
 import io.mantisrx.master.jobcluster.scaler.JobClusterScalerRuleDataImplWritable;
 import io.mantisrx.runtime.JobSla;
+import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.InvalidJobRequestException;
@@ -617,6 +621,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         new EnableJobClusterResponse(x.requestId, SUCCESS, genUnexpectedMsg(x.toString(),
                                 this.name, state)), getSelf()))
                 .match(GetJobClusterRequest.class, this::onJobClusterGet)
+                .match(HealthCheckRequest.class, this::onHealthCheck)
                 .match(JobClusterProto.DeleteJobClusterRequest.class, this::onJobClusterDelete)
                 .match(ListArchivedWorkersRequest.class, this::onListArchivedWorkers)
                 .match(ListCompletedJobsInClusterRequest.class, this::onJobListCompleted)
@@ -1359,6 +1364,79 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             sender.tell(new GetJobClusterResponse(request.requestId, CLIENT_ERROR, "Cluster Name " + request.getJobClusterName() + " in request Does not match cluster Name " + this.name + " of Job Cluster Actor", Optional.empty()), getSelf());
         }
         if(logger.isTraceEnabled()) { logger.trace("Exit onJobClusterGet"); }
+    }
+
+    public void onHealthCheck(final HealthCheckRequest request) {
+        final ActorRef sender = getSender();
+        final ActorRef self = getSelf();
+        Duration timeout = Duration.ofMillis(500);
+
+        List<JobInfo> jobInfoList;
+        if (request.getJobIds() != null && !request.getJobIds().isEmpty()) {
+            jobInfoList = request.getJobIds().stream()
+                    .map(id -> JobId.fromId(id))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(jId -> jobManager.getJobInfoForNonTerminalJob(jId))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toList());
+        } else {
+            jobInfoList = jobManager.getAllNonTerminalJobsList();
+            if (jobInfoList.size() > 1) {
+                jobInfoList = jobInfoList.subList(0, 1);
+            }
+        }
+
+        if (jobInfoList.isEmpty()) {
+            sender.tell(HealthCheckResponse.healthy(request.requestId), self);
+            return;
+        }
+
+        List<FailedWorker> failedWorkers = new ArrayList<>();
+        Observable.from(jobInfoList)
+                .flatMap(jInfo -> {
+                    GetJobDetailsRequest req = new GetJobDetailsRequest("healthcheck", jInfo.jobId);
+                    CompletionStage<GetJobDetailsResponse> respCS = ask(jInfo.jobActor, req, timeout)
+                            .thenApply(GetJobDetailsResponse.class::cast);
+                    return Observable.from(respCS.toCompletableFuture(), Schedulers.io())
+                            .onErrorResumeNext(ex -> {
+                                logger.warn("Health check failed to get job details for {}", jInfo.jobId, ex);
+                                return Observable.empty();
+                            });
+                })
+                .filter(resp -> resp != null && resp.getJobMetadata().isPresent())
+                .map(resp -> new MantisJobMetadataView(resp.getJobMetadata().get(),
+                        Collections.emptyList(), Collections.emptyList(),
+                        Collections.emptyList(), Collections.emptyList(), false))
+                .doOnNext(view -> {
+                    if (view.getWorkerMetadataList() != null) {
+                        for (var worker : view.getWorkerMetadataList()) {
+                            if (worker.getState() != MantisJobState.Started) {
+                                failedWorkers.add(new FailedWorker(
+                                        worker.getWorkerIndex(),
+                                        worker.getWorkerNumber(),
+                                        worker.getState().name()));
+                            }
+                        }
+                    }
+                })
+                .toList()
+                .subscribeOn(Schedulers.computation())
+                .subscribe(
+                        views -> {
+                            if (failedWorkers.isEmpty()) {
+                                sender.tell(HealthCheckResponse.healthy(request.requestId), self);
+                            } else {
+                                sender.tell(HealthCheckResponse.unhealthyWorkers(request.requestId, failedWorkers), self);
+                            }
+                        },
+                        error -> {
+                            logger.error("Health check failed for cluster {}", name, error);
+                            sender.tell(new HealthCheckResponse(request.requestId, SERVER_ERROR,
+                                    "Health check failed: " + error.getMessage(), false, null), self);
+                        }
+                );
     }
 
     private MantisJobClusterMetadataView generateJobClusterMetadataView(IJobClusterMetadata jobClusterMetadata, boolean isDisabled, boolean cronActive) {
