@@ -64,7 +64,7 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
-import io.mantisrx.master.jobcluster.HealthCheck;
+import io.mantisrx.master.jobcluster.HealthCheckExtension;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import java.util.List;
 import java.util.Objects;
@@ -97,7 +97,7 @@ public class MasterApiAkkaService extends BaseService {
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
     private final HttpsConnectionContext httpsConnectionContext;
-    private final List<HealthCheck> healthChecks;
+    private final List<HealthCheckExtension> healthCheckExtensions;
 
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
@@ -162,7 +162,7 @@ public class MasterApiAkkaService extends BaseService {
                                 final LifecycleEventPublisher lifecycleEventPublisher,
                                 final ILeadershipManager leadershipManager,
                                 final HttpsConnectionContext httpsConnectionContext,
-                                final List<HealthCheck> healthChecks) {
+                                final List<HealthCheckExtension> healthCheckExtensions) {
         super(true);
         Preconditions.checkNotNull(masterMonitor, "MasterMonitor");
         Preconditions.checkNotNull(masterDescription, "masterDescription");
@@ -181,7 +181,7 @@ public class MasterApiAkkaService extends BaseService {
         this.storageProvider = mantisStorageProvider;
         this.lifecycleEventPublisher = lifecycleEventPublisher;
         this.leadershipManager = leadershipManager;
-        this.healthChecks = Objects.requireNonNullElseGet(healthChecks, List::of);
+        this.healthCheckExtensions = Objects.requireNonNullElseGet(healthCheckExtensions, List::of);
         this.system = ActorSystem.create("MasterApiActorSystem");
         this.materializer = Materializer.createMaterializer(system);
         this.mantisMasterRoute = configureApiRoutes(this.system);
@@ -203,7 +203,7 @@ public class MasterApiAkkaService extends BaseService {
 
     private MantisMasterRoute configureApiRoutes(final ActorSystem actorSystem) {
         // Setup API routes
-        final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, this.healthChecks);
+        final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, this.healthCheckExtensions);
         final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor);
 
         final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(masterDescription);

@@ -813,9 +813,7 @@ public class JobClustersRoute extends BaseRoute {
 
             return completeAsync(
                 response,
-                resp -> complete(
-                    resp.isHealthy() ? StatusCodes.OK : StatusCodes.SERVICE_UNAVAILABLE,
-                    resp, Jackson.marshaller()),
+                resp -> complete(StatusCodes.OK, resp, Jackson.marshaller()),
                 HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_HEALTHCHECK,
                 HttpRequestMetrics.HttpVerb.GET
             );

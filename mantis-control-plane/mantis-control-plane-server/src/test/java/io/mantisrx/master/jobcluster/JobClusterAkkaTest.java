@@ -91,6 +91,7 @@ import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.master.jobcluster.proto.HealthCheckResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterArtifactRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterLabelsRequest;
@@ -3377,6 +3378,133 @@ public class JobClusterAkkaTest {
         //TODO
     }
 
+    // HEALTH CHECK TESTS //////////////////////////////////////////////////////////////////////////
 
+    @Test
+    public void testHealthCheckAllWorkersStarted() {
+        try {
+            TestKit probe = new TestKit(system);
+            String clusterName = "testHealthCheckAllWorkersStarted";
+            MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+            MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+            String jobId = clusterName + "-1";
+            JobDefinition jobDefn = createJob(clusterName);
+
+            final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
+            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
+            jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
+            JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+            assertEquals(SUCCESS, createResp.responseCode);
+
+            JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn, jobId);
+            JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
+            JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobClusterActor, jobId, 1, new WorkerId(clusterName, jobId, 0, 1));
+            JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Launched);
+
+            jobClusterActor.tell(new JobClusterManagerProto.HealthCheckRequest(clusterName, null), probe.getRef());
+            HealthCheckResponse healthResp = probe.expectMsgClass(HealthCheckResponse.class);
+
+            assertTrue(healthResp.isHealthy());
+            assertEquals(SUCCESS, healthResp.responseCode);
+            assertNull(healthResp.getFailureReason());
+
+            probe.getSystem().stop(jobClusterActor);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+
+    @Test
+    public void testHealthCheckWithUnstartedWorkers() {
+        try {
+            TestKit probe = new TestKit(system);
+            String clusterName = "testHealthCheckWithUnstartedWorkers";
+            MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+            MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+            String jobId = clusterName + "-1";
+            JobDefinition jobDefn = createJob(clusterName);
+
+            final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
+            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
+            jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
+            JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+            assertEquals(SUCCESS, createResp.responseCode);
+
+            JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn, jobId);
+            JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
+
+            jobClusterActor.tell(new JobClusterManagerProto.HealthCheckRequest(clusterName, null), probe.getRef());
+            HealthCheckResponse healthResp = probe.expectMsgClass(HealthCheckResponse.class);
+
+            assertFalse(healthResp.isHealthy());
+            assertEquals(SERVER_ERROR, healthResp.responseCode);
+            assertNotNull(healthResp.getFailureReason());
+            assertTrue(healthResp.getFailureReason() instanceof HealthCheckResponse.WorkerFailure);
+
+            HealthCheckResponse.WorkerFailure workerFailure =
+                    (HealthCheckResponse.WorkerFailure) healthResp.getFailureReason();
+            assertFalse(workerFailure.failedWorkers().isEmpty());
+
+            probe.getSystem().stop(jobClusterActor);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+
+    @Test
+    public void testHealthCheckWithJobIdFilter() {
+        try {
+            TestKit probe = new TestKit(system);
+            String clusterName = "testHealthCheckWithJobIdFilter";
+            MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+            MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+            String jobId = clusterName + "-1";
+            JobDefinition jobDefn = createJob(clusterName);
+
+            final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
+            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher, costsCalculator, 0));
+            jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
+            JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+            assertEquals(SUCCESS, createResp.responseCode);
+
+            JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn, jobId);
+            JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobClusterActor, jobId, 1, new WorkerId(clusterName, jobId, 0, 1));
+
+            jobClusterActor.tell(new JobClusterManagerProto.HealthCheckRequest(clusterName, ImmutableList.of(jobId)), probe.getRef());
+            HealthCheckResponse healthResp = probe.expectMsgClass(HealthCheckResponse.class);
+
+            assertTrue(healthResp.isHealthy());
+            assertEquals(SUCCESS, healthResp.responseCode);
+
+            probe.getSystem().stop(jobClusterActor);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+
+    @Test
+    public void testHealthCheckNoActiveJobs() throws Exception {
+        TestKit probe = new TestKit(system);
+        String clusterName = "testHealthCheckNoActiveJobs";
+        MantisSchedulerFactory schedulerMock = mock(MantisSchedulerFactory.class);
+        MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+        final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMock, eventPublisher, costsCalculator, 0));
+        jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
+        JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+        assertEquals(SUCCESS, createResp.responseCode);
+
+        jobClusterActor.tell(new JobClusterManagerProto.HealthCheckRequest(clusterName, null), probe.getRef());
+        HealthCheckResponse healthResp = probe.expectMsgClass(HealthCheckResponse.class);
+
+        assertTrue(healthResp.isHealthy());
+        assertEquals(SUCCESS, healthResp.responseCode);
+
+        probe.getSystem().stop(jobClusterActor);
+    }
 
 }

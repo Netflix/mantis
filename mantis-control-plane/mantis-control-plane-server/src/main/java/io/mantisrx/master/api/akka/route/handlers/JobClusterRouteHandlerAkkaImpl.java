@@ -23,7 +23,7 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
-import io.mantisrx.master.jobcluster.HealthCheck;
+import io.mantisrx.master.jobcluster.HealthCheckExtension;
 import io.mantisrx.master.jobcluster.proto.HealthCheckResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
@@ -45,15 +45,15 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     private final ActorRef jobClustersManagerActor;
     private final Counter allJobClustersGET;
     private final Duration timeout;
-    private final List<HealthCheck> healthChecks;
+    private final List<HealthCheckExtension> healthCheckExtensions;
 
     public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor) {
         this(jobClusterManagerActor, List.of());
     }
 
-    public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor, List<HealthCheck> healthChecks) {
+    public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor, List<HealthCheckExtension> healthCheckExtensions) {
         this.jobClustersManagerActor = jobClusterManagerActor;
-        this.healthChecks = healthChecks;
+        this.healthCheckExtensions = healthCheckExtensions;
         long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
         this.timeout = Duration.ofMillis(timeoutMs);
         Metrics m = new Metrics.Builder()
@@ -198,13 +198,13 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
         return ask(jobClustersManagerActor, request, timeout)
                 .thenApply(HealthCheckResponse.class::cast)
                 .thenApply(actorResponse -> {
-                    if (!actorResponse.isHealthy() || healthChecks.isEmpty()) {
+                    if (!actorResponse.isHealthy() || healthCheckExtensions.isEmpty()) {
                         return actorResponse;
                     }
 
-                    for (HealthCheck healthCheck : healthChecks) {
-                        Map<String, Object> scopedContext = extractContext(context, healthCheck.contextId());
-                        HealthCheckResponse result = healthCheck.checkHealth(clusterName, jobIds, scopedContext);
+                    for (HealthCheckExtension healthCheckExtension : healthCheckExtensions) {
+                        Map<String, Object> scopedContext = extractContext(context, healthCheckExtension.contextId());
+                        HealthCheckResponse result = healthCheckExtension.checkHealth(clusterName, jobIds, scopedContext);
                         if (!result.isHealthy()) {
                             return result;
                         }

@@ -18,6 +18,7 @@ package io.mantisrx.master.api.akka.route.v1;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -155,6 +156,8 @@ public class JobClustersRouteTest extends RouteTestBase {
         testJobClustersDelete();
         testJobClustersPut();
         testJobClusterInstanceGET();
+        testJobClusterHealthCheck();
+        testJobClusterHealthCheckNonExistent();
         testNonExistentJobClusterInstanceGET();
         testJobClusterInstancePOSTNotAllowed();
         testJobClusterInstanceValidUpdate();
@@ -677,6 +680,29 @@ public class JobClustersRouteTest extends RouteTestBase {
 
     private void testJobClusterActionDisableDELETENotAllowed() throws InterruptedException {
         testDelete(getJobClusterDisableEp(JobClusterPayloads.CLUSTER_NAME), StatusCodes.METHOD_NOT_ALLOWED, null);
+    }
+
+    private void testJobClusterHealthCheck() throws InterruptedException {
+        testGet(
+                getJobClusterInstanceEndpoint(JobClusterPayloads.CLUSTER_NAME) + "/healthcheck",
+                StatusCodes.OK,
+                response -> {
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode node = mapper.readTree(response);
+                        assertTrue("Expected 'healthy' field in response: " + response, node.has("healthy"));
+                        assertTrue(node.get("healthy").asBoolean());
+                    } catch (IOException e) {
+                        fail("Failed to parse health check response: " + e.getMessage());
+                    }
+                });
+    }
+
+    private void testJobClusterHealthCheckNonExistent() throws InterruptedException {
+        testGet(
+                getJobClusterInstanceEndpoint("nonExistentCluster") + "/healthcheck",
+                StatusCodes.NOT_FOUND,
+                null);
     }
 
     private void testJobClusterDeleteWithoutRequiredParam() throws InterruptedException {

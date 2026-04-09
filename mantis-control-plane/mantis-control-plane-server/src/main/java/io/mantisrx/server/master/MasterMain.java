@@ -36,7 +36,7 @@ import io.mantisrx.master.JobClustersManagerService;
 import io.mantisrx.master.api.akka.MasterApiAkkaService;
 import io.mantisrx.master.events.AuditEventBrokerActor;
 import io.mantisrx.master.events.AuditEventSubscriber;
-import io.mantisrx.master.jobcluster.HealthCheck;
+import io.mantisrx.master.jobcluster.HealthCheckExtension;
 import java.util.List;
 import io.mantisrx.master.events.AuditEventSubscriberAkkaImpl;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
@@ -105,7 +105,7 @@ public class MasterMain implements Service {
     private MasterConfiguration config;
     private ILeadershipManager leadershipManager;
     private MasterMonitor monitor;
-    private final List<HealthCheck> healthChecks;
+    private final List<HealthCheckExtension> healthCheckExtensions;
 
     public MasterMain(
         ConfigurationFactory configFactory,
@@ -118,8 +118,8 @@ public class MasterMain implements Service {
         ConfigurationFactory configFactory,
         MantisPropertiesLoader dynamicPropertiesLoader,
         AuditEventSubscriber auditEventSubscriber,
-        List<HealthCheck> healthChecks) {
-        this.healthChecks = healthChecks == null ? List.of() : healthChecks;
+        List<HealthCheckExtension> healthCheckExtensions) {
+        this.healthCheckExtensions = healthCheckExtensions == null ? List.of() : healthCheckExtensions;
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
 
         Metrics metrics = new Metrics.Builder()
@@ -229,7 +229,7 @@ public class MasterMain implements Service {
             monitor.start();
             mantisServices.addService(leaderFactory.createLeaderElector(config, leadershipManager));
             mantisServices.addService(new MasterApiAkkaService(monitor, leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, null, healthChecks));
+                resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, null, healthCheckExtensions));
 
             if (leaderFactory instanceof LocalLeaderFactory && !config.isLocalMode()) {
                 logger.error("local mode is [ {} ] and leader factory is {} this configuration is unsafe", config.isLocalMode(), leaderFactory.getClass().getSimpleName());

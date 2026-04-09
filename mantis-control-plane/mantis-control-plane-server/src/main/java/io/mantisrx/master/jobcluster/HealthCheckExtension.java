@@ -28,7 +28,7 @@ import java.util.Map;
  * The handler extracts query params prefixed with this ID (e.g., {@code alertSystem.names})
  * and passes them to the check with the prefix stripped.
  */
-public interface HealthCheck {
+public interface HealthCheckExtension {
 
     /**
      * Namespace prefix for context parameters belonging to this health check.
