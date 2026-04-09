@@ -56,15 +56,14 @@ import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
-import io.mantisrx.master.jobcluster.proto.HealthCheckResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.runtime.NamedJobDefinition;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
-import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.util.Arrays;
-import java.util.HashMap;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -808,8 +807,7 @@ public class JobClustersRoute extends BaseRoute {
                 ? Arrays.asList(jobIdsParam.split(","))
                 : null;
 
-            Map<String, Object> context = new HashMap<>(params);
-            CompletionStage<HealthCheckResponse> response = jobClusterRouteHandler.healthCheck(clusterName, jobIds, context);
+            CompletionStage<JobClusterProto.HealthCheckResponse> response = jobClusterRouteHandler.healthCheck(clusterName, jobIds);
 
             return completeAsync(
                 response,

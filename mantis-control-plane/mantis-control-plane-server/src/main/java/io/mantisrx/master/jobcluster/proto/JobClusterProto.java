@@ -21,10 +21,13 @@ import akka.actor.ActorRef;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;
+import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Instant;
 import java.util.List;
@@ -276,5 +279,51 @@ public class JobClusterProto {
         }
 
     }
+
+    public static final class HealthCheckResponse extends BaseResponse {
+
+        public final boolean isHealthy;
+        public final FailureReason failureReason;
+
+        public HealthCheckResponse(long requestId, ResponseCode responseCode, String message, boolean isHealthy, FailureReason failureReason) {
+            super(requestId, responseCode, message);
+            this.isHealthy = isHealthy;
+            this.failureReason = failureReason;
+        }
+
+        public HealthCheckResponse(ResponseCode responseCode, String message, boolean isHealthy, FailureReason failureReason) {
+            this(0, responseCode, message, isHealthy, failureReason);
+        }
+    }
+
+    public static HealthCheckResponse healthy(long requestId) {
+        return new HealthCheckResponse(
+            requestId, ResponseCode.SUCCESS, "OK", true, null);
+    }
+
+    public static HealthCheckResponse unhealthyWorkers(long requestId, List<FailedWorker> failedWorkers) {
+        return new HealthCheckResponse(
+            requestId, ResponseCode.SERVER_ERROR, "unhealthy workers", false,
+            new WorkerFailure(failedWorkers));
+    }
+
+    public static HealthCheckResponse unhealthyAlerts(long requestId, List<String> alerts) {
+        return new HealthCheckResponse(
+            requestId, ResponseCode.SERVER_ERROR, "alerts firing", false,
+            new AlertFailure(alerts));
+    }
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = WorkerFailure.class, name = "workerStatus"),
+        @JsonSubTypes.Type(value = AlertFailure.class, name = "alertsFiring")
+    })
+    public sealed interface FailureReason permits WorkerFailure, AlertFailure {}
+
+    public record WorkerFailure(List<FailedWorker> failedWorkers) implements FailureReason {}
+
+    public record AlertFailure(List<String> alerts) implements FailureReason {}
+
+    public record FailedWorker(int workerIndex, int workerNumber, String state) {}
 
 }

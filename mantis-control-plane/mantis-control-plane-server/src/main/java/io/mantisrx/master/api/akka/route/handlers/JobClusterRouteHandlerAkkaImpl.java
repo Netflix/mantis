@@ -23,17 +23,14 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
-import io.mantisrx.master.jobcluster.HealthCheckExtension;
-import io.mantisrx.master.jobcluster.proto.HealthCheckResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
@@ -45,15 +42,8 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     private final ActorRef jobClustersManagerActor;
     private final Counter allJobClustersGET;
     private final Duration timeout;
-    private final List<HealthCheckExtension> healthCheckExtensions;
-
     public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor) {
-        this(jobClusterManagerActor, List.of());
-    }
-
-    public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor, List<HealthCheckExtension> healthCheckExtensions) {
         this.jobClustersManagerActor = jobClusterManagerActor;
-        this.healthCheckExtensions = healthCheckExtensions;
         long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
         this.timeout = Duration.ofMillis(timeoutMs);
         Metrics m = new Metrics.Builder()
@@ -190,43 +180,12 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     }
 
     @Override
-    public CompletionStage<HealthCheckResponse> healthCheck(
-            String clusterName, List<String> jobIds, Map<String, Object> context) {
+    public CompletionStage<JobClusterProto.HealthCheckResponse> healthCheck(
+            String clusterName, List<String> jobIds) {
         JobClusterManagerProto.HealthCheckRequest request =
                 new JobClusterManagerProto.HealthCheckRequest(clusterName, jobIds);
 
         return ask(jobClustersManagerActor, request, timeout)
-                .thenApply(HealthCheckResponse.class::cast)
-                .thenApply(actorResponse -> {
-                    if (!actorResponse.isHealthy() || healthCheckExtensions.isEmpty()) {
-                        return actorResponse;
-                    }
-
-                    for (HealthCheckExtension healthCheckExtension : healthCheckExtensions) {
-                        Map<String, Object> scopedContext = extractContext(context, healthCheckExtension.contextId());
-                        HealthCheckResponse result = healthCheckExtension.checkHealth(clusterName, jobIds, scopedContext);
-                        if (!result.isHealthy()) {
-                            return result;
-                        }
-                    }
-
-                    return actorResponse;
-                });
-    }
-
-    private static Map<String, Object> extractContext(Map<String, Object> context, String contextId) {
-        if (contextId == null || contextId.isEmpty()) {
-            return context;
-        }
-
-        String prefix = contextId + ".";
-        Map<String, Object> scoped = new HashMap<>();
-        for (Map.Entry<String, Object> entry : context.entrySet()) {
-            if (entry.getKey().startsWith(prefix)) {
-                scoped.put(entry.getKey().substring(prefix.length()), entry.getValue());
-            }
-        }
-
-        return scoped;
+                .thenApply(JobClusterProto.HealthCheckResponse.class::cast);
     }
 }

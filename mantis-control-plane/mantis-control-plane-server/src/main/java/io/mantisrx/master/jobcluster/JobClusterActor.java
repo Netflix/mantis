@@ -62,8 +62,7 @@ import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
-import io.mantisrx.master.jobcluster.proto.HealthCheckResponse;
-import io.mantisrx.master.jobcluster.proto.HealthCheckResponse.FailedWorker;
+import io.mantisrx.master.jobcluster.proto.JobClusterProto.FailedWorker;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckRequest;
@@ -2669,14 +2668,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .subscribe(
                         failedWorkers -> {
                             if (failedWorkers.isEmpty()) {
-                                sender.tell(HealthCheckResponse.healthy(request.requestId), self);
+                                sender.tell(JobClusterProto.healthy(request.requestId), self);
                             } else {
-                                sender.tell(HealthCheckResponse.unhealthyWorkers(request.requestId, failedWorkers), self);
+                                sender.tell(JobClusterProto.unhealthyWorkers(request.requestId, failedWorkers), self);
                             }
                         },
                         error -> {
                             logger.error("Health check failed for cluster {}", name, error);
-                            sender.tell(new HealthCheckResponse(request.requestId, SERVER_ERROR,
+                            sender.tell(new JobClusterProto.HealthCheckResponse(request.requestId, SERVER_ERROR,
                                     "Health check failed: " + error.getMessage(), false, null), self);
                         }
                 );
