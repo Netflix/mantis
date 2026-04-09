@@ -42,6 +42,7 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     private final ActorRef jobClustersManagerActor;
     private final Counter allJobClustersGET;
     private final Duration timeout;
+
     public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor) {
         this.jobClustersManagerActor = jobClusterManagerActor;
         long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
@@ -180,12 +181,8 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     }
 
     @Override
-    public CompletionStage<JobClusterProto.HealthCheckResponse> healthCheck(
-            String clusterName, List<String> jobIds) {
-        JobClusterManagerProto.HealthCheckRequest request =
-                new JobClusterManagerProto.HealthCheckRequest(clusterName, jobIds);
-
-        return ask(jobClustersManagerActor, request, timeout)
-                .thenApply(JobClusterProto.HealthCheckResponse.class::cast);
+    public CompletionStage<JobClusterProto.HealthCheckResponse> healthCheck(String clusterName, List<String> jobIds) {
+        JobClusterManagerProto.HealthCheckRequest request = new JobClusterManagerProto.HealthCheckRequest(clusterName, jobIds);
+        return ask(jobClustersManagerActor, request, timeout).thenApply(JobClusterProto.HealthCheckResponse.class::cast);
     }
 }

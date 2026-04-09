@@ -119,6 +119,7 @@ public class MasterApiAkkaService extends BaseService {
             null
         );
     }
+
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
                                 final ActorRef jobClustersManagerActor,

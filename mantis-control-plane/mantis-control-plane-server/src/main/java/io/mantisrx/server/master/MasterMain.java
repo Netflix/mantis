@@ -36,8 +36,6 @@ import io.mantisrx.master.JobClustersManagerService;
 import io.mantisrx.master.api.akka.MasterApiAkkaService;
 import io.mantisrx.master.events.AuditEventBrokerActor;
 import io.mantisrx.master.events.AuditEventSubscriber;
-
-
 import io.mantisrx.master.events.AuditEventSubscriberAkkaImpl;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -105,6 +103,7 @@ public class MasterMain implements Service {
     private MasterConfiguration config;
     private ILeadershipManager leadershipManager;
     private MasterMonitor monitor;
+
     public MasterMain(
         ConfigurationFactory configFactory,
         MantisPropertiesLoader dynamicPropertiesLoader,

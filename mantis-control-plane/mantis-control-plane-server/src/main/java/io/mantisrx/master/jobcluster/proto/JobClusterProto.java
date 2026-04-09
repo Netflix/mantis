@@ -290,10 +290,6 @@ public class JobClusterProto {
             this.isHealthy = isHealthy;
             this.failureReason = failureReason;
         }
-
-        public HealthCheckResponse(ResponseCode responseCode, String message, boolean isHealthy, FailureReason failureReason) {
-            this(0, responseCode, message, isHealthy, failureReason);
-        }
     }
 
     public static HealthCheckResponse healthy(long requestId) {
@@ -307,22 +303,13 @@ public class JobClusterProto {
             new WorkerFailure(failedWorkers));
     }
 
-    public static HealthCheckResponse unhealthyAlerts(long requestId, List<String> alerts) {
-        return new HealthCheckResponse(
-            requestId, ResponseCode.SERVER_ERROR, "alerts firing", false,
-            new AlertFailure(alerts));
-    }
-
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
     @JsonSubTypes({
         @JsonSubTypes.Type(value = WorkerFailure.class, name = "workerStatus"),
-        @JsonSubTypes.Type(value = AlertFailure.class, name = "alertsFiring")
     })
-    public sealed interface FailureReason permits WorkerFailure, AlertFailure {}
+    public sealed interface FailureReason permits WorkerFailure {}
 
     public record WorkerFailure(List<FailedWorker> failedWorkers) implements FailureReason {}
-
-    public record AlertFailure(List<String> alerts) implements FailureReason {}
 
     public record FailedWorker(int workerIndex, int workerNumber, String state) {}
 

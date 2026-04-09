@@ -808,7 +808,6 @@ public class JobClustersRoute extends BaseRoute {
                 : null;
 
             CompletionStage<JobClusterProto.HealthCheckResponse> response = jobClusterRouteHandler.healthCheck(clusterName, jobIds);
-
             return completeAsync(
                 response,
                 resp -> complete(StatusCodes.OK, resp, Jackson.marshaller()),
