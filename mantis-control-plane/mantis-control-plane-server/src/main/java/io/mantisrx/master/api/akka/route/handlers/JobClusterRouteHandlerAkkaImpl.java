@@ -194,12 +194,14 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
             String clusterName, List<String> jobIds, Map<String, Object> context) {
         JobClusterManagerProto.HealthCheckRequest request =
                 new JobClusterManagerProto.HealthCheckRequest(clusterName, jobIds);
+
         return ask(jobClustersManagerActor, request, timeout)
                 .thenApply(HealthCheckResponse.class::cast)
                 .thenApply(actorResponse -> {
                     if (!actorResponse.isHealthy() || healthChecks.isEmpty()) {
                         return actorResponse;
                     }
+
                     for (HealthCheck healthCheck : healthChecks) {
                         Map<String, Object> scopedContext = extractContext(context, healthCheck.contextId());
                         HealthCheckResponse result = healthCheck.checkHealth(clusterName, jobIds, scopedContext);
@@ -207,6 +209,7 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
                             return result;
                         }
                     }
+
                     return actorResponse;
                 });
     }
@@ -215,6 +218,7 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
         if (contextId == null || contextId.isEmpty()) {
             return context;
         }
+
         String prefix = contextId + ".";
         Map<String, Object> scoped = new HashMap<>();
         for (Map.Entry<String, Object> entry : context.entrySet()) {
@@ -222,6 +226,7 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
                 scoped.put(entry.getKey().substring(prefix.length()), entry.getValue());
             }
         }
+
         return scoped;
     }
 }

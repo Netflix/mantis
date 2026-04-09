@@ -25,26 +25,27 @@ import java.util.Map;
  * list and executed sequentially — the chain stops at the first failure.
  *
  * <p>Each implementation declares a {@link #contextId()} that acts as a namespace prefix.
- * The handler extracts query params prefixed with this ID (e.g., {@code radar.alertGroups})
+ * The handler extracts query params prefixed with this ID (e.g., {@code alertSystem.names})
  * and passes them to the check with the prefix stripped.
  */
 public interface HealthCheck {
 
     /**
      * Namespace prefix for context parameters belonging to this health check.
-     * For example, a check with contextId "radar" receives query params like
-     * {@code radar.alertGroups} as {@code alertGroups} in its context map.
+     * For example, a check with contextId "alertSystem" receives query params like
+     * {@code alertSystem.names} as {@code names} in its context map.
      *
-     * @return the context namespace, or empty string to receive unnamespaced params
+     * @return the context namespace.
      */
     String contextId();
 
     /**
      * Run a health check against the given job cluster.
      *
-     * @param clusterName the job cluster name
-     * @param jobIds specific job IDs to check, or empty to use the latest active job
-     * @param context parameters namespaced to this check (prefix already stripped)
+     * @param clusterName the job cluster name.
+     * @param jobIds specific job IDs to check. Used to overwrite the default behavior of checking all active jobs.
+     * @param context parameters namespaced to this check (prefix already stripped).
+     *
      * @return a healthy response, or an unhealthy response with the appropriate {@link
      *     HealthCheckResponse.FailureReason}
      */

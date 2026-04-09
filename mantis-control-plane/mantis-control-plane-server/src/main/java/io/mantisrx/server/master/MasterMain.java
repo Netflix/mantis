@@ -119,7 +119,7 @@ public class MasterMain implements Service {
         MantisPropertiesLoader dynamicPropertiesLoader,
         AuditEventSubscriber auditEventSubscriber,
         List<HealthCheck> healthChecks) {
-        this.healthChecks = healthChecks != null ? healthChecks : List.of();
+        this.healthChecks = healthChecks == null ? List.of() : healthChecks;
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
 
         Metrics metrics = new Metrics.Builder()

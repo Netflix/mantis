@@ -565,15 +565,6 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         }
     }
 
-    public void onHealthCheck(HealthCheckRequest r) {
-        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(r.getClusterName());
-        ActorRef sender = getSender();
-        if (jobClusterInfo.isPresent()) {
-            jobClusterInfo.get().jobClusterActor.forward(r, getContext());
-        } else {
-            sender.tell(new HealthCheckResponse(r.requestId, CLIENT_ERROR_NOT_FOUND, "No such Job cluster " + r.getClusterName(), false, null), getSelf());
-        }
-    }
     @Override
     public void onGetLastSubmittedJobIdSubject(GetLastSubmittedJobIdStreamRequest r) {
         Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(r.getClusterName());
@@ -675,6 +666,17 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                     .message(String.format("JobCluster %s doesn't exist", request.getJobId().getCluster()))
                     .build(),
                 getSelf());
+        }
+    }
+
+    public void onHealthCheck(HealthCheckRequest request) {
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getClusterName());
+
+        if (jobClusterInfo.isPresent()) {
+            jobClusterInfo.get().jobClusterActor.forward(request, getContext());
+        } else {
+            ActorRef sender = getSender();
+            sender.tell(new HealthCheckResponse(request.requestId, CLIENT_ERROR_NOT_FOUND, "No such Job cluster " + request.getClusterName(), false, null), getSelf());
         }
     }
 

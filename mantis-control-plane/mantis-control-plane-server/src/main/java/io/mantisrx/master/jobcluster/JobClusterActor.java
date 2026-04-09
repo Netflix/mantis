@@ -54,6 +54,7 @@ import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.job.CostsCalculator;
+import io.mantisrx.master.jobcluster.job.FilterableMantisWorkerMetadataWritable;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobActor;
 import io.mantisrx.master.jobcluster.job.JobHelper;
@@ -1366,79 +1367,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(logger.isTraceEnabled()) { logger.trace("Exit onJobClusterGet"); }
     }
 
-    public void onHealthCheck(final HealthCheckRequest request) {
-        final ActorRef sender = getSender();
-        final ActorRef self = getSelf();
-        Duration timeout = Duration.ofMillis(500);
-
-        List<JobInfo> jobInfoList;
-        if (request.getJobIds() != null && !request.getJobIds().isEmpty()) {
-            jobInfoList = request.getJobIds().stream()
-                    .map(id -> JobId.fromId(id))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .map(jId -> jobManager.getJobInfoForNonTerminalJob(jId))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .collect(Collectors.toList());
-        } else {
-            jobInfoList = jobManager.getAllNonTerminalJobsList();
-            if (jobInfoList.size() > 1) {
-                jobInfoList = jobInfoList.subList(0, 1);
-            }
-        }
-
-        if (jobInfoList.isEmpty()) {
-            sender.tell(HealthCheckResponse.healthy(request.requestId), self);
-            return;
-        }
-
-        List<FailedWorker> failedWorkers = new ArrayList<>();
-        Observable.from(jobInfoList)
-                .flatMap(jInfo -> {
-                    GetJobDetailsRequest req = new GetJobDetailsRequest("healthcheck", jInfo.jobId);
-                    CompletionStage<GetJobDetailsResponse> respCS = ask(jInfo.jobActor, req, timeout)
-                            .thenApply(GetJobDetailsResponse.class::cast);
-                    return Observable.from(respCS.toCompletableFuture(), Schedulers.io())
-                            .onErrorResumeNext(ex -> {
-                                logger.warn("Health check failed to get job details for {}", jInfo.jobId, ex);
-                                return Observable.empty();
-                            });
-                })
-                .filter(resp -> resp != null && resp.getJobMetadata().isPresent())
-                .map(resp -> new MantisJobMetadataView(resp.getJobMetadata().get(),
-                        Collections.emptyList(), Collections.emptyList(),
-                        Collections.emptyList(), Collections.emptyList(), false))
-                .doOnNext(view -> {
-                    if (view.getWorkerMetadataList() != null) {
-                        for (var worker : view.getWorkerMetadataList()) {
-                            if (worker.getState() != MantisJobState.Started) {
-                                failedWorkers.add(new FailedWorker(
-                                        worker.getWorkerIndex(),
-                                        worker.getWorkerNumber(),
-                                        worker.getState().name()));
-                            }
-                        }
-                    }
-                })
-                .toList()
-                .subscribeOn(Schedulers.computation())
-                .subscribe(
-                        views -> {
-                            if (failedWorkers.isEmpty()) {
-                                sender.tell(HealthCheckResponse.healthy(request.requestId), self);
-                            } else {
-                                sender.tell(HealthCheckResponse.unhealthyWorkers(request.requestId, failedWorkers), self);
-                            }
-                        },
-                        error -> {
-                            logger.error("Health check failed for cluster {}", name, error);
-                            sender.tell(new HealthCheckResponse(request.requestId, SERVER_ERROR,
-                                    "Health check failed: " + error.getMessage(), false, null), self);
-                        }
-                );
-    }
-
     private MantisJobClusterMetadataView generateJobClusterMetadataView(IJobClusterMetadata jobClusterMetadata, boolean isDisabled, boolean cronActive) {
         return new MantisJobClusterMetadataView.Builder()
                 .withName(jobClusterMetadata.getJobClusterDefinition().getName())
@@ -2709,6 +2637,49 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if (logger.isTraceEnabled()) {
             logger.trace("Exit JCA:onJobScalerRuleStream {}", req);
         }
+    }
+
+    public void onHealthCheck(final HealthCheckRequest request) {
+        final ActorRef sender = getSender();
+        final ActorRef self = getSelf();
+
+        Set<JobId> prefilteredJobIds = new HashSet<>();
+        if (request.getJobIds() != null && !request.getJobIds().isEmpty()) {
+            request.getJobIds().stream()
+                    .map(JobId::fromId)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .forEach(prefilteredJobIds::add);
+        }
+
+        ListJobCriteria criteria = new ListJobCriteria();
+        getFilteredNonTerminalJobList(criteria, prefilteredJobIds)
+                .collect(Lists::<FailedWorker>newArrayList, (failedWorkers, view) -> {
+                    if (view.getWorkerMetadataList() != null) {
+                        for (FilterableMantisWorkerMetadataWritable worker : view.getWorkerMetadataList()) {
+                            if (worker.getState() != MantisJobState.Started) {
+                                failedWorkers.add(new FailedWorker(
+                                        worker.getWorkerIndex(),
+                                        worker.getWorkerNumber(),
+                                        worker.getState().name()));
+                            }
+                        }
+                    }
+                })
+                .subscribe(
+                        failedWorkers -> {
+                            if (failedWorkers.isEmpty()) {
+                                sender.tell(HealthCheckResponse.healthy(request.requestId), self);
+                            } else {
+                                sender.tell(HealthCheckResponse.unhealthyWorkers(request.requestId, failedWorkers), self);
+                            }
+                        },
+                        error -> {
+                            logger.error("Health check failed for cluster {}", name, error);
+                            sender.tell(new HealthCheckResponse(request.requestId, SERVER_ERROR,
+                                    "Health check failed: " + error.getMessage(), false, null), self);
+                        }
+                );
     }
 
     static final class JobInfo  {

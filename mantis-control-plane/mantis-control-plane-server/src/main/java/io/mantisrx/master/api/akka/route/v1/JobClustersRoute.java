@@ -788,29 +788,6 @@ public class JobClustersRoute extends BaseRoute {
         );
     }
 
-    private Route healthCheckRoute(String clusterName) {
-        logger.trace("GET /api/v1/jobClusters/{}/healthcheck called", clusterName);
-
-        return parameterMap(params -> {
-            String jobIdsParam = params.get("job-ids");
-            List<String> jobIds = (jobIdsParam != null && !jobIdsParam.isBlank())
-                    ? Arrays.asList(jobIdsParam.split(","))
-                    : null;
-
-            Map<String, Object> context = new HashMap<>(params);
-            CompletionStage<HealthCheckResponse> response = jobClusterRouteHandler.healthCheck(clusterName, jobIds, context);
-
-            return completeAsync(
-                    response,
-                    resp -> complete(
-                            resp.isHealthy() ? StatusCodes.OK : StatusCodes.SERVICE_UNAVAILABLE,
-                            resp, Jackson.marshaller()),
-                    HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_HEALTHCHECK,
-                    HttpRequestMetrics.HttpVerb.GET
-            );
-        });
-    }
-
     private Route deleteScalerRuleRoute(String clusterName, String ruleId) {
         logger.info("DELETE /api/v1/jobClusters/{}/scalerRules/{} called", clusterName, ruleId);
 
@@ -820,5 +797,28 @@ public class JobClustersRoute extends BaseRoute {
             HttpRequestMetrics.Endpoints.JOB_CLUSTER_SCALER_RULES,
             HttpRequestMetrics.HttpVerb.DELETE
         );
+    }
+
+    private Route healthCheckRoute(String clusterName) {
+        logger.trace("GET /api/v1/jobClusters/{}/healthcheck called", clusterName);
+
+        return parameterMap(params -> {
+            String jobIdsParam = params.get("job-ids");
+            List<String> jobIds = (jobIdsParam != null && !jobIdsParam.isBlank())
+                ? Arrays.asList(jobIdsParam.split(","))
+                : null;
+
+            Map<String, Object> context = new HashMap<>(params);
+            CompletionStage<HealthCheckResponse> response = jobClusterRouteHandler.healthCheck(clusterName, jobIds, context);
+
+            return completeAsync(
+                response,
+                resp -> complete(
+                    resp.isHealthy() ? StatusCodes.OK : StatusCodes.SERVICE_UNAVAILABLE,
+                    resp, Jackson.marshaller()),
+                HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_HEALTHCHECK,
+                HttpRequestMetrics.HttpVerb.GET
+            );
+        });
     }
 }

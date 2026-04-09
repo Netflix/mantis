@@ -883,37 +883,6 @@ public class JobClusterManagerProto {
         }
     }
 
-    public static final class HealthCheckRequest extends BaseRequest {
-        private final String clusterName;
-        private final List<String> jobIds;
-
-        public HealthCheckRequest(final String clusterName, final List<String> jobIds) {
-            super();
-            Preconditions.checkArg(
-                    clusterName != null && !clusterName.isEmpty(),
-                    "Cluster name cannot be null or empty");
-            this.clusterName = clusterName;
-            this.jobIds = jobIds;
-        }
-
-        public String getClusterName() {
-            return clusterName;
-        }
-
-        public List<String> getJobIds() {
-            return jobIds;
-        }
-
-        @Override
-        public String toString() {
-            return "HealthCheckRequest{" +
-                   "clusterName='" + clusterName + '\'' +
-                   ", jobIds=" + jobIds +
-                   ", requestId=" + requestId +
-                   '}';
-        }
-    }
-
     public static final class ListJobCriteria {
         private final Optional<Integer> limit;
         private final Optional<JobState.MetaState> jobState;
@@ -2284,5 +2253,34 @@ public class JobClusterManagerProto {
         }
     }
 
+    public static final class HealthCheckRequest extends BaseRequest {
+        private final String clusterName;
+        private final List<String> jobIds;
 
+        public HealthCheckRequest(final String clusterName, final List<String> jobIds) {
+            super();
+            Preconditions.checkArg(
+                clusterName != null && !clusterName.isEmpty(),
+                "Cluster name cannot be null or empty");
+            this.clusterName = clusterName;
+            this.jobIds = jobIds;
+        }
+
+        public String getClusterName() {
+            return clusterName;
+        }
+
+        public List<String> getJobIds() {
+            return jobIds;
+        }
+
+        @Override
+        public String toString() {
+            return "HealthCheckRequest{" +
+                "clusterName='" + clusterName + '\'' +
+                ", jobIds=" + jobIds +
+                ", requestId=" + requestId +
+                '}';
+        }
+    }
 }
