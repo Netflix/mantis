@@ -23,7 +23,7 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
-import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
@@ -181,8 +181,8 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     }
 
     @Override
-    public CompletionStage<JobClusterProto.HealthCheckResponse> healthCheck(String clusterName, List<String> jobIds) {
+    public CompletionStage<JobClusterManagerProto.HealthCheckResponse> healthCheck(String clusterName, List<String> jobIds) {
         JobClusterManagerProto.HealthCheckRequest request = new JobClusterManagerProto.HealthCheckRequest(clusterName, jobIds);
-        return ask(jobClustersManagerActor, request, timeout).thenApply(JobClusterProto.HealthCheckResponse.class::cast);
+        return ask(jobClustersManagerActor, request, timeout).thenApply(JobClusterManagerProto.HealthCheckResponse.class::cast);
     }
 }

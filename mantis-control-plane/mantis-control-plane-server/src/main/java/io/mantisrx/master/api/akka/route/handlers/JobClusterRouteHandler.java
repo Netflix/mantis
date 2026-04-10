@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
-import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
@@ -61,5 +61,5 @@ public interface JobClusterRouteHandler {
 
     CompletionStage<JobClusterScalerRuleProto.DeleteScalerRuleResponse> deleteScalerRule(JobClusterScalerRuleProto.DeleteScalerRuleRequest request);
 
-    CompletionStage<JobClusterProto.HealthCheckResponse> healthCheck(String clusterName, List<String> jobIds);
+    CompletionStage<JobClusterManagerProto.HealthCheckResponse> healthCheck(String clusterName, List<String> jobIds);
 }

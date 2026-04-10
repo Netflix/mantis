@@ -3401,11 +3401,11 @@ public class JobClusterAkkaTest {
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Launched);
 
             jobClusterActor.tell(new JobClusterManagerProto.HealthCheckRequest(clusterName, null), probe.getRef());
-            JobClusterProto.HealthCheckResponse healthResp = probe.expectMsgClass(JobClusterProto.HealthCheckResponse.class);
+            JobClusterManagerProto.HealthCheckResponse healthResp = probe.expectMsgClass(JobClusterManagerProto.HealthCheckResponse.class);
 
             assertTrue(healthResp.isHealthy);
             assertEquals(SUCCESS, healthResp.responseCode);
-            assertNull(healthResp.failureReason);
+            assertNull(healthResp.workerFailure);
 
             probe.getSystem().stop(jobClusterActor);
         } catch (Exception e) {
@@ -3434,16 +3434,12 @@ public class JobClusterAkkaTest {
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
 
             jobClusterActor.tell(new JobClusterManagerProto.HealthCheckRequest(clusterName, null), probe.getRef());
-            JobClusterProto.HealthCheckResponse healthResp = probe.expectMsgClass(JobClusterProto.HealthCheckResponse.class);
+            JobClusterManagerProto.HealthCheckResponse healthResp = probe.expectMsgClass(JobClusterManagerProto.HealthCheckResponse.class);
 
             assertFalse(healthResp.isHealthy);
             assertEquals(SERVER_ERROR, healthResp.responseCode);
-            assertNotNull(healthResp.failureReason);
-            assertTrue(healthResp.failureReason instanceof JobClusterProto.WorkerFailure);
-
-            JobClusterProto.WorkerFailure workerFailure =
-                    (JobClusterProto.WorkerFailure) healthResp.failureReason;
-            assertFalse(workerFailure.failedWorkers().isEmpty());
+            assertNotNull(healthResp.workerFailure);
+            assertFalse(healthResp.workerFailure.failedWorkers().isEmpty());
 
             probe.getSystem().stop(jobClusterActor);
         } catch (Exception e) {
@@ -3472,7 +3468,7 @@ public class JobClusterAkkaTest {
             JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobClusterActor, jobId, 1, new WorkerId(clusterName, jobId, 0, 1));
 
             jobClusterActor.tell(new JobClusterManagerProto.HealthCheckRequest(clusterName, ImmutableList.of(jobId)), probe.getRef());
-            JobClusterProto.HealthCheckResponse healthResp = probe.expectMsgClass(JobClusterProto.HealthCheckResponse.class);
+            JobClusterManagerProto.HealthCheckResponse healthResp = probe.expectMsgClass(JobClusterManagerProto.HealthCheckResponse.class);
 
             assertTrue(healthResp.isHealthy);
             assertEquals(SUCCESS, healthResp.responseCode);
@@ -3498,7 +3494,7 @@ public class JobClusterAkkaTest {
         assertEquals(SUCCESS, createResp.responseCode);
 
         jobClusterActor.tell(new JobClusterManagerProto.HealthCheckRequest(clusterName, null), probe.getRef());
-        JobClusterProto.HealthCheckResponse healthResp = probe.expectMsgClass(JobClusterProto.HealthCheckResponse.class);
+        JobClusterManagerProto.HealthCheckResponse healthResp = probe.expectMsgClass(JobClusterManagerProto.HealthCheckResponse.class);
 
         assertTrue(healthResp.isHealthy);
         assertEquals(SUCCESS, healthResp.responseCode);

@@ -279,38 +279,4 @@ public class JobClusterProto {
         }
 
     }
-
-    public static final class HealthCheckResponse extends BaseResponse {
-
-        public final boolean isHealthy;
-        public final FailureReason failureReason;
-
-        public HealthCheckResponse(long requestId, ResponseCode responseCode, String message, boolean isHealthy, FailureReason failureReason) {
-            super(requestId, responseCode, message);
-            this.isHealthy = isHealthy;
-            this.failureReason = failureReason;
-        }
-    }
-
-    public static HealthCheckResponse healthy(long requestId) {
-        return new HealthCheckResponse(
-            requestId, ResponseCode.SUCCESS, "OK", true, null);
-    }
-
-    public static HealthCheckResponse unhealthyWorkers(long requestId, List<FailedWorker> failedWorkers) {
-        return new HealthCheckResponse(
-            requestId, ResponseCode.SERVER_ERROR, "unhealthy workers", false,
-            new WorkerFailure(failedWorkers));
-    }
-
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-    @JsonSubTypes({
-        @JsonSubTypes.Type(value = WorkerFailure.class, name = "workerStatus"),
-    })
-    public sealed interface FailureReason permits WorkerFailure {}
-
-    public record WorkerFailure(List<FailedWorker> failedWorkers) implements FailureReason {}
-
-    public record FailedWorker(int workerIndex, int workerNumber, String state) {}
-
 }

@@ -62,7 +62,8 @@ import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
-import io.mantisrx.master.jobcluster.proto.JobClusterProto.FailedWorker;
+import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.FailedWorker;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckRequest;
@@ -113,8 +114,10 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClust
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.JobStartedEvent;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.WorkerFailure;
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
@@ -2668,14 +2671,23 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .subscribe(
                         failedWorkers -> {
                             if (failedWorkers.isEmpty()) {
-                                sender.tell(JobClusterProto.healthy(request.requestId), self);
+                                HealthCheckResponse response
+                                    = new HealthCheckResponse(request.requestId, ResponseCode.SUCCESS, "OK", true, null);
+                                sender.tell(response, self);
                             } else {
-                                sender.tell(JobClusterProto.unhealthyWorkers(request.requestId, failedWorkers), self);
+                                HealthCheckResponse response
+                                    = new HealthCheckResponse(
+                                        request.requestId,
+                                    ResponseCode.SERVER_ERROR,
+                                    "unhealthy workers",
+                                    false,
+                                    new WorkerFailure(failedWorkers));
+                                sender.tell(response, self);
                             }
                         },
                         error -> {
                             logger.error("Health check failed for cluster {}", name, error);
-                            sender.tell(new JobClusterProto.HealthCheckResponse(request.requestId, SERVER_ERROR,
+                            sender.tell(new JobClusterManagerProto.HealthCheckResponse(request.requestId, SERVER_ERROR,
                                     "Health check failed: " + error.getMessage(), false, null), self);
                         }
                 );

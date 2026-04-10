@@ -32,7 +32,7 @@ import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.job.CostsCalculator;
-import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
@@ -93,7 +93,7 @@ public class JobClusterRouteHandlerAkkaImplTest {
     public void testHealthCheck() throws Exception {
         JobClusterRouteHandlerAkkaImpl handler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor);
 
-        JobClusterProto.HealthCheckResponse response = handler.healthCheck("nonExistentCluster", null)
+        JobClusterManagerProto.HealthCheckResponse response = handler.healthCheck("nonExistentCluster", null)
                 .toCompletableFuture().get(5, TimeUnit.SECONDS);
 
         assertNotNull(response);

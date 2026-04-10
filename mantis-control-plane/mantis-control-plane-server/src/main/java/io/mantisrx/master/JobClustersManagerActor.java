@@ -33,6 +33,7 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJ
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobClusterRequest;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckRequest;
+import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobClusterResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
@@ -675,7 +676,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             jobClusterInfo.get().jobClusterActor.forward(request, getContext());
         } else {
             ActorRef sender = getSender();
-            sender.tell(new JobClusterProto.HealthCheckResponse(request.requestId, CLIENT_ERROR_NOT_FOUND, "No such Job cluster " + request.getClusterName(), false, null), getSelf());
+            sender.tell(new HealthCheckResponse(request.requestId, CLIENT_ERROR_NOT_FOUND, "No such Job cluster " + request.getClusterName(), false, null), getSelf());
         }
     }
 

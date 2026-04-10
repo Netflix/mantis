@@ -2283,4 +2283,27 @@ public class JobClusterManagerProto {
                 '}';
         }
     }
+
+    public static final class HealthCheckResponse extends BaseResponse {
+
+        public final boolean isHealthy;
+        public final WorkerFailure workerFailure;
+
+        @JsonCreator
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public HealthCheckResponse(
+            @JsonProperty("requestId") long requestId,
+            @JsonProperty("responseCode") ResponseCode responseCode,
+            @JsonProperty("message") String message,
+            @JsonProperty("isHealthy") boolean isHealthy,
+            @JsonProperty("workerFailure") WorkerFailure workerFailure) {
+            super(requestId, responseCode, message);
+            this.isHealthy = isHealthy;
+            this.workerFailure = workerFailure;
+        }
+    }
+
+    public record WorkerFailure(List<FailedWorker> failedWorkers) {}
+
+    public record FailedWorker(int workerIndex, int workerNumber, String state) {}
 }

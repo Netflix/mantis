@@ -690,8 +690,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                     try {
                         ObjectMapper mapper = new ObjectMapper();
                         JsonNode node = mapper.readTree(response);
-                        assertTrue("Expected 'healthy' field in response: " + response, node.has("healthy"));
-                        assertTrue(node.get("healthy").asBoolean());
+                        assertTrue("Expected 'isHealthy' field in response: " + response, node.has("isHealthy"));
+                        assertTrue(node.get("isHealthy").asBoolean());
                     } catch (IOException e) {
                         fail("Failed to parse health check response: " + e.getMessage());
                     }
