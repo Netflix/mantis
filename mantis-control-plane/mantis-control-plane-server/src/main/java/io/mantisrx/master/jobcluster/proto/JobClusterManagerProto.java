@@ -2254,8 +2254,8 @@ public class JobClusterManagerProto {
     }
 
     public static final class HealthCheckRequest extends BaseRequest {
-        private final String clusterName;
-        private final List<String> jobIds;
+        public final String clusterName;
+        public final List<String> jobIds;
 
         public HealthCheckRequest(final String clusterName, final List<String> jobIds) {
             super();
@@ -2264,14 +2264,6 @@ public class JobClusterManagerProto {
                 "Cluster name cannot be null or empty");
             this.clusterName = clusterName;
             this.jobIds = jobIds;
-        }
-
-        public String getClusterName() {
-            return clusterName;
-        }
-
-        public List<String> getJobIds() {
-            return jobIds;
         }
 
         @Override
@@ -2285,7 +2277,6 @@ public class JobClusterManagerProto {
     }
 
     public static final class HealthCheckResponse extends BaseResponse {
-
         public final boolean isHealthy;
         public final WorkerFailure workerFailure;
 

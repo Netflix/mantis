@@ -94,6 +94,7 @@ public class MasterApiAkkaService extends BaseService {
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
     private final HttpsConnectionContext httpsConnectionContext;
+
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
                                 final ActorRef jobClustersManagerActor,
@@ -119,7 +120,6 @@ public class MasterApiAkkaService extends BaseService {
             null
         );
     }
-
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
                                 final ActorRef jobClustersManagerActor,
