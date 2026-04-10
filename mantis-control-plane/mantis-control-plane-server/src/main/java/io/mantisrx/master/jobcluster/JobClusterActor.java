@@ -2678,7 +2678,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                                 HealthCheckResponse response
                                     = new HealthCheckResponse(
                                         request.requestId,
-                                        ResponseCode.SERVER_ERROR,
+                                        ResponseCode.SUCCESS,
                                         "unhealthy workers",
                                         false,
                                         new WorkerFailure(failedWorkers));

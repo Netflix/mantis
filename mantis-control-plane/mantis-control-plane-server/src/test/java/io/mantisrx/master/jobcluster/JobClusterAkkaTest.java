@@ -3424,7 +3424,7 @@ public class JobClusterAkkaTest {
                 submitJobAndHealthCheck("testHealthCheckWithUnstartedWorkers", false, null);
 
         assertFalse(resp.isHealthy);
-        assertEquals(SERVER_ERROR, resp.responseCode);
+        assertEquals(SUCCESS, resp.responseCode);
         assertNotNull(resp.workerFailure);
         assertFalse(resp.workerFailure.failedWorkers().isEmpty());
     }
