@@ -21,13 +21,10 @@ import akka.actor.ActorRef;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;
-import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Instant;
 import java.util.List;
@@ -279,4 +276,5 @@ public class JobClusterProto {
         }
 
     }
+
 }

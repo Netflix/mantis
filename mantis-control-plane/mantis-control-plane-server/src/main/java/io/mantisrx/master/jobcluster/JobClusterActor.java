@@ -2646,8 +2646,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         final ActorRef self = getSelf();
 
         Set<JobId> prefilteredJobIds = new HashSet<>();
-        if (request.getJobIds() != null && !request.getJobIds().isEmpty()) {
-            request.getJobIds().stream()
+        if (request.jobIds != null && !request.jobIds.isEmpty()) {
+            request.jobIds.stream()
                     .map(JobId::fromId)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
@@ -2678,10 +2678,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                                 HealthCheckResponse response
                                     = new HealthCheckResponse(
                                         request.requestId,
-                                    ResponseCode.SERVER_ERROR,
-                                    "unhealthy workers",
-                                    false,
-                                    new WorkerFailure(failedWorkers));
+                                        ResponseCode.SERVER_ERROR,
+                                        "unhealthy workers",
+                                        false,
+                                        new WorkerFailure(failedWorkers));
                                 sender.tell(response, self);
                             }
                         },

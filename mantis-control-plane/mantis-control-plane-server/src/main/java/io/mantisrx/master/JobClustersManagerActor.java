@@ -670,13 +670,13 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     }
 
     public void onHealthCheck(HealthCheckRequest request) {
-        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getClusterName());
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.clusterName);
 
         if (jobClusterInfo.isPresent()) {
             jobClusterInfo.get().jobClusterActor.forward(request, getContext());
         } else {
             ActorRef sender = getSender();
-            sender.tell(new HealthCheckResponse(request.requestId, CLIENT_ERROR_NOT_FOUND, "No such Job cluster " + request.getClusterName(), false, null), getSelf());
+            sender.tell(new HealthCheckResponse(request.requestId, CLIENT_ERROR_NOT_FOUND, "No such Job cluster " + request.clusterName, false, null), getSelf());
         }
     }
 
