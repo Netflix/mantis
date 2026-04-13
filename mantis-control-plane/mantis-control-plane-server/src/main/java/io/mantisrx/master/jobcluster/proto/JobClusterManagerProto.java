@@ -2287,7 +2287,7 @@ public class JobClusterManagerProto {
             @JsonProperty("responseCode") ResponseCode responseCode,
             @JsonProperty("message") String message,
             @JsonProperty("isHealthy") boolean isHealthy,
-            @JsonProperty("workersUnready") UnreadyWorkers unreadyWorkers) {
+            @JsonProperty("unreadyWorkers") UnreadyWorkers unreadyWorkers) {
             super(requestId, responseCode, message);
             this.isHealthy = isHealthy;
             this.unreadyWorkers = unreadyWorkers;
