@@ -3415,7 +3415,7 @@ public class JobClusterAkkaTest {
 
         assertTrue(resp.isHealthy);
         assertEquals(SUCCESS, resp.responseCode);
-        assertNull(resp.workersUnready);
+        assertNull(resp.unreadyWorkers);
     }
 
     @Test
@@ -3425,8 +3425,8 @@ public class JobClusterAkkaTest {
 
         assertFalse(resp.isHealthy);
         assertEquals(SUCCESS, resp.responseCode);
-        assertNotNull(resp.workersUnready);
-        assertFalse(resp.workersUnready.unreadyWorkers().isEmpty());
+        assertNotNull(resp.unreadyWorkers);
+        assertFalse(resp.unreadyWorkers.workers().isEmpty());
     }
 
     @Test

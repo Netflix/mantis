@@ -117,7 +117,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.JobStartedEvent;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.WorkersUnready;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UnreadyWorkers;
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
@@ -2681,7 +2681,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                                         ResponseCode.SUCCESS,
                                         "unready workers",
                                         false,
-                                        new WorkersUnready(unreadyWorkers));
+                                        new UnreadyWorkers(unreadyWorkers));
                                 sender.tell(response, self);
                             }
                         },
