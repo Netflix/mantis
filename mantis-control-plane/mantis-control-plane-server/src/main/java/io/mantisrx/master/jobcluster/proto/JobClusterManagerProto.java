@@ -2278,7 +2278,7 @@ public class JobClusterManagerProto {
 
     public static final class HealthCheckResponse extends BaseResponse {
         public final boolean isHealthy;
-        public final WorkerFailure workerFailure;
+        public final WorkersUnready workersUnready;
 
         @JsonCreator
         @JsonIgnoreProperties(ignoreUnknown = true)
@@ -2287,14 +2287,14 @@ public class JobClusterManagerProto {
             @JsonProperty("responseCode") ResponseCode responseCode,
             @JsonProperty("message") String message,
             @JsonProperty("isHealthy") boolean isHealthy,
-            @JsonProperty("workerFailure") WorkerFailure workerFailure) {
+            @JsonProperty("workersUnready") WorkersUnready workersUnready) {
             super(requestId, responseCode, message);
             this.isHealthy = isHealthy;
-            this.workerFailure = workerFailure;
+            this.workersUnready = workersUnready;
         }
     }
 
-    public record WorkerFailure(List<FailedWorker> failedWorkers) {}
+    public record WorkersUnready(List<UnreadyWorker> unreadyWorkers) {}
 
-    public record FailedWorker(int workerIndex, int workerNumber, String state) {}
+    public record UnreadyWorker(int workerIndex, int workerNumber, String state) {}
 }

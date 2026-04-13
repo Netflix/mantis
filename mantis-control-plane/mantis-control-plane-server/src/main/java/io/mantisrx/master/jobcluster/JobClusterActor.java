@@ -63,7 +63,7 @@ import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.FailedWorker;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UnreadyWorker;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckRequest;
@@ -117,7 +117,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.JobStartedEvent;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.WorkerFailure;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.WorkersUnready;
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
@@ -2656,11 +2656,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         ListJobCriteria criteria = new ListJobCriteria();
         getFilteredNonTerminalJobList(criteria, prefilteredJobIds)
-                .collect(Lists::<FailedWorker>newArrayList, (failedWorkers, view) -> {
+                .collect(Lists::<UnreadyWorker>newArrayList, (unreadyWorkers, view) -> {
                     if (view.getWorkerMetadataList() != null) {
                         for (FilterableMantisWorkerMetadataWritable worker : view.getWorkerMetadataList()) {
                             if (worker.getState() != MantisJobState.Started) {
-                                failedWorkers.add(new FailedWorker(
+                                unreadyWorkers.add(new UnreadyWorker(
                                         worker.getWorkerIndex(),
                                         worker.getWorkerNumber(),
                                         worker.getState().name()));
@@ -2669,8 +2669,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     }
                 })
                 .subscribe(
-                        failedWorkers -> {
-                            if (failedWorkers.isEmpty()) {
+                        unreadyWorkers -> {
+                            if (unreadyWorkers.isEmpty()) {
                                 HealthCheckResponse response
                                     = new HealthCheckResponse(request.requestId, ResponseCode.SUCCESS, "OK", true, null);
                                 sender.tell(response, self);
@@ -2679,9 +2679,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                                     = new HealthCheckResponse(
                                         request.requestId,
                                         ResponseCode.SUCCESS,
-                                        "unhealthy workers",
+                                        "unready workers",
                                         false,
-                                        new WorkerFailure(failedWorkers));
+                                        new WorkersUnready(unreadyWorkers));
                                 sender.tell(response, self);
                             }
                         },
