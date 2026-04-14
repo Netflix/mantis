@@ -956,6 +956,7 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testTaskExecutorIsDisabledEvenAfterRestart() throws Exception {
+        resourceCluster.getRegisteredTaskExecutors().get();
         when(mantisJobStore.getTaskExecutor(TASK_EXECUTOR_ID)).thenReturn(TASK_EXECUTOR_REGISTRATION);
         doReturn(ImmutableList.of()).when(mantisJobStore).getJobArtifactsToCache(CLUSTER_ID);
 
