@@ -33,6 +33,7 @@ import static java.util.Optional.ofNullable;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Status;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
 import com.mantisrx.common.utils.LabelUtils;
@@ -61,8 +62,10 @@ import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UnreadyWorker;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterRequest;
@@ -90,6 +93,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListJobIdsRequ
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListJobIdsResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListJobsRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListJobsResponse;
+import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListWorkersRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListWorkersResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerRequest;
@@ -110,8 +114,10 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClust
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.HealthCheckResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.JobStartedEvent;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UnreadyWorkers;
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.master.jobcluster.scaler.IJobClusterScalerRuleData;
@@ -152,11 +158,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -617,6 +625,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         new EnableJobClusterResponse(x.requestId, SUCCESS, genUnexpectedMsg(x.toString(),
                                 this.name, state)), getSelf()))
                 .match(GetJobClusterRequest.class, this::onJobClusterGet)
+                .match(HealthCheckRequest.class, this::onHealthCheck)
                 .match(JobClusterProto.DeleteJobClusterRequest.class, this::onJobClusterDelete)
                 .match(ListArchivedWorkersRequest.class, this::onListArchivedWorkers)
                 .match(ListCompletedJobsInClusterRequest.class, this::onJobListCompleted)
@@ -2631,6 +2640,72 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if (logger.isTraceEnabled()) {
             logger.trace("Exit JCA:onJobScalerRuleStream {}", req);
         }
+    }
+
+    public void onHealthCheck(final HealthCheckRequest request) {
+        final ActorRef sender = getSender();
+        final ActorRef self = getSelf();
+        final Duration timeout = Duration.ofMillis(500);
+
+        Set<JobId> prefilteredJobIds = getJobIdsIfSpecified(request);
+        final List<JobInfo> jobInfoList = getJobInfoList(prefilteredJobIds);
+
+        List<CompletableFuture<ListWorkersResponse>> futures = sendListWorkersRequests(jobInfoList, timeout);
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenAccept(__ -> {
+                    List<UnreadyWorker> unreadyWorkers = futures.stream()
+                            .map(CompletableFuture::join)
+                            .flatMap(resp -> resp.getWorkerMetadata().stream())
+                            .filter(worker -> worker.getState() != WorkerState.Started)
+                            .map(worker ->
+                                new UnreadyWorker(worker.getJobId(), worker.getWorkerIndex(), worker.getWorkerNumber(), worker.getState().name()))
+                            .collect(Collectors.toList());
+                    if (unreadyWorkers.isEmpty()) {
+                        sender.tell(new HealthCheckResponse(request.requestId, SUCCESS, HealthCheckResponse.healthyMessage, true, null), self);
+                    } else {
+                        sender.tell(new HealthCheckResponse(request.requestId, SUCCESS, HealthCheckResponse.unreadyWorkersMessage, false,
+                                new UnreadyWorkers(unreadyWorkers)), self);
+                    }
+                })
+                .exceptionally(error -> {
+                    logger.error("Health check failed for cluster {}", name, error);
+                    sender.tell(new Status.Failure(error), self);
+                    return null;
+                });
+    }
+
+    private @NonNull List<CompletableFuture<ListWorkersResponse>> sendListWorkersRequests(List<JobInfo> jobInfoList, Duration timeout) {
+        return jobInfoList.stream()
+            .map(jobInfo -> ask(jobInfo.jobActor, new ListWorkersRequest(jobInfo.jobId, Integer.MAX_VALUE), timeout)
+                .thenApply(ListWorkersResponse.class::cast)
+                .toCompletableFuture())
+            .toList();
+    }
+
+    private @NonNull List<JobInfo> getJobInfoList(Set<JobId> prefilteredJobIds) {
+        final List<JobInfo> jobInfoList;
+        if (!prefilteredJobIds.isEmpty()) {
+            jobInfoList = prefilteredJobIds.stream()
+                    .map(jobManager::getJobInfoForNonTerminalJob)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toList());
+        } else {
+            jobInfoList = jobManager.getAllNonTerminalJobsList();
+        }
+        return jobInfoList;
+    }
+
+    private @NonNull Set<JobId> getJobIdsIfSpecified(HealthCheckRequest request) {
+        Set<JobId> prefilteredJobIds = new HashSet<>();
+        if (request.jobIds != null && !request.jobIds.isEmpty()) {
+            request.jobIds.stream()
+                    .map(JobId::fromId)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .forEach(prefilteredJobIds::add);
+        }
+        return prefilteredJobIds;
     }
 
     static final class JobInfo  {

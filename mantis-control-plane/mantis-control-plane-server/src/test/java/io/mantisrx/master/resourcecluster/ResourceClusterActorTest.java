@@ -223,7 +223,7 @@ public class ResourceClusterActorTest {
             .getJobArtifactsToCache(CLUSTER_ID);
     }
 
-    private void setupActor() {
+    private void setupActor() throws ExecutionException, InterruptedException {
         MasterConfiguration masterConfig = mock(MasterConfiguration.class);
         when(masterConfig.getTimeoutSecondsToReportStart()).thenReturn(1);
         ExecuteStageRequestFactory executeStageRequestFactory = new ExecuteStageRequestFactory(masterConfig);
@@ -253,6 +253,7 @@ public class ResourceClusterActorTest {
                 Duration.ofSeconds(15),
                 CLUSTER_ID,
                 new LongDynamicProperty(propertiesLoader, "resourcecluster.gateway.maxConcurrentRequests.test", 100000L));
+        resourceCluster.getRegisteredTaskExecutors().get();
     }
 
     @Test
