@@ -62,8 +62,6 @@ import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UnreadyJob;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UnreadyJobs;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UnreadyWorker;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterResponse;
@@ -2652,10 +2650,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         Set<JobId> prefilteredJobIds = getJobIdsIfSpecified(request);
         final List<JobInfo> jobInfoList = getJobInfoList(prefilteredJobIds);
 
-        if (hasNonLaunchedJobs(request, jobInfoList, sender, self)) {
-            return;
-        }
-
         List<CompletableFuture<ListWorkersResponse>> futures = sendListWorkersRequests(jobInfoList, timeout);
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .thenAccept(__ -> {
@@ -2686,19 +2680,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .thenApply(ListWorkersResponse.class::cast)
                 .toCompletableFuture())
             .toList();
-    }
-
-    private static boolean hasNonLaunchedJobs(HealthCheckRequest request, List<JobInfo> jobInfoList, ActorRef sender, ActorRef self) {
-        var unreadyJobs = jobInfoList.stream()
-                .filter(jInfo -> jInfo.state != JobState.Launched)
-                .map(jInfo -> new UnreadyJob(jInfo.jobId.getId(), jInfo.jobId.getJobNum(), jInfo.state.name()))
-                .collect(Collectors.toList());
-        if (!unreadyJobs.isEmpty()) {
-            sender.tell(new HealthCheckResponse(request.requestId, SUCCESS,
-                    HealthCheckResponse.unreadyJobsMessage, false, new UnreadyJobs(unreadyJobs)), self);
-            return true;
-        }
-        return false;
     }
 
     private @NonNull List<JobInfo> getJobInfoList(Set<JobId> prefilteredJobIds) {

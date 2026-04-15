@@ -2281,7 +2281,6 @@ public class JobClusterManagerProto {
     public static final class HealthCheckResponse extends BaseResponse {
         public static final String healthyMessage = "OK";
         public static final String unreadyWorkersMessage = "unready workers";
-        public static final String unreadyJobsMessage = "unready jobs";
         public final boolean isHealthy;
         public final FailureReason failureReason;
 
@@ -2302,15 +2301,11 @@ public class JobClusterManagerProto {
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
     @JsonSubTypes({
         @JsonSubTypes.Type(value = UnreadyWorkers.class, name = "unreadyWorkers"),
-        @JsonSubTypes.Type(value = UnreadyJobs.class,   name = "unreadyJobs")
     })
-    public sealed interface FailureReason permits UnreadyWorkers, UnreadyJobs {}
+    public sealed interface FailureReason permits UnreadyWorkers {}
 
     public record UnreadyWorkers(List<UnreadyWorker> workers) implements FailureReason {}
 
     public record UnreadyWorker(int workerIndex, int workerNumber, String state) {}
 
-    public record UnreadyJob(String jobId, long jobIndex, String state) {}
-
-    public record UnreadyJobs(List<UnreadyJob> jobs) implements FailureReason {}
 }
