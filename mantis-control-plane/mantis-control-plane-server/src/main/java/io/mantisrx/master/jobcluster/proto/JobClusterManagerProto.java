@@ -42,6 +42,8 @@ import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Instant;
@@ -2277,8 +2279,11 @@ public class JobClusterManagerProto {
     }
 
     public static final class HealthCheckResponse extends BaseResponse {
+        public static final String healthyMessage = "OK";
+        public static final String unreadyWorkersMessage = "unready workers";
+        public static final String unreadyJobsMessage = "unready jobs";
         public final boolean isHealthy;
-        public final UnreadyWorkers unreadyWorkers;
+        public final FailureReason failureReason;
 
         @JsonCreator
         @JsonIgnoreProperties(ignoreUnknown = true)
@@ -2287,14 +2292,25 @@ public class JobClusterManagerProto {
             @JsonProperty("responseCode") ResponseCode responseCode,
             @JsonProperty("message") String message,
             @JsonProperty("isHealthy") boolean isHealthy,
-            @JsonProperty("unreadyWorkers") UnreadyWorkers unreadyWorkers) {
+            @JsonProperty("failureReason") FailureReason failureReason) {
             super(requestId, responseCode, message);
             this.isHealthy = isHealthy;
-            this.unreadyWorkers = unreadyWorkers;
+            this.failureReason = failureReason;
         }
     }
 
-    public record UnreadyWorkers(List<UnreadyWorker> workers) {}
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = UnreadyWorkers.class, name = "unreadyWorkers"),
+        @JsonSubTypes.Type(value = UnreadyJobs.class,   name = "unreadyJobs")
+    })
+    public sealed interface FailureReason permits UnreadyWorkers, UnreadyJobs {}
+
+    public record UnreadyWorkers(List<UnreadyWorker> workers) implements FailureReason {}
 
     public record UnreadyWorker(int workerIndex, int workerNumber, String state) {}
+
+    public record UnreadyJob(String jobId, long jobIndex, String state) {}
+
+    public record UnreadyJobs(List<UnreadyJob> jobs) implements FailureReason {}
 }

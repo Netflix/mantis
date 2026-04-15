@@ -3415,7 +3415,7 @@ public class JobClusterAkkaTest {
 
         assertTrue(resp.isHealthy);
         assertEquals(SUCCESS, resp.responseCode);
-        assertNull(resp.unreadyWorkers);
+        assertNull(resp.failureReason);
     }
 
     @Test
@@ -3425,8 +3425,8 @@ public class JobClusterAkkaTest {
 
         assertFalse(resp.isHealthy);
         assertEquals(SUCCESS, resp.responseCode);
-        assertNotNull(resp.unreadyWorkers);
-        assertFalse(resp.unreadyWorkers.workers().isEmpty());
+        assertTrue(resp.failureReason instanceof JobClusterManagerProto.UnreadyWorkers);
+        assertFalse(((JobClusterManagerProto.UnreadyWorkers) resp.failureReason).workers().isEmpty());
     }
 
     @Test
