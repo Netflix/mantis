@@ -2658,7 +2658,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                             .flatMap(resp -> resp.getWorkerMetadata().stream())
                             .filter(worker -> worker.getState() != WorkerState.Started)
                             .map(worker ->
-                                new UnreadyWorker(worker.getWorkerIndex(), worker.getWorkerNumber(), worker.getState().name()))
+                                new UnreadyWorker(worker.getJobId(), worker.getWorkerIndex(), worker.getWorkerNumber(), worker.getState().name()))
                             .collect(Collectors.toList());
                     if (unreadyWorkers.isEmpty()) {
                         sender.tell(new HealthCheckResponse(request.requestId, SUCCESS, HealthCheckResponse.healthyMessage, true, null), self);

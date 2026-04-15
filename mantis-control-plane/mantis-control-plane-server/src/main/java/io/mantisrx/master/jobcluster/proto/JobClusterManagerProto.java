@@ -2306,6 +2306,6 @@ public class JobClusterManagerProto {
 
     public record UnreadyWorkers(List<UnreadyWorker> workers) implements FailureReason {}
 
-    public record UnreadyWorker(int workerIndex, int workerNumber, String state) {}
+    public record UnreadyWorker(String jobId, int workerIndex, int workerNumber, String state) {}
 
 }
