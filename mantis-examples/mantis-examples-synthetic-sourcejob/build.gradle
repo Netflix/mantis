@@ -17,7 +17,6 @@
 apply plugin: 'mantis'
 
 ext {
-    mqlVersion = '3.2.2'
     mockNeatVersion = '0.3.7'
 }
 
@@ -30,7 +29,7 @@ task execute(type: JavaExec) {
 dependencies {
     implementation project(':mantis-runtime')
 
-    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    implementation "io.mantisrx:mql-jvm:$versions.mql"
     implementation libraries.spectatorApi
 
     implementation libraries.mockneat
