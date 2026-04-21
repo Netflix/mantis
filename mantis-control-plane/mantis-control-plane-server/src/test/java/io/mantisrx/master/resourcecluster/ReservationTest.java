@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.*;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -149,13 +150,13 @@ public class ReservationTest {
         // Create mock TaskExecutorAllocationRequest objects
         // Note: In a real scenario, these would be properly constructed with all required fields
         TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(
-            worker1, constraints, null, 1);
+            worker1, constraints, null, 1, MantisJobDurationType.Perpetual);
 
         TaskExecutorAllocationRequest req2 = TaskExecutorAllocationRequest.of(
-            worker2, constraints, null, 1);
+            worker2, constraints, null, 1, MantisJobDurationType.Perpetual);
 
         TaskExecutorAllocationRequest req3 = TaskExecutorAllocationRequest.of(
-            worker3, constraints, null, 1);
+            worker3, constraints, null, 1, MantisJobDurationType.Perpetual);
 
         Set<TaskExecutorAllocationRequest> allocationRequests = Set.of(req1, req2, req3);
         Set<WorkerId> expectedWorkerIds = Set.of(worker1, worker2, worker3);
@@ -305,13 +306,13 @@ public class ReservationTest {
 
         // Create allocation requests with duplicate WorkerIds
         TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(
-            worker1, constraints, null, 2);
+            worker1, constraints, null, 2, MantisJobDurationType.Perpetual);
 
         TaskExecutorAllocationRequest req2 = TaskExecutorAllocationRequest.of(
-            worker2, constraints, null, 2);
+            worker2, constraints, null, 2, MantisJobDurationType.Perpetual);
 
         TaskExecutorAllocationRequest req3 = TaskExecutorAllocationRequest.of(
-            worker1, constraints, null, 2); // Duplicate worker1
+            worker1, constraints, null, 2, MantisJobDurationType.Perpetual); // Duplicate worker1
 
         Set<TaskExecutorAllocationRequest> allocationRequests = new HashSet<>();
         allocationRequests.add(req1);

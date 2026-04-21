@@ -45,6 +45,7 @@ import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
 import io.mantisrx.master.scheduler.CpuWeightedFitnessCalculator;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
@@ -222,7 +223,7 @@ public class ResourceClusterActorTest {
             .getJobArtifactsToCache(CLUSTER_ID);
     }
 
-    private void setupActor() {
+    private void setupActor() throws ExecutionException, InterruptedException {
         MasterConfiguration masterConfig = mock(MasterConfiguration.class);
         when(masterConfig.getTimeoutSecondsToReportStart()).thenReturn(1);
         ExecuteStageRequestFactory executeStageRequestFactory = new ExecuteStageRequestFactory(masterConfig);
@@ -252,6 +253,7 @@ public class ResourceClusterActorTest {
                 Duration.ofSeconds(15),
                 CLUSTER_ID,
                 new LongDynamicProperty(propertiesLoader, "resourcecluster.gateway.maxConcurrentRequests.test", 100000L));
+        resourceCluster.getRegisteredTaskExecutors().get();
     }
 
     @Test
@@ -351,7 +353,8 @@ public class ResourceClusterActorTest {
                 WORKER_ID,
                 SchedulingConstraints.of(MACHINE_DEFINITION),
                 JOB_METADATA,
-                0));
+                0,
+                MantisJobDurationType.Perpetual));
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -453,7 +456,8 @@ public class ResourceClusterActorTest {
                 WORKER_ID,
                 SchedulingConstraints.of(MACHINE_DEFINITION_2),
                 JOB_METADATA,
-                0));
+                0,
+                MantisJobDurationType.Perpetual));
         assertEquals(
             TASK_EXECUTOR_ID_3,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -493,7 +497,8 @@ public class ResourceClusterActorTest {
                 WORKER_ID,
                 SchedulingConstraints.of(MACHINE_DEFINITION),
                 JOB_METADATA,
-                0));
+                0,
+                MantisJobDurationType.Perpetual));
         assertEquals(
             TASK_EXECUTOR_ID_2,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -554,7 +559,7 @@ public class ResourceClusterActorTest {
                         TASK_EXECUTOR_ID,
                         CLUSTER_ID,
                         TaskExecutorReport.available())).get());
-        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION), JOB_METADATA, 0));
+        Set<TaskExecutorAllocationRequest> requests = Collections.singleton(TaskExecutorAllocationRequest.of(WORKER_ID, SchedulingConstraints.of(MACHINE_DEFINITION), JOB_METADATA, 0, MantisJobDurationType.Perpetual));
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -623,7 +628,7 @@ public class ResourceClusterActorTest {
             expectedTaskExecutorIds.add(taskExecutorID);
             JobMetadata jobMetadata =
                 new JobMetadata(workerId.getJobId(), null, null, 1, "testuser", null, ImmutableList.of(), -1, -1, -1);
-            requests.add(TaskExecutorAllocationRequest.of(workerId, SchedulingConstraints.of(MACHINE_DEFINITION), jobMetadata, 0));
+            requests.add(TaskExecutorAllocationRequest.of(workerId, SchedulingConstraints.of(MACHINE_DEFINITION), jobMetadata, 0, MantisJobDurationType.Perpetual));
         }
         assertEquals(
             expectedTaskExecutorIds,
@@ -833,7 +838,8 @@ public class ResourceClusterActorTest {
                 WORKER_ID,
                 SchedulingConstraints.of(MACHINE_DEFINITION),
                 JOB_METADATA,
-                0));
+                0,
+                MantisJobDurationType.Perpetual));
         assertEquals(
             TASK_EXECUTOR_ID_2,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());
@@ -873,7 +879,8 @@ public class ResourceClusterActorTest {
                 WORKER_ID,
                 SchedulingConstraints.of(MACHINE_DEFINITION),
                 JOB_METADATA,
-                0));
+                0,
+                MantisJobDurationType.Perpetual));
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorsFor(requests).get().values().stream().findFirst().get());

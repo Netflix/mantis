@@ -42,6 +42,8 @@ import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Instant;
@@ -2253,5 +2255,57 @@ public class JobClusterManagerProto {
         }
     }
 
+    public static final class HealthCheckRequest extends BaseRequest {
+        public final String clusterName;
+        public final List<String> jobIds;
+
+        public HealthCheckRequest(final String clusterName, final List<String> jobIds) {
+            super();
+            Preconditions.checkArg(
+                clusterName != null && !clusterName.isEmpty(),
+                "Cluster name cannot be null or empty");
+            this.clusterName = clusterName;
+            this.jobIds = jobIds;
+        }
+
+        @Override
+        public String toString() {
+            return "HealthCheckRequest{" +
+                "clusterName='" + clusterName + '\'' +
+                ", jobIds=" + jobIds +
+                ", requestId=" + requestId +
+                '}';
+        }
+    }
+
+    public static final class HealthCheckResponse extends BaseResponse {
+        public static final String healthyMessage = "OK";
+        public static final String unreadyWorkersMessage = "unready workers";
+        public final boolean isHealthy;
+        public final FailureReason failureReason;
+
+        @JsonCreator
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public HealthCheckResponse(
+            @JsonProperty("requestId") long requestId,
+            @JsonProperty("responseCode") ResponseCode responseCode,
+            @JsonProperty("message") String message,
+            @JsonProperty("isHealthy") boolean isHealthy,
+            @JsonProperty("failureReason") FailureReason failureReason) {
+            super(requestId, responseCode, message);
+            this.isHealthy = isHealthy;
+            this.failureReason = failureReason;
+        }
+    }
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = UnreadyWorkers.class, name = "unreadyWorkers"),
+    })
+    public sealed interface FailureReason permits UnreadyWorkers {}
+
+    public record UnreadyWorkers(List<UnreadyWorker> workers) implements FailureReason {}
+
+    public record UnreadyWorker(String jobId, int workerIndex, int workerNumber, String state) {}
 
 }

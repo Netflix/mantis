@@ -318,6 +318,20 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
                 continue;
             }
 
+            // Record how long the head-of-queue reservation has been waiting
+            long headOfQueueDurationNanos = Duration.between(
+                Instant.ofEpochMilli(topReservation.get().getCreatedAt()),
+                clock.instant()
+            ).toNanos();
+
+            metrics.recordTimer(
+                ResourceClusterActorMetrics.RESERVATION_HEAD_OF_QUEUE_LATENCY,
+                headOfQueueDurationNanos,
+                TagList.create(ImmutableMap.of(
+                    "resourceCluster", clusterID.getResourceID(),
+                    "jobId", topReservation.get().getKey().getJobId(),
+                    "priorityType", topReservation.get().getPriority().getType().name())));
+
             sendBatchAssignmentRequest(constraintKey, topReservation.get());
         }
     }

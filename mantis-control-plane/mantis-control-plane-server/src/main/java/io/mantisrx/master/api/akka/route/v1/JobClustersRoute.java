@@ -56,12 +56,16 @@ import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.runtime.NamedJobDefinition;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
-import io.mantisrx.shaded.com.google.common.base.Strings;
+import java.util.Arrays;
+
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -210,6 +214,14 @@ public class JobClustersRoute extends BaseRoute {
                                         post(() -> updateJobClusterStateDisableRoute(clusterName))
                                 ))
                         ),
+
+                    // api/v1/jobClusters/{}/healthcheck
+                    path(
+                        PathMatchers.segment().slash("healthcheck"),
+                        (clusterName) -> pathEndOrSingleSlash(() ->
+                            get(() -> healthCheckRoute(clusterName))
+                        )
+                    ),
 
                     // api/v1/jobClusters/{}/scalerRules
                     path(
@@ -784,5 +796,24 @@ public class JobClustersRoute extends BaseRoute {
             HttpRequestMetrics.Endpoints.JOB_CLUSTER_SCALER_RULES,
             HttpRequestMetrics.HttpVerb.DELETE
         );
+    }
+
+    private Route healthCheckRoute(String clusterName) {
+        logger.trace("GET /api/v1/jobClusters/{}/healthcheck called", clusterName);
+
+        return parameterMap(params -> {
+            String jobIdsParam = params.get("job-ids");
+            List<String> jobIds = (jobIdsParam != null && !jobIdsParam.isBlank())
+                ? Arrays.asList(jobIdsParam.split(","))
+                : null;
+
+            CompletionStage<JobClusterManagerProto.HealthCheckResponse> response = jobClusterRouteHandler.healthCheck(clusterName, jobIds);
+            return completeAsync(
+                response,
+                resp -> complete(StatusCodes.OK, resp, Jackson.marshaller()),
+                HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_HEALTHCHECK,
+                HttpRequestMetrics.HttpVerb.GET
+            );
+        });
     }
 }

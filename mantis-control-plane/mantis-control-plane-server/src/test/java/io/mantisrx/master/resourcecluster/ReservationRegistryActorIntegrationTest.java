@@ -22,6 +22,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.PendingReservatio
 import static io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.*;
 import io.mantisrx.master.scheduler.CpuWeightedFitnessCalculator;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.scheduler.SchedulingConstraints;
@@ -201,8 +202,8 @@ public class ReservationRegistryActorIntegrationTest {
         WorkerId worker1 = WorkerId.fromIdUnsafe("job-1-worker-0-1");
         WorkerId worker2 = WorkerId.fromIdUnsafe("job-2-worker-0-1");
 
-        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(worker1, constraints, createJobMetadata(), 1);
-        TaskExecutorAllocationRequest req2 = TaskExecutorAllocationRequest.of(worker2, constraints, createJobMetadata(), 1);
+        TaskExecutorAllocationRequest req1 = TaskExecutorAllocationRequest.of(worker1, constraints, createJobMetadata(), 1, MantisJobDurationType.Perpetual);
+        TaskExecutorAllocationRequest req2 = TaskExecutorAllocationRequest.of(worker2, constraints, createJobMetadata(), 1, MantisJobDurationType.Perpetual);
 
         // Upsert reservations
         upsertReservation(resourceClusterActor, probe, key1, constraints, Set.of(req1), 1, BASE_INSTANT.toEpochMilli());
@@ -293,8 +294,8 @@ public class ReservationRegistryActorIntegrationTest {
         WorkerId workerA = WorkerId.fromIdUnsafe("job-a-worker-0-1");
         WorkerId workerB = WorkerId.fromIdUnsafe("job-b-worker-0-1");
 
-        TaskExecutorAllocationRequest reqA = TaskExecutorAllocationRequest.of(workerA, constraintsA, createJobMetadata(), 1);
-        TaskExecutorAllocationRequest reqB = TaskExecutorAllocationRequest.of(workerB, constraintsB, createJobMetadata(), 1);
+        TaskExecutorAllocationRequest reqA = TaskExecutorAllocationRequest.of(workerA, constraintsA, createJobMetadata(), 1, MantisJobDurationType.Perpetual);
+        TaskExecutorAllocationRequest reqB = TaskExecutorAllocationRequest.of(workerB, constraintsB, createJobMetadata(), 1, MantisJobDurationType.Perpetual);
 
         upsertReservation(resourceClusterActor, probe, key1, constraintsA, Set.of(reqA), 1, BASE_INSTANT.toEpochMilli());
         upsertReservation(resourceClusterActor, probe, key2, constraintsB, Set.of(reqB), 1, BASE_INSTANT.toEpochMilli());
@@ -317,7 +318,7 @@ public class ReservationRegistryActorIntegrationTest {
         ReservationKey key = ReservationKey.builder().jobId("job-cancel").stageNumber(1).build();
         SchedulingConstraints constraints = SchedulingConstraints.of(MACHINE, Optional.empty(), ImmutableMap.of());
         WorkerId worker = WorkerId.fromIdUnsafe("job-cancel-worker-0-1");
-        TaskExecutorAllocationRequest req = TaskExecutorAllocationRequest.of(worker, constraints, createJobMetadata(), 1);
+        TaskExecutorAllocationRequest req = TaskExecutorAllocationRequest.of(worker, constraints, createJobMetadata(), 1, MantisJobDurationType.Perpetual);
         resourceClusterActor.tell(MarkReady.INSTANCE, probe.getRef());
         probe.expectMsg(Ack.getInstance());
 
@@ -374,7 +375,7 @@ public class ReservationRegistryActorIntegrationTest {
         ReservationKey key = ReservationKey.builder().jobId("job-retry").stageNumber(1).build();
         SchedulingConstraints constraints = SchedulingConstraints.of(MACHINE, Optional.empty(), ImmutableMap.of());
         WorkerId worker = WorkerId.fromIdUnsafe("job-retry-worker-0-1");
-        TaskExecutorAllocationRequest req = TaskExecutorAllocationRequest.of(worker, constraints, createJobMetadata(), 1);
+        TaskExecutorAllocationRequest req = TaskExecutorAllocationRequest.of(worker, constraints, createJobMetadata(), 1, MantisJobDurationType.Perpetual);
 
         upsertReservation(resourceClusterActor, probe, key, constraints, Set.of(req), 1, BASE_INSTANT.toEpochMilli());
 
@@ -426,7 +427,7 @@ public class ReservationRegistryActorIntegrationTest {
         ReservationKey key = ReservationKey.builder().jobId("job-fail").stageNumber(1).build();
         SchedulingConstraints constraints = SchedulingConstraints.of(MACHINE, Optional.empty(), ImmutableMap.of());
         WorkerId worker = WorkerId.fromIdUnsafe("job-fail-worker-0-1");
-        TaskExecutorAllocationRequest req = TaskExecutorAllocationRequest.of(worker, constraints, createJobMetadata(), 1);
+        TaskExecutorAllocationRequest req = TaskExecutorAllocationRequest.of(worker, constraints, createJobMetadata(), 1, MantisJobDurationType.Perpetual);
 
         upsertReservation(resourceClusterActor, probe, key, constraints, Set.of(req), 1, BASE_INSTANT.toEpochMilli());
 

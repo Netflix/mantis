@@ -23,12 +23,14 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
+
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterScalerRuleProto;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
@@ -176,5 +178,11 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
         CompletionStage<JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse> response = ask(jobClustersManagerActor, request, timeout)
             .thenApply(JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse.class::cast);
         return response;
+    }
+
+    @Override
+    public CompletionStage<JobClusterManagerProto.HealthCheckResponse> healthCheck(String clusterName, List<String> jobIds) {
+        JobClusterManagerProto.HealthCheckRequest request = new JobClusterManagerProto.HealthCheckRequest(clusterName, jobIds);
+        return ask(jobClustersManagerActor, request, timeout).thenApply(JobClusterManagerProto.HealthCheckResponse.class::cast);
     }
 }
