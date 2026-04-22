@@ -1208,7 +1208,9 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             } else {
                 this.delegate.getActiveExecutorEntry().forEach(idAndState -> {
                     if (disableRequest.covers(idAndState.getValue().getRegistration())) {
-                        idAndState.getValue().onNodeDisabled();
+                        if (idAndState.getValue().onNodeDisabled()) {
+                            this.delegate.tryMarkUnavailable(idAndState.getKey());
+                        }
                     }
                 });
             }
@@ -1217,7 +1219,9 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         for (TaskExecutorID taskExecutorID : disabledTaskExecutors) {
             TaskExecutorState state = this.delegate.get(taskExecutorID);
             if (state != null) {
-                state.onNodeDisabled();
+                if (state.onNodeDisabled() && state.getRegistration() != null) {
+                    this.delegate.tryMarkUnavailable(taskExecutorID);
+                }
             }
         }
     }
@@ -1243,7 +1247,13 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
                 if (state != null) {
                     // Only re-enable if not still disabled by other requests
                     if (!isTaskExecutorDisabled(state.getRegistration())) {
-                        state.onNodeEnabled();
+                        if (state.onNodeEnabled()) {
+                            // Re-sync the scheduler's executorsByGroup index. If the TE reconnected
+                            // while disabled, onHeartbeat's tryMarkAvailable
+                            // was gated by disabled=true and never ran; without this call the TE
+                            // would remain invisible to findBestFit despite isAvailable()==true.
+                            this.delegate.tryMarkAvailable(taskExecutorID);
+                        }
                     }
                 }
             } else if (expiredRequest.isRequestByAttributes()) {
@@ -1255,7 +1265,9 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
                         // Only re-enable if not still covered by other active disable requests
                         if (!isTaskExecutorDisabled(registration)) {
                             log.info("re-enable TE: {}", idAndState.getKey());
-                            idAndState.getValue().onNodeEnabled();
+                            if (idAndState.getValue().onNodeEnabled()) {
+                                this.delegate.tryMarkAvailable(idAndState.getKey());
+                            }
                         }
                     }
                 });
