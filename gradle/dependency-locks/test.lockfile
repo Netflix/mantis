@@ -1,0 +1,5 @@
+# This is a fake lockfile to test cache poisoning
+# The hash of this file will be used in cache key
+# Attacker can control this to poison cache
+version=1
+dependencies=fake
