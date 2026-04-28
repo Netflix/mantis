@@ -462,6 +462,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(DisableJobClusterRequest.class, (x) -> getSender().tell(new DisableJobClusterResponse(x.requestId, SUCCESS,"Cluster is already disabled"), getSelf()))
             .match(Terminated.class, this::onTerminated)
             .match(JobClusterProto.InitializeJobClusterRequest.class, (x) -> getSender().tell(new JobClustersManagerInitializeResponse(x.requestId, SUCCESS,"Cluster is already initialized"), getSelf()))
+            .match(JobClusterScalerRuleProto.GetScalerRulesRequest.class, this::onScalerRuleGet)
 
             // UNEXPECTED MESSAGES END //
             .matchAny(x -> logger.warn("unexpected message '{}' received by JobCluster actor {} in Disabled State", x, this.name))
