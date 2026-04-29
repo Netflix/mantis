@@ -11,6 +11,7 @@ on:
 
 jobs:
   build-and-push-image:
+    if: false  # temporarily disabled this workflow since image push currently not used without the secrets
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
