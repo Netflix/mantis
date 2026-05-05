@@ -273,6 +273,36 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         return false;
     }
 
+    /**
+     * Reverses {@link #addWorkerMetadata(int, JobWorker)} for rollback of a pending in-memory
+     * addition that failed to persist. Removes the worker from both the stage's index/number maps
+     * and the job-level workerNumberToStageMap. Does not archive — the worker was never durably stored.
+     */
+    void unsafeRemoveWorkerMetadata(int stageNum, int workerIndex, int workerNumber) {
+        IMantisStageMetadata stage = stageMetadataMap.get(stageNum);
+        if (!(stage instanceof MantisStageMetadataImpl)) {
+            throw new IllegalStateException(String.format(
+                    "Corrupt job worker rollback state for job %s: missing stage %d while removing index %d "
+                            + "workerNumber %d",
+                    jobId.getId(),
+                    stageNum,
+                    workerIndex,
+                    workerNumber));
+        }
+        ((MantisStageMetadataImpl) stage).removeWorkerIndex(workerIndex, workerNumber);
+        Integer removedStage = workerNumberToStageMap.remove(workerNumber);
+        if (removedStage == null || removedStage != stageNum) {
+            throw new IllegalStateException(String.format(
+                    "Corrupt job worker rollback state for job %s: workerNumber map for stage %d index %d "
+                            + "workerNumber %d removed mapping %s",
+                    jobId.getId(),
+                    stageNum,
+                    workerIndex,
+                    workerNumber,
+                    removedStage));
+        }
+    }
+
     @JsonIgnore
     public Optional<JobWorker> getWorkerByIndex(int stageNumber, int workerIndex) throws InvalidJobException {
         Optional<IMantisStageMetadata> stage = getStageMetadata(stageNumber);

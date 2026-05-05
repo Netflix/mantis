@@ -94,6 +94,7 @@ import io.mantisrx.server.core.scheduler.SchedulingConstraints;
 import io.mantisrx.server.master.agentdeploy.MigrationStrategyFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
+import io.mantisrx.server.master.domain.Costs;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobDefinition;
@@ -167,6 +168,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final Counter numPeriodicRefreshSkipped;
     private final Counter numReservationUpsertRetries;
     private final Counter numReservationUpsertFailures;
+    private final Counter numWorkerStoreFailures;
 
     /**
      * Behavior after being initialized.
@@ -298,6 +300,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .addCounter("numPeriodicRefreshSkipped")
                 .addCounter("numReservationUpsertRetries")
                 .addCounter("numReservationUpsertFailures")
+                .addCounter("numWorkerStoreFailures")
                 .build();
         this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
         this.numWorkerResubmissions = metrics.getCounter("numWorkerResubmissions");
@@ -309,6 +312,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.numPeriodicRefreshSkipped = metrics.getCounter("numPeriodicRefreshSkipped");
         this.numReservationUpsertRetries = metrics.getCounter("numReservationUpsertRetries");
         this.numReservationUpsertFailures = metrics.getCounter("numReservationUpsertFailures");
+        this.numWorkerStoreFailures = metrics.getCounter("numWorkerStoreFailures");
     }
 
     /**
@@ -798,6 +802,19 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .build();
     }
 
+    private static final class PartialScaleStageFailureException extends RuntimeException {
+        private final int actualNumWorkers;
+
+        PartialScaleStageFailureException(String message, int actualNumWorkers, Throwable cause) {
+            super(message, cause);
+            this.actualNumWorkers = actualNumWorkers;
+        }
+
+        int getActualNumWorkers() {
+            return actualNumWorkers;
+        }
+    }
+
     //////////////////////////////////////////// Akka Messages sent to the Job Actor Begin/////////////////////
 
     @Override
@@ -820,6 +837,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             sender.tell(
                     new JobInitialized(i.requestId, SERVER_ERROR, "" + e.getMessage(), jobId, i.requstor),
                     getSelf());
+            getContext().stop(getSelf());
         }
     }
 
@@ -1144,15 +1162,55 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             int ruleMin = policies.stream().min(Comparator.comparingInt(StageScalingPolicy::getMin))
                 .map(StageScalingPolicy::getMin).orElse(0);
 
-            int actualScaleup = this.workerManager.scaleStage(stageMetaData, ruleMax, ruleMin, scaleStage.getNumWorkers(),
+            IWorkerManager.ScaleStageResult scaleResult = this.workerManager.scaleStage(
+                    stageMetaData,
+                    ruleMax,
+                    ruleMin,
+                    scaleStage.getNumWorkers(),
                     scaleStage.getReason());
+            String responseMessage;
+            if (scaleResult.hasFailedAdditions()) {
+                responseMessage = String.format(
+                        "Partially scaled stage %d to %d workers (requested %d; %d add failures)",
+                        scaleStage.getStageNum(),
+                        scaleResult.getActualNumWorkers(),
+                        scaleResult.getRequestedNumWorkers(),
+                        scaleResult.getFailedAdditions());
+                eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(
+                        WARN,
+                        responseMessage,
+                        getJobId(),
+                        getJobState()));
+            } else {
+                responseMessage = String.format(
+                        "Scaled stage %d to %d workers",
+                        scaleStage.getStageNum(),
+                        scaleResult.getActualNumWorkers());
+            }
 
-            LOGGER.info("Scaled stage {} to {} workers for Job {}", scaleStage.getStageNum(), actualScaleup,
-                    this.jobId);
+            LOGGER.info(
+                    "Scaled stage {} to {} workers for Job {} (requested {}, failed additions={})",
+                    scaleStage.getStageNum(),
+                    scaleResult.getActualNumWorkers(),
+                    this.jobId,
+                    scaleResult.getRequestedNumWorkers(),
+                    scaleResult.getFailedAdditions());
             numScaleStage.increment();
             sender.tell(new ScaleStageResponse(scaleStage.requestId, SUCCESS,
-                    String.format("Scaled stage %d to %d workers", scaleStage.getStageNum(), actualScaleup),
-                    actualScaleup), getSelf());
+                    responseMessage,
+                    scaleResult.getActualNumWorkers()), getSelf());
+        } catch (PartialScaleStageFailureException e) {
+            LOGGER.error(e.getMessage(), e);
+            eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(
+                    ERROR,
+                    e.getMessage(),
+                    getJobId(),
+                    getJobState()));
+            sender.tell(new ScaleStageResponse(
+                    scaleStage.requestId,
+                    SERVER_ERROR,
+                    e.getMessage(),
+                    e.getActualNumWorkers()), getSelf());
         } catch (Exception e) {
             String msg = String.format("Stage %d scale failed due to %s", scaleStage.getStageNum(), e.getMessage());
             LOGGER.error(msg, e);
@@ -2146,13 +2204,34 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     mantisJobMetaData.addJobStageIfAbsent(msmd);
                     jobStore.updateStage(msmd);
                 }
-                IMantisWorkerMetadata mwmd = addWorker(schedulingInfo, stageNum, workerIndex);
+                IMantisWorkerMetadata mwmd = addInitialWorkerMetadata(schedulingInfo, stageNum, workerIndex);
                 workerRequests.add(mwmd);
             }
             return workerRequests;
         }
 
-        private IMantisWorkerMetadata addWorker(SchedulingInfo schedulingInfo, int stageNo, int workerIndex)
+        private IMantisWorkerMetadata addInitialWorkerMetadata(
+                SchedulingInfo schedulingInfo,
+                int stageNo,
+                int workerIndex)
+                throws InvalidJobException {
+            // Initial-job paths are one-shot: init failure returns SERVER_ERROR and stops the
+            // actor, so callers never reuse the mutated metadata snapshot. They take the
+            // wrapper's metadata directly and let the wrapper become unreachable (no commit or
+            // rollback). The two-phase scale-up path uses prepareWorker(...) directly.
+            return prepareWorker(schedulingInfo, stageNo, workerIndex).metadata();
+        }
+
+        /**
+         * Two-phase variant of {@link #addInitialWorkerMetadata(SchedulingInfo, int, int)}. Performs the
+         * in-memory mutations on {@code mantisJobMetaData} (adding to stage maps and
+         * recomputing job costs) and returns a {@link PendingWorkerAddition} wrapper that
+         * the caller must either {@link PendingWorkerAddition#commit() commit} after
+         * successfully persisting via {@code MantisJobStore.storeNewWorker}, or
+         * {@link PendingWorkerAddition#rollback() rollback} if persistence fails — keeping
+         * the in-memory metadata consistent with what is durably stored.
+         */
+        private PendingWorkerAddition prepareWorker(SchedulingInfo schedulingInfo, int stageNo, int workerIndex)
                 throws InvalidJobException {
             StageSchedulingInfo stageSchedInfo = schedulingInfo.getStages().get(stageNo);
             int workerNumber = workerNumberGenerator.getNextWorkerNumber(mantisJobMetaData, jobStore);
@@ -2166,6 +2245,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     .withLifecycleEventsPublisher(eventPublisher)
 
                     .build();
+
+            // Snapshot Costs BEFORE mutating so rollback can restore in O(1) instead of recomputing.
+            Costs previousJobCosts = mantisJobMetaData.getJobCosts();
+
             if (!mantisJobMetaData.addWorkerMetadata(stageNo, jw)) {
                 Optional<JobWorker> tmp = mantisJobMetaData.getWorkerByIndex(stageNo, workerIndex);
                 if (tmp.isPresent()) {
@@ -2179,7 +2262,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 }
             }
             mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
-            return jw.getMetadata();
+            return new PendingWorkerAddition(
+                    mantisJobMetaData, stageNo, workerIndex, workerNumber, jw.getMetadata(), previousJobCosts);
         }
 
         @Override
@@ -2763,13 +2847,16 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         /**
-         * Preconditions : Stage is Valid and scalable Determines the actual no of workers for this stage within min and
-         * max, updates the expected num workers first and saves to store. (If that fails we abort the operation) then
-         * continues adding/terminating worker one by one. If an exception occurs adding/removing any worker we continue
-         * forward with others. Heartbeat check should kick in and resubmit any workers that didn't get scheduled
+         * Preconditions: stage is valid and scalable. Determines the target number of workers for
+         * this stage within min and max bounds, persists that desired count first, then applies the
+         * add/remove operations one by one. Failed scale-up additions are rolled back and the stage
+         * target is shrunk to the realized worker count so stage metadata remains dense and
+         * consistent with what was durably stored. If that compensating shrink cannot be persisted
+         * after some additions already succeeded, those successes are still queued and the caller
+         * receives a dedicated error describing the preserved partial result.
          */
         @Override
-        public int scaleStage(
+        public ScaleStageResult scaleStage(
             MantisStageMetadataImpl stageMetaData,
             int ruleMax,
             int ruleMin,
@@ -2787,12 +2874,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             }
 
             // sanitize input worker count to be between min and max
-            int newNumWorkerCount = max(min(numWorkers, max), min);
-            if (newNumWorkerCount != oldNumWorkers) {
+            int requestedNumWorkers = max(min(numWorkers, max), min);
+            int realizedTarget = requestedNumWorkers;
+            int failedAdditions = 0;
+            if (requestedNumWorkers != oldNumWorkers) {
                 try {
-                    stageMetaData.unsafeSetNumWorkers(newNumWorkerCount, jobStore);
+                    stageMetaData.unsafeSetNumWorkers(requestedNumWorkers, jobStore);
                     eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
-                            String.format("Setting #workers to %d for stage %d, reason=%s", newNumWorkerCount,
+                            String.format("Setting #workers to %d for stage %d, reason=%s", requestedNumWorkers,
                                     stageMetaData.getStageNum(), reason), getJobId(), getJobState()));
                 } catch (Exception e) {
                     String error = String.format("Exception updating stage %d worker count for Job %s due to %s",
@@ -2804,29 +2893,58 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     throw new RuntimeException(error);
                 }
                 List<IMantisWorkerMetadata> workerRequests = new ArrayList<>();
-                if (newNumWorkerCount > oldNumWorkers) {
-                    for (int i = 0; i < newNumWorkerCount - oldNumWorkers; i++) {
+                if (requestedNumWorkers > oldNumWorkers) {
+                    SchedulingInfo schedInfo = mantisJobMetaData.getJobDefinition().getSchedulingInfo();
+                    int successfulAdds = 0;
+                    for (int i = 0; i < requestedNumWorkers - oldNumWorkers; i++) {
+                        int newWorkerIndex = oldNumWorkers + successfulAdds;
+                        PendingWorkerAddition pending = null;
                         try {
-                            int newWorkerIndex = oldNumWorkers + i;
-                            SchedulingInfo schedInfo = mantisJobMetaData.getJobDefinition().getSchedulingInfo();
-                            IMantisWorkerMetadata workerRequest = addWorker(schedInfo, stageMetaData.getStageNum(),
-                                    newWorkerIndex);
-                            jobStore.storeNewWorker(workerRequest);
-                            markStageAssignmentsChanged(true);
-                            workerRequests.add(workerRequest);
+                            pending = prepareWorker(schedInfo, stageMetaData.getStageNum(), newWorkerIndex);
+                            jobStore.storeNewWorker(pending.metadata());
+                            pending.commit();
+                            workerRequests.add(pending.metadata());
+                            successfulAdds++;
                         } catch (Exception e) {
-                            // creating a worker failed but expected no of workers was set successfully,
-                            // during heartbeat check we will
-                            // retry launching this worker
-                            LOGGER.warn("Exception adding new worker for {}", stageMetaData.getJobId().getId(), e);
+                            if (pending != null) {
+                                try {
+                                    pending.rollback();
+                                } catch (RuntimeException rollbackException) {
+                                    rollbackException.addSuppressed(e);
+                                    throw rollbackException;
+                                }
+                            }
+                            failedAdditions++;
+                            numWorkerStoreFailures.increment();
+                            try {
+                                realizedTarget = shrinkStageTargetAfterFailedAddition(stageMetaData, realizedTarget);
+                            } catch (RuntimeException shrinkFailure) {
+                                flushQueuedScaleWorkers(workerRequests);
+                                if (!workerRequests.isEmpty()) {
+                                    throw new PartialScaleStageFailureException(
+                                            String.format(
+                                                    "Stage %d scale partially applied: queued workers were kept and %d workers remain realized (requested %d; %d add failures), but failed to persist the adjusted stage target",
+                                                    stageMetaData.getStageNum(),
+                                                    oldNumWorkers + successfulAdds,
+                                                    requestedNumWorkers,
+                                                    failedAdditions),
+                                            oldNumWorkers + successfulAdds,
+                                            shrinkFailure);
+                                }
+                                throw shrinkFailure;
+                            }
+                            LOGGER.warn(
+                                    "Exception adding new worker for {} at index {}. Rolled back in-memory state and shrunk stage target to {}",
+                                    stageMetaData.getJobId().getId(),
+                                    newWorkerIndex,
+                                    realizedTarget,
+                                    e);
                         }
                     }
-                    // Queue all new workers
-                    // Use SCALE priority (medium) for scaling operations in reservation system
-                    queueWorkers(workerRequests, PriorityType.SCALE, empty());
+                    flushQueuedScaleWorkers(workerRequests);
                 } else {
                     //  potential bulk removal opportunity?
-                    for (int i = 0; i < oldNumWorkers - newNumWorkerCount; i++) {
+                    for (int i = 0; i < oldNumWorkers - requestedNumWorkers; i++) {
                         try {
                             final JobWorker w = stageMetaData.getWorkerByIndex(oldNumWorkers - i - 1);
                             terminateAndRemoveWorker(w.getMetadata(), WorkerState.Completed, JobCompletedReason.Killed);
@@ -2839,8 +2957,37 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     }
                 }
             }
-            LOGGER.info("{} Scaled stage to {} workers", stageMetaData.getJobId().getId(), newNumWorkerCount);
-            return newNumWorkerCount;
+            LOGGER.info(
+                    "{} Scaled stage to {} workers (requested {}, failed additions={})",
+                    stageMetaData.getJobId().getId(),
+                    realizedTarget,
+                    requestedNumWorkers,
+                    failedAdditions);
+            return new ScaleStageResult(realizedTarget, requestedNumWorkers, failedAdditions);
+        }
+
+        private void flushQueuedScaleWorkers(List<IMantisWorkerMetadata> workerRequests) {
+            if (!workerRequests.isEmpty()) {
+                markStageAssignmentsChanged(true);
+                // Use SCALE priority (medium) for scaling operations in reservation system.
+                queueWorkers(workerRequests, PriorityType.SCALE, empty());
+            }
+        }
+
+        private int shrinkStageTargetAfterFailedAddition(MantisStageMetadataImpl stageMetaData, int realizedTarget) {
+            int shrunkTarget = realizedTarget - 1;
+            try {
+                stageMetaData.unsafeSetNumWorkers(shrunkTarget, jobStore);
+                return shrunkTarget;
+            } catch (Exception e) {
+                throw new RuntimeException(
+                        String.format(
+                                "Failed to shrink stage %d for Job %s to realized size %d after add failure",
+                                stageMetaData.getStageNum(),
+                                jobId,
+                                shrunkTarget),
+                        e);
+            }
         }
     }
 

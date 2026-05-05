@@ -571,6 +571,40 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
     }
 
     /**
+     * Reverses {@link #addWorkerIndex(JobWorker)} without archiving. Intended for rolling back a
+     * pending in-memory addition that failed to persist (e.g. {@code MantisJobStore.storeNewWorker}
+     * threw); use {@link #unsafeRemoveWorker(int, int, MantisJobStore)} for the archive-on-remove path.
+     */
+    void removeWorkerIndex(int workerIndex, int workerNumber) {
+        JobWorker removedIdx = workerByIndexMetadataSet.remove(workerIndex);
+        JobWorker removedNum = workerByNumberMetadataSet.remove(workerNumber);
+        if (removedIdx == null
+                || removedNum == null
+                || removedIdx.getMetadata().getWorkerNumber() != workerNumber
+                || removedNum.getMetadata().getWorkerIndex() != workerIndex) {
+            throw new IllegalStateException(String.format(
+                    "Corrupt stage worker rollback state for job %s stage %d index %d workerNumber %d "
+                            + "(removedByIndex=%s, removedByNumber=%s)",
+                    jobId.getId(),
+                    stageNum,
+                    workerIndex,
+                    workerNumber,
+                    removedIdx == null
+                            ? "null"
+                            : String.format(
+                                    "index=%d,workerNumber=%d",
+                                    removedIdx.getMetadata().getWorkerIndex(),
+                                    removedIdx.getMetadata().getWorkerNumber()),
+                    removedNum == null
+                            ? "null"
+                            : String.format(
+                                    "index=%d,workerNumber=%d",
+                                    removedNum.getMetadata().getWorkerIndex(),
+                                    removedNum.getMetadata().getWorkerNumber())));
+        }
+    }
+
+    /**
      * Updates the the state of a worker based on the worker event.
      * @param event
      * @param jobStore
