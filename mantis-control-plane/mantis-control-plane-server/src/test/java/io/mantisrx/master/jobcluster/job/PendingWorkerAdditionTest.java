@@ -167,7 +167,7 @@ public class PendingWorkerAdditionTest {
         corruptStageIndexEntry(
                 stageMeta,
                 NEW_WORKER_INDEX,
-                makeWorker(jobMetaData.getJobId(), NEW_WORKER_INDEX, EXISTING_WORKER_NUMBER));
+                makeWorker(jobMetaData.getJobId(), NEW_WORKER_INDEX, NEW_WORKER_NUMBER));
 
         try {
             pending.rollback();
@@ -177,8 +177,14 @@ public class PendingWorkerAdditionTest {
             assertTrue(expected.getMessage().contains("stage " + STAGE_NUM));
         }
 
-        assertTrue("failed rollback must leave the job-level worker mapping untouched",
-                jobMetaData.getWorkerNumberToStageMap().containsKey(NEW_WORKER_NUMBER));
+        assertEquals("failed rollback must leave the pending worker in the stage index map",
+                NEW_WORKER_NUMBER,
+                stageMeta.getWorkerByIndex(NEW_WORKER_INDEX).getMetadata().getWorkerNumber());
+        assertTrue("failed rollback must leave the pending worker in stage worker metadata",
+                stageContainsWorker(NEW_WORKER_NUMBER));
+        assertEquals("failed rollback must leave the job-level worker mapping untouched",
+                Integer.valueOf(STAGE_NUM),
+                jobMetaData.getWorkerNumberToStageMap().get(NEW_WORKER_NUMBER));
         assertEquals("failed rollback must not restore costs",
                 postAdditionCosts, jobMetaData.getJobCosts());
 

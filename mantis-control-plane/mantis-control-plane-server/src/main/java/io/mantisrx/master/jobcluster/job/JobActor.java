@@ -804,14 +804,24 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
     private static final class PartialScaleStageFailureException extends RuntimeException {
         private final int actualNumWorkers;
+        private final boolean fatal;
 
         PartialScaleStageFailureException(String message, int actualNumWorkers, Throwable cause) {
+            this(message, actualNumWorkers, cause, false);
+        }
+
+        PartialScaleStageFailureException(String message, int actualNumWorkers, Throwable cause, boolean fatal) {
             super(message, cause);
             this.actualNumWorkers = actualNumWorkers;
+            this.fatal = fatal;
         }
 
         int getActualNumWorkers() {
             return actualNumWorkers;
+        }
+
+        boolean isFatal() {
+            return fatal;
         }
     }
 
@@ -837,7 +847,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             sender.tell(
                     new JobInitialized(i.requestId, SERVER_ERROR, "" + e.getMessage(), jobId, i.requstor),
                     getSelf());
-            getContext().stop(getSelf());
+            if (i.isSubmit) {
+                getContext().stop(getSelf());
+            }
         }
     }
 
@@ -1211,6 +1223,20 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     SERVER_ERROR,
                     e.getMessage(),
                     e.getActualNumWorkers()), getSelf());
+            if (e.isFatal()) {
+                getContext().getParent().tell(
+                        new JobClusterProto.KillJobRequest(
+                                jobId,
+                                e.getMessage(),
+                                JobCompletedReason.Error,
+                                MANTIS_MASTER_USER,
+                                ActorRef.noSender()),
+                        getSelf());
+            } else {
+                // Partial scale durably stored some workers; count it like a successful scale so dashboards
+                // don't under-report operator-initiated scaling activity.
+                numScaleStage.increment();
+            }
         } catch (Exception e) {
             String msg = String.format("Stage %d scale failed due to %s", scaleStage.getStageNum(), e.getMessage());
             LOGGER.error(msg, e);
@@ -2215,10 +2241,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 int stageNo,
                 int workerIndex)
                 throws InvalidJobException {
-            // Initial-job paths are one-shot: init failure returns SERVER_ERROR and stops the
-            // actor, so callers never reuse the mutated metadata snapshot. They take the
-            // wrapper's metadata directly and let the wrapper become unreachable (no commit or
-            // rollback). The two-phase scale-up path uses prepareWorker(...) directly.
+            // Submit-time initial-worker paths are one-shot: init failure returns SERVER_ERROR
+            // and stops the actor, so callers never reuse the mutated metadata snapshot. They
+            // take the wrapper's metadata directly and let the wrapper become unreachable (no
+            // commit or rollback). The two-phase scale-up path uses prepareWorker(...) directly.
             return prepareWorker(schedulingInfo, stageNo, workerIndex).metadata();
         }
 
@@ -2910,8 +2936,23 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                 try {
                                     pending.rollback();
                                 } catch (RuntimeException rollbackException) {
-                                    rollbackException.addSuppressed(e);
-                                    throw rollbackException;
+                                    PartialScaleStageFailureException partial = new PartialScaleStageFailureException(
+                                            String.format(
+                                                    "Stage %d scale failed after partially applying %d workers "
+                                                            + "(requested %d; %d add failures, last add failure: %s); "
+                                                            + "rollback of failed addition also threw: %s; "
+                                                            + "stage metadata rollback is corrupt and the job will be failed",
+                                                    stageMetaData.getStageNum(),
+                                                    oldNumWorkers + successfulAdds,
+                                                    requestedNumWorkers,
+                                                    failedAdditions + 1,
+                                                    e.getMessage(),
+                                                    rollbackException.getMessage()),
+                                            oldNumWorkers + successfulAdds,
+                                            e,
+                                            true);
+                                    partial.addSuppressed(rollbackException);
+                                    throw partial;
                                 }
                             }
                             failedAdditions++;
@@ -2921,16 +2962,25 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             } catch (RuntimeException shrinkFailure) {
                                 flushQueuedScaleWorkers(workerRequests);
                                 if (!workerRequests.isEmpty()) {
-                                    throw new PartialScaleStageFailureException(
+                                    PartialScaleStageFailureException partial = new PartialScaleStageFailureException(
                                             String.format(
-                                                    "Stage %d scale partially applied: queued workers were kept and %d workers remain realized (requested %d; %d add failures), but failed to persist the adjusted stage target",
+                                                    "Stage %d scale partially applied: %d workers remain realized "
+                                                            + "(requested %d; %d add failures, last add failure: %s); "
+                                                            + "compensating shrink also failed: %s; "
+                                                            + "shrink did not stick and prior stage target %d remains in force",
                                                     stageMetaData.getStageNum(),
                                                     oldNumWorkers + successfulAdds,
                                                     requestedNumWorkers,
-                                                    failedAdditions),
+                                                    failedAdditions,
+                                                    e.getMessage(),
+                                                    shrinkFailure.getMessage(),
+                                                    stageMetaData.getNumWorkers()),
                                             oldNumWorkers + successfulAdds,
-                                            shrinkFailure);
+                                            e);
+                                    partial.addSuppressed(shrinkFailure);
+                                    throw partial;
                                 }
+                                shrinkFailure.addSuppressed(e);
                                 throw shrinkFailure;
                             }
                             LOGGER.warn(
