@@ -77,8 +77,14 @@ final class PendingWorkerAddition {
 
     /**
      * Marks this addition as durable. Subsequent {@link #rollback()} calls become no-ops.
+     *
+     * <p>Not synchronized: this wrapper is constructed and consumed entirely within a single
+     * {@code JobActor} message handler, never escapes that scope, and never crosses a thread
+     * boundary. Adding cross-thread guarantees here would mislead callers about the wider
+     * thread-safety of the underlying {@link MantisJobMetadataImpl}, which is itself
+     * actor-confined.
      */
-    synchronized void commit() {
+    void commit() {
         if (rolledBack) {
             return;
         }
@@ -92,8 +98,10 @@ final class PendingWorkerAddition {
      * before the addition. Idempotent after a successful rollback; no-op if {@link #commit()}
      * has already been called. If rollback itself throws, this wrapper remains unfinished so
      * callers can surface the corruption instead of silently finalizing it.
+     *
+     * <p>Not synchronized — see {@link #commit()} for the actor-confinement rationale.
      */
-    synchronized void rollback() {
+    void rollback() {
         if (committed || rolledBack) {
             return;
         }
