@@ -32,6 +32,7 @@
 
 package io.mantisrx.master.jobcluster.job;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -40,17 +41,29 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
+import akka.actor.ActorIdentity;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Identify;
 import akka.testkit.javadsl.TestKit;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
+import io.mantisrx.master.jobcluster.JobClusterActor;
+import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
+import io.mantisrx.master.jobcluster.job.worker.JobWorker;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
@@ -62,15 +75,19 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.domain.IJobClusterDefinition;
+import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.UpsertReservation;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -82,10 +99,18 @@ import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
 public class JobScaleUpDownTests {
+
+	static {
+		// Wire a real Spectator registry before any JobActor is constructed so Counter.value()
+		// reflects increments instead of returning 0 from the default no-op composite registry.
+		io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory.setRegistry(
+				new com.netflix.spectator.api.DefaultRegistry());
+	}
 
 	static ActorSystem system;
 	final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
@@ -94,7 +119,6 @@ public class JobScaleUpDownTests {
 	public static void setup() {
 		system = ActorSystem.create();
 		TestHelpers.setupMasterConfig();
-
 	}
 
 	@AfterClass
@@ -308,6 +332,54 @@ public class JobScaleUpDownTests {
 		verify(schedulerMock, times(1)).scheduleWorkers(any());
 		verify(schedulerMock, never()).upsertReservation(any(UpsertReservation.class));
 
+	}
+
+	@Test
+	public void initFailureStopsActorAndPreventsDirtySnapshotReuse() throws Exception {
+		setupLegacyConfig();
+		final TestKit probe = new TestKit(system);
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerStageWithConstraints(
+						1,
+						new MachineDefinition(1.0, 1.0, 1.0, 3),
+						Lists.newArrayList(),
+						Lists.newArrayList())
+				.build();
+		String clusterName = "initFailureStopsActor";
+		IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName, sInfo);
+		JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+		doThrow(new IOException("induced init store failure"))
+				.when(jobStoreMock).storeNewWorkers(any(), any());
+
+		MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
+				.withJobId(new JobId(clusterName, 1))
+				.withSubmittedAt(Instant.now())
+				.withJobState(JobState.Accepted)
+				.withNextWorkerNumToUse(1)
+				.withJobDefinition(jobDefn)
+				.build();
+		ActorRef jobActor = system.actorOf(JobActor.props(
+				jobClusterDefn,
+				mantisJobMetaData,
+				jobStoreMock,
+				schedulerMock,
+				lifecycleEventPublisher,
+				CostsCalculator.noop()));
+
+		probe.watch(jobActor);
+		jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
+		JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
+		assertEquals(SERVER_ERROR, initMsg.responseCode);
+		assertTrue(initMsg.message.contains("Exception saving worker for Job"));
+		probe.expectTerminated(jobActor);
+
+		verify(jobStoreMock, times(1)).storeNewJob(any());
+		verify(jobStoreMock, times(1)).storeNewWorkers(any(), any());
+		verify(schedulerMock, never()).scheduleWorkers(any());
+		verify(schedulerMock, never()).upsertReservation(any(UpsertReservation.class));
 	}
 
 	private void validateHost(Map<Integer, WorkerHost> hosts, int workerIdx, int workerNum, MantisJobState workerState) {
@@ -785,6 +857,548 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		verify(schedulerMock, times(1)).scheduleWorkers(any());
 		verify(schedulerMock, never()).upsertReservation(any(UpsertReservation.class));
 	}
+
+	////////////////////// Scale-up + storeNewWorker failure tests /////////////////////////
+	// These verify that JobActor.scaleStage keeps worker indexes dense when storeNewWorker fails:
+	// failed additions are rolled back from in-memory metadata, the stage target shrinks to the
+	// realized worker count, and only durably-stored workers are queued to the scheduler.
+
+	/**
+	 * First storeNewWorker call (for worker index 1) throws; the next two attempts succeed.
+	 * After the scale: the stage target shrinks to 3 workers, later successes reuse the failed
+	 * index so the worker indexes remain dense, and the SCALE reservation contains only the
+	 * 2 durably-stored new workers.
+	 */
+	@Test
+	public void scaleUpStageWithStoreNewWorkerFailureOnNthIteration_shrinksToRealizedCount() throws Exception {
+		setupReservationConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0, 1.0, 1.0, 3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "scaleUpStoreFailureRollback";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		// Fail the FIRST scale-up storeNewWorker call (worker index 1), allow the next two.
+		// Initial-job path uses storeNewWorkers(...) (plural batch) — unaffected by this stub.
+		doThrow(new IOException("induced storeNewWorker failure"))
+				.doNothing()
+				.doNothing()
+				.when(jobStoreMock).storeNewWorker(any());
+
+		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(
+				system, probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
+
+		// Scale 1 -> 4 (delta=3): one will fail, two will succeed
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName + "-1", 1, 4, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		assertEquals(SUCCESS, scaleResp.responseCode);
+		assertEquals(3, scaleResp.getActualNumWorkers());
+		assertTrue(scaleResp.message.contains("requested 4"));
+		assertTrue(scaleResp.message.contains("1 add failures"));
+
+		// All three storeNewWorker calls were attempted (the failure didn't abort the loop)
+		verify(jobStoreMock, times(3)).storeNewWorker(any());
+
+		// Inspect the live job metadata: stage 1 must contain exactly 3 workers with no missing index.
+		jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(clusterName + "-1").get()), probe.getRef());
+		JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
+		assertEquals(SUCCESS, detailsResp.responseCode);
+		assertTrue(detailsResp.getJobMetadata().isPresent());
+		IMantisJobMetadata md = detailsResp.getJobMetadata().get();
+		IMantisStageMetadata stage1 = md.getStageMetadata().get(1);
+		assertStageHasDenseWorkerIndexes(stage1, 3);
+
+		// Capture the actual reservation upsert payloads. The scale event's upsert must carry
+		// exactly 2 workers (only the successfully-stored ones). Initial submission and JobMaster
+		// upserts are NEW_JOB-priority; the scale upsert is SCALE-priority — filter on that.
+		ArgumentCaptor<UpsertReservation> upsertCap = ArgumentCaptor.forClass(UpsertReservation.class);
+		verify(schedulerMock, atLeast(1)).upsertReservation(upsertCap.capture());
+		UpsertReservation scaleUpsert = lastUpsertOfType(upsertCap.getAllValues(),
+				io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationPriority.PriorityType.SCALE);
+		assertEquals("scale upsert must contain only the 2 successfully-stored workers",
+				2, scaleUpsert.getAllocationRequests().size());
+
+		// Follow-on scale-down must remove the highest realized index cleanly.
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName + "-1", 1, 2, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleDownResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		assertEquals(SUCCESS, scaleDownResp.responseCode);
+		assertEquals(2, scaleDownResp.getActualNumWorkers());
+		jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(clusterName + "-1").get()), probe.getRef());
+		JobClusterManagerProto.GetJobDetailsResponse postScaleDownResp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
+		assertEquals(SUCCESS, postScaleDownResp.responseCode);
+		assertStageHasDenseWorkerIndexes(postScaleDownResp.getJobMetadata().get().getStageMetadata().get(1), 2);
+	}
+
+	/**
+	 * Every storeNewWorker call during the scale fails. After the scale: the stage target shrinks
+	 * back to its pre-scale worker count (1), and the reservation upsert from the scale must
+	 * contain zero workers (queueWorkers was called with an empty list).
+	 */
+	@Test
+	public void scaleUpStageWithAllStoreNewWorkerFailures_keepsOriginalState() throws Exception {
+		setupReservationConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0, 1.0, 1.0, 3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "scaleUpAllStoreFailures";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		// Make every scale-up storeNewWorker call throw.
+		doThrow(new IOException("induced storeNewWorker failure"))
+				.when(jobStoreMock).storeNewWorker(any());
+
+		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(
+				system, probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
+
+		// Scale 1 -> 4 (delta=3): all three will fail
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName + "-1", 1, 4, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		assertEquals(SUCCESS, scaleResp.responseCode);
+		assertEquals(1, scaleResp.getActualNumWorkers());
+		assertTrue(scaleResp.message.contains("requested 4"));
+		assertTrue(scaleResp.message.contains("3 add failures"));
+
+		verify(jobStoreMock, times(3)).storeNewWorker(any());
+
+		// Stage worker count must be back to its pre-scale value (1 initial worker).
+		jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(clusterName + "-1").get()), probe.getRef());
+		JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
+		assertEquals(SUCCESS, detailsResp.responseCode);
+		IMantisJobMetadata md = detailsResp.getJobMetadata().get();
+		IMantisStageMetadata stage1 = md.getStageMetadata().get(1);
+		assertStageHasDenseWorkerIndexes(stage1, 1);
+
+		// queueWorkersViaReservation short-circuits on an empty worker list (JobActor.java:1905)
+		// so when every store call rolls back, NO SCALE-priority upsert should be sent at all —
+		// the only upserts are the NEW_JOB ones from initial submission and JobMaster.
+		ArgumentCaptor<UpsertReservation> upsertCap = ArgumentCaptor.forClass(UpsertReservation.class);
+		verify(schedulerMock, atLeast(1)).upsertReservation(upsertCap.capture());
+		long scaleUpserts = upsertCap.getAllValues().stream()
+				.filter(u -> u.getPriority() != null
+						&& u.getPriority().getType() == io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationPriority.PriorityType.SCALE)
+				.count();
+		assertEquals("no SCALE upsert should be sent when every storeNewWorker rolls back",
+				0L, scaleUpserts);
+	}
+
+	@Test
+	public void scaleUpStageWithStoreNewWorkerFailureOnNthIteration_legacyShrinksToRealizedCount() throws Exception {
+		setupLegacyConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0, 1.0, 1.0, 3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "scaleUpStoreFailureRollbackLegacy";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		when(schedulerMock.schedulerHandlesAllocationRetries()).thenReturn(false);
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		doThrow(new IOException("induced storeNewWorker failure"))
+				.doNothing()
+				.doNothing()
+				.when(jobStoreMock).storeNewWorker(any());
+
+		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(
+				system, probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
+
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName + "-1", 1, 4, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		assertEquals(SUCCESS, scaleResp.responseCode);
+		assertEquals(3, scaleResp.getActualNumWorkers());
+		assertTrue(scaleResp.message.contains("requested 4"));
+		assertTrue(scaleResp.message.contains("1 add failures"));
+
+		verify(jobStoreMock, times(3)).storeNewWorker(any());
+		verify(schedulerMock, times(2)).scheduleWorkers(any());
+		verify(schedulerMock, never()).upsertReservation(any(UpsertReservation.class));
+
+		jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(clusterName + "-1").get()), probe.getRef());
+		JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
+		assertEquals(SUCCESS, detailsResp.responseCode);
+		assertStageHasDenseWorkerIndexes(detailsResp.getJobMetadata().get().getStageMetadata().get(1), 3);
+	}
+
+	@Test
+	public void scaleUpStageShrinkPersistenceFailurePreservesQueuedPartialResult() throws Exception {
+		setupReservationConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0, 1.0, 1.0, 3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "scaleUpShrinkPersistenceFailure";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		doNothing()
+				.doThrow(new IOException("induced storeNewWorker failure"))
+				.when(jobStoreMock).storeNewWorker(any());
+		doAnswer(invocation -> {
+			IMantisStageMetadata stage = (IMantisStageMetadata) invocation.getArguments()[0];
+			if (stage.getStageNum() == 1 && stage.getNumWorkers() == 3) {
+				throw new IOException("induced shrink updateStage failure");
+			}
+			return null;
+		}).when(jobStoreMock).updateStage(any());
+
+		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(
+				system, probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
+
+		long scaleCounterBefore = readNumScaleStage(clusterName + "-1");
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName + "-1", 1, 4, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		assertEquals(SERVER_ERROR, scaleResp.responseCode);
+		assertEquals(2, scaleResp.getActualNumWorkers());
+		assertTrue(scaleResp.message.contains("requested 4"));
+		assertTrue(scaleResp.message.contains("compensating shrink also failed"));
+		assertTrue(scaleResp.message.contains("shrink did not stick"));
+		assertTrue(scaleResp.message.contains("prior stage target 4 remains in force"));
+		assertTrue("response message must include the original add-failure cause",
+				scaleResp.message.contains("induced storeNewWorker failure"));
+		assertTrue("response message must include the shrink-failure summary",
+				scaleResp.message.contains("Failed to shrink stage"));
+
+		verify(jobStoreMock, times(2)).storeNewWorker(any());
+
+		ArgumentCaptor<UpsertReservation> upsertCap = ArgumentCaptor.forClass(UpsertReservation.class);
+		verify(schedulerMock, atLeast(1)).upsertReservation(upsertCap.capture());
+		UpsertReservation scaleUpsert = lastUpsertOfType(
+				upsertCap.getAllValues(),
+				io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationPriority.PriorityType.SCALE);
+		assertEquals("the already-persisted worker must still be queued",
+				1, scaleUpsert.getAllocationRequests().size());
+
+		jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(clusterName + "-1").get()), probe.getRef());
+		JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
+		assertEquals(SUCCESS, detailsResp.responseCode);
+		assertStageHasDenseWorkerIndexes(detailsResp.getJobMetadata().get().getStageMetadata().get(1), 4, 2);
+
+		assertEquals("partial-success scale must increment numScaleStage",
+				scaleCounterBefore + 1, readNumScaleStage(clusterName + "-1"));
+	}
+
+	@Test
+	public void scaleUpStageRollbackCorruptionFailsJobWithoutQueueingScaleReservation() throws Exception {
+		setupReservationConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0, 1.0, 1.0, 3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "scaleUpRollbackCorruption";
+		MantisSchedulerFactory schedulerMockFactory = mock(MantisSchedulerFactory.class);
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
+		when(schedulerMockFactory.forClusterID(any())).thenReturn(schedulerMock);
+		List<UpsertReservation> upserts = new CopyOnWriteArrayList<>();
+		doAnswer(invocation -> {
+			UpsertReservation request = (UpsertReservation) invocation.getArguments()[0];
+			upserts.add(request);
+			return java.util.concurrent.CompletableFuture.completedFuture(io.mantisrx.common.Ack.getInstance());
+		}).when(schedulerMock).upsertReservation(any());
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		final java.util.concurrent.atomic.AtomicReference<MantisStageMetadataImpl> stageRef =
+				new java.util.concurrent.atomic.AtomicReference<>();
+		final java.util.concurrent.atomic.AtomicInteger storeCallCount = new java.util.concurrent.atomic.AtomicInteger();
+		doAnswer(invocation -> {
+			int call = storeCallCount.incrementAndGet();
+			if (call == 1) {
+				return null;
+			}
+			IMantisWorkerMetadata stored = (IMantisWorkerMetadata) invocation.getArguments()[0];
+			MantisStageMetadataImpl stage = stageRef.get();
+			assertTrue("stage reference must be captured before rollback corruption fires", stage != null);
+			corruptStageIndexEntry(stage, stored.getWorkerIndex(), duplicateWorker(stored));
+			throw new IOException("induced storeNewWorker failure");
+		}).when(jobStoreMock).storeNewWorker(any());
+
+		IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName, sInfo);
+		JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
+		ActorRef jobClusterActor = system.actorOf(JobClusterActor.props(
+				clusterName,
+				jobStoreMock,
+				schedulerMockFactory,
+				lifecycleEventPublisher,
+				CostsCalculator.noop(),
+				0));
+		jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(
+				(io.mantisrx.server.master.domain.JobClusterDefinitionImpl) jobClusterDefn,
+				"user",
+				probe.getRef()), probe.getRef());
+		JobClusterProto.InitializeJobClusterResponse initResp =
+				probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+		assertEquals(SUCCESS, initResp.responseCode);
+
+		String jobId = clusterName + "-1";
+		JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn, jobId);
+		JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
+		JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(
+				probe,
+				jobClusterActor,
+				jobId,
+				0,
+				new WorkerId(clusterName, jobId, 0, 1));
+		JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(
+				probe,
+				jobClusterActor,
+				jobId,
+				1,
+				new WorkerId(clusterName, jobId, 0, 2));
+		JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Launched);
+
+		ActorRef jobActor = resolveJobActor(probe, jobClusterActor, jobId);
+		probe.watch(jobActor);
+
+		jobClusterActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(jobId).get()), probe.getRef());
+		JobClusterManagerProto.GetJobDetailsResponse pre = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
+		stageRef.set((MantisStageMetadataImpl) pre.getJobMetadata().get().getStageMetadata().get(1));
+
+		long scaleCounterBefore = readNumScaleStage(jobId);
+		long scaleUpsertsBefore = countUpsertsOfType(
+				upserts,
+				io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationPriority.PriorityType.SCALE);
+
+		jobClusterActor.tell(new JobClusterManagerProto.ScaleStageRequest(jobId, 1, 3, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		assertEquals(SERVER_ERROR, scaleResp.responseCode);
+		assertEquals(2, scaleResp.getActualNumWorkers());
+		assertTrue(scaleResp.message.contains("rollback of failed addition also threw"));
+		assertTrue("response message must include the original add-failure cause",
+				scaleResp.message.contains("induced storeNewWorker failure"));
+		assertTrue(scaleResp.message.contains("job will be failed"));
+
+		assertEquals("fatal rollback corruption must not queue SCALE reservations",
+				scaleUpsertsBefore,
+				countUpsertsOfType(
+						upserts,
+						io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationPriority.PriorityType.SCALE));
+		assertEquals("fatal rollback corruption must NOT increment numScaleStage",
+				scaleCounterBefore, readNumScaleStage(jobId));
+
+		probe.expectTerminated(jobActor);
+		verify(jobStoreMock, timeout(2000).times(1)).archiveJob(any());
+	}
+
+	/**
+	 * Item 1 negative case: when scaleStage fails *before* anything is durably stored
+	 * (the initial unsafeSetNumWorkers call throws), the scale produced no durable state
+	 * change and numScaleStage must NOT increment.
+	 */
+	@Test
+	public void scaleUpStageInitialTargetPersistFailureDoesNotIncrementScaleCounter() throws Exception {
+		setupReservationConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0, 1.0, 1.0, 3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "scaleUpTargetPersistFailure";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(
+				system, probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
+
+		// Now arm updateStage to throw — the *initial* unsafeSetNumWorkers in scaleStage will fail
+		// before any worker is durably stored.
+		doThrow(new IOException("induced updateStage failure"))
+				.when(jobStoreMock).updateStage(any());
+
+		long scaleCounterBefore = readNumScaleStage(clusterName + "-1");
+
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName + "-1", 1, 3, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		assertEquals(SERVER_ERROR, scaleResp.responseCode);
+
+		jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(clusterName + "-1").get()), probe.getRef());
+		JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
+		assertEquals(SUCCESS, detailsResp.responseCode);
+		assertStageHasDenseWorkerIndexes(detailsResp.getJobMetadata().get().getStageMetadata().get(1), 1);
+
+		assertEquals("scale that never durably stored anything must NOT increment numScaleStage",
+				scaleCounterBefore, readNumScaleStage(clusterName + "-1"));
+	}
+
+	private long readNumScaleStage(String jobId) {
+		// Look up the JobActor's metrics group from the global registry. We scan rather than
+		// build the exact MetricGroupId so the lookup is robust against tag-ordering or
+		// resourceCluster differences across test setups.
+		for (Metrics m : MetricsRegistry.getInstance().getMetrics("JobActor")) {
+			if (m.getMetricGroupId().id().contains("jobId=" + jobId)) {
+				Counter c = m.getCounter("numScaleStage");
+				return c == null ? 0L : c.value();
+			}
+		}
+		return 0L;
+	}
+
+	private static UpsertReservation lastUpsertOfType(
+			List<UpsertReservation> upserts,
+			io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationPriority.PriorityType priorityType) {
+		UpsertReservation last = null;
+		for (UpsertReservation u : upserts) {
+			if (u.getPriority() != null && u.getPriority().getType() == priorityType) {
+				last = u;
+			}
+		}
+		if (last == null) {
+			fail("no upsertReservation captured with priority type " + priorityType);
+		}
+		return last;
+	}
+
+	private static void assertStageHasDenseWorkerIndexes(IMantisStageMetadata stage, int expectedNumWorkers) throws InvalidJobException {
+		assertStageHasDenseWorkerIndexes(stage, expectedNumWorkers, expectedNumWorkers);
+	}
+
+	private static void assertStageHasDenseWorkerIndexes(
+			IMantisStageMetadata stage,
+			int expectedTargetWorkers,
+			int expectedRealizedWorkers) throws InvalidJobException {
+		assertEquals("stage target size should match expected target", expectedTargetWorkers, stage.getNumWorkers());
+		assertEquals("worker metadata count should match realized worker count", expectedRealizedWorkers, stage.getAllWorkers().size());
+		for (int workerIndex = 0; workerIndex < expectedRealizedWorkers; workerIndex++) {
+			assertEquals(workerIndex, stage.getWorkerByIndex(workerIndex).getMetadata().getWorkerIndex());
+		}
+		assertMissingWorkerIndex(stage, expectedRealizedWorkers);
+	}
+
+	private static ActorRef resolveJobActor(TestKit probe, ActorRef jobClusterActor, String jobId) {
+		system.actorSelection(jobClusterActor.path().child("JobActor-" + jobId))
+				.tell(new Identify(jobId), probe.getRef());
+		ActorIdentity identity = probe.expectMsgClass(ActorIdentity.class);
+		assertTrue("job actor must be resolvable for " + jobId, identity.getActorRef().isPresent());
+		return identity.getActorRef().get();
+	}
+
+	private static long countUpsertsOfType(
+			List<UpsertReservation> upserts,
+			io.mantisrx.server.master.resourcecluster.proto.MantisResourceClusterReservationProto.ReservationPriority.PriorityType priorityType) {
+		long count = 0;
+		for (UpsertReservation upsert : upserts) {
+			if (upsert.getPriority() != null && upsert.getPriority().getType() == priorityType) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	private static void corruptStageIndexEntry(MantisStageMetadataImpl stageMeta, int workerIndex, JobWorker worker)
+			throws Exception {
+		java.lang.reflect.Field idxField = MantisStageMetadataImpl.class.getDeclaredField("workerByIndexMetadataSet");
+		idxField.setAccessible(true);
+		@SuppressWarnings("unchecked")
+		Map<Integer, JobWorker> idxMap = (Map<Integer, JobWorker>) idxField.get(stageMeta);
+		idxMap.put(workerIndex, worker);
+	}
+
+	private JobWorker duplicateWorker(IMantisWorkerMetadata stored) {
+		return new JobWorker.Builder()
+				.withJobId(stored.getJobId())
+				.withWorkerIndex(stored.getWorkerIndex())
+				.withWorkerNumber(stored.getWorkerNumber())
+				.withNumberOfPorts(1 + io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.MANTIS_SYSTEM_ALLOCATED_NUM_PORTS)
+				.withWorkerPorts(new WorkerPorts(Lists.newArrayList(9091, 9092, 9093, 9094, 9095)))
+				.withStageNum(stored.getStageNum())
+				.withLifecycleEventsPublisher(lifecycleEventPublisher)
+				.build();
+	}
+
+	private static void assertMissingWorkerIndex(IMantisStageMetadata stage, int workerIndex) {
+		try {
+			stage.getWorkerByIndex(workerIndex);
+			fail("expected worker index " + workerIndex + " to be absent");
+		} catch (InvalidJobException expected) {
+			// Expected: dense index set stops before workerIndex.
+		}
+	}
+
+	/**
+	 * Regression guard: when every storeNewWorker call succeeds, the post-fix behavior must
+	 * match the legacy expectation set by {@link #testJobScaleUpReservation()} — same
+	 * storeNewWorker call count, same worker count after scale, same upsertReservation count.
+	 */
+	@Test
+	public void scaleUpStageWithAllStoreNewWorkerSuccesses_unchangedBehavior() throws Exception {
+		setupReservationConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0, 1.0, 1.0, 3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "scaleUpAllStoreSuccesses";
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(
+				system, probe, clusterName, sInfo, schedulerMock, jobStoreMock, lifecycleEventPublisher);
+
+		// Scale 1 -> 3 (delta=2): same as the existing reservation test
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName + "-1", 1, 3, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		assertEquals(SUCCESS, scaleResp.responseCode);
+		assertEquals(3, scaleResp.getActualNumWorkers());
+
+		verify(jobStoreMock, times(2)).storeNewWorker(any());
+
+		jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(clusterName + "-1").get()), probe.getRef());
+		JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
+		assertEquals(SUCCESS, detailsResp.responseCode);
+		IMantisJobMetadata md = detailsResp.getJobMetadata().get();
+		IMantisStageMetadata stage1 = md.getStageMetadata().get(1);
+		assertEquals("all-success path should yield 3 workers in stage", 3, stage1.getAllWorkers().size());
+	}
+
 	@Test
 	public void stageScalingPolicyTest() {
 		int stageNo = 1;

@@ -225,7 +225,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     int getMaximumResubmissionsPerWorker();
 
     @Config("mantis.worker.resubmission.interval.secs")
-    @Default("5:10:20")
+    @Default("5:10:30:60:120:600")
     String getWorkerResubmitIntervalSecs();
 
     @Config("mantis.worker.expire.resubmit.delay.secs")

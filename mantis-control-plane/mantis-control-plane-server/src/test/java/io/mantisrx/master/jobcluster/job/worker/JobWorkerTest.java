@@ -36,8 +36,11 @@ public class JobWorkerTest {
 
     @BeforeClass
     public static void setup() {
-        registry = new DefaultRegistry();
-        SpectatorRegistryFactory.setRegistry(registry);
+        // SpectatorRegistryFactory.setRegistry uses a one-shot CAS — whichever test class
+        // loads first wins. Install a DefaultRegistry if no one has yet, then read back the
+        // actually-installed registry so we query the same one JobWorker writes to.
+        SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
+        registry = SpectatorRegistryFactory.getRegistry();
     }
 
     @Test
