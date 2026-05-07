@@ -65,9 +65,8 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -94,7 +93,7 @@ public class TaskExecutorReconnectionIntegrationTest {
     private static final WorkerId WORKER_ID_1 =
         WorkerId.fromIdUnsafe("test-job-1-worker-0-1");
 
-    private static ActorSystem actorSystem;
+    private ActorSystem actorSystem;
 
     private final TestingRpcService rpcService = new TestingRpcService();
     private final TaskExecutorGateway gateway = mock(TaskExecutorGateway.class);
@@ -106,19 +105,9 @@ public class TaskExecutorReconnectionIntegrationTest {
     private final MantisPropertiesLoader propertiesLoader =
         new DefaultMantisPropertiesLoader(System.getProperties());
 
-    @BeforeClass
-    public static void setup() {
-        actorSystem = ActorSystem.create();
-    }
-
-    @AfterClass
-    public static void teardown() {
-        TestKit.shutdownActorSystem(actorSystem);
-        actorSystem = null;
-    }
-
     @Before
     public void setupTest() throws Exception {
+        actorSystem = ActorSystem.create();
         rpcService.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
 
         mantisJobStore = mock(MantisJobStore.class);
@@ -165,6 +154,12 @@ public class TaskExecutorReconnectionIntegrationTest {
                 Duration.ofSeconds(15),
                 CLUSTER_ID,
                 new LongDynamicProperty(propertiesLoader, "resourcecluster.gateway.maxConcurrentRequests.test", 100000L));
+    }
+
+    @After
+    public void teardownTest() {
+        TestKit.shutdownActorSystem(actorSystem);
+        actorSystem = null;
     }
 
     @Test
