@@ -35,6 +35,10 @@ dependencies {
     testImplementation libraries.spectatorExtIpc
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.release = 8
+}
+
 test {
     useJUnitPlatform()
 }

@@ -132,9 +132,6 @@ subprojects {
 
     group = 'io.mantisrx'
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-
     if (project.hasProperty('useMavenLocal')) {
         repositories {
             mavenLocal()
