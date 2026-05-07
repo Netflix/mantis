@@ -41,6 +41,10 @@ test {
     useJUnitPlatform()
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.release = 8
+}
+
 tasks.withType(Test) {
     jvmArgs += [
         '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
