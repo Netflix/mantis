@@ -42,6 +42,10 @@ dependencies {
     testImplementation libraries.spectatorApi
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.release = 8
+}
+
 test {
     useJUnitPlatform()
 }
