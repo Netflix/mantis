@@ -27,11 +27,16 @@ import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDefinition;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
-import io.mantisrx.runtime.codec.JsonCodec;
+import io.mantisrx.runtime.codec.JacksonCodecs;
 import io.mantisrx.runtime.descriptor.DeploymentStrategy;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
-import io.mantisrx.server.core.*;
+import io.mantisrx.server.core.JobAssignmentResult;
+import io.mantisrx.server.core.JobScalerRuleInfo;
+import io.mantisrx.server.core.JobSchedulingInfo;
+import io.mantisrx.server.core.NamedJobInfo;
+import io.mantisrx.server.core.PostJobStatusRequest;
+import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
@@ -78,9 +83,6 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 
 
-/**
- *
- */
 public class MantisMasterClientApi implements MantisMasterGateway {
 
     static final String ConnectTimeoutSecsPropertyName = "MantisClientConnectTimeoutSecs";
@@ -136,10 +138,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
             });
     private MasterMonitor masterMonitor;
 
-    /**
-     *
-     * @param masterMonitor
-     */
     public MantisMasterClientApi(MasterMonitor masterMonitor) {
         this.masterMonitor = masterMonitor;
         masterEndpoint = masterMonitor.getMasterObservable()
@@ -170,15 +168,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
     }
 
 
-    /**
-     *
-     * @param name
-     * @param version
-     * @param parameters
-     * @param jobSla
-     * @param schedulingInfo
-     * @return
-     */
     public Observable<JobSubmitResponse> submitJob(final String name, final String version,
                                                    final List<Parameter> parameters,
                                                    final JobSla jobSla,
@@ -187,17 +176,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 WorkerMigrationConfig.DEFAULT);
     }
 
-    /**
-     *
-     * @param name
-     * @param version
-     * @param parameters
-     * @param jobSla
-     * @param subscriptionTimeoutSecs
-     * @param schedulingInfo
-     * @param migrationConfig
-     * @return
-     */
     public Observable<JobSubmitResponse> submitJob(final String name, final String version,
                                                    final List<Parameter> parameters,
                                                    final JobSla jobSla,
@@ -208,17 +186,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 false, migrationConfig);
     }
 
-    /**
-     *
-     * @param name
-     * @param version
-     * @param parameters
-     * @param jobSla
-     * @param subscriptionTimeoutSecs
-     * @param schedulingInfo
-     * @return
-     */
-
     public Observable<JobSubmitResponse> submitJob(final String name, final String version,
                                                    final List<Parameter> parameters,
                                                    final JobSla jobSla,
@@ -228,17 +195,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 false, WorkerMigrationConfig.DEFAULT);
     }
 
-    /**
-     *
-     * @param name
-     * @param version
-     * @param parameters
-     * @param jobSla
-     * @param subscriptionTimeoutSecs
-     * @param schedulingInfo
-     * @param readyForJobMaster
-     * @return
-     */
     public Observable<JobSubmitResponse> submitJob(final String name, final String version,
                                                    final List<Parameter> parameters,
                                                    final JobSla jobSla,
@@ -249,18 +205,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 readyForJobMaster, WorkerMigrationConfig.DEFAULT);
     }
 
-    /**
-     *
-     * @param name
-     * @param version
-     * @param parameters
-     * @param jobSla
-     * @param subscriptionTimeoutSecs
-     * @param schedulingInfo
-     * @param readyForJobMaster
-     * @param migrationConfig
-     * @return
-     */
     public Observable<JobSubmitResponse> submitJob(final String name, final String version,
                                                    final List<Parameter> parameters,
                                                    final JobSla jobSla,
@@ -272,19 +216,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 readyForJobMaster, migrationConfig, new LinkedList<>());
     }
 
-    /**
-     *
-     * @param name
-     * @param version
-     * @param parameters
-     * @param jobSla
-     * @param subscriptionTimeoutSecs
-     * @param schedulingInfo
-     * @param readyForJobMaster
-     * @param migrationConfig
-     * @param labels
-     * @return
-     */
     public Observable<JobSubmitResponse> submitJob(final String name, final String version,
                                                    final List<Parameter> parameters,
                                                    final JobSla jobSla,
@@ -319,12 +250,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
             return Observable.error(e);
         }
     }
-
-    /**
-     *
-     * @param submitJobRequestJson
-     * @return
-     */
 
     public Observable<JobSubmitResponse> submitJob(final String submitJobRequestJson) {
         return masterMonitor.getMasterObservable()
@@ -363,13 +288,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 "User requested");
     }
 
-    /**
-     *
-     * @param jobId
-     * @param user
-     * @param reason
-     * @return
-     */
     public Observable<Void> killJob(final String jobId, final String user, final String reason) {
         return masterMonitor.getMasterObservable()
                 .filter(md -> md != null)
@@ -394,14 +312,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 });
     }
 
-    /**
-     *
-     * @param jobId
-     * @param stageNum
-     * @param numWorkers
-     * @param reason
-     * @return
-     */
     public Observable<Boolean> scaleJobStage(final String jobId, final int stageNum, final int numWorkers,
                                              final String reason) {
         return masterMonitor
@@ -423,14 +333,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 });
     }
 
-    /**
-     *
-     * @param jobId
-     * @param user
-     * @param workerNum
-     * @param reason
-     * @return
-     */
     public Observable<Boolean> resubmitJobWorker(final String jobId, final String user, final int workerNum,
                                                  final String reason) {
         return masterMonitor.getMasterObservable()
@@ -462,7 +364,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                                 .withContent(postContent),
                         new HttpClient.HttpClientConfig.Builder()
                                 .build())
-                .map(b -> b.getStatus());
+                .map(HttpClientResponse::getStatus);
     }
 
     private Observable<String> getPostResponse(String uri, String postContent) {
@@ -473,15 +375,9 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                                 .withContent(postContent),
                         new HttpClient.HttpClientConfig.Builder()
                                 .build())
-                .flatMap((Func1<HttpClientResponse<ByteBuf>, Observable<ByteBuf>>) b -> b.getContent())
+                .flatMap(HttpClientResponse::getContent)
                 .map(o -> o.toString(Charset.defaultCharset()));
     }
-
-    /**
-     *
-     * @param jobName
-     * @return
-     */
 
     public Observable<Boolean> namedJobExists(final String jobName) {
         return masterMonitor.getMasterObservable()
@@ -507,11 +403,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 ;
     }
 
-    /**
-     *
-     * @param jobId
-     * @return
-     */
     public Observable<Integer> getSinkStageNum(final String jobId) {
         return masterMonitor.getMasterObservable()
                 .filter(masterDescription -> masterDescription != null)
@@ -543,12 +434,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 });
     }
 
-    /**
-     *
-     * @param jobName
-     * @param state
-     * @return
-     */
     // returns json array of job metadata
     public Observable<String> getJobsOfNamedJob(final String jobName, final MantisJobState.MetaState state) {
         return masterMonitor.getMasterObservable()
@@ -672,11 +557,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                         .build();
     }
 
-    /**
-     *
-     * @param jobId
-     * @return
-     */
     public Observable<String> getJobStatusObservable(final String jobId) {
         return masterMonitor.getMasterObservable()
                 .filter((md) -> md != null)
@@ -689,11 +569,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 .onErrorResumeNext(Observable.empty());
     }
 
-    /**
-     *
-     * @param jobId
-     * @return
-     */
     public Observable<JobSchedulingInfo> schedulingChanges(final String jobId) {
         final ConditionalRetry retryObject = new ConditionalRetry(null, "assignmentresults_" + jobId);
         return masterMonitor.getMasterObservable()
@@ -792,11 +667,6 @@ public class MantisMasterClientApi implements MantisMasterGateway {
             ;
     }
 
-    /**
-     *
-     * @param jobName
-     * @return
-     */
     public Observable<NamedJobInfo> namedJobInfo(final String jobName) {
         return masterMonitor.getMasterObservable()
                 .filter(masterDescription -> masterDescription != null)
@@ -827,17 +697,12 @@ public class MantisMasterClientApi implements MantisMasterGateway {
     }
 
 
-    /**
-     *
-     * @param jobId
-     * @return
-     */
     public Observable<JobAssignmentResult> assignmentResults(String jobId) {
         ConnectToObservable.Builder<JobAssignmentResult> connectionBuilder =
                 new ConnectToObservable.Builder<JobAssignmentResult>()
                         .subscribeAttempts(subscribeAttemptsToMaster)
                         .name("/v1/api/master/assignmentresults")
-                        .decoder(new JsonCodec<JobAssignmentResult>(JobAssignmentResult.class));
+                        .decoder(JacksonCodecs.pojo(JobAssignmentResult.class));
         if (jobId != null && !jobId.isEmpty()) {
             Map<String, String> subscriptionParams = new HashMap<>();
             subscriptionParams.put("jobId", jobId);
