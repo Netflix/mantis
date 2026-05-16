@@ -2,7 +2,10 @@
 
 ## Prerequisites
 
-JDK 8 or higher
+JDK 8 (newer versions may not be supported)
+
+!!! tip
+    Some users find https://sdkman.io/ helpful for managing multiple Java versions.
 
 ## Build and run the synthetic-sourcejob sample
 
@@ -43,7 +46,7 @@ Such an MQL query would like like this.
 ```bash
 select country from stream where status==500
 ```
-In another terminal window curl this port
+In another terminal window curl this port (note that your port will likely be different)
 ```bash
 $ curl "localhost:8436?subscriptionId=nj&criterion=select%20country%20from%20stream%20where%20status%3D%3D500&clientId=nj2"
 ```
