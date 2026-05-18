@@ -471,17 +471,17 @@ public class JobTestLifecycle {
                     .build();
             final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, costsCalculator));
 
+            probe.watch(jobActor);
 			jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
 			JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
 			assertEquals(SERVER_ERROR, initMsg.responseCode);
 			System.out.println(initMsg.message);
 
-			String jobId = clusterName + "-1";
-			jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
-			//jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
-			GetJobDetailsResponse resp = probe.expectMsgClass(GetJobDetailsResponse.class);
-			System.out.println("resp " + resp + " msg " + resp.message);
-			assertEquals(CLIENT_ERROR, resp.responseCode);
+			// Submit-time init failure leaves the in-memory job metadata in a dirty state
+			// (setupStageWorkers may have mutated the stage maps before storeNewJob threw),
+			// so the actor stops itself to prevent any subsequent message from observing
+			// that dirty snapshot. Verify it terminates.
+			probe.expectTerminated(jobActor);
 		} catch (InvalidJobException  e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -332,9 +332,14 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
      * @throws Exception
      */
     public void unsafeSetNumWorkers(int numWorkers, MantisJobStore store) throws Exception {
+        int previousNumWorkers = this.numWorkers;
         this.numWorkers = numWorkers;
-
-        store.updateStage(this);
+        try {
+            store.updateStage(this);
+        } catch (Exception e) {
+            this.numWorkers = previousNumWorkers;
+            throw e;
+        }
     }
 
     /**
@@ -568,6 +573,70 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
         workerByNumberMetadataSet.put(newWorkerMetadata.getWorkerNumber(), newWorker);
         return true;
 
+    }
+
+    /**
+     * Reverses {@link #addWorkerIndex(JobWorker)} without archiving. Intended for rolling back a
+     * pending in-memory addition that failed to persist (e.g. {@code MantisJobStore.storeNewWorker}
+     * threw); use {@link #unsafeRemoveWorker(int, int, MantisJobStore)} for the archive-on-remove path.
+     */
+    void removeWorkerIndex(int workerIndex, int workerNumber) {
+        JobWorker workerByIndex = workerByIndexMetadataSet.get(workerIndex);
+        JobWorker workerByNumber = workerByNumberMetadataSet.get(workerNumber);
+        if (workerByIndex == null
+                || workerByNumber == null
+                || workerByIndex.getMetadata().getWorkerIndex() != workerIndex
+                || workerByIndex.getMetadata().getWorkerNumber() != workerNumber
+                || workerByNumber.getMetadata().getWorkerIndex() != workerIndex
+                || workerByNumber.getMetadata().getWorkerNumber() != workerNumber
+                || workerByIndex != workerByNumber) {
+            throw new IllegalStateException(String.format(
+                    "Corrupt stage worker rollback state for job %s stage %d index %d workerNumber %d "
+                            + "(workerByIndex=%s, workerByNumber=%s)",
+                    jobId.getId(),
+                    stageNum,
+                    workerIndex,
+                    workerNumber,
+                    describeRollbackWorker(workerByIndex),
+                    describeRollbackWorker(workerByNumber)));
+        }
+
+        if (!workerByIndexMetadataSet.remove(workerIndex, workerByIndex)) {
+            throw new IllegalStateException(String.format(
+                    "Corrupt stage worker rollback state for job %s stage %d index %d workerNumber %d "
+                            + "(workerByIndex=%s, workerByNumber=%s, removedByIndex=false)",
+                    jobId.getId(),
+                    stageNum,
+                    workerIndex,
+                    workerNumber,
+                    describeRollbackWorker(workerByIndex),
+                    describeRollbackWorker(workerByNumber)));
+        }
+
+        if (!workerByNumberMetadataSet.remove(workerNumber, workerByNumber)) {
+            workerByIndexMetadataSet.put(workerIndex, workerByIndex);
+            throw new IllegalStateException(String.format(
+                    "Corrupt stage worker rollback state for job %s stage %d index %d workerNumber %d "
+                            + "(workerByIndex=%s, workerByNumber=%s, removedByNumber=false)",
+                    jobId.getId(),
+                    stageNum,
+                    workerIndex,
+                    workerNumber,
+                    describeRollbackWorker(workerByIndex),
+                    describeRollbackWorker(workerByNumber)));
+        }
+    }
+
+    private static String describeRollbackWorker(JobWorker worker) {
+        if (worker == null) {
+            return "null";
+        }
+
+        return String.format(
+                "index=%d,workerNumber=%d,identity=%s",
+                worker.getMetadata().getWorkerIndex(),
+                worker.getMetadata().getWorkerNumber(),
+                Integer.toHexString(System.identityHashCode(worker)));
     }
 
     /**

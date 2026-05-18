@@ -69,7 +69,7 @@ public interface IWorkerManager {
      *
      * @return
      */
-    int scaleStage(MantisStageMetadataImpl stageMetaData, int ruleMax, int ruleMin, int numWorkers, String reason);
+    ScaleStageResult scaleStage(MantisStageMetadataImpl stageMetaData, int ruleMax, int ruleMin, int numWorkers, String reason);
 
     /**
      * Explicitly kill and resubmit worker associated with the given workerNumber.
@@ -100,4 +100,32 @@ public interface IWorkerManager {
      * Force sending any updates in worker data.
      */
     void refreshAndSendWorkerAssignments();
+
+    final class ScaleStageResult {
+        private final int actualNumWorkers;
+        private final int requestedNumWorkers;
+        private final int failedAdditions;
+
+        ScaleStageResult(int actualNumWorkers, int requestedNumWorkers, int failedAdditions) {
+            this.actualNumWorkers = actualNumWorkers;
+            this.requestedNumWorkers = requestedNumWorkers;
+            this.failedAdditions = failedAdditions;
+        }
+
+        int getActualNumWorkers() {
+            return actualNumWorkers;
+        }
+
+        int getRequestedNumWorkers() {
+            return requestedNumWorkers;
+        }
+
+        int getFailedAdditions() {
+            return failedAdditions;
+        }
+
+        boolean hasFailedAdditions() {
+            return failedAdditions > 0;
+        }
+    }
 }
