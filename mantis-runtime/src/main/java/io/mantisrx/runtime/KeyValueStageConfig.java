@@ -37,7 +37,11 @@ public abstract class KeyValueStageConfig<T, K, R> extends StageConfig<T, R> {
     }
 
     public KeyValueStageConfig(String description, Codec<?> inputKeyCodec, Codec<T> inputCodec, Codec<K> outputKeyCodec, Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params, int concurrency) {
-        super(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, concurrency);
+        this(description, inputKeyCodec, inputCodec, outputKeyCodec, outputCodec, inputStrategy, params, concurrency, rx.internal.util.RxRingBuffer.SIZE);
+    }
+
+    public KeyValueStageConfig(String description, Codec<?> inputKeyCodec, Codec<T> inputCodec, Codec<K> outputKeyCodec, Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params, int concurrency, int bufferSize) {
+        super(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, concurrency, bufferSize);
         this.keyCodec = outputKeyCodec;
     }
 

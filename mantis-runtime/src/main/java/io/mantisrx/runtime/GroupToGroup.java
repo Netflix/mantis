@@ -53,7 +53,7 @@ public class GroupToGroup<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
 
     GroupToGroup(GroupComputation<K1, T, K2, R> computation,
                  Config<K1, T, K2, R> config, Codec<K1> inputKeyCodec, Codec<T> inputCodec) {
-        super(config.description, inputKeyCodec, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, inputKeyCodec, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters, DEFAULT_STAGE_CONCURRENCY, config.bufferSize);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }
@@ -76,6 +76,7 @@ public class GroupToGroup<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
         // always assume a stateful calculation is being made
         // do not allow config to override
         private final INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
+        private int bufferSize = rx.internal.util.RxRingBuffer.SIZE;
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
         /**
@@ -133,6 +134,15 @@ public class GroupToGroup<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
         public Config<K1, T, K2, R> withParameters(List<ParameterDefinition<?>> params) {
             this.parameters = params;
             return this;
+        }
+
+        public Config<K1, T, K2, R> bufferSize(int bufferSize) {
+            this.bufferSize = bufferSize;
+            return this;
+        }
+
+        public int getBufferSize() {
+            return bufferSize;
         }
 
     }

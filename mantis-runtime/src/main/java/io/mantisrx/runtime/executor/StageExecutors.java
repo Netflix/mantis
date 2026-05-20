@@ -204,7 +204,7 @@ public class StageExecutors {
      */
     @SuppressWarnings("unchecked")
     private static <K, T, R> Observable<Observable<R>> executeMantisGroupsInParallel(Observable<Observable<MantisGroup<K, T>>> go, Computation computation,
-                                                                                     final Context context, final boolean applyTimeoutToInners, final long timeout, final int concurrency) {
+                                                                                     final Context context, final boolean applyTimeoutToInners, final long timeout, final int concurrency, final int bufferSize) {
         logger.info("initializing {}", computation.getClass().getCanonicalName());
         computation.init(context);
 
@@ -218,7 +218,7 @@ public class StageExecutors {
                     .lift(new MonitorOperator<>("worker_stage_outer"))
                     .map(observable -> c
                             .call(context, observable
-                                    .observeOn(Schedulers.computation())
+                                    .observeOn(Schedulers.computation(), bufferSize)
                                     .lift(new MonitorOperator<>("worker_stage_inner_input")))
                             .lift(new MonitorOperator<>("worker_stage_inner_output")));
 
@@ -238,7 +238,7 @@ public class StageExecutors {
                             .groupBy(e -> Math.abs(e.getKeyValue().hashCode()) % concurrency)
                             .flatMap(gbo -> c
                                     .call(context, gbo
-                                            .observeOn(mantisRxSingleThreadSchedulers[gbo.getKey()])
+                                            .observeOn(mantisRxSingleThreadSchedulers[gbo.getKey()], bufferSize)
                                             .lift(new MonitorOperator<MantisGroup<K, T>>("worker_stage_inner_input")))
                                     .lift(new MonitorOperator<R>("worker_stage_inner_output"))));
         }
@@ -277,7 +277,7 @@ public class StageExecutors {
      */
     @SuppressWarnings("unchecked")
     private static <T, R> Observable<Observable<R>> executeInnersInParallel(Observable<Observable<T>> oo, Computation computation,
-                                                                            final Context context, final boolean applyTimeoutToInners, final long timeout, final int concurrency) {
+                                                                            final Context context, final boolean applyTimeoutToInners, final long timeout, final int concurrency, final int bufferSize) {
         logger.info("initializing {}", computation.getClass().getCanonicalName());
         computation.init(context);
 
@@ -290,7 +290,7 @@ public class StageExecutors {
                     .lift(new MonitorOperator<>("worker_stage_outer"))
                     .map(observable -> c
                             .call(context, observable
-                                    .observeOn(Schedulers.computation())
+                                    .observeOn(Schedulers.computation(), bufferSize)
                                     .lift(new MonitorOperator<T>("worker_stage_inner_input")))
                             .lift(new MonitorOperator<R>("worker_stage_inner_output")));
         } else {
@@ -307,7 +307,7 @@ public class StageExecutors {
                             .flatMap(go ->
                                     c
                                     .call(context, go
-                                            .observeOn(mantisRxSingleThreadSchedulers[go.getKey().intValue()])
+                                            .observeOn(mantisRxSingleThreadSchedulers[go.getKey().intValue()], bufferSize)
                                             .lift(new MonitorOperator<>("worker_stage_inner_input")))
                                     .lift(new MonitorOperator<>("worker_stage_inner_output"))));
         }
@@ -352,7 +352,8 @@ public class StageExecutors {
                 context,
                 false,
                 Integer.MAX_VALUE,
-                resolveStageConcurrency(context, stage.getConcurrency()));
+                resolveStageConcurrency(context, stage.getConcurrency()),
+                stage.getBufferSize());
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
             Observable<Observable<T>> merged = Observable.just(Observable.merge(source));
             return executeInners(merged, stage.getComputation(), context, false, Integer.MAX_VALUE);
@@ -368,7 +369,7 @@ public class StageExecutors {
         // check if job overrides the default input strategy
         if (inputType == StageConfig.INPUT_STRATEGY.CONCURRENT) {
             return executeInnersInParallel(source, stage.getComputation(), context, true,
-                stage.getKeyExpireTimeSeconds(), resolveStageConcurrency(context, stage.getConcurrency()));
+                stage.getKeyExpireTimeSeconds(), resolveStageConcurrency(context, stage.getConcurrency()), stage.getBufferSize());
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
             Observable<Observable<T>> merged = Observable.just(Observable.merge(source));
             return executeInners(merged, stage.getComputation(), context, true, stage.getKeyExpireTimeSeconds());
@@ -385,7 +386,7 @@ public class StageExecutors {
         // check if job overrides the default input strategy
         if (inputType == StageConfig.INPUT_STRATEGY.CONCURRENT) {
             return executeInnersInParallel(source, stage.getComputation(), context, true,
-                stage.getKeyExpireTimeSeconds(),resolveStageConcurrency(context, stage.getConcurrency()));
+                stage.getKeyExpireTimeSeconds(),resolveStageConcurrency(context, stage.getConcurrency()), stage.getBufferSize());
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
             Observable<Observable<T>> merged = Observable.just(Observable.merge(source));
             return executeInners(merged, stage.getComputation(), context, true, stage.getKeyExpireTimeSeconds());
@@ -446,7 +447,7 @@ public class StageExecutors {
         if (inputType == StageConfig.INPUT_STRATEGY.CONCURRENT) {
             logger.info("Execute Groups in PARALLEL!!!!");
             return executeMantisGroupsInParallel(source, stage.getComputation(), context, true,
-                stage.getKeyExpireTimeSeconds(),resolveStageConcurrency(context, stage.getConcurrency()));
+                stage.getKeyExpireTimeSeconds(),resolveStageConcurrency(context, stage.getConcurrency()), stage.getBufferSize());
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
 
             Observable<Observable<MantisGroup<K, T>>> merged = Observable.just(Observable.merge(source));
