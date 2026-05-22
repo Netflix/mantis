@@ -1,6 +1,5 @@
-Mantis Source Jobs are [Mantis Jobs] that fetch data from external sources. There are four types of
+Mantis Source Jobs are [Mantis Jobs] that fetch data from external sources. There are two types of
 Source Jobs:
-
 1. **Mantis Publish Source Jobs**
    read from their sources by using the [Mantis Publish](../../developing/mre) client library. As such, they do not apply [MQL](../../developing/mql) on events
    themselves. Instead, they propagate the MQL queries upstream to Mantis Publish running on the external
