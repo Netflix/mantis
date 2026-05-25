@@ -98,7 +98,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private final AtomicReference<Heartbeat> heartbeatRef = new AtomicReference<>();
     private final SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
     private final MantisMasterGateway mantisMasterApi;
-    private int connectionsPerEndpoint = 2;
     private boolean lookupSpectatorRegistry = true;
     private SinkSubscriptionStateHandler subscriptionStateHandler;
     private Action0 onSinkSubscribe = null;
@@ -119,12 +118,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         this.workerMetricsClient = workerMetricsClient;
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
         this.classLoader = classLoader;
-
-        String connectionsPerEndpointStr =
-            ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.connectionsPerEndpoint", "2");
-        if (connectionsPerEndpointStr != null && !connectionsPerEndpointStr.equals("2")) {
-            connectionsPerEndpoint = Integer.parseInt(connectionsPerEndpointStr);
-        }
 
         String locateSpectatorRegistry =
             ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.locate.spectator.registry", "true");
@@ -472,7 +465,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
                     WorkerPublisherRemoteObservable publisher
                             = new WorkerPublisherRemoteObservable<>(rw.getPorts().next(),
-                            remoteObservableName, numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1),
+                            remoteObservableName,
                             rw.getJobName(), getRouterFactoryInstance(serviceLocator));
 
                     closeables.add(StageExecutors.executeSource(rw.getWorkerIndex(), rw.getJob().getSource(),
@@ -614,7 +607,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
                 WorkerPublisherRemoteObservable publisher
                         = new WorkerPublisherRemoteObservable<>(workerPort, remoteObservableName,
-                        numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1), rw.getJobName(),
+                        rw.getJobName(),
                         getRouterFactoryInstance(serviceLocator)
                     );
                 closeables.add(StageExecutors.executeIntermediate(consumer, rw.getStage(), publisher,
@@ -633,31 +626,23 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
     }
 
-    private Observable<Integer> numWorkersAtStage(Observable<JobSchedulingInfo> selfSchedulingInfo, String jobId, final int stageNum) {
-        //return mantisMasterApi.schedulingChanges(jobId)
-        return selfSchedulingInfo
-                .distinctUntilChanged((prevJobSchedInfo, currentJobSchedInfo) -> (!prevJobSchedInfo.equals(currentJobSchedInfo)) ? false : true)
-                .flatMap((Func1<JobSchedulingInfo, Observable<WorkerAssignments>>) schedulingChange -> {
-                    Map<Integer, WorkerAssignments> assignments = schedulingChange.getWorkerAssignments();
-                    if (assignments != null && !assignments.isEmpty()) {
-                        return Observable.from(assignments.values());
-                    } else {
-                        return Observable.empty();
-                    }
-                })
-                .filter(assignments -> (assignments.getStage() == stageNum))
-                .map(assignments -> {
-                    return assignments.getNumWorkers() * connectionsPerEndpoint; // scale by numConnections
-                }).share();
-
-    }
-
     @SuppressWarnings( {"rawtypes"})
     private WorkerConsumer connectToObservableAtPreviousStages(Observable<JobSchedulingInfo> selfSchedulingInfo, final String jobId, final int previousStageNum,
                                                                int numInstanceAtPreviousStage, final StageConfig previousStage, final AtomicBoolean acceptSchedulingChanges,
                                                                final Observer<Status> jobStatusObserver, final int stageNumToExecute, final int workerIndex, final int workerNumber,
                                                                ServiceLocator serviceLocator) {
         logger.info("Watching for scheduling changes");
+
+        int connectionsPerEndpoint;
+        String connectionsPerEndpointStr =
+            ServiceRegistry.INSTANCE
+                .getPropertiesService()
+                .getStringValue("mantis.worker.connectionsPerEndpoint", "2");
+        if (connectionsPerEndpointStr != null && !connectionsPerEndpointStr.equals("2")) {
+          connectionsPerEndpoint = Integer.parseInt(connectionsPerEndpointStr);
+        } else {
+          connectionsPerEndpoint = 2;
+        }
 
         //Observable<List<Endpoint>> schedulingUpdates = mantisMasterApi.schedulingChanges(jobId)
         Observable<List<Endpoint>> schedulingUpdates = selfSchedulingInfo
