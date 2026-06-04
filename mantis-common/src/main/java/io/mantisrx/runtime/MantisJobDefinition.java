@@ -41,7 +41,7 @@ public class MantisJobDefinition {
     private String version;
     private List<Parameter> parameters;
     private JobSla jobSla;
-    private long subscriptionTimeoutSecs = 0L;
+    private long subscriptionTimeoutSecs;
     private SchedulingInfo schedulingInfo;
     private DeploymentStrategy deploymentStrategy;
     private int slaMin = 0;
@@ -59,14 +59,14 @@ public class MantisJobDefinition {
                                @JsonProperty("url") URL jobJarFileLocation,
                                @JsonProperty("version") String version,
                                @JsonProperty("parameters") List<Parameter> parameters,
-                               @JsonProperty("jobSla") JobSla jobSla,
-                               @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
+                               @JsonProperty(value = "jobSla", required = false) JobSla jobSla,
+                               @JsonProperty(value = "subscriptionTimeoutSecs", required = false, defaultValue = "0") long subscriptionTimeoutSecs,
                                @JsonProperty("schedulingInfo") SchedulingInfo schedulingInfo,
                                @JsonProperty("slaMin") int slaMin,
                                @JsonProperty("slaMax") int slaMax,
-                               @JsonProperty("cronSpec") String cronSpec,
-                               @JsonProperty("cronPolicy") NamedJobDefinition.CronPolicy cronPolicy,
-                               @JsonProperty("isReadyForJobMaster") boolean isReadyForJobMaster,
+                               @JsonProperty(value = "cronSpec", required = false, defaultValue = "") String cronSpec,
+                               @JsonProperty(value = "cronPolicy", required = false) NamedJobDefinition.CronPolicy cronPolicy,
+                               @Deprecated @JsonProperty(value = "isReadyForJobMaster", required = false, defaultValue = "false") boolean isReadyForJobMaster,
                                @JsonProperty("migrationConfig") WorkerMigrationConfig migrationConfig,
                                @JsonProperty("labels") List<Label> labels,
                                @JsonProperty("deploymentStrategy") DeploymentStrategy deploymentStrategy
@@ -87,8 +87,7 @@ public class MantisJobDefinition {
             this.labels = new LinkedList<>();
         }
         this.jobSla = jobSla;
-        if (subscriptionTimeoutSecs > 0)
-            this.subscriptionTimeoutSecs = subscriptionTimeoutSecs;
+        this.subscriptionTimeoutSecs = subscriptionTimeoutSecs > 0 ? subscriptionTimeoutSecs : 0L;
         this.schedulingInfo = schedulingInfo;
         this.deploymentStrategy = deploymentStrategy;
         this.slaMin = slaMin;
@@ -169,6 +168,10 @@ public class MantisJobDefinition {
         return parameters;
     }
 
+    /**
+     * @deprecated jobSla is not applicable for job cluster creation requests and is ignored. Only used for job submission.
+     */
+    @Deprecated
     public JobSla getJobSla() {
         return jobSla;
     }
@@ -205,6 +208,10 @@ public class MantisJobDefinition {
         return cronPolicy;
     }
 
+    /**
+     * @deprecated isReadyForJobMaster is no longer used. Job master is determined by autoscaling configuration instead.
+     */
+    @Deprecated
     public boolean getIsReadyForJobMaster() {
         return isReadyForJobMaster;
     }
