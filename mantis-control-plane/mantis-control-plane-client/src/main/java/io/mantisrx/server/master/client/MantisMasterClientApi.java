@@ -351,10 +351,16 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                                           boolean readyForJobMaster, final WorkerMigrationConfig migrationConfig,
                                           final List<Label> labels, final DeploymentStrategy deploymentStrategy)
             throws JsonProcessingException, MalformedURLException {
-        MantisJobDefinition jobDefinition = new MantisJobDefinition(name, System.getProperty("user.name"),
-                jobUrl == null ? null : new URL(jobUrl),
-                version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo, 0, 0,
-                null, null, readyForJobMaster, migrationConfig, labels, deploymentStrategy);
+        MantisJobDefinition jobDefinition = MantisJobDefinition.builder(name, System.getProperty("user.name"), schedulingInfo)
+                .jobJarFileLocation(jobUrl == null ? null : new URL(jobUrl))
+                .version(version)
+                .parameters(parameters)
+                .jobSla(jobSla)
+                .subscriptionTimeoutSecs(subscriptionTimeoutSecs)
+                .migrationConfig(migrationConfig)
+                .labels(labels)
+                .deploymentStrategy(deploymentStrategy)
+                .build();
         return objectMapper.writeValueAsString(jobDefinition);
     }
 
