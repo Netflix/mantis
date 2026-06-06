@@ -54,7 +54,7 @@
             "locked": "1.7.0"
         },
         "org.xerial.snappy:snappy-java": {
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "lombok": {
@@ -112,7 +112,7 @@
             "locked": "1.7.0"
         },
         "org.xerial.snappy:snappy-java": {
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testAnnotationProcessor": {
@@ -204,7 +204,7 @@
             "locked": "1.2.1"
         },
         "org.mockito:mockito-core": {
-            "locked": "5.14.2"
+            "locked": "5.21.0"
         },
         "org.projectlombok:lombok": {
             "locked": "1.18.36"
@@ -225,7 +225,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testFixturesAnnotationProcessor": {
@@ -311,7 +311,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testFixturesRuntimeClasspath": {
@@ -407,7 +407,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testRuntimeClasspath": {
@@ -506,7 +506,7 @@
             "locked": "1.2.1"
         },
         "org.mockito:mockito-core": {
-            "locked": "5.14.2"
+            "locked": "5.21.0"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
@@ -524,7 +524,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     }
 }
