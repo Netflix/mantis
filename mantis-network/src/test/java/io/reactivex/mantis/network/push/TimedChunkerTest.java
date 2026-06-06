@@ -156,13 +156,12 @@ public class TimedChunkerTest {
         assertEquals(expected, processor.getProcessed());
     }
 
-    public static class TestProcessor<T> extends ChunkProcessor<T> {
+    public static class TestProcessor<T> implements ChunkProcessor<T> {
         private ScheduledExecutorService scheduledService = Executors.newSingleThreadScheduledExecutor();
         private List<T> processed = new ArrayList();
         private long processingTimeMs = 0;
 
         public TestProcessor(long processingTimeMs) {
-            super(null);
             this.processingTimeMs = processingTimeMs;
         }
 
