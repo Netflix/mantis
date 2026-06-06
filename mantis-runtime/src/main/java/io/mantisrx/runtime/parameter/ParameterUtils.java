@@ -20,7 +20,9 @@ import static io.mantisrx.common.SystemParameters.*;
 
 import com.mantisrx.common.utils.MantisSSEConstants;
 import io.mantisrx.common.compression.CompressionUtils;
+import io.mantisrx.runtime.EagerSubscriptionStrategy;
 import io.mantisrx.runtime.parameter.type.BooleanParameter;
+import io.mantisrx.runtime.parameter.type.EnumParameter;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validation;
@@ -253,6 +255,29 @@ public class ParameterUtils {
                 "built in to allow for network delays and/or miss a few worker heartbeats before being killed.")
             .build();
         systemParams.put(workerTimeout.getName(), workerTimeout);
+
+        // Eager subscription parameters for perpetual jobs
+        ParameterDefinition<Enum<EagerSubscriptionStrategy>> eagerSubscriptionStrategy =
+            new EnumParameter<EagerSubscriptionStrategy>(EagerSubscriptionStrategy.class)
+                .name(JOB_WORKER_EAGER_SUBSCRIPTION_STRATEGY)
+                .defaultValue(EagerSubscriptionStrategy.IMMEDIATE)
+                .validator(Validators.alwaysPass())
+                .description("Strategy for when perpetual jobs start eager subscription:\n" +
+                           "IMMEDIATE - Start processing data immediately (default, backward compatible)\n" +
+                           "ON_FIRST_CLIENT - Wait for first SSE client connection before processing\n" +
+                           "TIMEOUT_BASED - Wait for first client OR timeout (uses mantis.eager.subscription.timeoutSecs)")
+                .build();
+        systemParams.put(eagerSubscriptionStrategy.getName(), eagerSubscriptionStrategy);
+
+        ParameterDefinition<Integer> eagerSubscriptionTimeout = new IntParameter()
+                .name(JOB_WORKER_EAGER_SUBSCRIPTION_TIMEOUT_SECS)
+                .defaultValue(60)
+                .description("Timeout in seconds for TIMEOUT_BASED eager subscription strategy. " +
+                           "If no client connects within this time, job starts processing anyway. " +
+                           "Must be greater than 0.")
+                .validator(Validators.range(1, 3600)) // 1 second to 1 hour
+                .build();
+        systemParams.put(eagerSubscriptionTimeout.getName(), eagerSubscriptionTimeout);
     }
 
     private ParameterUtils() {
