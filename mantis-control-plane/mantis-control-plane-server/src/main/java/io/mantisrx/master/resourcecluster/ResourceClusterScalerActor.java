@@ -187,6 +187,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 .id(metricGroupId)
                 .addCounter("numScaleDown")
                 .addCounter("numScaleUp")
+                .addCounter("numScaleUpCappedAtMaxSize")
                 .addCounter("numReachScaleMaxLimit")
                 .addCounter("numReachScaleMinLimit")
                 .addGauge("desiredSize")
@@ -196,6 +197,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             return new SkuScalerMetrics(
                 m.getCounter("numScaleUp"),
                 m.getCounter("numScaleDown"),
+                m.getCounter("numScaleUpCappedAtMaxSize"),
                 m.getCounter("numReachScaleMaxLimit"),
                 m.getCounter("numReachScaleMinLimit"),
                 m.getGauge("desiredSize"));
@@ -267,6 +269,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
                     // Update desired size gauge
                     skuMetrics.getDesiredSize().set(decisionO.get().getDesireSize());
+
+                    if (decisionO.get().isCappedAtMaxSize()) {
+                        skuMetrics.getScaleUpCappedAtMaxSize().increment();
+                    }
 
                     switch (decisionO.get().getType()) {
                         case ScaleDown:
@@ -562,10 +568,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 }
 
                 // Scale up to cover both idle deficit and pending reservations
-                int step = (pendingReservations + scaleSpec.getMinIdleToKeep() - actualIdleCount) ;
+                int step = pendingReservations + scaleSpec.getMinIdleToKeep() - actualIdleCount;
 
-                int newSize = Math.min(
-                    usage.getTotalCount() + step, this.scaleSpec.getMaxSize());
+                int uncappedNewSize = usage.getTotalCount() + step;
+                int newSize = Math.min(uncappedNewSize, this.scaleSpec.getMaxSize());
                 decision = Optional.of(
                     ScaleDecision.builder()
                         .clusterId(this.scaleSpec.getClusterId())
@@ -574,6 +580,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         .maxSize(newSize)
                         .minSize(newSize)
                         .type(newSize == usage.getTotalCount() ? ScaleType.NoOpReachMax : ScaleType.ScaleUp)
+                        .cappedAtMaxSize(uncappedNewSize > this.scaleSpec.getMaxSize())
                         .build());
             }
 
@@ -609,6 +616,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         int minSize;
         int desireSize;
         ScaleType type;
+        boolean cappedAtMaxSize;
     }
 
     /**
@@ -618,6 +626,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     static class SkuScalerMetrics {
         Counter scaleUp;
         Counter scaleDown;
+        Counter scaleUpCappedAtMaxSize;
         Counter reachScaleMaxLimit;
         Counter reachScaleMinLimit;
         Gauge desiredSize;

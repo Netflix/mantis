@@ -26,7 +26,12 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.testkit.javadsl.TestKit;
+import com.netflix.spectator.api.DefaultRegistry;
 import io.mantisrx.common.Ack;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetReservationAwareClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ClusterAvailabilityRule;
@@ -83,6 +88,7 @@ public class ResourceClusterScalerActorTests {
 
     @BeforeClass
     public static void setup() {
+        SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
         actorSystem = ActorSystem.create();
     }
 
@@ -212,6 +218,58 @@ public class ResourceClusterScalerActorTests {
         // Test trigger again
         GetClusterUsageRequest req2 = clusterActorProbe.expectMsgClass(GetClusterUsageRequest.class);
         assertEquals(CLUSTER_ID, req2.getClusterID());
+    }
+
+    @Test
+    public void testScalerIncrementsScaleUpCappedAtMaxSizeMetric() throws IOException {
+        ClusterID clusterId = ClusterID.of("cappedMetricCluster");
+        ContainerSkuID skuId = ContainerSkuID.of("cappedMetricSku");
+        when(this.storageProvider.getResourceClusterScaleRules(clusterId))
+            .thenReturn(
+                ResourceClusterScaleRulesWritable.builder()
+                    .scaleRule(skuId.getResourceID(), ResourceClusterScaleSpec.builder()
+                        .clusterId(clusterId)
+                        .skuId(skuId)
+                        .coolDownSecs(0)
+                        .maxIdleToKeep(10)
+                        .minIdleToKeep(5)
+                        .minSize(11)
+                        .maxSize(15)
+                        .build())
+                    .build());
+
+        final Props props =
+            ResourceClusterScalerActor.props(
+                clusterId,
+                Clock.systemDefaultZone(),
+                Duration.ofSeconds(1),
+                Duration.ofSeconds(100),
+                this.storageProvider,
+                hostActorProbe.getRef(),
+                clusterActorProbe.getRef(),
+                false);
+
+        scalerActor = actorSystem.actorOf(props);
+        GetClusterUsageRequest req = clusterActorProbe.expectMsgClass(GetClusterUsageRequest.class);
+        assertEquals(clusterId, req.getClusterID());
+
+        long cappedBefore = readScalerCounter(clusterId, skuId, "numScaleUpCappedAtMaxSize");
+        long reachMaxBefore = readScalerCounter(clusterId, skuId, "numReachScaleMaxLimit");
+        scalerActor.tell(
+            GetClusterUsageResponse.builder()
+                .clusterID(clusterId)
+                .usage(UsageByGroupKey.builder()
+                    .usageGroupKey(skuId.getResourceID())
+                    .idleCount(0)
+                    .totalCount(15)
+                    .build())
+                .build(),
+            clusterActorProbe.getRef());
+
+        assertNotNull(clusterActorProbe.expectMsgClass(Ack.class));
+        assertEquals(cappedBefore + 1, readScalerCounter(clusterId, skuId, "numScaleUpCappedAtMaxSize"));
+        assertEquals(reachMaxBefore + 1, readScalerCounter(clusterId, skuId, "numReachScaleMaxLimit"));
+        hostActorProbe.expectNoMessage(Duration.ofMillis(100));
     }
 
     @Test
@@ -414,6 +472,7 @@ public class ResourceClusterScalerActorTests {
                     .minSize(newSize)
                     .maxSize(newSize)
                     .type(ScaleType.ScaleUp)
+                    .cappedAtMaxSize(true)
                     .build()),
             decision);
 
@@ -446,6 +505,44 @@ public class ResourceClusterScalerActorTests {
                     .minSize(newSize)
                     .maxSize(newSize)
                     .type(ScaleType.ScaleDown)
+                    .build()),
+            decision);
+    }
+
+    @Test
+    public void testRuleScaleUpAtMaxMarksDecisionCappedAtMaxSize() {
+        String skuId = "small";
+        ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
+            ResourceClusterScaleSpec.builder()
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
+                .coolDownSecs(0)
+                .maxIdleToKeep(10)
+                .minIdleToKeep(5)
+                .minSize(11)
+                .maxSize(15)
+                .build(),
+            Clock.fixed(Instant.MIN, ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
+
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId)
+            .idleCount(0)
+            .totalCount(15)
+            .build();
+
+        Optional<ScaleDecision> decision = rule.apply(usage);
+        assertEquals(
+            Optional.of(
+                ScaleDecision.builder()
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
+                    .desireSize(15)
+                    .minSize(15)
+                    .maxSize(15)
+                    .type(ScaleType.NoOpReachMax)
+                    .cappedAtMaxSize(true)
                     .build()),
             decision);
     }
@@ -557,6 +654,7 @@ public class ResourceClusterScalerActorTests {
                     .minSize(expectedSize)
                     .maxSize(expectedSize)
                     .type(ScaleType.ScaleUp)
+                    .cappedAtMaxSize(true)
                     .build()),
             decision);
     }
@@ -682,6 +780,7 @@ public class ResourceClusterScalerActorTests {
                     .minSize(expectedSize)
                     .maxSize(expectedSize)
                     .type(ScaleType.ScaleUp)
+                    .cappedAtMaxSize(true)
                     .build()),
             decision);
     }
@@ -808,5 +907,17 @@ public class ResourceClusterScalerActorTests {
 
         // Should not scale (no op)
         assertEquals(Optional.empty(), decision);
+    }
+
+    private long readScalerCounter(ClusterID clusterId, ContainerSkuID skuId, String metricName) {
+        for (Metrics m : MetricsRegistry.getInstance().getMetrics("ResourceClusterScalerActor")) {
+            String metricGroupId = m.getMetricGroupId().id();
+            if (metricGroupId.contains("resourceCluster=" + clusterId.getResourceID())
+                && metricGroupId.contains("sku=" + skuId.getResourceID())) {
+                Counter counter = m.getCounter(metricName);
+                return counter == null ? 0L : counter.value();
+            }
+        }
+        return 0L;
     }
 }
