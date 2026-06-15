@@ -191,6 +191,24 @@ public class MantisJobClusterMetadataView {
 
         }
 
+        public static Builder from(MantisJobClusterMetadataView view) {
+            Builder builder = new Builder();
+            builder.name = view.getName();
+            builder.jars = view.getJars();
+            builder.sla = view.getSla();
+            builder.parameters = view.getParameters();
+            builder.owner = view.getOwner();
+            builder.lastJobCount = view.getLastJobCount();
+            builder.disabled = view.isDisabled();
+            builder.isReadyForJobMaster = view.getIsReadyForJobMaster();
+            builder.migrationConfig = view.getMigrationConfig();
+            builder.labels = view.getLabels();
+            builder.cronActive = view.isCronActive();
+            builder.latestVersion = view.getLatestVersion();
+            builder.jobPrincipal = view.getJobPrincipal();
+            return builder;
+        }
+
         public Builder withName(String name) {
             this.name = name;
             return this;

@@ -25,6 +25,7 @@ import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.ServerBinding;
+import akka.pattern.PatternsCS;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntities;
 import akka.http.javadsl.model.HttpRequest;
@@ -130,9 +131,11 @@ public class JobsRouteTest extends RouteTestBase {
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
-                jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
-                        fakeSchedulerFactory,
-                        false), ActorRef.noSender());
+                PatternsCS.ask(
+                        jobClustersManagerActor,
+                        new JobClusterManagerProto.JobClustersManagerInitialize(fakeSchedulerFactory, false),
+                        Duration.ofSeconds(30))
+                    .toCompletableFuture().get();
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
@@ -224,6 +227,7 @@ public class JobsRouteTest extends RouteTestBase {
                         routeFlow,
                         ConnectHttp.toHost("localhost", SERVER_PORT),
                         materializer);
+                binding.toCompletableFuture().get();
                 latch.countDown();
             } catch (Exception e) {
                 logger.info("caught exception", e);
