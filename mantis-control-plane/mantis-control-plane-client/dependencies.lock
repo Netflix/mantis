@@ -79,7 +79,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.13.0"
+            "locked": "2.14.0"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -139,7 +139,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "lombok": {
@@ -249,7 +249,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.13.0"
+            "locked": "2.14.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -314,7 +314,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testAnnotationProcessor": {
@@ -401,7 +401,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.13.0"
+            "locked": "2.14.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -470,7 +470,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testRuntimeClasspath": {
@@ -579,7 +579,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.13.0"
+            "locked": "2.14.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -653,7 +653,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     }
 }

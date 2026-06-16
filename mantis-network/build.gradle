@@ -15,13 +15,12 @@
  */
 
 ext {
-    mqlVersion = '3.4.+'
     nettyVersion = '4.1.17.Final'
 }
 
 dependencies {
     api "io.netty:netty-handler:$nettyVersion"
-    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    implementation "io.mantisrx:mql-jvm:$versions.mql"
     implementation "net.openhft:zero-allocation-hashing:0.+"
     api project(':mantis-common')
     compileOnly libraries.spectatorApi

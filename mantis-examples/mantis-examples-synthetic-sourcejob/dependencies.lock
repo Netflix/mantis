@@ -56,7 +56,7 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.2.2"
+            "locked": "4.0.0-rc.10"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -117,7 +117,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "lombok": {
@@ -193,7 +193,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "3.4.0"
+            "locked": "4.0.0-rc.10"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -245,7 +245,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "0.27ea0"
+            "locked": "0.27ea1"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
@@ -272,7 +272,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testAnnotationProcessor": {
@@ -332,7 +332,7 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.2.2"
+            "locked": "4.0.0-rc.10"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -396,7 +396,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testRuntimeClasspath": {
@@ -467,7 +467,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "3.4.0"
+            "locked": "4.0.0-rc.10"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -519,7 +519,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "0.27ea0"
+            "locked": "0.27ea1"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
@@ -549,7 +549,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     }
 }
