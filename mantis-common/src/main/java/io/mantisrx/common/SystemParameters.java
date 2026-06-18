@@ -26,6 +26,8 @@ public final class SystemParameters {
     public static final String JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM = "mantis.jobmaster.autoscale.sourcejob.dropMetricPatterns";
     public static final String JOB_WORKER_HEARTBEAT_INTERVAL_SECS = "mantis.job.worker.heartbeat.interval.secs";
     public static final String JOB_WORKER_TIMEOUT_SECS = "mantis.job.worker.timeout.secs";
+    public static final String JOB_WORKER_EAGER_SUBSCRIPTION_STRATEGY = "mantis.job.worker.eager.subscription.strategy";
+    public static final String JOB_WORKER_EAGER_SUBSCRIPTION_TIMEOUT_SECS = "mantis.job.worker.eager.subscription.timeout.secs";
 
     public static final String JOB_AUTOSCALE_V2_ENABLED_PARAM = "mantis.job.autoscale.v2.enabled";
     public static final String JOB_AUTOSCALE_V2_LOADER_CONFIG_PARAM = "mantis.job.autoscale.v2.loader.config";
