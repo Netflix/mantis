@@ -32,6 +32,7 @@
 
 package io.mantisrx.master.jobcluster.job;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_CONFLICT;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 import static org.junit.Assert.assertEquals;
@@ -239,6 +240,122 @@ public class JobScaleUpDownTests {
 		verify(schedulerMock, times(2)).scheduleWorkers(any());
 		verify(schedulerMock, never()).upsertReservation(any(UpsertReservation.class));
 
+	}
+
+	/**
+	 * A job that is not yet active (still in Accepted because its workers never started — the classic
+	 * "stuck job" caused by a runtime error such as a missing required parameter) lands in the
+	 * non-active behavior. A scaleStage request there should return a descriptive 409 that names the
+	 * job state and surfaces the worker-health reason, instead of the previous generic
+	 * "Unexpected message ... in initialized State" rejection.
+	 */
+	@Test
+	public void testScaleStageRejectedWhenJobStuckInAccepted() throws Exception {
+		setupLegacyConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0, 1.0, 1.0, 3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "testScaleStageRejectedWhenJobStuckInAccepted";
+		IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName, sInfo);
+		JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
+				.withJobId(new JobId(clusterName, 1))
+				.withSubmittedAt(Instant.now())
+				.withJobState(JobState.Accepted)
+				.withNextWorkerNumToUse(1)
+				.withJobDefinition(jobDefn)
+				.build();
+		ActorRef jobActor = system.actorOf(JobActor.props(
+				jobClusterDefn,
+				mantisJobMetaData,
+				jobStoreMock,
+				schedulerMock,
+				lifecycleEventPublisher,
+				CostsCalculator.noop()));
+		// Submit-init the job, but never send worker started events: the job stays in Accepted and the
+		// actor remains in its non-active (initialized) behavior.
+		jobActor.tell(new JobProto.InitJob(probe.getRef(), true), probe.getRef());
+		JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
+		assertEquals(SUCCESS, initMsg.responseCode);
+
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName + "-1", 1, 3, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		System.out.println("ScaleupResp " + scaleResp.message);
+		assertEquals(CLIENT_ERROR_CONFLICT, scaleResp.responseCode);
+		assertEquals(0, scaleResp.getActualNumWorkers());
+		assertTrue("expected state-naming message but was: " + scaleResp.message,
+				scaleResp.message.contains("Accepted"));
+		assertFalse("should not be the old generic unexpected-message error: " + scaleResp.message,
+				scaleResp.message.contains("Unexpected message"));
+		verify(jobStoreMock, never()).storeNewWorker(any());
+	}
+
+	/**
+	 * A job that is terminating (still tracked by its actor, so the request reaches JobActor) must
+	 * not be scaled. Instead of durably storing workers that can never start, scaleStage returns a
+	 * descriptive 409 CLIENT_ERROR_CONFLICT naming the job state.
+	 */
+	@Test
+	public void testScaleStageRejectedWhenJobTerminating() throws Exception {
+		setupLegacyConfig();
+		final TestKit probe = new TestKit(system);
+		Map<ScalingReason, Strategy> smap = new HashMap<>();
+		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
+		SchedulingInfo sInfo = new SchedulingInfo.Builder()
+				.numberOfStages(1)
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0, 1.0, 1.0, 3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
+						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap, true))
+				.build();
+		String clusterName = "testScaleStageRejectedWhenJobTerminating";
+		IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName, sInfo);
+		JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
+		MantisScheduler schedulerMock = JobTestHelper.createMockScheduler();
+		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+		// Construct the actor with the job already in a terminating state. A non-submit InitJob does
+		// not reset this state, so getJobState() reports Terminating_abnormal when scaleStage runs.
+		MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
+				.withJobId(new JobId(clusterName, 1))
+				.withSubmittedAt(Instant.now())
+				.withJobState(JobState.Terminating_abnormal)
+				.withNextWorkerNumToUse(1)
+				.withJobDefinition(jobDefn)
+				.build();
+		ActorRef jobActor = system.actorOf(JobActor.props(
+				jobClusterDefn,
+				mantisJobMetaData,
+				jobStoreMock,
+				schedulerMock,
+				lifecycleEventPublisher,
+				CostsCalculator.noop()));
+		// Non-submit init: do not re-store the job or set up workers, just bring up the actor with the
+		// existing (terminating) state so the request reaches the non-active behavior.
+		jobActor.tell(new JobProto.InitJob(probe.getRef(), false), probe.getRef());
+		JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
+		assertEquals(SUCCESS, initMsg.responseCode);
+
+		jobActor.tell(new JobClusterManagerProto.ScaleStageRequest(clusterName + "-1", 1, 3, "", ""), probe.getRef());
+		JobClusterManagerProto.ScaleStageResponse scaleResp = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+		assertEquals(CLIENT_ERROR_CONFLICT, scaleResp.responseCode);
+		assertEquals(0, scaleResp.getActualNumWorkers());
+		assertTrue("expected state-naming message but was: " + scaleResp.message,
+				scaleResp.message.contains("Terminating_abnormal"));
+		// No new workers should have been durably stored for a terminating job.
+		verify(jobStoreMock, never()).storeNewWorker(any());
 	}
 
 	@Test
