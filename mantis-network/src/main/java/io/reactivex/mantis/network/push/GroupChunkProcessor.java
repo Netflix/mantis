@@ -20,18 +20,18 @@ import java.util.List;
 import java.util.Map;
 
 
-public class GroupChunkProcessor<T> extends ChunkProcessor<T> {
+public class GroupChunkProcessor<T> implements ChunkProcessor<T> {
+    protected Router<T> fallbackRouter;
 
-    public GroupChunkProcessor(Router<T> router) {
-        super(router);
+    public GroupChunkProcessor(Router<T> fallbackRouter) {
+        this.fallbackRouter = fallbackRouter;
     }
 
     @Override
     public void process(ConnectionManager<T> connectionManager, List<T> chunks) {
         Map<String, ConnectionGroup<T>> groups = connectionManager.groups();
         for (ConnectionGroup<T> group : groups.values()) {
-            router.route(group.getConnections(), chunks);
+            group.route(chunks, fallbackRouter);
         }
     }
-
 }
