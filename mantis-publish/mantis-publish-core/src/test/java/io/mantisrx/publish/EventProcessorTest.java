@@ -29,11 +29,13 @@ import com.netflix.archaius.DefaultPropertyFactory;
 import com.netflix.archaius.api.PropertyRepository;
 import com.netflix.archaius.api.config.SettableConfig;
 import com.netflix.archaius.config.DefaultSettableConfig;
+import com.netflix.spectator.api.DefaultRegistry;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
+import io.mantisrx.publish.internal.metrics.StreamMetrics;
 import io.mantisrx.publish.internal.mql.MQLSubscription;
 import java.time.Instant;
 import java.util.*;
@@ -77,11 +79,11 @@ class EventProcessorTest {
         event.set("k1", "v1");
         Event actual = eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
         // Single event with a `select * where true` yields the single event.
-        assertEquals(actual.get("mantisStream"), StreamType.DEFAULT_EVENT_STREAM);
-        assertEquals(actual.get("type"), "EVENT");
-        assertEquals(actual.get("k1"), "v1");
-        assertEquals(((ArrayList)actual.get("matched-clients")).size(), 1);
-        assertEquals(((ArrayList)actual.get("matched-clients")).get(0), "id");
+        assertEquals(StreamType.DEFAULT_EVENT_STREAM, actual.get("mantisStream"));
+        assertEquals("EVENT", actual.get("type"));
+        assertEquals("v1", actual.get("k1"));
+        assertEquals(1, ((ArrayList)actual.get("matched-clients")).size());
+        assertEquals("id", ((ArrayList)actual.get("matched-clients")).get(0));
     }
 
     @Test
@@ -102,6 +104,89 @@ class EventProcessorTest {
         actual = eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
         // A subscription exists but doesn't match.
         assertNull(actual);
+    }
+
+    @Test
+    void shouldIncrementMantisEventsFilteredForNonMatchingSubscription() throws Exception {
+        StreamMetrics metrics = new StreamMetrics(new DefaultRegistry(), StreamType.DEFAULT_EVENT_STREAM);
+        when(streamManager.getStreamMetrics(anyString())).thenReturn(Optional.of(metrics));
+        when(streamManager.hasSubscriptions(anyString())).thenReturn(true);
+
+        Subscription subscription = mock(MQLSubscription.class);
+        when(subscription.getSubscriptionId()).thenReturn("nonMatchingSub");
+        when(subscription.matches(any(Event.class))).thenReturn(false);
+        Set<Subscription> subscriptions = new ConcurrentSkipListSet<>();
+        subscriptions.add(subscription);
+        when(streamManager.getStreamSubscriptions(anyString())).thenReturn(subscriptions);
+
+        Event event = new Event();
+        event.set("k1", "v1");
+        Event actual = eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
+
+        assertNull(actual);
+        assertEquals(1, metrics.getMantisEventsFilteredCounter("nonMatchingSub").count());
+    }
+
+    @Test
+    void shouldNotIncrementMantisEventsFilteredForMatchingSubscription() throws Exception {
+        StreamMetrics metrics = new StreamMetrics(new DefaultRegistry(), StreamType.DEFAULT_EVENT_STREAM);
+        when(streamManager.getStreamMetrics(anyString())).thenReturn(Optional.of(metrics));
+        when(streamManager.hasSubscriptions(anyString())).thenReturn(true);
+
+        Subscription subscription = new MQLSubscription("matchingSub", "select * where true");
+        Set<Subscription> subscriptions = new ConcurrentSkipListSet<>();
+        subscriptions.add(subscription);
+        when(streamManager.getStreamSubscriptions(anyString())).thenReturn(subscriptions);
+
+        Event event = new Event();
+        event.set("k1", "v1");
+        eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
+
+        assertEquals(0, metrics.getMantisEventsFilteredCounter("matchingSub").count());
+    }
+
+    @Test
+    void shouldOnlyIncrementMantisEventsFilteredForNonMatchingSubscriptionInMixedSet() throws Exception {
+        StreamMetrics metrics = new StreamMetrics(new DefaultRegistry(), StreamType.DEFAULT_EVENT_STREAM);
+        when(streamManager.getStreamMetrics(anyString())).thenReturn(Optional.of(metrics));
+        when(streamManager.hasSubscriptions(anyString())).thenReturn(true);
+
+        Subscription matchingSubscription = new MQLSubscription("matchingSub", "select * where true");
+        Subscription nonMatchingSubscription = new MQLSubscription("nonMatchingSub", "select * where false");
+        Set<Subscription> subscriptions = new ConcurrentSkipListSet<>();
+        subscriptions.add(matchingSubscription);
+        subscriptions.add(nonMatchingSubscription);
+        when(streamManager.getStreamSubscriptions(anyString())).thenReturn(subscriptions);
+
+        Event event = new Event();
+        event.set("k1", "v1");
+        Event actual = eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
+
+        assertEquals(0, metrics.getMantisEventsFilteredCounter("matchingSub").count());
+        assertEquals(1, metrics.getMantisEventsFilteredCounter("nonMatchingSub").count());
+        assertEquals(StreamType.DEFAULT_EVENT_STREAM, actual.get("mantisStream"));
+    }
+
+    @Test
+    void shouldNotIncrementMantisEventsFilteredWhenMatchesThrows() throws Exception {
+        StreamMetrics metrics = new StreamMetrics(new DefaultRegistry(), StreamType.DEFAULT_EVENT_STREAM);
+        when(streamManager.getStreamMetrics(anyString())).thenReturn(Optional.of(metrics));
+        when(streamManager.hasSubscriptions(anyString())).thenReturn(true);
+
+        Subscription subscription = mock(MQLSubscription.class);
+        when(subscription.getSubscriptionId()).thenReturn("throwingSub");
+        when(subscription.matches(any(Event.class))).thenThrow(new RuntimeException("query failed"));
+        Set<Subscription> subscriptions = new ConcurrentSkipListSet<>();
+        subscriptions.add(subscription);
+        when(streamManager.getStreamSubscriptions(anyString())).thenReturn(subscriptions);
+
+        Event event = new Event();
+        event.set("k1", "v1");
+        Event actual = eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
+
+        assertNull(actual);
+        assertEquals(1, metrics.getMantisQueryFailedCounter().count());
+        assertEquals(0, metrics.getMantisEventsFilteredCounter("throwingSub").count());
     }
 
     @Test
