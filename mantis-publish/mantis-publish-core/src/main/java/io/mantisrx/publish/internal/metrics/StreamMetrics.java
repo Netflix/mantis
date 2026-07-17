@@ -19,13 +19,27 @@ package io.mantisrx.publish.internal.metrics;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Timer;
+import com.netflix.spectator.api.patterns.CardinalityLimiters;
 import com.netflix.spectator.impl.AtomicDouble;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 
 public class StreamMetrics {
 
+    /**
+     * Bounds the number of distinct {@code subscriptionId} tag values registered for the
+     * {@code mantisEventsFiltered} counter. Matches the limit used by {@code MqlEvalStage} on
+     * the Mantis source-job side (Netflix-internal PR #949).
+     */
+    private static final int SUBSCRIPTION_ID_CARDINALITY_LIMIT = 50;
+
     private final String streamName;
+    private final Registry registry;
+    private final Function<String, String> subscriptionIdLimiter =
+            CardinalityLimiters.mostFrequent(SUBSCRIPTION_ID_CARDINALITY_LIMIT);
+    private final ConcurrentHashMap<String, Counter> mantisEventsFilteredCounters = new ConcurrentHashMap<>();
 
     private final Counter mantisEventsDroppedCounter;
     private final Counter mantisEventsDroppedProcessingExceptionCounter;
@@ -42,6 +56,7 @@ public class StreamMetrics {
 
     public StreamMetrics(Registry registry, final String streamName) {
         this.streamName = streamName;
+        this.registry = registry;
 
         this.mantisEventsDroppedCounter = SpectatorUtils.buildAndRegisterCounter(
                 registry, "mantisEventsDropped", "stream", streamName, "reason", "publisherQueueFull");
@@ -97,6 +112,29 @@ public class StreamMetrics {
 
     public Counter getMantisQueryProjectionFailedCounter() {
         return mantisQueryProjectionFailedCounter;
+    }
+
+    /**
+     * Returns the per-subscription "events filtered out" counter for the given
+     * subscription id. The subscriptionId tag value is cardinality-limited; ids
+     * beyond the limit collapse into a single "--others--" bucket. Counters are
+     * cached one per (limited) id for the lifetime of this StreamMetrics.
+     *
+     * @param subscriptionId the id of the subscription whose query did not match
+     * @return a Spectator Counter tagged stream=<streamName>, subscriptionId=<limited id>
+     */
+    public Counter getMantisEventsFilteredCounter(String subscriptionId) {
+        // CardinalityLimiters.mostFrequent(...) is backed by a non-thread-safe LinkedHashMap;
+        // this class is shared across concurrently-processed events, so apply() must be
+        // synchronized to avoid corrupting its internal LRU state.
+        String limitedId;
+        synchronized (subscriptionIdLimiter) {
+            limitedId = subscriptionIdLimiter.apply(subscriptionId);
+        }
+        return mantisEventsFilteredCounters.computeIfAbsent(
+                limitedId,
+                lid -> SpectatorUtils.buildAndRegisterCounter(
+                        registry, "mantisEventsFiltered", "stream", streamName, "subscriptionId", lid));
     }
 
     public AtomicDouble getMantisEventsQueuedGauge() {
