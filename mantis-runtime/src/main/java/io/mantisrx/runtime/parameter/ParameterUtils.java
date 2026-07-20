@@ -253,6 +253,46 @@ public class ParameterUtils {
                 "built in to allow for network delays and/or miss a few worker heartbeats before being killed.")
             .build();
         systemParams.put(workerTimeout.getName(), workerTimeout);
+
+        // Scalar worker to worker params
+        ParameterDefinition<Integer> scalarW2WMaxChunkTimeMSec = new IntParameter()
+            .name(SCALAR_WORKER_TO_WORKER_MAX_CHUNK_TIME_MSEC)
+            .validator(Validators.range(1, 100000))
+            .defaultValue(100)
+            .description("max time to read from queue, for a single chunk")
+            .build();
+        systemParams.put(scalarW2WMaxChunkTimeMSec.getName(), scalarW2WMaxChunkTimeMSec);
+
+        ParameterDefinition<Integer> scalarW2WConsumerThreads = new IntParameter()
+            .name(SCALAR_WORKER_TO_WORKER_CONSUMER_THREADS)
+            .validator(Validators.range(1, 64))
+            .description("number of consumer threads draining the queue to write to worker")
+            .defaultValue(1)
+            .build();
+        systemParams.put(scalarW2WConsumerThreads.getName(), scalarW2WConsumerThreads);
+
+        ParameterDefinition<Boolean> scalarW2WSpsc = new BooleanParameter()
+            .name(SCALAR_WORKER_TO_WORKER_SPSC)
+            .description("Whether to use spsc or blocking queue for scalar worker to worker stages")
+            .defaultValue(false)
+            .build();
+        systemParams.put(scalarW2WSpsc.getName(), scalarW2WSpsc);
+
+        ParameterDefinition<Integer> scalarW2WBufferCapacity = new IntParameter()
+            .name(SCALAR_WORKER_TO_WORKER_BUFFER_CAPACITY)
+            .validator(Validators.range(1, 100000))
+            .description("buffer capacity for scalar worker to worker stages")
+            .defaultValue(100)
+            .build();
+        systemParams.put(scalarW2WBufferCapacity.getName(), scalarW2WBufferCapacity);
+
+        ParameterDefinition<Integer> scalarW2WMaxChunkSize = new IntParameter()
+            .name(SCALAR_WORKER_TO_WORKER_MAX_CHUNK_SIZE)
+            .validator(Validators.range(1, 100000))
+            .description("max chunk size for scalar worker to worker stages")
+            .defaultValue(25)
+            .build();
+        systemParams.put(scalarW2WMaxChunkSize.getName(), scalarW2WMaxChunkSize);
     }
 
     private ParameterUtils() {
