@@ -100,7 +100,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "lombok": {
@@ -163,7 +163,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "3.4.0"
+            "locked": "4.0.0-rc.10"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -212,7 +212,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "0.27ea0"
+            "locked": "0.27ea1"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
@@ -238,7 +238,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testAnnotationProcessor": {
@@ -330,7 +330,7 @@
             "locked": "1.2.1"
         },
         "org.mockito:mockito-core": {
-            "locked": "5.14.2"
+            "locked": "5.21.0"
         },
         "org.projectlombok:lombok": {
             "locked": "1.18.36"
@@ -351,7 +351,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "testRuntimeClasspath": {
@@ -412,7 +412,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "3.4.0"
+            "locked": "4.0.0-rc.10"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -467,7 +467,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "0.27ea0"
+            "locked": "0.27ea1"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
@@ -476,7 +476,7 @@
             "locked": "1.2.1"
         },
         "org.mockito:mockito-core": {
-            "locked": "5.14.2"
+            "locked": "5.21.0"
         },
         "org.slf4j:slf4j-api": {
             "firstLevelTransitive": [
@@ -496,7 +496,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     }
 }

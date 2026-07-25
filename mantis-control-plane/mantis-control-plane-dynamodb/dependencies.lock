@@ -82,7 +82,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.13.0"
+            "locked": "2.14.0"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -139,10 +139,10 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         },
         "software.amazon.awssdk:aws-core": {
-            "locked": "2.29.38"
+            "locked": "2.40.6"
         },
         "software.amazon.awssdk:bom": {
             "locked": "2.23.15"
@@ -151,7 +151,7 @@
             "locked": "2.23.15"
         },
         "software.amazon.awssdk:sts": {
-            "locked": "2.29.38"
+            "locked": "2.40.6"
         }
     },
     "lombok": {
@@ -217,13 +217,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.115.Final"
+            "locked": "4.1.126.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.115.Final"
+            "locked": "4.1.126.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
@@ -248,7 +248,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.13.0"
+            "locked": "2.14.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -308,10 +308,10 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         },
         "software.amazon.awssdk:aws-core": {
-            "locked": "2.29.38"
+            "locked": "2.40.6"
         },
         "software.amazon.awssdk:bom": {
             "locked": "2.23.15"
@@ -320,7 +320,7 @@
             "locked": "2.23.15"
         },
         "software.amazon.awssdk:sts": {
-            "locked": "2.29.38"
+            "locked": "2.40.6"
         }
     },
     "testAnnotationProcessor": {
@@ -419,7 +419,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.13.0"
+            "locked": "2.14.0"
         },
         "junit:junit": {
             "locked": "4.13.1"
@@ -491,10 +491,10 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         },
         "software.amazon.awssdk:aws-core": {
-            "locked": "2.29.38"
+            "locked": "2.40.6"
         },
         "software.amazon.awssdk:bom": {
             "locked": "2.23.15"
@@ -503,7 +503,7 @@
             "locked": "2.23.15"
         },
         "software.amazon.awssdk:sts": {
-            "locked": "2.29.38"
+            "locked": "2.40.6"
         }
     },
     "testRuntimeClasspath": {
@@ -574,13 +574,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.115.Final"
+            "locked": "4.1.126.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.115.Final"
+            "locked": "4.1.126.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
@@ -605,7 +605,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.13.0"
+            "locked": "2.14.0"
         },
         "junit:junit": {
             "locked": "4.13.1"
@@ -686,10 +686,10 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         },
         "software.amazon.awssdk:aws-core": {
-            "locked": "2.29.38"
+            "locked": "2.40.6"
         },
         "software.amazon.awssdk:bom": {
             "locked": "2.23.15"
@@ -698,7 +698,7 @@
             "locked": "2.23.15"
         },
         "software.amazon.awssdk:sts": {
-            "locked": "2.29.38"
+            "locked": "2.40.6"
         }
     }
 }

@@ -1,7 +1,7 @@
 {
     "annotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "compileClasspath": {
@@ -158,7 +158,7 @@
             "locked": "20180813"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         },
         "org.quartz-scheduler:quartz": {
             "locked": "2.2.3"
@@ -186,17 +186,17 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.8"
         }
     },
     "lombok": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testAnnotationProcessor": {
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testCompileClasspath": {
@@ -213,10 +213,10 @@
             "locked": "4.11"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
+            "locked": "5.21.0"
         },
         "org.projectlombok:lombok": {
-            "locked": "1.18.20"
+            "locked": "1.18.36"
         }
     },
     "testRuntimeClasspath": {
@@ -233,7 +233,7 @@
             "locked": "4.11"
         },
         "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
+            "locked": "5.21.0"
         }
     }
 }

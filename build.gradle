@@ -50,6 +50,7 @@ ext.versions = [
         mockito  : "2.0.+",
         mockito3 : "3.+",
         mockito5 : "5.+",
+        mql      : "4.0.0-rc.10",
         scala    : "2.12",
         spectator: "1.3.+",
         slf4j    : "1.7.0",

@@ -16,11 +16,10 @@
 ext {
     archaiusVersion = 'latest.release'
     versionMockito = '2.18.+'
-    mqlVersion = '3.2.2'
 }
 
 dependencies {
-    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    implementation "io.mantisrx:mql-jvm:$versions.mql"
     implementation project(":mantis-common-serde")
     api project(":mantis-discovery-proto")
 
