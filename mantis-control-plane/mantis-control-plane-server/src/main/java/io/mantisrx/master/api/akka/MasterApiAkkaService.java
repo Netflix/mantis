@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.api.akka;
 
+import akka.Done;
 import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -65,6 +66,7 @@ import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -77,6 +79,20 @@ import scala.concurrent.duration.Duration;
 public class MasterApiAkkaService extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(MasterApiAkkaService.class);
+
+    /**
+     * Depth of outstanding demand on the accept source. Every outstanding pull becomes a
+     * {@code ResumeAccepting(1)} to the akka TCP listener, so this is how many accepts the listener
+     * is armed for at any moment. {@code Sink.foreach} hardcodes this to 1, which leaves a single
+     * demand token whose loss silently and permanently stops the server from accepting connections
+     * while the port stays bound and the stream stays alive and healthy.
+     *
+     * <p>This is deliberately NOT {@code akka.http.server.max-connections} (500000 here) and is NOT
+     * a cap on concurrent connections: the slot is released as soon as the connection is handed off
+     * to the route flow, not when the connection closes. It only buys redundancy in the accept loop.
+     */
+    private static final int ACCEPT_PARALLELISM = 64;
+
     private final MasterMonitor masterMonitor;
     private final MasterDescription masterDescription;
     private final ActorRef jobClustersManagerActor;
@@ -240,10 +256,19 @@ public class MasterApiAkkaService extends BaseService {
         final CompletionStage<ServerBinding> binding = httpServerBuilder
                 .withSettings(customServerSettings)
                 .connectionSource()
-                .to(Sink.foreach(connection -> {
+                .mapAsyncUnordered(ACCEPT_PARALLELISM, connection -> {
                     MasterApiMetrics.getInstance().incrementIncomingRequestCount();
-                    connection.handleWith(routeFlow, materializer);
-                }))
+                    try {
+                        connection.handleWith(routeFlow, materializer);
+                    } catch (RuntimeException e) {
+                        // Never let one bad connection fail the accept stream; akka-http's own
+                        // bindAndHandle recovers here for the same reason (Http.scala:264-275).
+                        logger.error("Failed to materialize handler for connection from {}",
+                            connection.remoteAddress(), e);
+                    }
+                    return CompletableFuture.completedFuture(Done.getInstance());
+                })
+                .to(Sink.ignore())
                 .run(materializer)
                 .exceptionally(failure -> {
                     System.err.println("API service exited, committing suicide !" + failure.getMessage());
