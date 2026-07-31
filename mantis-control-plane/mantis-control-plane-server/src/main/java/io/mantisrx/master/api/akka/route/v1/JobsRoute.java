@@ -37,6 +37,7 @@ import io.mantisrx.master.api.akka.route.utils.JobRouteUtils;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.utils.ApiRequestRateLimiter;
 import io.mantisrx.runtime.MantisJobDefinition;
 import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -82,14 +83,24 @@ public class JobsRoute extends BaseRoute {
     private final MasterConfiguration config;
     private final Cache<Uri, RouteResult> routeResultCache;
 
+    /**
+     * Admission control for this route's job-creation endpoints. The reads and the per-job actions
+     * (scaleStage, resubmitWorker, postJobStatus) are deliberately left unguarded: it is the creation
+     * path whose backlog lands on the shared cluster actor. Which of these endpoints share a bucket, and
+     * whether that bucket is shared with another route, is decided where the instance is constructed.
+     */
+    private final ApiRequestRateLimiter rateLimiter;
+
     public JobsRoute(
             final JobClusterRouteHandler clusterRouteHandler,
             final JobRouteHandler jobRouteHandler,
-            final ActorSystem actorSystem) {
+            final ActorSystem actorSystem,
+            final ApiRequestRateLimiter rateLimiter) {
         this.jobRouteHandler = jobRouteHandler;
         this.clusterRouteHandler = clusterRouteHandler;
         this.config = ConfigurationProvider.getConfig();
         this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(), config.getApiCacheTtlMilliseconds());
+        this.rateLimiter = rateLimiter;
     }
 
 
@@ -266,7 +277,10 @@ public class JobsRoute extends BaseRoute {
     }
 
     private Route postJobsRoute(Optional<String> clusterName) {
+        return withThrottle(rateLimiter, () -> submitJobRoute(clusterName));
+    }
 
+    private Route submitJobRoute(Optional<String> clusterName) {
         return decodeRequest(() -> entity(
                 Jackson.unmarshaller(MantisJobDefinition.class),
                 submitJobRequest -> {
@@ -484,6 +498,12 @@ public class JobsRoute extends BaseRoute {
 
 
     private Route postJobInstanceQuickSubmitRoute() {
+        // quickSubmit is a job-creation path too, so it shares the submit bucket rather than getting
+        // its own: the thing we are protecting is the cluster actor behind both, not the endpoint.
+        return withThrottle(rateLimiter, this::quickSubmitRoute);
+    }
+
+    private Route quickSubmitRoute() {
         return entity(
                 Jackson.unmarshaller(JobClusterManagerProto.SubmitJobRequest.class),
                 request -> {

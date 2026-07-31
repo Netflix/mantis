@@ -62,6 +62,7 @@ import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
+import io.mantisrx.master.utils.ApiRequestRateLimiter;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
@@ -178,7 +179,8 @@ public class JobsRouteTest extends RouteTestBase {
                 final JobsRoute v1JobsRoute = new JobsRoute(
                         jobClusterRouteHandler,
                         jobRouteHandler,
-                        system);
+                        system,
+                        ApiRequestRateLimiter.UNLIMITED);
 
                 final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(
                         jobClusterRouteHandler, system);
