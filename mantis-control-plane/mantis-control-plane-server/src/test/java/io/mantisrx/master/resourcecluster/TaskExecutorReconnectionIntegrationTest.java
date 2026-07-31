@@ -102,6 +102,7 @@ public class TaskExecutorReconnectionIntegrationTest {
     private JobMessageRouter jobMessageRouter;
     private ActorRef resourceClusterActor;
     private ResourceCluster resourceCluster;
+    private TaskExecutorRegistration registration;
     private final MantisPropertiesLoader propertiesLoader =
         new DefaultMantisPropertiesLoader(System.getProperties());
 
@@ -116,13 +117,21 @@ public class TaskExecutorReconnectionIntegrationTest {
         when(gateway.submitTask(any()))
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
 
-        // Setup required mocks for the MantisJobStore
+        // Setup required mocks for the MantisJobStore. All stubbing has to happen before the actor is
+        // created below: once it is, its preStart and the async disabled-executor load call into this
+        // same mock from other threads, and Mockito's stubbing state is not thread safe. A concurrent
+        // invocation lands on the pending doReturn() and gets stubbed instead of the intended method,
+        // which kills the actor in preStart and leaves later asks to time out.
+        registration = createRegistration(TASK_EXECUTOR_ID);
         doReturn(ImmutableList.of())
             .when(mantisJobStore)
             .loadAllDisableTaskExecutorsRequests(CLUSTER_ID);
         doReturn(ImmutableList.of())
             .when(mantisJobStore)
             .getJobArtifactsToCache(CLUSTER_ID);
+        doReturn(registration)
+            .when(mantisJobStore)
+            .getTaskExecutor(TASK_EXECUTOR_ID);
 
         MasterConfiguration masterConfig = mock(MasterConfiguration.class);
         when(masterConfig.getTimeoutSecondsToReportStart()).thenReturn(1);
@@ -154,6 +163,9 @@ public class TaskExecutorReconnectionIntegrationTest {
                 Duration.ofSeconds(15),
                 CLUSTER_ID,
                 new LongDynamicProperty(propertiesLoader, "resourcecluster.gateway.maxConcurrentRequests.test", 100000L));
+
+        // Round trip through the actor so the test body only starts once preStart has completed.
+        resourceCluster.getRegisteredTaskExecutors().get();
     }
 
     @After
@@ -189,9 +201,6 @@ public class TaskExecutorReconnectionIntegrationTest {
             // Test basic TaskExecutor lifecycle without crash scenarios
             // This ensures the test setup is working correctly
 
-            TaskExecutorRegistration registration = createRegistration(TASK_EXECUTOR_ID);
-            doReturn(registration).when(mantisJobStore).getTaskExecutor(TASK_EXECUTOR_ID);
-
             // Register TaskExecutor
             assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(registration).get());
 
@@ -220,9 +229,6 @@ public class TaskExecutorReconnectionIntegrationTest {
         new TestKit(actorSystem) {{
             // Test scenario where TaskExecutor crashes (like segfault) without sending
             // an explicit disconnection event, but is detected through heartbeat state mismatch
-
-            TaskExecutorRegistration registration = createRegistration(TASK_EXECUTOR_ID);
-            doReturn(registration).when(mantisJobStore).getTaskExecutor(TASK_EXECUTOR_ID);
 
             // Step 1: Register and setup TaskExecutor with a running worker
             assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(registration).get());

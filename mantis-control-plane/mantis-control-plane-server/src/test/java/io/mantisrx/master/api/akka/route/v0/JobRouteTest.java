@@ -65,6 +65,7 @@ import io.mantisrx.master.api.akka.route.v1.JobClustersRoute;
 import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
+import io.mantisrx.master.utils.ApiRequestRateLimiter;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -251,7 +252,8 @@ public class JobRouteTest {
                 final JobsRoute v1JobsRoute = new JobsRoute(
                         jobClusterRouteHandler,
                         jobRouteHandler,
-                        system);
+                        system,
+                        ApiRequestRateLimiter.UNLIMITED);
                 final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
                 final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
 
