@@ -129,9 +129,6 @@
             ],
             "locked": "2.13.0"
         },
-        "nz.ac.waikato.cms.moa:moa": {
-            "locked": "2017.06"
-        },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -389,14 +386,11 @@
             ],
             "locked": "0.27ea0"
         },
-        "nz.ac.waikato.cms.moa:moa": {
-            "locked": "2017.06"
-        },
         "org.apache.commons:commons-math3": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-rxcontrol"
             ],
-            "locked": "3.6.1"
+            "locked": "3.5"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -606,9 +600,6 @@
         },
         "junit:junit-dep": {
             "locked": "4.11"
-        },
-        "nz.ac.waikato.cms.moa:moa": {
-            "locked": "2017.06"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -879,14 +870,11 @@
             ],
             "locked": "0.27ea0"
         },
-        "nz.ac.waikato.cms.moa:moa": {
-            "locked": "2017.06"
-        },
         "org.apache.commons:commons-math3": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-rxcontrol"
             ],
-            "locked": "3.6.1"
+            "locked": "3.5"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
