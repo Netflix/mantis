@@ -23,14 +23,37 @@ import java.time.Instant;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * A property that re-reads itself from the {@link MantisPropertiesLoader} roughly once per refresh
+ * interval ({@code mantis.config.dynamic.refreshSecs}, default 30s), lazily on whichever thread
+ * calls {@link #getValue()}.
+ *
+ * <p>Safe to read from many threads, which matters because callers sit on request paths (see
+ * {@code GlobalApiRequestRateLimiter}): the cached state is published through volatile fields, so a
+ * reader never sees a stale or partially-visible value and the steady-state read is lock-free.
+ *
+ * <p>The refresh itself is deliberately unsynchronized, and volatile alone is enough because the
+ * refresh is a blind overwrite: the new value is derived from the loader, never from
+ * {@link #lastValue}. So racing refreshers each compute a correct value independently and
+ * last-writer-wins leaves a correct one — there is no lost update the way there would be for a
+ * read-modify-write such as a counter. Nor do {@link #lastValue} and {@link #lastRefreshTime} need to
+ * be updated atomically with respect to each other: the stamp is written before the loader call, so a
+ * reader can briefly see a fresh stamp with the previous value, which is just the one-interval
+ * staleness the contract already allows. The only cost of a race is a duplicated lookup inside a
+ * window the width of one {@link System#getProperty}.
+ *
+ * <p>That reasoning breaks if a refresh ever becomes dependent on the previous value — rate
+ * smoothing, "reject a value more than 2x the last one", parse-failure backoff. Any of those makes
+ * this a read-modify-write and would need a lock or a CAS on the refresh stamp.
+ */
 @Slf4j
 public abstract class DynamicProperty<T>  {
     public static final String DYNAMIC_PROPERTY_REFRESH_SECONDS_KEY = "mantis.config.dynamic.refreshSecs";
     protected final MantisPropertiesLoader propertiesLoader;
     protected final String propertyName;
     protected final T defaultValue;
-    protected T lastValue;
-    protected Instant lastRefreshTime;
+    protected volatile T lastValue;
+    protected volatile Instant lastRefreshTime;
     private final Duration refreshDuration;
     private final Clock clock;
 

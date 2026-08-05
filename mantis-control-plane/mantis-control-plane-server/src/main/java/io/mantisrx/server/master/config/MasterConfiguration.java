@@ -363,6 +363,22 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("5000")
     int getResourceClusterActionsPermitsPerSecond();
 
+    // Whether to rate limit the write endpoints of the v1 jobs route (POST api/v1/jobs,
+    // POST api/v1/jobClusters/{}/jobs and POST api/v1/jobs/actions/quickSubmit), to guard against a
+    // client storming job submission. Off by default: the right ceiling depends on cluster size and
+    // traffic, so operators opt in once they have measured their own submit rate. When off no limiter
+    // is constructed at all.
+    @Config("mantis.master.api.v1.jobs.throttle.enabled")
+    @Default("false")
+    boolean isApiV1JobsThrottleEnabled();
+
+    // Permits per second for the throttle above; ignored unless it is enabled. The default is a
+    // backstop against a runaway client rather than a tuned limit, so override it with a value derived
+    // from the submit rate you actually see. Must be positive.
+    @Config("mantis.master.api.v1.jobs.throttle.permitsPerSecond")
+    @Default("1000")
+    int getApiV1JobsThrottlePermitsPerSecond();
+
     @Config("mantis.scheduler.enable-batch")
     @Default("false")
     boolean isBatchSchedulingEnabled();

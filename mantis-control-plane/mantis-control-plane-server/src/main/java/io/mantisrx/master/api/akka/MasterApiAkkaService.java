@@ -57,12 +57,15 @@ import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.utils.ApiRequestRateLimiterFactory;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
+import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import java.util.concurrent.CompletionStage;
@@ -77,6 +80,7 @@ import scala.concurrent.duration.Duration;
 public class MasterApiAkkaService extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(MasterApiAkkaService.class);
+
     private final MasterMonitor masterMonitor;
     private final MasterDescription masterDescription;
     private final ActorRef jobClustersManagerActor;
@@ -94,6 +98,7 @@ public class MasterApiAkkaService extends BaseService {
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
     private final HttpsConnectionContext httpsConnectionContext;
+    private final MantisPropertiesLoader dynamicPropertiesLoader;
 
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
@@ -104,7 +109,8 @@ public class MasterApiAkkaService extends BaseService {
                                 final int serverPort,
                                 final IMantisPersistenceProvider mantisStorageProvider,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
-                                final ILeadershipManager leadershipManager
+                                final ILeadershipManager leadershipManager,
+                                final MantisPropertiesLoader dynamicPropertiesLoader
                                 ) {
         this(
             masterMonitor,
@@ -117,6 +123,7 @@ public class MasterApiAkkaService extends BaseService {
             mantisStorageProvider,
             lifecycleEventPublisher,
             leadershipManager,
+            dynamicPropertiesLoader,
             null
         );
     }
@@ -130,6 +137,7 @@ public class MasterApiAkkaService extends BaseService {
                                 final IMantisPersistenceProvider mantisStorageProvider,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
                                 final ILeadershipManager leadershipManager,
+                                final MantisPropertiesLoader dynamicPropertiesLoader,
                                 final HttpsConnectionContext httpsConnectionContext) {
         super(true);
         Preconditions.checkNotNull(masterMonitor, "MasterMonitor");
@@ -139,6 +147,8 @@ public class MasterApiAkkaService extends BaseService {
         Preconditions.checkNotNull(mantisStorageProvider, "mantisStorageProvider");
         Preconditions.checkNotNull(lifecycleEventPublisher, "lifecycleEventPublisher");
         Preconditions.checkNotNull(leadershipManager, "leadershipManager");
+        Preconditions.checkNotNull(dynamicPropertiesLoader, "dynamicPropertiesLoader");
+        this.dynamicPropertiesLoader = dynamicPropertiesLoader;
         this.masterMonitor = masterMonitor;
         this.masterDescription = masterDescription;
         this.jobClustersManagerActor = jobClustersManagerActor;
@@ -186,7 +196,17 @@ public class MasterApiAkkaService extends BaseService {
         final JobStatusRoute v0JobStatusRoute = new JobStatusRoute(jobStatusRouteHandler);
 
         final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(jobClusterRouteHandler, actorSystem);
-        final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler, actorSystem);
+
+        // A route gets its own budget, and a route not named here is not throttled at all. What each
+        // budget is called and which config sizes it lives on ApiRequestRateLimiterFactory.
+        final ApiRequestRateLimiterFactory rateLimiterFactory =
+            new ApiRequestRateLimiterFactory(ConfigurationProvider.getConfig(), dynamicPropertiesLoader);
+
+        final JobsRoute v1JobsRoute = new JobsRoute(
+            jobClusterRouteHandler,
+            jobRouteHandler,
+            actorSystem,
+            rateLimiterFactory.v1Jobs());
         final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);

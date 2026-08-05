@@ -217,7 +217,8 @@ public class MasterMain implements Service {
             monitor.start();
             mantisServices.addService(leaderFactory.createLeaderElector(config, leadershipManager));
             mantisServices.addService(new MasterApiAkkaService(monitor, leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager));
+                resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager,
+                dynamicPropertiesLoader));
 
             if (leaderFactory instanceof LocalLeaderFactory && !config.isLocalMode()) {
                 logger.error("local mode is [ {} ] and leader factory is {} this configuration is unsafe", config.isLocalMode(), leaderFactory.getClass().getSimpleName());

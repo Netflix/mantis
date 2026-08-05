@@ -44,6 +44,7 @@ import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.master.utils.ApiRequestRateLimiter;
 import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorTaskCancelledException;
@@ -63,6 +64,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.duration.Duration;
@@ -112,6 +114,38 @@ abstract class BaseRoute extends AllDirectives {
             .withTimeToLive(Duration.create(ttlMillis, TimeUnit.MILLISECONDS));
         final CachingSettings cachingSettings = defaultCachingSettings.withLfuCacheSettings(lfuCacheSettings);
         return LfuCache.create(cachingSettings);
+    }
+
+    /**
+     * Wraps {@code inner} in admission control: if {@code rateLimiter} has no permit left for the
+     * request, it is shed with a 429 and {@code inner} never runs.
+     *
+     * <p>Intended for the mutating endpoints — job submit, cluster create/update/delete — where a
+     * client storm turns into a backlog on an actor that reads do not touch. The limiter decides the
+     * policy (node-wide bucket, per-client bucket, unlimited); this only decides where the check
+     * happens.
+     *
+     * <p>Two properties matter at the call site. The check runs before the entity is unmarshalled, so
+     * a storm costs a rate-limiter check rather than a parse plus an ask into an actor. And
+     * {@code extractRequest} is evaluated per request — unlike the by-name {@code Supplier} that
+     * {@code post} and friends take — which is what makes this a request-time check rather than a
+     * one-off when the route tree is built.
+     *
+     * @param rateLimiter the bucket to draw a permit from. Every endpoint handed the same instance
+     *     shares its permits, so pass the limiter whose configured rate was sized for this endpoint's
+     *     traffic; an endpoint given a limiter built for a different workload silently splits one
+     *     budget between two. The limiter counts its own sheds under its {@code route} tag, so the
+     *     metric names the bucket that ran out rather than whatever this call site claimed.
+     * @param inner the route to run when a permit is available
+     */
+    protected Route withThrottle(ApiRequestRateLimiter rateLimiter, Supplier<Route> inner) {
+        return extractRequest(request -> {
+            if (!rateLimiter.tryAcquire(request)) {
+                MasterApiMetrics.getInstance().incrementResp4xx();
+                return complete(StatusCodes.TOO_MANY_REQUESTS);
+            }
+            return inner.get();
+        });
     }
 
     protected abstract Route constructRoutes();
