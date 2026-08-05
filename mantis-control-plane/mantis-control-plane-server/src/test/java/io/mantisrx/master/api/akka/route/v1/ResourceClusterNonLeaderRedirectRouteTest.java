@@ -82,6 +82,10 @@ import java.util.concurrent.CompletionStage;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verifyNoInteractions;
+
+import akka.http.javadsl.testkit.TestRouteResult;
 
 public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     private static final UnitTestResourceProviderAdapter resourceProviderAdapter =
@@ -152,6 +156,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
         PagedActiveJobOverview overview1 = new PagedActiveJobOverview(ImmutableList.of(), 0);
         PagedActiveJobOverview overview2 = new PagedActiveJobOverview(ImmutableList.of("test"), 1);
         PagedActiveJobOverview overview3 = new PagedActiveJobOverview(ImmutableList.of("test"), 99);
+        PagedActiveJobOverview zeroPageSizeOverview = new PagedActiveJobOverview(ImmutableList.of("test"), 1);
 
         ResourceCluster resourceCluster = mock(ResourceCluster.class);
         when(resourceCluster.getActiveJobOverview(Optional.empty(), Optional.empty()))
@@ -161,6 +166,10 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
         when(resourceCluster.getActiveJobOverview(Optional.empty(), Optional.of(99)))
             .thenReturn(CompletableFuture.completedFuture(overview3));
         when(resourceClusters.getClusterFor(ClusterID.of("myCluster"))).thenReturn(resourceCluster);
+        when(resourceCluster.getActiveJobOverview(
+            Optional.of(0),
+            Optional.of(0)))
+            .thenReturn(CompletableFuture.completedFuture(zeroPageSizeOverview));
 
         testRouteWithNoopAdapter.run(HttpRequest.GET(
                 "/api/v1/resourceClusters/myCluster/activeJobOverview"))
@@ -176,6 +185,24 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                 "/api/v1/resourceClusters/myCluster/activeJobOverview?pageSize=99"))
             .assertStatusCode(200)
             .assertEntityAs(Jackson.unmarshaller(PagedActiveJobOverview.class), overview3);
+
+        testRouteWithNoopAdapter.run(HttpRequest.GET(
+                "/api/v1/resourceClusters/myCluster/activeJobOverview"
+                    + "?startingIndex=0&pageSize=0"))
+            .assertStatusCode(StatusCodes.OK)
+            .assertEntityAs(
+                Jackson.unmarshaller(PagedActiveJobOverview.class),
+                zeroPageSizeOverview);
+    }
+
+    @Test
+    public void testGetActiveJobOverviewRejectsNegativeStartingIndex() {
+        testRouteWithNoopAdapter.run(HttpRequest.GET(
+                "/api/v1/resourceClusters/myCluster/activeJobOverview"
+                    + "?startingIndex=-1&pageSize=9"))
+            .assertStatusCode(StatusCodes.BAD_REQUEST);
+
+        verifyNoInteractions(resourceClusters);
     }
 
     @Test
@@ -400,6 +427,67 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                     .optionalSkuId(createRuleReq1.getOptionalSkuId())
                     .optionalEnvType(createRuleReq1.getOptionalEnvType())
                     .build());
+    }
+
+    @Test
+    public void testGetActiveJobOverviewRejectsInvalidStartingIndex() {
+        assertInvalidActiveJobOverviewQuery(
+            "startingIndex=abc",
+            "startingIndex must be a non-negative integer");
+
+        assertInvalidActiveJobOverviewQuery(
+            "startingIndex=-1",
+            "startingIndex must be a non-negative integer");
+
+        assertInvalidActiveJobOverviewQuery(
+            "startingIndex=2147483648",
+            "startingIndex must be a non-negative integer");
+
+        assertInvalidActiveJobOverviewQuery(
+            "startingIndex=",
+            "startingIndex must be a non-negative integer");
+
+        verifyNoInteractions(resourceClusters);
+    }
+
+    @Test
+    public void testGetActiveJobOverviewRejectsInvalidPageSize() {
+        assertInvalidActiveJobOverviewQuery(
+            "pageSize=abc",
+            "pageSize must be a non-negative integer");
+
+        assertInvalidActiveJobOverviewQuery(
+            "pageSize=-1",
+            "pageSize must be a non-negative integer");
+
+        assertInvalidActiveJobOverviewQuery(
+            "pageSize=2147483648",
+            "pageSize must be a non-negative integer");
+
+        assertInvalidActiveJobOverviewQuery(
+            "pageSize=",
+            "pageSize must be a non-negative integer");
+
+        verifyNoInteractions(resourceClusters);
+    }
+
+    private void assertInvalidActiveJobOverviewQuery(
+        String query,
+        String expectedErrorMessage) {
+
+        TestRouteResult result = testRouteWithNoopAdapter.run(
+            HttpRequest.GET(
+                "/api/v1/resourceClusters/myCluster/activeJobOverview?"
+                    + query));
+
+        result.assertStatusCode(StatusCodes.BAD_REQUEST);
+
+        String responseBody = result.entityString();
+
+        assertTrue(
+            responseBody,
+            responseBody.contains(
+                "\"error\":\"" + expectedErrorMessage + "\""));
     }
 
     final String getResourceClusterEndpoint() {
