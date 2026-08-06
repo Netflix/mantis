@@ -643,7 +643,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     private static ListenerCallQueue.Event<Listener> getTaskStartingEvent(RuntimeTask task) {
-        return new ListenerCallQueue.Event<Listener>() {
+        return new ListenerCallQueue.Event<>() {
             @Override
             public void call(Listener listener) {
                 listener.onTaskStarting(task);
@@ -657,7 +657,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     private static ListenerCallQueue.Event<Listener> getTaskCancellingEvent(RuntimeTask task) {
-        return new ListenerCallQueue.Event<Listener>() {
+        return new ListenerCallQueue.Event<>() {
             @Override
             public void call(Listener listener) {
                 listener.onTaskCancelling(task);
@@ -671,7 +671,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     private static ListenerCallQueue.Event<Listener> getTaskFailedEvent(RuntimeTask task, Throwable throwable) {
-        return new ListenerCallQueue.Event<Listener>() {
+        return new ListenerCallQueue.Event<>() {
             @Override
             public void call(Listener listener) {
                 listener.onTaskFailed(task, throwable);
@@ -685,7 +685,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     private static ListenerCallQueue.Event<Listener> getTaskCancelledEvent(RuntimeTask task, @Nullable Throwable throwable) {
-        return new ListenerCallQueue.Event<Listener>() {
+        return new ListenerCallQueue.Event<>() {
             @Override
             public void call(Listener listener) {
                 listener.onTaskCancelled(task, throwable);

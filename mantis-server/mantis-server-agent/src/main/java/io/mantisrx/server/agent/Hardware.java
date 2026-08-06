@@ -60,7 +60,7 @@ public class Hardware {
      * Returns the total size of the disk. Assumes that it's a UNIX style filesystem. Will not work
      * in Windows.
      *
-     * @return
+     * @return total disk size in bytes
      */
     public static long getSizeOfDisk() {
         try {
