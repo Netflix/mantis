@@ -55,6 +55,9 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
     private static final String TIMER_KEY_AUTO_MARK_READY = "reservation-registry-auto-mark-ready";
     private static final Duration DEFAULT_PROCESS_INTERVAL = Duration.ofMillis(1000);
     private static final Duration DEFAULT_AUTO_MARK_READY_TIMEOUT = Duration.ofSeconds(5);
+    // Extra delay added on top of inFlightReservationTimeout (5s) when retrying after a
+    // NoResourceAvailableException. Adding 55s delay yields a 60s effective backoff between retries on scaling.
+    private static final Duration DEFAULT_NO_RESOURCE_EXTRA_DELAY = Duration.ofSeconds(55);
 
     private final ClusterID clusterID;
     private final Clock clock;
@@ -465,17 +468,20 @@ public class ReservationRegistryActor extends AbstractActorWithTimers {
             NoResourceAvailableException exception = (NoResourceAvailableException) cause;
             String exceptionConstraintKey = exception.getConstraintKey();
 
-            log.info("{}: Received NoResourceAvailableException: {} (constraintKey={})",
+            log.error("{}: Received NoResourceAvailableException: {} (constraintKey={})",
                 this.clusterID, exception.getMessage(), exceptionConstraintKey);
 
             if (exceptionConstraintKey != null) {
                 // Match the exact reservation by constraint key
                 Reservation matchingReservation = inFlightReservations.get(exceptionConstraintKey);
                 if (matchingReservation != null) {
-                    // Update the timestamp for the matching in-flight reservation
-                    // This tracks when the reservation last received a NoResourceAvailableException
-                    // The reservation will be retried if this timestamp is older than the timeout
-                    inFlightReservationRequestTimestamps.put(exceptionConstraintKey, clock.instant());
+                    // Push the in-flight timestamp into the future so shouldSkipConstraintGroup's
+                    // elapsed-time check (now - timestamp < inFlightReservationTimeout) keeps this
+                    // group skipped for an additional DEFAULT_NO_RESOURCE_EXTRA_DELAY before the
+                    // next retry after 60s.
+                    inFlightReservationRequestTimestamps.put(
+                        exceptionConstraintKey,
+                        clock.instant().plus(DEFAULT_NO_RESOURCE_EXTRA_DELAY));
                     log.info("{}: Updated request timestamp for in-flight reservation {} (constraintKey={}) due to NoResourceAvailableException",
                         this.clusterID, matchingReservation.getKey(), exceptionConstraintKey);
                 } else {
