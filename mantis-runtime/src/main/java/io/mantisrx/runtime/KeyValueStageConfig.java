@@ -33,11 +33,15 @@ public abstract class KeyValueStageConfig<T, K, R> extends StageConfig<T, R> {
     private final Codec<K> keyCodec;
 
     public KeyValueStageConfig(String description, Codec<?> inputKeyCodec, Codec<T> inputCodec, Codec<K> outputKeyCodec, Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params) {
-        this(description, inputKeyCodec, inputCodec, outputKeyCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY);
+        this(description, inputKeyCodec, inputCodec, outputKeyCodec, outputCodec, inputStrategy, params, false);
     }
 
-    public KeyValueStageConfig(String description, Codec<?> inputKeyCodec, Codec<T> inputCodec, Codec<K> outputKeyCodec, Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params, int concurrency) {
-        super(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, concurrency);
+    public KeyValueStageConfig(String description, Codec<?> inputKeyCodec, Codec<T> inputCodec, Codec<K> outputKeyCodec, Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params, boolean useProactiveRouter) {
+        this(description, inputKeyCodec, inputCodec, outputKeyCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY, useProactiveRouter);
+    }
+
+    public KeyValueStageConfig(String description, Codec<?> inputKeyCodec, Codec<T> inputCodec, Codec<K> outputKeyCodec, Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params, int concurrency, boolean useProactiveRouter) {
+        super(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, concurrency, useProactiveRouter);
         this.keyCodec = outputKeyCodec;
     }
 
