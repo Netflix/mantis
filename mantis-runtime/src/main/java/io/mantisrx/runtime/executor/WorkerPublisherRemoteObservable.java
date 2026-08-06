@@ -135,6 +135,8 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
         Func1<T, byte[]> valueEncoder = t1 -> stage.getOutputCodec().encode(t1);
         Func1<K, byte[]> keyEncoder = t1 -> stage.getOutputKeyCodec().encode(t1);
 
+        Router<KeyValuePair<K, T>> router = this.routerFactory.keyedRouter(jobName, keyEncoder, valueEncoder);
+
         ServerConfig<KeyValuePair<K, T>> config = new ServerConfig.Builder<KeyValuePair<K, T>>()
             .name(name)
             .port(serverPort)
@@ -144,7 +146,7 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
             .maxChunkTimeMSec(maxChunkTimeMSec())
             .bufferCapacity(bufferCapacity())
             .useSpscQueue(useSpsc())
-            .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
+            .router(router)
             .build();
 
         if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
