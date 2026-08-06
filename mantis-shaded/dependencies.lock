@@ -50,9 +50,6 @@
         "com.google.guava:guava": {
             "locked": "31.1-jre"
         },
-        "io.netty:netty": {
-            "locked": "3.7.0.Final"
-        },
         "io.vavr:vavr-jackson": {
             "locked": "0.9.2"
         },
