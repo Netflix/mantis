@@ -51,7 +51,7 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
 
     ScalarToKey(ToKeyComputation<T, K, R> computation,
                 Config<T, K, R> config, Codec<T> inputCodec) {
-        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters, DEFAULT_STAGE_CONCURRENCY, config.bufferSize);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }
@@ -72,6 +72,7 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
         // default input type is concurrent for 'grouping' use case
         private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.CONCURRENT;
         private long keyExpireTimeSeconds = Long.MAX_VALUE; // never expire by default
+        private int bufferSize = rx.internal.util.RxRingBuffer.SIZE;
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
         /**
@@ -139,6 +140,15 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
         public Config<T, K, R> withParameters(List<ParameterDefinition<?>> params) {
             this.parameters = params;
             return this;
+        }
+
+        public Config<T, K, R> bufferSize(int bufferSize) {
+            this.bufferSize = bufferSize;
+            return this;
+        }
+
+        public int getBufferSize() {
+            return bufferSize;
         }
     }
 }

@@ -127,17 +127,6 @@ public class ServerSentEventRequestHandler<T> implements
         // copy reference, then apply request specific filters, sampling
         Observable<T> requestObservable = observableToServe;
 
-        // decouple the observable on a separate thread and add backpressure handling
-        String decoupleSSE = "false";//ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("sse.decouple", "false");
-        //TODO Below condition would be always false during if condition.
-        // Since decoupleSSE would be false and matching with true as string
-        // would always ignore code inside if block
-        if ("true".equals(decoupleSSE)) {
-            final BasicTag sockAddrTag = new BasicTag("sockAddr", Optional.ofNullable(socketAddrStr).orElse("none"));
-            requestObservable = requestObservable
-                    .lift(new DropOperator<>("outgoing_ServerSentEventRequestHandler", sockAddrTag))
-                    .observeOn(Schedulers.io());
-        }
         response.getHeaders().set("Access-Control-Allow-Origin", "*");
         response.getHeaders().set("content-type", "text/event-stream");
         response.getHeaders().set("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
