@@ -47,6 +47,7 @@ import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorTaskCancelledException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.FilterProvider;
@@ -304,6 +305,15 @@ abstract class BaseRoute extends AllDirectives {
         return node.toString();
     }
 
+    protected String generateFailureResponsePayload(JsonNode errorMsgNode, long requestId) {
+        ObjectNode node = JsonNodeFactory.instance.objectNode();
+        node.put("time", System.currentTimeMillis());
+        node.put("host", this.hostName);
+        node.set("error", errorMsgNode);
+        node.put("requestId", requestId);
+        return node.toString();
+    }
+
     FilterProvider parseFilter(String fields, String target) {
         if (Strings.isNullOrEmpty(fields)) {
             return null;
@@ -351,18 +361,31 @@ abstract class BaseRoute extends AllDirectives {
                 throwable -> {
                     if (throwable instanceof TaskExecutorNotFoundException) {
                         MasterApiMetrics.getInstance().incrementResp4xx();
-                        return complete(StatusCodes.NOT_FOUND);
+                        return complete(
+                            StatusCodes.NOT_FOUND,
+                            HttpEntities.create(
+                                ContentTypes.APPLICATION_JSON,
+                                generateFailureResponsePayload(throwable.getMessage(), -1)));
                     }
 
                     if (throwable instanceof RequestThrottledException) {
                         MasterApiMetrics.getInstance().incrementResp4xx();
                         MasterApiMetrics.getInstance().incrementThrottledRequestCount();
-                        return complete(StatusCodes.TOO_MANY_REQUESTS);
+                        return complete(
+                            StatusCodes.TOO_MANY_REQUESTS,
+                            HttpEntities.create(
+                                ContentTypes.APPLICATION_JSON,
+                                generateFailureResponsePayload(throwable.getMessage(), -1)));
                     }
 
                     if (throwable instanceof TaskExecutorTaskCancelledException) {
                         MasterApiMetrics.getInstance().incrementResp4xx();
-                        return complete(StatusCodes.NOT_ACCEPTABLE, throwable, Jackson.marshaller() );
+                        TaskExecutorTaskCancelledException ex = (TaskExecutorTaskCancelledException) throwable;
+                        return complete(
+                            StatusCodes.NOT_ACCEPTABLE,
+                            HttpEntities.create(
+                                ContentTypes.APPLICATION_JSON,
+                                generateFailureResponsePayload(ex.toJsonNode(), -1)));
                     }
 
                     if (throwable instanceof AskTimeoutException) {
@@ -371,7 +394,11 @@ abstract class BaseRoute extends AllDirectives {
 
                     MasterApiMetrics.getInstance().incrementResp5xx();
                     logger.error("withFuture error: ", throwable);
-                    return complete(StatusCodes.INTERNAL_SERVER_ERROR, throwable, Jackson.marshaller());
+                    return complete(
+                        StatusCodes.INTERNAL_SERVER_ERROR,
+                        HttpEntities.create(
+                            ContentTypes.APPLICATION_JSON,
+                            generateFailureResponsePayload(throwable.getMessage(), -1)));
                 },
                 r -> complete(StatusCodes.OK, r, Jackson.marshaller())));
     }
