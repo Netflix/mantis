@@ -17,10 +17,6 @@
 package io.mantisrx.master.utils;
 
 import akka.http.javadsl.model.HttpRequest;
-import com.netflix.spectator.api.BasicTag;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.config.dynamic.LongDynamicProperty;
 import io.mantisrx.shaded.com.google.common.util.concurrent.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
@@ -42,20 +38,25 @@ import lombok.extern.slf4j.Slf4j;
  * 302 the caller away first. So the configured rate is in practice the cluster-wide ceiling, not a
  * per-node share of one.
  *
- * <p>Sheds are counted by this class rather than by the route layer, so that the {@code route} tag
- * always names the bucket that actually shed the request instead of whatever the call site claimed.
+ * <p>Nothing here is counted. Sheds are counted by the route layer, which is the only place they can be
+ * counted once the mechanism is a deployment's to choose — see {@link ApiRequestRateLimiterProvider}.
+ *
+ * <p>{@link ApiRequestRateLimiter#getRetryAfter(HttpRequest)} is left at the inherited one second, which is
+ * the honest answer for every rate this limiter can be given: the bucket refills a permit every
+ * {@code 1/rate} seconds and the rate is a whole number of permits per second, so the next permit is always
+ * within a second — and {@code Retry-After} cannot express less than that anyway. Its request parameter is
+ * of no use here for the same reason {@link #tryAcquire(HttpRequest)} discards one. Two caveats. The hint
+ * does not say the permit will be <em>this</em> caller's: the bucket is unkeyed, so every client shed in the
+ * same second gets the same number and they contend again when it elapses, which is why the route layer's
+ * message asks for backoff and jitter on top. And if the rate ever becomes fractional, one second turns into
+ * an underestimate and this needs an override.
  */
 @Slf4j
 public class GlobalApiRequestRateLimiter implements ApiRequestRateLimiter {
 
-    private static final String METRIC_GROUP = "ApiRequestRateLimiter";
-    private static final String THROTTLED_REQUEST_COUNT = "throttledRequestCount";
-    private static final String ROUTE_TAG = "route";
-
     private final String route;
     private final LongDynamicProperty permitsPerSecondDp;
     private final RateLimiter rateLimiter;
-    private final Counter throttledRequestCount;
 
     /**
      * Guards {@link #syncRate()} so concurrent callers don't race on {@code RateLimiter.setRate}.
@@ -65,21 +66,15 @@ public class GlobalApiRequestRateLimiter implements ApiRequestRateLimiter {
     private volatile long currentRate;
 
     /**
-     * @param route names what this bucket guards, and is the {@code route} tag its sheds are counted
-     *     under. Two limiters built with the same label report into the same time series, so give each
-     *     bucket its own label.
+     * @param route names what this bucket guards, for the startup log line and the rate-change one. It is
+     *     not a metric tag — sheds are counted at the route layer under the endpoint that shed them, which
+     *     is finer than this label: one bucket can guard several endpoints.
      */
     public GlobalApiRequestRateLimiter(String route, LongDynamicProperty permitsPerSecondDp) {
         this.route = route;
         this.permitsPerSecondDp = permitsPerSecondDp;
         this.currentRate = permitsPerSecondDp.getValue();
         this.rateLimiter = RateLimiter.create(this.currentRate);
-        final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(
-            new Metrics.Builder()
-                .id(METRIC_GROUP, new BasicTag(ROUTE_TAG, route))
-                .addCounter(THROTTLED_REQUEST_COUNT)
-                .build());
-        this.throttledRequestCount = metrics.getCounter(THROTTLED_REQUEST_COUNT);
         log.info("Created rate limiter for route {} from {} at {} permits/sec",
             route, permitsPerSecondDp, this.currentRate);
     }
@@ -92,11 +87,7 @@ public class GlobalApiRequestRateLimiter implements ApiRequestRateLimiter {
     @Override
     public boolean tryAcquire(HttpRequest request) {
         syncRate();
-        if (rateLimiter.tryAcquire()) {
-            return true;
-        }
-        throttledRequestCount.increment();
-        return false;
+        return rateLimiter.tryAcquire();
     }
 
     /**

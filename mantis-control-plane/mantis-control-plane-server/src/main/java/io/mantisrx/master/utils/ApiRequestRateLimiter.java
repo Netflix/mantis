@@ -17,6 +17,7 @@
 package io.mantisrx.master.utils;
 
 import akka.http.javadsl.model.HttpRequest;
+import java.time.Duration;
 
 /**
  * Admission control for a set of API endpoints: decides whether an inbound request may proceed or
@@ -50,4 +51,31 @@ public interface ApiRequestRateLimiter {
      *     should be throttled. Never blocks.
      */
     boolean tryAcquire(HttpRequest request);
+
+    /**
+     * How long a shed caller should wait before trying again, reported to it as the {@code Retry-After}
+     * header of the 429. This is a hint, not a reservation: nothing holds a permit for the caller, so a
+     * client that waits exactly this long can still be shed again if others drained the bucket first.
+     *
+     * <p>The default of one second is the smallest value {@code Retry-After} can express in seconds, and
+     * suits any bucket refilling at a permit per second or faster. An implementation whose bucket refills
+     * more slowly than that should override this — telling a caller to come back in a second when the next
+     * permit is a minute away just converts one shed request into sixty.
+     *
+     * <p>The request is passed so that a keyed implementation can answer per caller: the client that
+     * drained its own bucket should be told to wait longer than one shed by a shared ceiling, and the
+     * two are indistinguishable without something to key on. It is called only on the shed path, and
+     * separately from {@link #tryAcquire}, so a keyed implementation pays a second lookup and may
+     * observe its bucket a moment later than the decision did. Both are deliberate: {@code Retry-After}
+     * has whole-second resolution, which is coarser than either effect. An implementation with no
+     * per-caller answer to give — no bucket for this client, because the shared ceiling shed it —
+     * should delegate to this default rather than invent one.
+     *
+     * @param request the request being shed, to key on
+     * @return a positive duration. The route layer clamps it into a range {@code Retry-After} can carry
+     *     sensibly, so an implementation need not round: see {@code BaseRoute.throttledResponse}.
+     */
+    default Duration getRetryAfter(HttpRequest request) {
+        return Duration.ofSeconds(1);
+    }
 }

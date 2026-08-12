@@ -140,9 +140,9 @@ public class GlobalApiRequestRateLimiterTest {
     }
 
     /**
-     * Two limiters registering under the same {@code route} tag must not fail. The metrics registry
-     * de-duplicates by group id, so this is a no-op there — but if it ever threw instead, it would throw
-     * during startup wiring and take the master down rather than degrade a metric.
+     * The route label is a name, not an identity: two limiters sharing one must still be two buckets. The
+     * factory hands out one limiter per route, so this is not how they are built — but if the label ever
+     * became a lookup key, the second route would silently draw down the first route's budget.
      */
     @Test
     public void twoLimitersMayShareARouteLabel() {
@@ -151,24 +151,23 @@ public class GlobalApiRequestRateLimiterTest {
         ApiRequestRateLimiter second = new GlobalApiRequestRateLimiter(
             "duplicate", property(new MutableLoader(), 1L, Clock.systemUTC()));
 
-        // Each still owns its own bucket; only the counter they report into is shared.
         assertTrue(first.tryAcquire(REQUEST));
         assertFalse(first.tryAcquire(REQUEST));
+        // Draining the first left the second untouched.
         assertTrue(second.tryAcquire(REQUEST));
     }
 
     /**
-     * The shed path increments a counter looked up at construction time. That path only runs when the
-     * system is already under stress, so an unregistered counter would surface as a 500 exactly when the
-     * throttle was supposed to be protecting the master.
+     * The {@code Retry-After} a shed caller is handed. One second holds across the whole configurable
+     * range because the rate is a whole number of permits per second, so the next permit is never more
+     * than a second out — this pins that reasoning to the two ends of the range, and would fail if the
+     * rate ever became fractional and made one second an underestimate.
      */
     @Test
-    public void sheddingDoesNotThrow() {
-        ApiRequestRateLimiter limiter = new GlobalApiRequestRateLimiter(
-            "counted", property(new MutableLoader(), 1L, Clock.systemUTC()));
-
-        for (int i = 0; i < 10; i++) {
-            limiter.tryAcquire(REQUEST);
-        }
+    public void retryAfterIsOneSecondAtAnyConfigurableRate() {
+        assertEquals(Duration.ofSeconds(1), new GlobalApiRequestRateLimiter(
+            "fast", property(new MutableLoader(), 10_000L, Clock.systemUTC())).getRetryAfter(REQUEST));
+        assertEquals(Duration.ofSeconds(1), new GlobalApiRequestRateLimiter(
+            "slow", property(new MutableLoader(), 1L, Clock.systemUTC())).getRetryAfter(REQUEST));
     }
 }

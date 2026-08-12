@@ -50,6 +50,7 @@ import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
+import io.mantisrx.master.utils.ApiRequestRateLimiterProvider;
 import io.mantisrx.master.zk.ZookeeperLeadershipFactory;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ILeaderElectorFactory;
@@ -104,10 +105,27 @@ public class MasterMain implements Service {
     private ILeadershipManager leadershipManager;
     private MasterMonitor monitor;
 
+    /**
+     * Throttles API routes with the node-wide single-bucket mechanism. Equivalent to passing
+     * {@link ApiRequestRateLimiterProvider#GLOBAL}.
+     */
     public MasterMain(
         ConfigurationFactory configFactory,
         MantisPropertiesLoader dynamicPropertiesLoader,
         AuditEventSubscriber auditEventSubscriber) {
+        this(configFactory, dynamicPropertiesLoader, auditEventSubscriber, ApiRequestRateLimiterProvider.GLOBAL);
+    }
+
+    /**
+     * @param rateLimiterProvider what kind of limiter backs each throttled route's budget. A deployment
+     *     with something to key on — an authenticated caller identity, say — can supply a per-caller
+     *     mechanism here; which routes have budgets at all is not its call.
+     */
+    public MasterMain(
+        ConfigurationFactory configFactory,
+        MantisPropertiesLoader dynamicPropertiesLoader,
+        AuditEventSubscriber auditEventSubscriber,
+        ApiRequestRateLimiterProvider rateLimiterProvider) {
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
 
         Metrics metrics = new Metrics.Builder()
@@ -218,7 +236,7 @@ public class MasterMain implements Service {
             mantisServices.addService(leaderFactory.createLeaderElector(config, leadershipManager));
             mantisServices.addService(new MasterApiAkkaService(monitor, leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
                 resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager,
-                dynamicPropertiesLoader));
+                dynamicPropertiesLoader, null, rateLimiterProvider));
 
             if (leaderFactory instanceof LocalLeaderFactory && !config.isLocalMode()) {
                 logger.error("local mode is [ {} ] and leader factory is {} this configuration is unsafe", config.isLocalMode(), leaderFactory.getClass().getSimpleName());

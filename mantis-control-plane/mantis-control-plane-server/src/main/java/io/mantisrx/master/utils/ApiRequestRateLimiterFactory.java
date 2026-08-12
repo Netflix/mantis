@@ -42,18 +42,37 @@ import lombok.extern.slf4j.Slf4j;
  * <p>A route whose flag is off yields {@link ApiRequestRateLimiter#UNLIMITED}: no dynamic property is
  * resolved and no limiter is constructed, so the feature stays inert until an operator opts in, and the
  * route layer has no disabled case to special-case.
+ *
+ * <p>What kind of limiter backs a budget is not decided here — that is the
+ * {@link ApiRequestRateLimiterProvider}'s job, so that a deployment can swap the mechanism (per-caller
+ * buckets, say) while this class keeps deciding which routes have budgets at all. Everything above still
+ * holds whatever the provider returns: the flag, the caching, and the one-limiter-per-route guarantee are
+ * applied to it, not delegated.
  */
 @Slf4j
 public class ApiRequestRateLimiterFactory {
 
     private final MasterConfiguration config;
     private final MantisPropertiesLoader propertiesLoader;
+    private final ApiRequestRateLimiterProvider provider;
     private final ConcurrentMap<String, ApiRequestRateLimiter> limiters = new ConcurrentHashMap<>();
 
+    /**
+     * Builds limiters with the node-wide single-bucket mechanism. Equivalent to passing
+     * {@link ApiRequestRateLimiterProvider#GLOBAL}.
+     */
     public ApiRequestRateLimiterFactory(
         MasterConfiguration config, MantisPropertiesLoader propertiesLoader) {
+        this(config, propertiesLoader, ApiRequestRateLimiterProvider.GLOBAL);
+    }
+
+    public ApiRequestRateLimiterFactory(
+        MasterConfiguration config,
+        MantisPropertiesLoader propertiesLoader,
+        ApiRequestRateLimiterProvider provider) {
         this.config = config;
         this.propertiesLoader = propertiesLoader;
+        this.provider = provider;
     }
 
     /**
@@ -80,6 +99,6 @@ public class ApiRequestRateLimiterFactory {
             MasterConfiguration.class,
             defaultPermitsPerSecond,
             propertiesLoader);
-        return new GlobalApiRequestRateLimiter(route, permitsPerSecondDp);
+        return provider.create(route, permitsPerSecondDp, propertiesLoader);
     }
 }

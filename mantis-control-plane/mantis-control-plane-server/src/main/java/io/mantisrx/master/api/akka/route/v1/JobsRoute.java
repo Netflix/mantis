@@ -277,7 +277,15 @@ public class JobsRoute extends BaseRoute {
     }
 
     private Route postJobsRoute(Optional<String> clusterName) {
-        return withThrottle(rateLimiter, () -> submitJobRoute(clusterName));
+        // Same endpoint split submitJobRoute makes once it has the body — done again here because a shed
+        // request never gets that far, and a shed has to land on the endpoint that would have served it.
+        return withThrottle(
+                rateLimiter,
+                clusterName.isPresent()
+                        ? HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_JOBS
+                        : HttpRequestMetrics.Endpoints.JOBS,
+                HttpRequestMetrics.HttpVerb.POST,
+                () -> submitJobRoute(clusterName));
     }
 
     private Route submitJobRoute(Optional<String> clusterName) {
@@ -500,7 +508,13 @@ public class JobsRoute extends BaseRoute {
     private Route postJobInstanceQuickSubmitRoute() {
         // quickSubmit is a job-creation path too, so it shares the submit bucket rather than getting
         // its own: the thing we are protecting is the cluster actor behind both, not the endpoint.
-        return withThrottle(rateLimiter, this::quickSubmitRoute);
+        // The bucket is shared, but the metric is not: sheds are counted under quickSubmit's own endpoint,
+        // so a dashboard shows which of the two callers is filling the bucket the other one drinks from.
+        return withThrottle(
+                rateLimiter,
+                HttpRequestMetrics.Endpoints.JOBS_ACTION_QUICKSUBMIT,
+                HttpRequestMetrics.HttpVerb.POST,
+                this::quickSubmitRoute);
     }
 
     private Route quickSubmitRoute() {
