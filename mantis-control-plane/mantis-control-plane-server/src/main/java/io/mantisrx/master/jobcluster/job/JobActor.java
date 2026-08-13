@@ -23,6 +23,7 @@ import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusE
 import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.WARN;
 import static io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.MANTIS_SYSTEM_ALLOCATED_NUM_PORTS;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_CONFLICT;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 import static java.lang.Math.max;
@@ -510,10 +511,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(JobClusterProto.KillJobRequest.class, (x) -> getSender().tell(new KillJobResponse(x.requestId,
                         SUCCESS, JobState.Noop, genUnexpectedMsg(x.toString(), this.jobId.getId(), state),
                         this.jobId, x.user), getSelf()))
-                // scale stage request
-                .match(ScaleStageRequest.class, (x) -> getSender().tell(new ScaleStageResponse(x.requestId,
-                        CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.jobId.getId(), state),
-                        0), getSelf()))
+                // scale stage request — surface the job state (terminating) rather than a generic message.
+                .match(ScaleStageRequest.class, this::onScaleStageNonActive)
                 // scheduling Info observable
                 .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(
                         new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR,
@@ -719,10 +718,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // runtime limit reached
                 .match(JobProto.RuntimeLimitReached.class, (x) -> LOGGER.warn(genUnexpectedMsg(
                         x.toString(), this.jobId.getId(), state)))
-                // scale stage request
-                .match(ScaleStageRequest.class, (x) -> getSender().tell(
-                        new ScaleStageResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
-                                x.toString(), this.jobId.getId(), state), 0), getSelf()))
+                // scale stage request — a job that is stuck (e.g. workers cannot start) stays in this
+                // non-active state, so surface a descriptive reason instead of a generic rejection.
+                .match(ScaleStageRequest.class, this::onScaleStageNonActive)
 
                 .match(InitJob.class, (x) -> getSender().tell(new JobInitialized(x.requestId, SUCCESS,
                         genUnexpectedMsg(x.toString(), this.jobId.getId(), state), this.jobId, x.requstor), getSelf()))
@@ -1242,6 +1240,26 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             LOGGER.error(msg, e);
             sender.tell(new ScaleStageResponse(scaleStage.requestId, SERVER_ERROR, msg, 0), getSelf());
         }
+    }
+
+    /**
+     * Handles a {@link ScaleStageRequest} that arrives while the job is not active (e.g. it is still
+     * in {@code Accepted} because its workers cannot start, or it is terminating). The job only becomes
+     * active once all workers have started, so a stuck job stays in a non-active behavior and previously
+     * received a generic "unexpected message" rejection here. This instead returns a 409 that names the
+     * job state so the operator can see why the scale did not take effect.
+     */
+    private void onScaleStageNonActive(ScaleStageRequest scaleStage) {
+        ActorRef sender = getSender();
+        JobState jobState = getJobState();
+        String msg = String.format(
+                "Cannot scale stage %d: job %s is in state %s and is not currently scalable",
+                scaleStage.getStageNum(), this.jobId, jobState);
+        LOGGER.warn(msg);
+        eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(
+                LifecycleEventsProto.StatusEvent.StatusEventType.WARN, msg, getJobId(), jobState));
+        sender.tell(new ScaleStageResponse(
+                scaleStage.requestId, CLIENT_ERROR_CONFLICT, msg, 0), getSelf());
     }
 
     /**

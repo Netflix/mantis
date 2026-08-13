@@ -410,17 +410,11 @@
             ],
             "locked": "0.27ea0"
         },
-        "nz.ac.waikato.cms.moa:moa": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "locked": "2017.06"
-        },
         "org.apache.commons:commons-math3": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-rxcontrol"
             ],
-            "locked": "3.6.1"
+            "locked": "3.5"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
@@ -901,17 +895,11 @@
             ],
             "locked": "0.27ea0"
         },
-        "nz.ac.waikato.cms.moa:moa": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-runtime-executor"
-            ],
-            "locked": "2017.06"
-        },
         "org.apache.commons:commons-math3": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-rxcontrol"
             ],
-            "locked": "3.6.1"
+            "locked": "3.5"
         },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [

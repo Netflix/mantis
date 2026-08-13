@@ -22,10 +22,6 @@ dependencies {
     api project(":mantis-rxcontrol")
 
     implementation libraries.vavr
-    implementation('nz.ac.waikato.cms.moa:moa:2017.06') {
-        exclude group: 'com.github.spullara.cli-parser', module: 'cli-parser'
-        exclude group: 'org.pentaho.pentaho-commons', module: 'pentaho-package-manager'
-    }
     implementation "com.yahoo.datasketches:sketches-core:0.9.1"
 
     implementation libraries.slf4jApi

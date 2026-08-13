@@ -20,7 +20,6 @@ import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.CP
 import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.JVMMemory;
 import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.Network;
 
-import com.yahoo.labs.samoa.instances.Attribute;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
 import io.mantisrx.server.worker.jobmaster.control.actuators.ClutchMantisStageActuator;
@@ -34,7 +33,6 @@ import io.vavr.Tuple;
 import io.vavr.Tuple3;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import moa.core.FastVector;
 import org.slf4j.Logger;
 import rx.Observable;
 
@@ -50,16 +48,6 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(ClutchAutoScaler.class);
     private static final String autoscaleLogMessageFormat = "Autoscaling stage %d to %d instances on controller output: cpu/mem/network %f/%f/%f (dampening: %f) and predicted error: %f with dominant resource: %s";
-    private static final FastVector attributes = new FastVector();
-
-    static {
-        attributes.add(new Attribute("cpu"));
-        attributes.add(new Attribute("memory"));
-        attributes.add(new Attribute("network"));
-        attributes.add(new Attribute("minuteofday"));
-        attributes.add(new Attribute("scale"));
-        attributes.add(new Attribute("error"));
-    }
 
     private final JobAutoScaler.StageScaler scaler;
     private final long initialSize;
