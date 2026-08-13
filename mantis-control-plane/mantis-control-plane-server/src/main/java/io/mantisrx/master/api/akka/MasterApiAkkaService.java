@@ -57,12 +57,16 @@ import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.utils.ApiRequestRateLimiterFactory;
+import io.mantisrx.master.utils.ApiRequestRateLimiterProvider;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ILeadershipManager;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
+import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import java.util.concurrent.CompletionStage;
@@ -77,6 +81,7 @@ import scala.concurrent.duration.Duration;
 public class MasterApiAkkaService extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(MasterApiAkkaService.class);
+
     private final MasterMonitor masterMonitor;
     private final MasterDescription masterDescription;
     private final ActorRef jobClustersManagerActor;
@@ -94,6 +99,12 @@ public class MasterApiAkkaService extends BaseService {
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
     private final HttpsConnectionContext httpsConnectionContext;
+    private final MantisPropertiesLoader dynamicPropertiesLoader;
+
+    /**
+     * Read by {@link #configureApiRoutes}, so it must be assigned before that call — see the note there.
+     */
+    private final ApiRequestRateLimiterProvider rateLimiterProvider;
 
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
@@ -104,7 +115,8 @@ public class MasterApiAkkaService extends BaseService {
                                 final int serverPort,
                                 final IMantisPersistenceProvider mantisStorageProvider,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
-                                final ILeadershipManager leadershipManager
+                                final ILeadershipManager leadershipManager,
+                                final MantisPropertiesLoader dynamicPropertiesLoader
                                 ) {
         this(
             masterMonitor,
@@ -117,9 +129,11 @@ public class MasterApiAkkaService extends BaseService {
             mantisStorageProvider,
             lifecycleEventPublisher,
             leadershipManager,
+            dynamicPropertiesLoader,
             null
         );
     }
+
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
                                 final ActorRef jobClustersManagerActor,
@@ -130,7 +144,38 @@ public class MasterApiAkkaService extends BaseService {
                                 final IMantisPersistenceProvider mantisStorageProvider,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
                                 final ILeadershipManager leadershipManager,
+                                final MantisPropertiesLoader dynamicPropertiesLoader,
                                 final HttpsConnectionContext httpsConnectionContext) {
+        this(
+            masterMonitor,
+            masterDescription,
+            jobClustersManagerActor,
+            statusEventBrokerActor,
+            resourceClusters,
+            resourceClustersHostManagerActor,
+            serverPort,
+            mantisStorageProvider,
+            lifecycleEventPublisher,
+            leadershipManager,
+            dynamicPropertiesLoader,
+            httpsConnectionContext,
+            ApiRequestRateLimiterProvider.GLOBAL
+        );
+    }
+
+    public MasterApiAkkaService(final MasterMonitor masterMonitor,
+                                final MasterDescription masterDescription,
+                                final ActorRef jobClustersManagerActor,
+                                final ActorRef statusEventBrokerActor,
+                                final ResourceClusters resourceClusters,
+                                final ActorRef resourceClustersHostManagerActor,
+                                final int serverPort,
+                                final IMantisPersistenceProvider mantisStorageProvider,
+                                final LifecycleEventPublisher lifecycleEventPublisher,
+                                final ILeadershipManager leadershipManager,
+                                final MantisPropertiesLoader dynamicPropertiesLoader,
+                                final HttpsConnectionContext httpsConnectionContext,
+                                final ApiRequestRateLimiterProvider rateLimiterProvider) {
         super(true);
         Preconditions.checkNotNull(masterMonitor, "MasterMonitor");
         Preconditions.checkNotNull(masterDescription, "masterDescription");
@@ -139,6 +184,10 @@ public class MasterApiAkkaService extends BaseService {
         Preconditions.checkNotNull(mantisStorageProvider, "mantisStorageProvider");
         Preconditions.checkNotNull(lifecycleEventPublisher, "lifecycleEventPublisher");
         Preconditions.checkNotNull(leadershipManager, "leadershipManager");
+        Preconditions.checkNotNull(dynamicPropertiesLoader, "dynamicPropertiesLoader");
+        Preconditions.checkNotNull(rateLimiterProvider, "rateLimiterProvider");
+        this.dynamicPropertiesLoader = dynamicPropertiesLoader;
+        this.rateLimiterProvider = rateLimiterProvider;
         this.masterMonitor = masterMonitor;
         this.masterDescription = masterDescription;
         this.jobClustersManagerActor = jobClustersManagerActor;
@@ -151,6 +200,8 @@ public class MasterApiAkkaService extends BaseService {
         this.leadershipManager = leadershipManager;
         this.system = ActorSystem.create("MasterApiActorSystem");
         this.materializer = Materializer.createMaterializer(system);
+        // Builds the routes, so every field it reads — rateLimiterProvider among them — has to be
+        // assigned above this line, not below it with httpsConnectionContext.
         this.mantisMasterRoute = configureApiRoutes(this.system);
         this.httpsConnectionContext = httpsConnectionContext;
         this.executorService = Executors.newSingleThreadExecutor(r -> {
@@ -186,7 +237,18 @@ public class MasterApiAkkaService extends BaseService {
         final JobStatusRoute v0JobStatusRoute = new JobStatusRoute(jobStatusRouteHandler);
 
         final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(jobClusterRouteHandler, actorSystem);
-        final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler, actorSystem);
+
+        // A route gets its own budget, and a route not named here is not throttled at all. What each
+        // budget is called and which config sizes it lives on ApiRequestRateLimiterFactory; what kind of
+        // limiter backs it comes from the injected provider.
+        final ApiRequestRateLimiterFactory rateLimiterFactory = new ApiRequestRateLimiterFactory(
+            ConfigurationProvider.getConfig(), dynamicPropertiesLoader, rateLimiterProvider);
+
+        final JobsRoute v1JobsRoute = new JobsRoute(
+            jobClusterRouteHandler,
+            jobRouteHandler,
+            actorSystem,
+            rateLimiterFactory.v1Jobs());
         final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);
