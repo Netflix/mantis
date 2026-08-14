@@ -37,6 +37,9 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorTaskCancelledException;
 import java.io.IOException;
+
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -71,10 +74,21 @@ public class ResourceClustersLeaderExclusiveRouteTest extends JUnitRouteTest {
         );
         String encoded = serializer.toJson(heartbeat);
 
-        testRoute.run(
+        String response = testRoute.run(
             HttpRequest.POST("/api/v1/resourceClusters/myCluster/actions/heartBeatFromTaskExecutor")
                 .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, encoded)))
             .assertStatusCode(StatusCodes.NOT_ACCEPTABLE)
-            .assertEntity(serializer.toJson(err));
+            .entityString();
+
+        // Parse response and verify the error field contains the exception
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode responseNode = mapper.readTree(response);
+        JsonNode errorNode = responseNode.get("error");
+
+        String expectedError = serializer.toJson(err);
+        String actualError = mapper.writeValueAsString(errorNode);
+
+        assert actualError.equals(expectedError) :
+            String.format("Expected error: %s, but got: %s", expectedError, actualError);
     }
 }
