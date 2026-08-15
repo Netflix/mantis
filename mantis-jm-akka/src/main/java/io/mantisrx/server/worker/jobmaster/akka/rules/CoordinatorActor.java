@@ -31,6 +31,18 @@ public class CoordinatorActor extends AbstractActor {
     private ActorRef controllerActor;
     protected final Map<String, ActorRef> ruleActors = new HashMap<>();
 
+    /**
+     * Latest activation requested by each trigger driven rule (custom / schedule), keyed by rule id.
+     * <p>
+     * Whether such a rule is currently in effect is only known to its rule actor: a custom trigger decides from
+     * its own signals and a schedule rule from its cron window, so {@link #currentRuleInfo} cannot answer it.
+     * The rule to activate is the one the trigger sent rather than the declared one, because triggers compute
+     * the effective desire size and scaling steps at activation time. Recording the request here lets
+     * {@link #onRuleRefresh} re-elect a rule that is still standing once a higher ranking rule goes away,
+     * instead of dropping to the default rule.
+     */
+    protected final Map<String, JobScalingRule> standingRuleActivations = new HashMap<>();
+
     public static Props Props(JobScalerContext context) {
         return Props.create(CoordinatorActor.class, context);
     }
@@ -45,11 +57,11 @@ public class CoordinatorActor extends AbstractActor {
         return receiveBuilder()
             // onRuleChange: update local rule state, create new actor if needed
             .match(JobScalerRuleInfo.class, this::onRuleChange)
-            // onRuleRefresh: trigger latest perpetual rule to controller
+            // onRuleRefresh: trigger highest ranking rule in effect to controller
             .match(RefreshRuleRequest.class, this::onRuleRefresh)
-            .match(ActivateRuleRequest.class, ar -> this.controllerActor.tell(ar, self()))
-            .match(DeactivateRuleRequest.class, dr -> this.controllerActor.tell(dr, self()))
-            .match(Terminated.class, terminated -> { log.info("Actor {} terminated.", terminated.actor());})
+            .match(ActivateRuleRequest.class, this::onActivateRuleRequest)
+            .match(DeactivateRuleRequest.class, this::onDeactivateRuleRequest)
+            .match(Terminated.class, this::onTerminated)
             // [for testing only] dump state
             .match(GetStateRequest.class, this::onGetStateRequest)
             .matchAny(any -> log.warn("Unknown message: {}", any))
@@ -64,6 +76,7 @@ public class CoordinatorActor extends AbstractActor {
                 .defaultRule(this.defaultRule)
                 .controllerActor(this.controllerActor)
                 .ruleActors(ImmutableMap.copyOf(this.ruleActors))
+                .standingRuleActivations(ImmutableMap.copyOf(this.standingRuleActivations))
                 .build(),
             self());
     }
@@ -128,6 +141,9 @@ public class CoordinatorActor extends AbstractActor {
             log.info("Stopping rule actor: {}", ruleActor);
             getContext().stop(ruleActor);
 
+            // a deleted rule is no longer in effect, drop it before the refresh below can re-elect it
+            this.standingRuleActivations.remove(ruleId);
+
             // notify controller to deactivate rule if active
             this.controllerActor.tell(DeactivateRuleRequest.of(this.jobScalerContext.getJobId(), ruleId), self());
         }
@@ -153,22 +169,92 @@ public class CoordinatorActor extends AbstractActor {
             return;
         }
 
-        Optional<JobScalingRule> activeRule =
+        Comparator<JobScalingRule> byRuleId = Comparator.comparing(rule -> Long.valueOf(rule.getRuleId()));
+
+        Optional<JobScalingRule> perpetualRule =
             Optional.ofNullable(this.currentRuleInfo)
                 .map(JobScalerRuleInfo::getRules)
                 .map(Collection::stream)
                 .orElseGet(Stream::empty)
                 .filter(RuleUtils::isPerpetualRule)
-                .max(Comparator.comparing(rule -> Long.valueOf(rule.getRuleId())));
+                .max(byRuleId);
 
-        // If no perpetual rule is found, fall back to defaultRule if not null
+        // Trigger driven rules never satisfy isPerpetualRule, so they can only be re-elected from the
+        // activations they sent. Without this a custom or schedule rule that is still in effect is dropped
+        // to the default rule as soon as a higher ranking rule it lost to is removed.
+        Optional<JobScalingRule> standingRule = this.standingRuleActivations.values().stream().max(byRuleId);
+
+        Optional<JobScalingRule> activeRule =
+            Stream.of(perpetualRule, standingRule)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .max(byRuleId);
+
+        // If no rule is in effect, fall back to defaultRule if not null
         JobScalingRule finalRule = activeRule.orElse(defaultRule);
-        if (finalRule != null) {
-            this.ruleActors.get(finalRule.getRuleId())
-                .tell(ActivateRuleRequest.of(jobScalerContext.getJobId(), finalRule), self());
-        } else {
+        if (finalRule == null) {
             log.warn("No active rule found {}", getSelf());
+            return;
         }
+
+        ActivateRuleRequest activateRequest =
+            ActivateRuleRequest.of(this.jobScalerContext.getJobId(), finalRule);
+
+        if (this.standingRuleActivations.containsKey(finalRule.getRuleId())) {
+            // Cannot route through the rule actor: it owns a trigger and does not accept activations, and the
+            // rule to activate is the trigger computed one rather than the declared one. The controller ranking
+            // check makes this a no-op when the rule is already the active one.
+            log.info("Re-electing standing rule {}", finalRule.getRuleId());
+            this.controllerActor.tell(activateRequest, self());
+            return;
+        }
+
+        ActorRef ruleActor = this.ruleActors.get(finalRule.getRuleId());
+        if (ruleActor == null) {
+            log.error("No rule actor for rule {}, cannot activate: {}", finalRule.getRuleId(), finalRule);
+            return;
+        }
+        ruleActor.tell(activateRequest, self());
+    }
+
+    private void onActivateRuleRequest(ActivateRuleRequest activateRuleRequest) {
+        JobScalingRule rule = activateRuleRequest.getRule();
+        if (rule != null && isTriggerDrivenRule(rule.getRuleId())) {
+            this.standingRuleActivations.put(rule.getRuleId(), rule);
+        }
+        this.controllerActor.tell(activateRuleRequest, self());
+    }
+
+    private void onDeactivateRuleRequest(DeactivateRuleRequest deactivateRuleRequest) {
+        this.standingRuleActivations.remove(deactivateRuleRequest.getRuleId());
+        this.controllerActor.tell(deactivateRuleRequest, self());
+    }
+
+    private void onTerminated(Terminated terminated) {
+        log.info("Actor {} terminated.", terminated.actor());
+        // a rule whose actor is gone has no trigger behind it any more, never re-elect it
+        this.ruleActors.entrySet().stream()
+            .filter(kv -> kv.getValue().equals(terminated.actor()))
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toSet())
+            .forEach(ruleId -> {
+                log.warn("Rule actor for {} terminated unexpectedly, dropping it from rule state", ruleId);
+                this.ruleActors.remove(ruleId);
+                this.standingRuleActivations.remove(ruleId);
+            });
+    }
+
+    /**
+     * @return true when the given rule id belongs to a rule whose activation is decided by a trigger
+     * (custom or schedule) rather than by rule ranking alone. Perpetual rules and the default rule return false:
+     * they are always reconstructible from {@link #currentRuleInfo} / {@link #defaultRule}.
+     */
+    private boolean isTriggerDrivenRule(String ruleId) {
+        return Optional.ofNullable(this.currentRuleInfo)
+            .map(JobScalerRuleInfo::getRules)
+            .orElse(ImmutableList.of())
+            .stream()
+            .anyMatch(rule -> ruleId.equals(rule.getRuleId()) && !RuleUtils.isPerpetualRule(rule));
     }
 
     private void createRuleActor(JobScalingRule rule) {
@@ -278,5 +364,6 @@ public class CoordinatorActor extends AbstractActor {
         JobScalingRule defaultRule;
         ActorRef controllerActor;
         Map<String, ActorRef> ruleActors;
+        Map<String, JobScalingRule> standingRuleActivations;
     }
 }
