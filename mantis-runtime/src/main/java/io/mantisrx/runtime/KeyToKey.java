@@ -79,6 +79,7 @@ public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
         // do not allow config to override
         private final INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
+        private boolean useProactiveRouter = false;
 
         /**
          * @param codec is a netty reactivex codec
@@ -134,6 +135,16 @@ public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
 
         public Config<K1, T, K2, R> withParameters(List<ParameterDefinition<?>> params) {
             this.parameters = params;
+            return this;
+        }
+
+        /**
+         * Configure this stage to use proactive routers for better connection management performance.
+         *
+         * @return this config for method chaining
+         */
+        public Config<K1, T, K2, R> withProactiveRouter() {
+            this.useProactiveRouter = true;
             return this;
         }
     }
