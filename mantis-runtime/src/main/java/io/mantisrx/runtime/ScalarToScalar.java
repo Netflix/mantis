@@ -42,7 +42,7 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
 
     public ScalarToScalar(ScalarComputation<T, R> computation,
                    Config<T, R> config, Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency);
+        super(config.description, null, inputCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency, config.bufferSize);
         this.computation = computation;
         this.inputStrategy = config.inputStrategy;
         this.parameters = config.parameters;
@@ -68,6 +68,7 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
         // default input type is serial for 'collecting' use case
         private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
         private volatile int concurrency = StageConfig.DEFAULT_STAGE_CONCURRENCY;
+        private int bufferSize = rx.internal.util.RxRingBuffer.SIZE;
 
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
@@ -128,6 +129,15 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
 
         public int getConcurrency() {
             return concurrency;
+        }
+
+        public Config<T, R> bufferSize(int bufferSize) {
+            this.bufferSize = bufferSize;
+            return this;
+        }
+
+        public int getBufferSize() {
+            return bufferSize;
         }
     }
 }

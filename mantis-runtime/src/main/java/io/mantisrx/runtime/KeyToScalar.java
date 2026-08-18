@@ -45,7 +45,7 @@ public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
 
     KeyToScalar(ToScalarComputation<K, T, R> computation,
                 Config<K, T, R> config, Codec<K> inputKeyCodec, Codec<T> inputCodec) {
-        super(config.description, inputKeyCodec, inputCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, inputKeyCodec, inputCodec, config.codec, config.inputStrategy, config.parameters, DEFAULT_STAGE_CONCURRENCY, config.bufferSize);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }
@@ -67,6 +67,7 @@ public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
         // 'stateful group calculation' use case
         // do not allow config override
         private final INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
+        private int bufferSize = rx.internal.util.RxRingBuffer.SIZE;
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
         /**
@@ -115,6 +116,15 @@ public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
         public Config<K, T, R> withParameters(List<ParameterDefinition<?>> params) {
             this.parameters = params;
             return this;
+        }
+
+        public Config<K, T, R> bufferSize(int bufferSize) {
+            this.bufferSize = bufferSize;
+            return this;
+        }
+
+        public int getBufferSize() {
+            return bufferSize;
         }
 
     }
