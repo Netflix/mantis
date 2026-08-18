@@ -31,6 +31,12 @@ public final class SystemParameters {
     public static final String JOB_AUTOSCALE_V2_LOADER_CONFIG_PARAM = "mantis.job.autoscale.v2.loader.config";
     public static final String JOB_AUTOSCALE_APPLY_INITIAL_COOLDOWN_PARAM = "mantis.job.autoscale.apply.initial.cooldown";
 
+    public static final String SCALAR_WORKER_TO_WORKER_MAX_CHUNK_TIME_MSEC = "mantis.scalarw2w.maxChunkTimeMSec";
+    public static final String SCALAR_WORKER_TO_WORKER_CONSUMER_THREADS = "mantis.scalarw2w.numConsumerThreads";
+    public static final String SCALAR_WORKER_TO_WORKER_SPSC = "mantis.scalarw2w.spsc";
+    public static final String SCALAR_WORKER_TO_WORKER_BUFFER_CAPACITY = "mantis.scalarw2w.bufferCapacity";
+    public static final String SCALAR_WORKER_TO_WORKER_MAX_CHUNK_SIZE = "mantis.scalarw2w.maxChunkSize";
+
 
     @Deprecated
     public static final String MANTIS_WORKER_JVM_OPTS_STAGE_PREFIX = "MANTIS_WORKER_JVM_OPTS_STAGE";
