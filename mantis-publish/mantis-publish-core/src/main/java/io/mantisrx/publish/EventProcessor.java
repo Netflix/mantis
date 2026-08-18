@@ -20,9 +20,11 @@ import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
+import io.mantisrx.publish.internal.metrics.StreamMetrics;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -90,14 +92,18 @@ class EventProcessor {
         List<Subscription> matchingSubscriptions = new ArrayList<>();
         if (streamManager.hasSubscriptions(stream)) {
             final Set<Subscription> streamSubscriptions = streamManager.getStreamSubscriptions(stream);
+            final Optional<StreamMetrics> streamMetricsOpt = streamManager.getStreamMetrics(stream);
 
             for (Subscription s : streamSubscriptions) {
                 try {
                     if (s.matches(event)) {
                         matchingSubscriptions.add(s);
+                    } else {
+                        streamMetricsOpt
+                                .ifPresent(m -> m.getMantisEventsFilteredCounter(s.getSubscriptionId()).increment());
                     }
                 } catch (Exception e) {
-                    streamManager.getStreamMetrics(stream)
+                    streamMetricsOpt
                             .ifPresent(m -> m.getMantisQueryFailedCounter().increment());
 
                     // Send errors only for a sample of events.
