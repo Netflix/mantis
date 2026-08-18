@@ -18,14 +18,13 @@ package io.reactivex.mantis.network.push;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 import rx.functions.Func1;
 
@@ -38,35 +37,50 @@ public class RoundRobinRouter<T> extends Router<T> {
 
     @Override
     public void route(Set<AsyncConnection<T>> connections, List<T> chunks) {
-        if (chunks != null && !chunks.isEmpty()) {
-            numEventsProcessed.increment(chunks.size());
+        if (chunks == null || chunks.isEmpty()) {
+            return;
         }
-        List<AsyncConnection<T>> randomOrder = new ArrayList<>(connections);
-        Collections.shuffle(randomOrder);
-        if (chunks != null && !chunks.isEmpty() && !randomOrder.isEmpty()) {
-            Iterator<AsyncConnection<T>> iter = loopingIterator(randomOrder);
-            Map<AsyncConnection<T>, List<byte[]>> writes = new HashMap<>();
-            // process chunks
-            for (T chunk : chunks) {
-                AsyncConnection<T> connection = iter.next();
-                Func1<T, Boolean> predicate = connection.getPredicate();
-                if (predicate == null || predicate.call(chunk)) {
-                    List<byte[]> buffer = writes.get(connection);
-                    if (buffer == null) {
-                        buffer = new LinkedList<>();
-                        writes.put(connection, buffer);
-                    }
-                    buffer.add(encoder.call(chunk));
+        numEventsProcessed.increment(chunks.size());
+
+        int numConnections = connections.size();
+        if (numConnections == 0) {
+            return;
+        }
+
+        // Start the round robin at a random offset rather than shuffling the whole connection set.
+        // A shuffle costs one Random.nextInt() and one swap per connection, and Collections.shuffle
+        // (List) draws from a single private static Random shared by the whole JVM, so every draw is
+        // a contended CAS on that one seed -- shared with every other caller of shuffle() in the
+        // process. A single ThreadLocalRandom draw gives the same uniform expectation per
+        // connection with no shared state and no per-connection work, which matters here because
+        // route() is called once per subscriber group per drain.
+        Iterator<AsyncConnection<T>> iter = loopingIterator(connections);
+        for (int i = ThreadLocalRandom.current().nextInt(numConnections); i > 0; i--) {
+            iter.next();
+        }
+
+        // assume even distribution
+        int bufferCapacity = (chunks.size() / numConnections) + 1;
+        Map<AsyncConnection<T>, List<byte[]>> writes =
+                new HashMap<>(Math.min(numConnections, chunks.size()));
+        // process chunks
+        for (T chunk : chunks) {
+            AsyncConnection<T> connection = iter.next();
+            Func1<T, Boolean> predicate = connection.getPredicate();
+            if (predicate == null || predicate.call(chunk)) {
+                List<byte[]> buffer = writes.get(connection);
+                if (buffer == null) {
+                    buffer = new ArrayList<>(bufferCapacity);
+                    writes.put(connection, buffer);
                 }
+                buffer.add(encoder.call(chunk));
             }
-            if (!writes.isEmpty()) {
-                for (Entry<AsyncConnection<T>, List<byte[]>> entry : writes.entrySet()) {
-                    AsyncConnection<T> connection = entry.getKey();
-                    List<byte[]> toWrite = entry.getValue();
-                    connection.write(toWrite);
-                    numEventsRouted.increment(toWrite.size());
-                }
-            }
+        }
+        for (Entry<AsyncConnection<T>, List<byte[]>> entry : writes.entrySet()) {
+            AsyncConnection<T> connection = entry.getKey();
+            List<byte[]> toWrite = entry.getValue();
+            connection.write(toWrite);
+            numEventsRouted.increment(toWrite.size());
         }
     }
 
