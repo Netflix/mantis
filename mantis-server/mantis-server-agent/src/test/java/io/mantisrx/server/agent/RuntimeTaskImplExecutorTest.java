@@ -36,6 +36,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
@@ -189,11 +190,17 @@ public class RuntimeTaskImplExecutorTest {
     }
 
     private void start(TaskFactory taskFactory) throws Exception {
+        start(taskFactory, new DefaultMantisPropertiesLoader(System.getProperties()));
+    }
+
+    private void start(
+        TaskFactory taskFactory,
+        MantisPropertiesLoader propertiesLoader) throws Exception {
         startTaskExecutor(
             new TaskExecutor(
                 rpcService,
                 workerConfiguration,
-                new DefaultMantisPropertiesLoader(System.getProperties()),
+                propertiesLoader,
                 highAvailabilityServices,
                 classLoaderHandle,
                 taskFactory));
@@ -373,13 +380,88 @@ public class RuntimeTaskImplExecutorTest {
 
         CompletableFuture<Ack> cancelFuture = taskExecutor.callInMainThread(
             () -> taskExecutor.cancelTask(workerId), Time.seconds(1));
+        cancelFuture.get(1, TimeUnit.SECONDS);
+        Assert.assertEquals(
+            TaskExecutorReport.occupied(workerId),
+            taskExecutor.getCurrentReport().get(1, TimeUnit.SECONDS));
+
         releasePreparation.countDown();
-        cancelFuture.get(2, TimeUnit.SECONDS);
 
         assertTrue(runtimeTask.preparationFinished.await(2, TimeUnit.SECONDS));
+        verify(resourceManagerGateway, timeout(2000).times(1)).notifyTaskExecutorStatusChange(
+            new TaskExecutorStatusChange(
+                taskExecutor.getTaskExecutorID(),
+                taskExecutor.getClusterID(),
+                TaskExecutorReport.available()));
         Assert.assertEquals(State.TERMINATED, runtimeTask.state());
         assertFalse(runtimeTask.started.get());
         assertTrue(taskClassLoader.closed.get());
+    }
+
+    @Test
+    public void stopFailureStillReleasesTaskSlot() throws Exception {
+        WorkerId workerId = new WorkerId("jobId-0", 0, 1);
+        CountDownLatch taskStarted = new CountDownLatch(1);
+        FailingStopRuntimeTask runtimeTask =
+            new FailingStopRuntimeTask(workerId, taskStarted);
+        CloseTrackingClassLoader taskClassLoader =
+            new CloseTrackingClassLoader(getClass().getClassLoader());
+        UserCodeClassLoader userCodeClassLoader = mock(UserCodeClassLoader.class);
+        when(userCodeClassLoader.asClassLoader()).thenReturn(taskClassLoader);
+
+        start(singleTaskFactory(runtimeTask, userCodeClassLoader));
+        taskExecutor.callInMainThread(
+            () -> taskExecutor.submitTask(createExecuteStageRequest(1)), Time.seconds(1)).get();
+        assertTrue(taskStarted.await(2, TimeUnit.SECONDS));
+
+        taskExecutor.callInMainThread(
+            () -> taskExecutor.cancelTask(workerId), Time.seconds(1)).get(1, TimeUnit.SECONDS);
+
+        verify(resourceManagerGateway, timeout(2000).times(1)).notifyTaskExecutorStatusChange(
+            new TaskExecutorStatusChange(
+                taskExecutor.getTaskExecutorID(),
+                taskExecutor.getClusterID(),
+                TaskExecutorReport.available()));
+        Assert.assertEquals(
+            TaskExecutorReport.available(),
+            taskExecutor.getCurrentReport().get(1, TimeUnit.SECONDS));
+        Assert.assertEquals(State.FAILED, runtimeTask.state());
+        assertTrue(taskClassLoader.closed.get());
+    }
+
+    @Test
+    public void shutdownDoesNotWaitIndefinitelyForPreparation() throws Exception {
+        WorkerId workerId = new WorkerId("jobId-0", 0, 1);
+        CountDownLatch preparationStarted = new CountDownLatch(1);
+        CountDownLatch releasePreparation = new CountDownLatch(1);
+        BlockingRuntimeTask runtimeTask =
+            new BlockingRuntimeTask(workerId, preparationStarted, releasePreparation);
+        UserCodeClassLoader userCodeClassLoader = mock(UserCodeClassLoader.class);
+        when(userCodeClassLoader.asClassLoader()).thenReturn(getClass().getClassLoader());
+        MantisPropertiesLoader shortTimeout = (name, defaultValue) ->
+            "mantis.taskexecutor.heartbeats.timeout.ms".equals(name) ? "100" : defaultValue;
+
+        start(singleTaskFactory(runtimeTask, userCodeClassLoader), shortTimeout);
+        taskExecutor.callInMainThread(
+            () -> taskExecutor.submitTask(createExecuteStageRequest(1)), Time.seconds(1)).get();
+        assertTrue(preparationStarted.await(2, TimeUnit.SECONDS));
+
+        TaskExecutor executor = taskExecutor;
+        CompletableFuture<Void> closeFuture = CompletableFuture.runAsync(() -> {
+            try {
+                executor.close();
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
+        try {
+            closeFuture.get(2, TimeUnit.SECONDS);
+            taskExecutor = null;
+            assertFalse(runtimeTask.started.get());
+        } finally {
+            releasePreparation.countDown();
+        }
+        assertTrue(runtimeTask.preparationFinished.await(2, TimeUnit.SECONDS));
     }
 
     @Test
@@ -537,6 +619,39 @@ public class RuntimeTaskImplExecutorTest {
         @Override
         public void close() {
             closed.set(true);
+        }
+    }
+
+    private static final class FailingStopRuntimeTask extends AbstractIdleService
+        implements RuntimeTask {
+        private final WorkerId workerId;
+        private final CountDownLatch taskStarted;
+
+        private FailingStopRuntimeTask(WorkerId workerId, CountDownLatch taskStarted) {
+            this.workerId = workerId;
+            this.taskStarted = taskStarted;
+        }
+
+        @Override
+        public void initialize(
+            String executeStageRequestString,
+            String workerConfigurationString,
+            UserCodeClassLoader userCodeClassLoader) {
+        }
+
+        @Override
+        public String getWorkerId() {
+            return workerId.getId();
+        }
+
+        @Override
+        protected void startUp() {
+            taskStarted.countDown();
+        }
+
+        @Override
+        protected void shutDown() {
+            throw new RuntimeException("stop failed");
         }
     }
 

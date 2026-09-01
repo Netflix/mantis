@@ -542,19 +542,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         stopFuture.whenCompleteAsync((ignored, throwable) -> {
             if (throwable != null) {
-                slot.cleanupStarted.set(false);
                 setPreviousFailure(throwable);
-                if (cancellation && task != null) {
-                    listeners.enqueue(getTaskCancelledEvent(task, throwable));
-                    getIOExecutor().execute(listeners::dispatch);
-                }
-                return;
             }
 
             getIOExecutor().execute(() -> {
                 closeTaskClassLoader(slot);
                 scheduleRunAsync(
-                    () -> finishTaskCleanup(slot, task, cancellation),
+                    () -> finishTaskCleanup(slot, task, cancellation, throwable),
                     0,
                     TimeUnit.MILLISECONDS);
             });
@@ -565,14 +559,19 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private void finishTaskCleanup(
         TaskSlot slot,
         @Nullable RuntimeTask task,
-        boolean cancellation) {
+        boolean cancellation,
+        @Nullable Throwable cleanupFailure) {
         validateRunsInMainThread();
         if (cancellation && task != null) {
-            listeners.enqueue(getTaskCancelledEvent(task, null));
+            listeners.enqueue(getTaskCancelledEvent(task, cleanupFailure));
             getIOExecutor().execute(listeners::dispatch);
         }
         clearTaskSlot(slot);
-        slot.terminated.complete(null);
+        if (cleanupFailure == null) {
+            slot.terminated.complete(null);
+        } else {
+            slot.terminated.completeExceptionally(cleanupFailure);
+        }
     }
 
     private void clearTaskSlot(TaskSlot slot) {
@@ -643,7 +642,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 disposeTaskSlot(slot, true);
             }
         }, 0, TimeUnit.MILLISECONDS);
-        return slot.terminated.thenApply(ignored -> Ack.getInstance());
+        return CompletableFuture.completedFuture(Ack.getInstance());
     }
 
     private CompletableFuture<Void> stopCurrentTask() {
@@ -695,7 +694,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         log.info("TaskExecutor onStop.");
         stopping = true;
-        final CompletableFuture<Void> runningTaskCompletionFuture = stopCurrentTask();
+        final CompletableFuture<Void> runningTaskCompletionFuture =
+            stopCurrentTask()
+                .thenApply(ignored -> (Void) null)
+                .orTimeout(this.rpcCallTimeoutMsDp.getValue(), TimeUnit.MILLISECONDS);
 
         return runningTaskCompletionFuture
             .handleAsync((dontCare, throwable) -> {
