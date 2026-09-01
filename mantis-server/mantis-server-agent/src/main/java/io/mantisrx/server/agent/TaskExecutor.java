@@ -55,7 +55,9 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -64,6 +66,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -87,6 +91,10 @@ import rx.subjects.PublishSubject;
  */
 @Slf4j
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
+    private static final String LEGACY_REGISTRATION_STATE_FILE = "rmCxnState.txt";
+    private static final String REGISTRATION_STATE_FILE =
+        "rmCxnState-accepted-task-reservation-v1.txt";
+
     @Getter
     private final TaskExecutorID taskExecutorID;
     @Getter
@@ -116,9 +124,27 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private final TaskFactory taskFactory;
 
-    private RuntimeTask currentTask;
-    private ExecuteStageRequest currentRequest;
+    private final AtomicReference<TaskSlot> taskSlot = new AtomicReference<>();
+    private volatile boolean stopping;
     private final DurableBooleanState registeredState;
+
+    private static final class TaskSlot {
+        private final ExecuteStageRequest request;
+        private final WorkerId workerId;
+        private final AtomicBoolean cancelled = new AtomicBoolean();
+        private final AtomicBoolean cleanupStarted = new AtomicBoolean();
+        private final CompletableFuture<Void> terminated = new CompletableFuture<>();
+        @Nullable
+        private volatile RuntimeTask task;
+        @Nullable
+        private volatile UserCodeClassLoader userCodeClassLoader;
+        private volatile boolean prepared;
+
+        private TaskSlot(ExecuteStageRequest request) {
+            this.request = request;
+            this.workerId = request.getWorkerId();
+        }
+    }
 
     @VisibleForTesting
     public TaskExecutor(
@@ -161,6 +187,18 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         MachineDefinition machineDefinition = MachineDefinitionUtils.from(workerConfiguration, workerPorts);
         String hostName = workerConfiguration.getExternalAddress();
 
+        Map<String, String> taskExecutorAttributes =
+            workerConfiguration
+                .getTaskExecutorAttributes()
+                .entrySet()
+                .stream()
+                .collect(Collectors.<Map.Entry<String, String>, String, String>toMap(
+                    kv -> kv.getKey().toLowerCase(),
+                    kv -> kv.getValue().toLowerCase()));
+        taskExecutorAttributes.put(
+            TaskExecutorRegistration.ACCEPTED_TASK_RESERVATION_ATTRIBUTE,
+            Boolean.TRUE.toString());
+
         this.taskExecutorRegistration =
             TaskExecutorRegistration.builder()
                 .machineDefinition(machineDefinition)
@@ -169,14 +207,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 .hostname(hostName)
                 .taskExecutorAddress(getAddress())
                 .workerPorts(workerPorts)
-                .taskExecutorAttributes(ImmutableMap.copyOf(
-                    workerConfiguration
-                        .getTaskExecutorAttributes()
-                        .entrySet()
-                        .stream()
-                        .collect(Collectors.<Map.Entry<String, String>, String, String>toMap(
-                            kv -> kv.getKey().toLowerCase(),
-                            kv -> kv.getValue().toLowerCase()))))
+                .taskExecutorAttributes(ImmutableMap.copyOf(taskExecutorAttributes))
                 .build();
         log.info("Starting executor registration: {}", this.taskExecutorRegistration);
 
@@ -190,9 +221,16 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         this.resourceManagerCxnIdx = 0;
         this.taskFactory = taskFactory == null ? new SingleTaskOnlyFactory() : taskFactory;
+        File registrationStore = workerConfiguration.getRegistrationStoreDir();
+        DurableBooleanState legacyRegisteredState = new DurableBooleanState(
+            new File(registrationStore, LEGACY_REGISTRATION_STATE_FILE).getAbsolutePath());
+        try {
+            legacyRegisteredState.setState(false);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to reset legacy registration marker", e);
+        }
         this.registeredState = new DurableBooleanState(
-            new File(workerConfiguration.getRegistrationStoreDir(),
-                "rmCxnState.txt").getAbsolutePath());
+            new File(registrationStore, REGISTRATION_STATE_FILE).getAbsolutePath());
         this.rpcCallTimeoutMsDp =
             ConfigUtils.getDynamicPropertyLong("heartbeatTimeoutMs", WorkerConfiguration.class,
                 workerConfiguration.heartbeatTimeoutMs(), this.dynamicPropertiesLoader);
@@ -349,10 +387,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     CompletableFuture<TaskExecutorReport> getCurrentReport() {
         return callAsync(() -> {
-            if (this.currentTask == null) {
+            TaskSlot slot = this.taskSlot.get();
+            if (slot == null) {
                 return TaskExecutorReport.available();
             } else {
-                return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
+                return TaskExecutorReport.occupied(slot.workerId);
             }
         }, Time.milliseconds(this.rpcCallTimeoutMsDp.getValue()));
     }
@@ -367,17 +406,31 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     public CompletableFuture<Ack> submitTask(ExecuteStageRequest request) {
 
         log.info("Received request {} for execution", request);
-        if (currentTask != null) {
-            if (currentTask.getWorkerId().equals(request.getWorkerId().getId())) {
-                return CompletableFuture.completedFuture(Ack.getInstance());
-            } else {
+        TaskSlot newSlot;
+        while (true) {
+            TaskSlot existingSlot = taskSlot.get();
+            if (existingSlot != null) {
+                if (existingSlot.workerId.equals(request.getWorkerId())) {
+                    return CompletableFuture.completedFuture(Ack.getInstance());
+                }
                 return CompletableFutures.exceptionallyCompletedFuture(
-                    new TaskAlreadyRunningException(WorkerId.fromIdUnsafe(currentTask.getWorkerId())));
+                    new TaskAlreadyRunningException(existingSlot.workerId));
+            }
+
+            newSlot = new TaskSlot(request);
+            if (taskSlot.compareAndSet(null, newSlot)) {
+                break;
             }
         }
 
-        // do not wait for task processing (e.g. artifact download).
-        getIOExecutor().execute(() -> this.prepareTask(request));
+        setStatus(TaskExecutorReport.occupied(newSlot.workerId));
+        final TaskSlot slotToPrepare = newSlot;
+        try {
+            getIOExecutor().execute(() -> prepareTask(slotToPrepare));
+        } catch (RuntimeException e) {
+            clearTaskSlot(newSlot);
+            return CompletableFutures.exceptionallyCompletedFuture(e);
+        }
         return CompletableFuture.completedFuture(Ack.getInstance());
     }
 
@@ -389,77 +442,157 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         return CompletableFuture.completedFuture(Ack.getInstance());
     }
 
-    private void prepareTask(ExecuteStageRequest request) {
+    private void prepareTask(TaskSlot slot) {
         try {
-            this.currentRequest = request;
-
-            UserCodeClassLoader userCodeClassLoader = this.taskFactory.getUserCodeClassLoader(
-                request, classLoaderHandle);
-            ClassLoader cl = userCodeClassLoader.asClassLoader();
+            slot.userCodeClassLoader = this.taskFactory.getUserCodeClassLoader(
+                slot.request, classLoaderHandle);
+            ClassLoader cl = slot.userCodeClassLoader.asClassLoader();
             // There should only be 1 task implementation provided by mantis-server-worker.
             JsonSerializer ser = new JsonSerializer();
-            String executeRequest = ser.toJson(request);
+            String executeRequest = ser.toJson(slot.request);
             String configString = ser.toJson(WorkerConfigurationUtils.toWritable(workerConfiguration));
-            RuntimeTask task = this.taskFactory.getRuntimeTaskInstance(request, cl);
+            slot.task = this.taskFactory.getRuntimeTaskInstance(slot.request, cl);
 
-            task.initialize(
+            slot.task.initialize(
                 executeRequest,
                 configString,
-                userCodeClassLoader);
+                slot.userCodeClassLoader);
 
-            scheduleRunAsync(() -> {
-                setCurrentTask(task);
-                startCurrentTask();
-            }, 0, TimeUnit.MILLISECONDS);
-        } catch (Exception ex) {
-            log.error("Failed to submit task, request: {}", request, ex);
-            final Status failedStatus = new Status(currentRequest.getJobId(), currentRequest.getStage(), currentRequest.getWorkerIndex(), currentRequest.getWorkerNumber(),
-                Status.TYPE.INFO, "stage " + currentRequest.getStage() + " worker index=" + currentRequest.getWorkerIndex() + " number=" + currentRequest.getWorkerNumber() + " failed during initialization",
+            slot.prepared = true;
+            scheduleRunAsync(() -> onTaskPrepared(slot), 0, TimeUnit.MILLISECONDS);
+        } catch (Throwable ex) {
+            slot.prepared = true;
+            log.error("Failed to submit task, request: {}", slot.request, ex);
+            final Status failedStatus = new Status(slot.request.getJobId(), slot.request.getStage(), slot.request.getWorkerIndex(), slot.request.getWorkerNumber(),
+                Status.TYPE.INFO, "stage " + slot.request.getStage() + " worker index=" + slot.request.getWorkerIndex() + " number=" + slot.request.getWorkerNumber() + " failed during initialization",
                 MantisJobState.Failed);
             updateExecutionStatus(failedStatus);
-            listeners.enqueue(getTaskFailedEvent(null, ex));
+            scheduleRunAsync(() -> onTaskPreparationFailed(slot, ex), 0, TimeUnit.MILLISECONDS);
         }
         finally {
             getIOExecutor().execute(listeners::dispatch);
         }
-
-
     }
 
-    private void startCurrentTask() {
+    private void onTaskPrepared(TaskSlot slot) {
         validateRunsInMainThread();
+        if (taskSlot.get() != slot || slot.cancelled.get() || stopping) {
+            disposeTaskSlot(slot, true);
+            return;
+        }
+        startTask(slot);
+    }
 
-        if (currentTask.state().equals(State.NEW)) {
-            listeners.enqueue(getTaskStartingEvent(currentTask));
+    private void onTaskPreparationFailed(TaskSlot slot, Throwable throwable) {
+        validateRunsInMainThread();
+        if (!slot.cancelled.get()) {
+            listeners.enqueue(getTaskFailedEvent(slot.task, throwable));
+            getIOExecutor().execute(listeners::dispatch);
+        }
+        disposeTaskSlot(slot, slot.cancelled.get());
+    }
+
+    private void startTask(TaskSlot slot) {
+        validateRunsInMainThread();
+        RuntimeTask task = slot.task;
+        if (task == null) {
+            onTaskPreparationFailed(slot, new IllegalStateException("Prepared task was null"));
+            return;
+        }
+
+        if (task.state().equals(State.NEW)) {
+            listeners.enqueue(getTaskStartingEvent(task));
             getIOExecutor().execute(listeners::dispatch);
 
-            CompletableFuture<Void> currentTaskSuccessfullyStartFuture =
-                Services.startAsync(currentTask, getRuntimeExecutor());
+            CompletableFuture<Void> startFuture = Services.startAsync(task, getRuntimeExecutor());
 
-            currentTaskSuccessfullyStartFuture
+            startFuture
                 .whenCompleteAsync((dontCare, throwable) -> {
                     if (throwable != null) {
-                        // okay failed to start task successfully
-                        // lets stop it
                         log.error("TaskExecutor failed to start", throwable);
-                        RuntimeTask task = currentTask;
-                        setCurrentTask(null);
                         setPreviousFailure(throwable);
                         listeners.enqueue(getTaskFailedEvent(task, throwable));
                         getIOExecutor().execute(listeners::dispatch);
+                        disposeTaskSlot(slot, false);
                     }
                 }, getMainThreadExecutor());
         }
     }
 
-    private void setCurrentTask(@Nullable RuntimeTask task) {
+    private CompletableFuture<Void> disposeTaskSlot(TaskSlot slot, boolean cancellation) {
         validateRunsInMainThread();
+        if (!slot.cleanupStarted.compareAndSet(false, true)) {
+            return slot.terminated;
+        }
 
-        this.currentTask = task;
-        if (task == null) {
+        RuntimeTask task = slot.task;
+        if (cancellation && task != null) {
+            listeners.enqueue(getTaskCancellingEvent(task));
+            getIOExecutor().execute(listeners::dispatch);
+        }
+
+        CompletableFuture<Void> stopFuture;
+        try {
+            stopFuture = task != null && task.state().ordinal() <= Service.State.RUNNING.ordinal()
+                ? Services.stopAsync(task, getRuntimeExecutor())
+                : CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            stopFuture = CompletableFutures.exceptionallyCompletedFuture(e);
+        }
+
+        stopFuture.whenCompleteAsync((ignored, throwable) -> {
+            if (throwable != null) {
+                slot.cleanupStarted.set(false);
+                setPreviousFailure(throwable);
+                if (cancellation && task != null) {
+                    listeners.enqueue(getTaskCancelledEvent(task, throwable));
+                    getIOExecutor().execute(listeners::dispatch);
+                }
+                return;
+            }
+
+            getIOExecutor().execute(() -> {
+                closeTaskClassLoader(slot);
+                scheduleRunAsync(
+                    () -> finishTaskCleanup(slot, task, cancellation),
+                    0,
+                    TimeUnit.MILLISECONDS);
+            });
+        }, getMainThreadExecutor());
+        return slot.terminated;
+    }
+
+    private void finishTaskCleanup(
+        TaskSlot slot,
+        @Nullable RuntimeTask task,
+        boolean cancellation) {
+        validateRunsInMainThread();
+        if (cancellation && task != null) {
+            listeners.enqueue(getTaskCancelledEvent(task, null));
+            getIOExecutor().execute(listeners::dispatch);
+        }
+        clearTaskSlot(slot);
+        slot.terminated.complete(null);
+    }
+
+    private void clearTaskSlot(TaskSlot slot) {
+        if (taskSlot.compareAndSet(slot, null) && !stopping) {
             setStatus(TaskExecutorReport.available());
-        } else {
-            setStatus(TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(task.getWorkerId())));
+        }
+    }
+
+    private void closeTaskClassLoader(TaskSlot slot) {
+        UserCodeClassLoader userCodeClassLoader = slot.userCodeClassLoader;
+        if (userCodeClassLoader == null) {
+            return;
+        }
+        ClassLoader classLoader = userCodeClassLoader.asClassLoader();
+        if (classLoader instanceof Closeable) {
+            try {
+                ((Closeable) classLoader).close();
+            } catch (IOException e) {
+                log.warn("Failed to close classloader for {}", slot.workerId, e);
+            }
         }
     }
 
@@ -496,49 +629,32 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @Override
     public CompletableFuture<Ack> cancelTask(WorkerId workerId) {
         log.info("TaskExecutor cancelTask requested for {}", workerId);
-        if (this.currentTask == null) {
+        TaskSlot slot = taskSlot.get();
+        if (slot == null) {
             return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
-        } else if (!this.currentTask.getWorkerId().equals(workerId.getId())) {
-            log.error("my current worker id is {} while expected worker id is {}", currentTask.getWorkerId(), workerId);
+        } else if (!slot.workerId.equals(workerId)) {
+            log.error("my current worker id is {} while expected worker id is {}", slot.workerId, workerId);
             return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
-        } else {
-            scheduleRunAsync(this::stopCurrentTask, 0, TimeUnit.MILLISECONDS);
-            return CompletableFuture.completedFuture(Ack.getInstance());
         }
+
+        slot.cancelled.set(true);
+        scheduleRunAsync(() -> {
+            if (slot.prepared) {
+                disposeTaskSlot(slot, true);
+            }
+        }, 0, TimeUnit.MILLISECONDS);
+        return slot.terminated.thenApply(ignored -> Ack.getInstance());
     }
 
     private CompletableFuture<Void> stopCurrentTask() {
         log.info("TaskExecutor stopCurrentTask.");
         validateRunsInMainThread();
-        if (this.currentTask != null) {
-            try {
-                if (this.currentTask.state().ordinal() <= Service.State.RUNNING.ordinal()) {
-                    listeners.enqueue(getTaskCancellingEvent(currentTask));
-                    CompletableFuture<Void> stopTaskFuture =
-                        Services.stopAsync(this.currentTask, getRuntimeExecutor());
-
-                    return stopTaskFuture
-                        .whenCompleteAsync((dontCare, throwable) -> {
-                            RuntimeTask t = this.currentTask;
-                            setCurrentTask(null);
-                            if (throwable != null) {
-                                setPreviousFailure(throwable);
-                            }
-                            listeners.enqueue(getTaskCancelledEvent(t, throwable));
-                            getIOExecutor().execute(listeners::dispatch);
-                        }, getMainThreadExecutor());
-                } else {
-                    return CompletableFuture.completedFuture(null);
-                }
-            } catch (Exception e) {
-                log.error("stopping current task failed", e);
-                return CompletableFutures.exceptionallyCompletedFuture(e);
-            } finally {
-                getIOExecutor().execute(listeners::dispatch);
-            }
-        } else {
+        TaskSlot slot = taskSlot.get();
+        if (slot == null) {
             return CompletableFuture.completedFuture(null);
         }
+        slot.cancelled.set(true);
+        return slot.prepared ? disposeTaskSlot(slot, true) : slot.terminated;
     }
 
     private CompletableFuture<Void> stopResourceManager() {
@@ -578,6 +694,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         validateRunsInMainThread();
 
         log.info("TaskExecutor onStop.");
+        stopping = true;
         final CompletableFuture<Void> runningTaskCompletionFuture = stopCurrentTask();
 
         return runningTaskCompletionFuture

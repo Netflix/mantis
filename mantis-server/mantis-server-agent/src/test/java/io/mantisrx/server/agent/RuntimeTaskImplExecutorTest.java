@@ -18,9 +18,11 @@ package io.mantisrx.server.agent;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,18 +35,21 @@ import com.sun.net.httpserver.HttpServer;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import io.mantisrx.runtime.loader.RuntimeTask;
+import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.source.http.HttpServerProvider;
 import io.mantisrx.runtime.source.http.HttpSources;
 import io.mantisrx.runtime.source.http.impl.HttpClientFactories;
 import io.mantisrx.runtime.source.http.impl.HttpRequestFactories;
 import io.mantisrx.server.agent.TaskExecutor.Listener;
+import io.mantisrx.server.agent.utils.DurableBooleanState;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.PostJobStatusRequest;
@@ -58,15 +63,21 @@ import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
+import io.mantisrx.server.worker.TaskExecutorGateway.TaskAlreadyRunningException;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
+import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import java.io.BufferedReader;
+import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -77,10 +88,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
 import lombok.Getter;
@@ -88,6 +101,7 @@ import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.runtime.rpc.RpcService;
+import org.apache.flink.util.UserCodeClassLoader;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -166,15 +180,28 @@ public class RuntimeTaskImplExecutorTest {
     }
 
     private void start() throws Exception {
-
-        listener = new CollectingTaskLifecycleListener();
-        taskExecutor =
+        startTaskExecutor(
             new TestingTaskExecutor(
                 rpcService,
                 workerConfiguration,
                 highAvailabilityServices,
-                classLoaderHandle
-            );
+                classLoaderHandle));
+    }
+
+    private void start(TaskFactory taskFactory) throws Exception {
+        startTaskExecutor(
+            new TaskExecutor(
+                rpcService,
+                workerConfiguration,
+                new DefaultMantisPropertiesLoader(System.getProperties()),
+                highAvailabilityServices,
+                classLoaderHandle,
+                taskFactory));
+    }
+
+    private void startTaskExecutor(TaskExecutor executor) throws Exception {
+        listener = new CollectingTaskLifecycleListener();
+        taskExecutor = executor;
         taskExecutor.addListener(listener, MoreExecutors.directExecutor());
         taskExecutor.start();
         taskExecutor.awaitRunning().get(2, TimeUnit.SECONDS);
@@ -182,7 +209,9 @@ public class RuntimeTaskImplExecutorTest {
 
     @After
     public void tearDown() throws Exception {
-        taskExecutor.close();
+        if (taskExecutor != null) {
+            taskExecutor.close();
+        }
         this.localApiServer.stop(0);
     }
 
@@ -267,6 +296,259 @@ public class RuntimeTaskImplExecutorTest {
         assertTrue(listener.isCancellingCalled());
         assertTrue(listener.isCancelledCalled());
         assertFalse(listener.isFailedCalled());
+    }
+
+    @Test
+    public void acceptedTaskReportsOccupiedWhilePreparing() throws Exception {
+        WorkerId workerId = new WorkerId("jobId-0", 0, 1);
+        CountDownLatch preparationStarted = new CountDownLatch(1);
+        CountDownLatch releasePreparation = new CountDownLatch(1);
+        BlockingRuntimeTask task =
+            new BlockingRuntimeTask(workerId, preparationStarted, releasePreparation);
+        UserCodeClassLoader userCodeClassLoader = mock(UserCodeClassLoader.class);
+        when(userCodeClassLoader.asClassLoader()).thenReturn(getClass().getClassLoader());
+
+        start(singleTaskFactory(task, userCodeClassLoader));
+        try {
+            taskExecutor.callInMainThread(
+                () -> taskExecutor.submitTask(createExecuteStageRequest(1)),
+                Time.seconds(1)).get();
+            assertTrue(preparationStarted.await(2, TimeUnit.SECONDS));
+
+            Assert.assertEquals(
+                TaskExecutorReport.occupied(workerId),
+                taskExecutor.getCurrentReport().get(1, TimeUnit.SECONDS));
+        } finally {
+            releasePreparation.countDown();
+        }
+    }
+
+    @Test
+    public void secondWorkerIsRejectedWhileAcceptedWorkerCanStillStart() throws Exception {
+        WorkerId firstWorker = new WorkerId("jobId-0", 0, 1);
+        CountDownLatch preparationStarted = new CountDownLatch(1);
+        CountDownLatch releasePreparation = new CountDownLatch(1);
+        BlockingRuntimeTask firstTask =
+            new BlockingRuntimeTask(firstWorker, preparationStarted, releasePreparation);
+        UserCodeClassLoader userCodeClassLoader = mock(UserCodeClassLoader.class);
+        when(userCodeClassLoader.asClassLoader()).thenReturn(getClass().getClassLoader());
+
+        start(singleTaskFactory(firstTask, userCodeClassLoader));
+        try {
+            taskExecutor.callInMainThread(
+                () -> taskExecutor.submitTask(createExecuteStageRequest(1)),
+                Time.seconds(1)).get();
+            assertTrue(preparationStarted.await(2, TimeUnit.SECONDS));
+
+            CompletableFuture<Ack> secondAssignment = taskExecutor.callInMainThread(
+                () -> taskExecutor.submitTask(createExecuteStageRequest(2)),
+                Time.seconds(1));
+            Throwable failure = secondAssignment.handle((ack, throwable) -> throwable).get();
+
+            assertTrue(
+                "second worker was accepted while the first accepted worker could still start",
+                failure != null);
+            assertTrue(rootCause(failure) instanceof TaskAlreadyRunningException);
+        } finally {
+            releasePreparation.countDown();
+        }
+    }
+
+    @Test
+    public void cancelDuringPreparationDisposesTaskAndClassLoader() throws Exception {
+        WorkerId workerId = new WorkerId("jobId-0", 0, 1);
+        CountDownLatch preparationStarted = new CountDownLatch(1);
+        CountDownLatch releasePreparation = new CountDownLatch(1);
+        BlockingRuntimeTask runtimeTask =
+            new BlockingRuntimeTask(workerId, preparationStarted, releasePreparation);
+        CloseTrackingClassLoader taskClassLoader =
+            new CloseTrackingClassLoader(getClass().getClassLoader());
+        UserCodeClassLoader userCodeClassLoader = mock(UserCodeClassLoader.class);
+        when(userCodeClassLoader.asClassLoader()).thenReturn(taskClassLoader);
+
+        start(singleTaskFactory(runtimeTask, userCodeClassLoader));
+        taskExecutor.callInMainThread(
+            () -> taskExecutor.submitTask(createExecuteStageRequest(1)), Time.seconds(1)).get();
+        assertTrue(preparationStarted.await(2, TimeUnit.SECONDS));
+
+        CompletableFuture<Ack> cancelFuture = taskExecutor.callInMainThread(
+            () -> taskExecutor.cancelTask(workerId), Time.seconds(1));
+        releasePreparation.countDown();
+        cancelFuture.get(2, TimeUnit.SECONDS);
+
+        assertTrue(runtimeTask.preparationFinished.await(2, TimeUnit.SECONDS));
+        Assert.assertEquals(State.TERMINATED, runtimeTask.state());
+        assertFalse(runtimeTask.started.get());
+        assertTrue(taskClassLoader.closed.get());
+    }
+
+    @Test
+    public void shutdownDuringPreparationDisposesTaskAndClassLoader() throws Exception {
+        WorkerId workerId = new WorkerId("jobId-0", 0, 1);
+        CountDownLatch preparationStarted = new CountDownLatch(1);
+        CountDownLatch releasePreparation = new CountDownLatch(1);
+        BlockingRuntimeTask runtimeTask =
+            new BlockingRuntimeTask(workerId, preparationStarted, releasePreparation);
+        CloseTrackingClassLoader taskClassLoader =
+            new CloseTrackingClassLoader(getClass().getClassLoader());
+        UserCodeClassLoader userCodeClassLoader = mock(UserCodeClassLoader.class);
+        when(userCodeClassLoader.asClassLoader()).thenReturn(taskClassLoader);
+
+        start(singleTaskFactory(runtimeTask, userCodeClassLoader));
+        taskExecutor.callInMainThread(
+            () -> taskExecutor.submitTask(createExecuteStageRequest(1)), Time.seconds(1)).get();
+        assertTrue(preparationStarted.await(2, TimeUnit.SECONDS));
+
+        TaskExecutor executor = taskExecutor;
+        CompletableFuture<Void> closeFuture = CompletableFuture.runAsync(() -> {
+            try {
+                executor.close();
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
+        releasePreparation.countDown();
+        closeFuture.get(2, TimeUnit.SECONDS);
+        taskExecutor = null;
+
+        Assert.assertEquals(State.TERMINATED, runtimeTask.state());
+        assertTrue(taskClassLoader.closed.get());
+    }
+
+    @Test
+    public void legacyRegistrationMarkerIsResetForCapabilityRefresh() throws Exception {
+        File legacyStateFile = new File(
+            workerConfiguration.getRegistrationStoreDir(), "rmCxnState.txt");
+        DurableBooleanState legacyState = new DurableBooleanState(legacyStateFile.getAbsolutePath());
+        legacyState.setState(true);
+
+        start();
+
+        verify(resourceManagerGateway, timeout(2000).times(1)).registerTaskExecutor(
+            argThat(TaskExecutorRegistration::reservesAcceptedTask));
+        assertFalse(new DurableBooleanState(legacyStateFile.getAbsolutePath()).getState());
+    }
+
+    private TaskFactory singleTaskFactory(RuntimeTask runtimeTask, UserCodeClassLoader userCodeClassLoader) {
+        return new TaskFactory() {
+            @Override
+            public RuntimeTask getRuntimeTaskInstance(ExecuteStageRequest request, ClassLoader ignored) {
+                return runtimeTask;
+            }
+
+            @Override
+            public UserCodeClassLoader getUserCodeClassLoader(
+                ExecuteStageRequest request,
+                ClassLoaderHandle ignored) {
+                return userCodeClassLoader;
+            }
+        };
+    }
+
+    private ExecuteStageRequest createExecuteStageRequest(int workerNumber) throws Exception {
+        return new ExecuteStageRequest(
+            "jobName",
+            "jobId-0",
+            0,
+            workerNumber,
+            new URL("https://example.invalid/job.zip"),
+            1,
+            1,
+            ImmutableList.of(100),
+            100L,
+            1,
+            ImmutableList.of(),
+            new SchedulingInfo.Builder()
+                .numberOfStages(1)
+                .singleWorkerStageWithConstraints(
+                    new MachineDefinition(1, 10, 10, 10, 2),
+                    Lists.newArrayList(),
+                    Lists.newArrayList())
+                .build(),
+            MantisJobDurationType.Transient,
+            0,
+            1000L,
+            1L,
+            new WorkerPorts(2, 3, 4, 5, 6),
+            Optional.of(SineFunctionJobProvider.class.getName()),
+            "user",
+            "111");
+    }
+
+    private static Throwable rootCause(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current;
+    }
+
+    private static class BlockingRuntimeTask extends AbstractIdleService implements RuntimeTask {
+        private final WorkerId workerId;
+        private final CountDownLatch preparationStarted;
+        private final CountDownLatch releasePreparation;
+        private final CountDownLatch preparationFinished = new CountDownLatch(1);
+        private final AtomicBoolean started = new AtomicBoolean();
+
+        private BlockingRuntimeTask(
+            WorkerId workerId,
+            CountDownLatch preparationStarted,
+            CountDownLatch releasePreparation) {
+            this.workerId = workerId;
+            this.preparationStarted = preparationStarted;
+            this.releasePreparation = releasePreparation;
+        }
+
+        @Override
+        public void initialize(
+            String executeStageRequestString,
+            String workerConfigurationString,
+            UserCodeClassLoader userCodeClassLoader) {
+            preparationStarted.countDown();
+            try {
+                await(releasePreparation);
+            } finally {
+                preparationFinished.countDown();
+            }
+        }
+
+        @Override
+        public String getWorkerId() {
+            return workerId.getId();
+        }
+
+        @Override
+        protected void startUp() {
+            started.set(true);
+        }
+
+        @Override
+        protected void shutDown() {
+        }
+    }
+
+    private static final class CloseTrackingClassLoader extends ClassLoader implements Closeable {
+        private final AtomicBoolean closed = new AtomicBoolean();
+
+        private CloseTrackingClassLoader(ClassLoader parent) {
+            super(parent);
+        }
+
+        @Override
+        public void close() {
+            closed.set(true);
+        }
+    }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            if (!latch.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("timed out waiting for test latch");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     private void setupLocalControl(int port) throws IOException {
