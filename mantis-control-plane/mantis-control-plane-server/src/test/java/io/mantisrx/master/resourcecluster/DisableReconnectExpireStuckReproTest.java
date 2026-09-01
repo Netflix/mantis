@@ -226,6 +226,9 @@ public class DisableReconnectExpireStuckReproTest {
             assertEquals(Ack.getInstance(),
                 resourceCluster.heartBeatFromTaskExecutor(
                     new TaskExecutorHeartbeat(TE_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+            assertEquals(Ack.getInstance(),
+                resourceCluster.heartBeatFromTaskExecutor(
+                    new TaskExecutorHeartbeat(TE_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
 
             // 5) Wait past expiry so ExpireDisableTaskExecutorsRequest fires.
             long elapsedMs = Instant.now().toEpochMilli() - disableAt.toEpochMilli();
@@ -287,7 +290,8 @@ public class DisableReconnectExpireStuckReproTest {
             .taskExecutorAttributes(
                 ImmutableMap.of(
                     WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, SKU_ID.getResourceID(),
-                    "repro", "attr"))
+                    "repro", "attr",
+                    TaskExecutorRegistration.ACCEPTED_TASK_RESERVATION_ATTRIBUTE, "true"))
             .build();
     }
 }

@@ -38,6 +38,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
@@ -52,6 +53,13 @@ class TaskExecutorState {
     enum RegistrationState {
         Registered,
         Unregistered,
+    }
+
+    private enum ReconciliationState {
+        None,
+        Cancelling,
+        Quarantined,
+        Verifying,
     }
 
     private RegistrationState state;
@@ -73,10 +81,10 @@ class TaskExecutorState {
     private final RpcService rpcService;
     private final JobMessageRouter jobMessageRouter;
 
-    // isTaskCancelled: this state is to mark the current assigned worker has been cancelled and this executor need to
-    // stop the task and re-register.
+    private ReconciliationState reconciliationState;
     @Nullable
     private WorkerId cancelledWorkerOnTask;
+    private long assignmentEpoch;
 
     // previousWorkerId: tracks the last WorkerId this executor was running before disconnection
     // This enables targeted notifications when the executor reconnects
@@ -94,7 +102,9 @@ class TaskExecutorState {
             clock,
             rpcService,
             jobMessageRouter,
+            ReconciliationState.None,
             null,
+            0L,
             null);
     }
 
@@ -116,12 +126,30 @@ class TaskExecutorState {
     }
 
     void setCancelledWorkerOnTask(WorkerId cancelledWorkerOnTask) {
+        if (!isRegistered()) {
+            throwNotRegistered(String.format("cancellation for %s", cancelledWorkerOnTask));
+        }
+        this.reconciliationState = ReconciliationState.Cancelling;
         this.cancelledWorkerOnTask = cancelledWorkerOnTask;
+    }
+
+    void quarantineWorkerOnTask(WorkerId workerId) {
+        if (!isRegistered()) {
+            throwNotRegistered(String.format("quarantine for %s", workerId));
+        }
+        this.reconciliationState = ReconciliationState.Quarantined;
+        this.cancelledWorkerOnTask = workerId;
+        setAvailabilityState(AvailabilityState.running(workerId));
     }
 
     boolean onRegistration(TaskExecutorRegistration registration) {
         if (state == RegistrationState.Registered) {
-            return false;
+            if (Objects.equals(this.registration, registration)) {
+                return false;
+            }
+            this.registration = registration;
+            updateTicker();
+            return true;
         } else {
             this.state = RegistrationState.Registered;
             this.registration = registration;
@@ -136,9 +164,10 @@ class TaskExecutorState {
         } else {
             state = RegistrationState.Unregistered;
             registration = null;
-            // Store the current WorkerId as previousWorkerId for potential reconnection notification
             previousWorkerId = getWorkerId();
-            setAvailabilityState(null);
+            if (previousWorkerId == null) {
+                setAvailabilityState(null);
+            }
             updateTicker();
             return true;
         }
@@ -163,7 +192,11 @@ class TaskExecutorState {
             throw new IllegalStateException("availability state was null when unassignmentas was issued");
         }
 
-        return setAvailabilityState(this.availabilityState.onAssignment(workerId));
+        boolean changed = setAvailabilityState(this.availabilityState.onAssignment(workerId));
+        if (changed) {
+            assignmentEpoch++;
+        }
+        return changed;
     }
 
     boolean onUnassignment() throws IllegalStateException {
@@ -172,6 +205,16 @@ class TaskExecutorState {
         }
 
         return setAvailabilityState(this.availabilityState.onUnassignment());
+    }
+
+    long getAssignmentEpoch() {
+        return assignmentEpoch;
+    }
+
+    boolean isCurrentAssignment(WorkerId workerId, long expectedEpoch) {
+        return isAssigned()
+            && assignmentEpoch == expectedEpoch
+            && workerId.equals(getWorkerId());
     }
 
     boolean onNodeDisabled() {
@@ -201,31 +244,8 @@ class TaskExecutorState {
             throwNotRegistered(String.format("heartbeat %s", heartbeat));
         }
 
-        TaskExecutorReport report = heartbeat.getTaskExecutorReport();
-        if (this.availabilityState instanceof Running && report instanceof Available) {
-            WorkerId runningWorkerId = this.availabilityState.getWorkerId();
-            if (runningWorkerId != null) {
-                log.warn("Heartbeat indicates available while running {}. Marking worker as lost.", runningWorkerId);
-                jobMessageRouter.routeWorkerEvent(
-                    new WorkerTerminate(runningWorkerId, WorkerState.Failed, JobCompletedReason.Lost));
-            }
-        }
-        if (this.cancelledWorkerOnTask != null) {
-            if (report instanceof Occupied && ((Occupied) report).getWorkerId().equals(this.cancelledWorkerOnTask)) {
-                log.warn("{} cancelled, request cancel on heartbeat.", this.cancelledWorkerOnTask);
-                throw new TaskExecutorTaskCancelledException(
-                    String.format(
-                        "heartbeat from %s has cancelled task %s",
-                        heartbeat.getTaskExecutorID(),
-                        this.cancelledWorkerOnTask),
-                    this.cancelledWorkerOnTask);
-            } else {
-                log.info("{} cancelled but executor is no longer occupied by it.", this.cancelledWorkerOnTask);
-                this.cancelledWorkerOnTask = null;
-            }
-        }
-
-        boolean result = handleStatusChange(report);
+        boolean result = handleReport(
+            heartbeat.getTaskExecutorReport(), heartbeat.getTaskExecutorID());
         updateTicker();
         return result;
     }
@@ -235,9 +255,111 @@ class TaskExecutorState {
             throwNotRegistered(String.format("status change %s", statusChange));
         }
 
-        boolean result = handleStatusChange(statusChange.getTaskExecutorReport());
+        boolean result;
+        try {
+            result = handleReport(statusChange.getTaskExecutorReport(), null);
+        } catch (TaskExecutorTaskCancelledException e) {
+            throw new IllegalStateException("Status changes cannot request cancellation", e);
+        }
         updateTicker();
         return result;
+    }
+
+    private boolean handleReport(
+        TaskExecutorReport report,
+        @Nullable io.mantisrx.server.master.resourcecluster.TaskExecutorID heartbeatTaskExecutorID)
+        throws TaskExecutorTaskCancelledException {
+        boolean heartbeat = heartbeatTaskExecutorID != null;
+
+        if (reconciliationState != ReconciliationState.None) {
+            if (report instanceof Available) {
+                if (!heartbeat) {
+                    clearReconciliation();
+                    return setAvailabilityState(AvailabilityState.pending());
+                }
+                if (registration.reservesAcceptedTask()) {
+                    if (reconciliationState == ReconciliationState.Verifying) {
+                        clearReconciliation();
+                        return setAvailabilityState(AvailabilityState.pending());
+                    }
+                    reconciliationState = ReconciliationState.Verifying;
+                }
+                return false;
+            }
+
+            WorkerId reportedWorker = ((Occupied) report).getWorkerId();
+            if (reconciliationState == ReconciliationState.Cancelling
+                && !reportedWorker.equals(cancelledWorkerOnTask)) {
+                log.info(
+                    "Executor expected cancelled worker {} but reports {}; clearing stale cancellation.",
+                    cancelledWorkerOnTask,
+                    reportedWorker);
+                clearReconciliation();
+                return reconcileOccupiedWorker(reportedWorker);
+            }
+
+            reconciliationState = ReconciliationState.Quarantined;
+            cancelledWorkerOnTask = reportedWorker;
+            boolean changed = reconcileOccupiedWorker(reportedWorker);
+            if (heartbeat) {
+                throw cancellationException(heartbeatTaskExecutorID, reportedWorker);
+            }
+            return changed;
+        }
+
+        if (report instanceof Occupied && availabilityState != null) {
+            WorkerId reportedWorker = ((Occupied) report).getWorkerId();
+            WorkerId expectedWorker = availabilityState.getWorkerId();
+            if (expectedWorker != null && !expectedWorker.equals(reportedWorker)) {
+                log.warn(
+                    "Executor expected worker {} but reports {}; quarantining reported worker.",
+                    expectedWorker,
+                    reportedWorker);
+                jobMessageRouter.routeWorkerEvent(
+                    new WorkerTerminate(expectedWorker, WorkerState.Failed, JobCompletedReason.Lost));
+                quarantineWorkerOnTask(reportedWorker);
+                if (heartbeat) {
+                    throw cancellationException(heartbeatTaskExecutorID, reportedWorker);
+                }
+                return true;
+            }
+        }
+
+        if (heartbeat && availabilityState instanceof Running && report instanceof Available) {
+            WorkerId runningWorkerId = availabilityState.getWorkerId();
+            log.warn(
+                "Heartbeat indicates available while running {}. Preserving ownership for reconciliation.",
+                runningWorkerId);
+            reconciliationState = registration.reservesAcceptedTask()
+                ? ReconciliationState.Verifying
+                : ReconciliationState.Quarantined;
+            cancelledWorkerOnTask = runningWorkerId;
+            jobMessageRouter.routeWorkerEvent(
+                new WorkerTerminate(runningWorkerId, WorkerState.Failed, JobCompletedReason.Lost));
+            return false;
+        }
+
+        return handleStatusChange(report);
+    }
+
+    private TaskExecutorTaskCancelledException cancellationException(
+        io.mantisrx.server.master.resourcecluster.TaskExecutorID taskExecutorID,
+        WorkerId workerId) {
+        return new TaskExecutorTaskCancelledException(
+            String.format("heartbeat from %s reports cancelled task %s", taskExecutorID, workerId),
+            workerId);
+    }
+
+    private boolean reconcileOccupiedWorker(WorkerId workerId) {
+        if (availabilityState instanceof Running && workerId.equals(availabilityState.getWorkerId())) {
+            return false;
+        }
+        return setAvailabilityState(AvailabilityState.running(workerId));
+    }
+
+    private void clearReconciliation() {
+        reconciliationState = ReconciliationState.None;
+        cancelledWorkerOnTask = null;
     }
 
     private boolean handleStatusChange(TaskExecutorReport report) throws IllegalStateException {
@@ -281,7 +403,7 @@ class TaskExecutorState {
     }
 
     boolean isAvailable() {
-        return this.availabilityState instanceof Pending && !isDisabled();
+        return isRegistered() && this.availabilityState instanceof Pending && !isDisabled();
     }
 
     boolean isRunningTask() {

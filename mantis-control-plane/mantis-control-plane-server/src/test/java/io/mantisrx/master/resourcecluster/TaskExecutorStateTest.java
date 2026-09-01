@@ -19,11 +19,15 @@ package io.mantisrx.master.resourcecluster;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.util.DelegateClock;
+import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -34,6 +38,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorTaskCancelledException;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
+import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
@@ -45,6 +50,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class TaskExecutorStateTest {
     private final AtomicReference<Clock> actual =
@@ -68,6 +74,7 @@ public class TaskExecutorStateTest {
     private static final Map<String, String> ATTRIBUTES =
         ImmutableMap.of("attr1", "attr2");
     private static final WorkerId WORKER_ID = WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1");
+    private static final WorkerId WORKER_ID_2 = WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-2");
 
     @Before
     public void setup() {
@@ -155,6 +162,233 @@ public class TaskExecutorStateTest {
         assertTrue(state.isRunningTask());
         assertFalse(state.isAvailable());
         assertEquals(currentTime, state.getLastActivity());
+    }
+
+    @Test
+    public void availableHeartbeatCannotReleaseStillOwnedExecutor()
+        throws TaskExecutorTaskCancelledException {
+        registerAndStartWorker(WORKER_ID);
+
+        assertFalse(state.onHeartbeat(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID,
+                CLUSTER_ID,
+                TaskExecutorReport.available())));
+
+        assertEquals("stale Available heartbeat released the owned executor", WORKER_ID, state.getWorkerId());
+        assertEquals(WORKER_ID, state.getCancelledWorkerId());
+        assertFalse(state.isAvailable());
+
+        ArgumentCaptor<WorkerEvent> eventCaptor = ArgumentCaptor.forClass(WorkerEvent.class);
+        verify(router).routeWorkerEvent(eventCaptor.capture());
+        WorkerTerminate termination = (WorkerTerminate) eventCaptor.getValue();
+        assertEquals(WORKER_ID, termination.getWorkerId());
+        assertEquals(JobCompletedReason.Lost, termination.getReason());
+    }
+
+    @Test
+    public void authoritativeAvailableStatusReleasesQuarantinedExecutor()
+        throws TaskExecutorTaskCancelledException {
+        registerAndStartWorker(WORKER_ID);
+        state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available()));
+
+        assertTrue(state.onTaskExecutorStatusChange(new TaskExecutorStatusChange(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+
+        assertTrue(state.isAvailable());
+        assertEquals(null, state.getWorkerId());
+        assertEquals(null, state.getCancelledWorkerId());
+    }
+
+    @Test
+    public void reservationAwareSecondAvailableHeartbeatReleasesQuarantine()
+        throws TaskExecutorTaskCancelledException {
+        registerAndStartWorker(WORKER_ID, true);
+
+        assertFalse(state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+        assertTrue(state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+
+        assertTrue(state.isAvailable());
+        assertEquals(null, state.getCancelledWorkerId());
+    }
+
+    @Test
+    public void legacyRepeatedAvailableHeartbeatsRemainQuarantined()
+        throws TaskExecutorTaskCancelledException {
+        registerAndStartWorker(WORKER_ID);
+
+        assertFalse(state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+        assertFalse(state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+
+        assertEquals(WORKER_ID, state.getWorkerId());
+        assertEquals(WORKER_ID, state.getCancelledWorkerId());
+        assertFalse(state.isAvailable());
+    }
+
+    @Test
+    public void availableHeartbeatCannotClearLegacyPreparationCancellation()
+        throws TaskExecutorTaskCancelledException {
+        registerAndAssignWorker(WORKER_ID);
+        state.setCancelledWorkerOnTask(WORKER_ID);
+
+        state.onHeartbeat(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID,
+                CLUSTER_ID,
+                TaskExecutorReport.available()));
+
+        assertEquals(
+            "Available alone lost cancellation ownership while the accepted task can still start",
+            WORKER_ID,
+            state.getCancelledWorkerId());
+        assertEquals(WORKER_ID, state.getWorkerId());
+        assertFalse(state.isAvailable());
+    }
+
+    @Test
+    public void occupiedWorkerMismatchWhileAssignedUsesReportedIdentity()
+        throws TaskExecutorTaskCancelledException {
+        registerAndAssignWorker(WORKER_ID);
+
+        state.onTaskExecutorStatusChange(
+            new TaskExecutorStatusChange(
+                TASK_EXECUTOR_ID,
+                CLUSTER_ID,
+                TaskExecutorReport.occupied(WORKER_ID_2)));
+
+        assertEquals(
+            "Occupied(B) was silently attributed to assigned worker A",
+            WORKER_ID_2,
+            state.getWorkerId());
+    }
+
+    @Test
+    public void occupiedWorkerMismatchWhileRunningUsesReportedIdentity()
+        throws TaskExecutorTaskCancelledException {
+        registerAndStartWorker(WORKER_ID);
+
+        try {
+            state.onHeartbeat(
+                new TaskExecutorHeartbeat(
+                    TASK_EXECUTOR_ID,
+                    CLUSTER_ID,
+                    TaskExecutorReport.occupied(WORKER_ID_2)));
+            fail("mismatched worker should be cancelled");
+        } catch (TaskExecutorTaskCancelledException e) {
+            assertTrue(e.getMessage().contains(WORKER_ID_2.toString()));
+        }
+
+        assertEquals(
+            "Occupied(B) was silently attributed to running worker A",
+            WORKER_ID_2,
+            state.getWorkerId());
+    }
+
+    @Test
+    public void staleCancellationDoesNotCancelDifferentReportedWorker()
+        throws TaskExecutorTaskCancelledException {
+        registerAndStartWorker(WORKER_ID);
+        state.setCancelledWorkerOnTask(WORKER_ID);
+
+        assertTrue(state.onHeartbeat(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID,
+                CLUSTER_ID,
+                TaskExecutorReport.occupied(WORKER_ID_2))));
+
+        assertEquals(WORKER_ID_2, state.getWorkerId());
+        assertEquals(null, state.getCancelledWorkerId());
+    }
+
+    @Test
+    public void availableHeartbeatRestoresDisconnectedIdleExecutor()
+        throws TaskExecutorTaskCancelledException {
+        assertTrue(state.onRegistration(registration()));
+        assertTrue(state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+
+        assertTrue(state.onDisconnection());
+        assertTrue(state.onRegistration(registration()));
+        assertTrue(state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+
+        assertTrue(state.isAvailable());
+    }
+
+    @Test(expected = TaskExecutorTaskCancelledException.class)
+    public void cancellationOwnershipSurvivesDisconnectAndReconnect()
+        throws TaskExecutorTaskCancelledException {
+        registerAndStartWorker(WORKER_ID);
+        state.setCancelledWorkerOnTask(WORKER_ID);
+
+        assertTrue(state.onDisconnection());
+        assertEquals(WORKER_ID, state.getCancelledWorkerId());
+        assertTrue(state.onRegistration(registration()));
+        assertEquals(WORKER_ID, state.getCancelledWorkerId());
+
+        state.onHeartbeat(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID,
+                CLUSTER_ID,
+                TaskExecutorReport.occupied(WORKER_ID)));
+    }
+
+    private void registerAndStartWorker(WorkerId workerId)
+        throws TaskExecutorTaskCancelledException {
+        registerAndStartWorker(workerId, false);
+    }
+
+    private void registerAndStartWorker(WorkerId workerId, boolean reservesAcceptedTask)
+        throws TaskExecutorTaskCancelledException {
+        registerAndAssignWorker(workerId, reservesAcceptedTask);
+        assertTrue(state.onTaskExecutorStatusChange(
+            new TaskExecutorStatusChange(
+                TASK_EXECUTOR_ID,
+                CLUSTER_ID,
+                TaskExecutorReport.occupied(workerId))));
+    }
+
+    private void registerAndAssignWorker(WorkerId workerId)
+        throws TaskExecutorTaskCancelledException {
+        registerAndAssignWorker(workerId, false);
+    }
+
+    private void registerAndAssignWorker(WorkerId workerId, boolean reservesAcceptedTask)
+        throws TaskExecutorTaskCancelledException {
+        assertTrue(state.onRegistration(registration(reservesAcceptedTask)));
+        assertTrue(state.onHeartbeat(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID,
+                CLUSTER_ID,
+                TaskExecutorReport.available())));
+        assertTrue(state.onAssignment(workerId));
+    }
+
+    private TaskExecutorRegistration registration() {
+        return registration(false);
+    }
+
+    private TaskExecutorRegistration registration(boolean reservesAcceptedTask) {
+        Map<String, String> attributes = ImmutableMap.<String, String>builder()
+            .putAll(ATTRIBUTES)
+            .put(
+                TaskExecutorRegistration.ACCEPTED_TASK_RESERVATION_ATTRIBUTE,
+                Boolean.toString(reservesAcceptedTask))
+            .build();
+        return TaskExecutorRegistration.builder()
+            .taskExecutorID(TASK_EXECUTOR_ID)
+            .clusterID(CLUSTER_ID)
+            .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+            .hostname(HOST_NAME)
+            .workerPorts(WORKER_PORTS)
+            .machineDefinition(MACHINE_DEFINITION)
+            .taskExecutorAttributes(attributes)
+            .build();
     }
 
     private Instant tick() {
