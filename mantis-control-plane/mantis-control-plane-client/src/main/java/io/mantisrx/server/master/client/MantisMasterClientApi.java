@@ -27,7 +27,7 @@ import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDefinition;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
-import io.mantisrx.runtime.codec.JacksonCodecs;
+import io.mantisrx.runtime.codec.JsonCodec;
 import io.mantisrx.runtime.descriptor.DeploymentStrategy;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
@@ -697,12 +697,17 @@ public class MantisMasterClientApi implements MantisMasterGateway {
     }
 
 
+    // JsonCodec's constructor is deprecated in favour of JacksonCodecs, but the two are not
+    // interchangeable on the wire: JsonCodec uses a plain ObjectMapper while JacksonCodecs is
+    // backed by a CBORFactory. Switching would silently change the encoding of this remote
+    // observable for external consumers, so the deprecated constructor is kept deliberately.
+    @SuppressWarnings("deprecation")
     public Observable<JobAssignmentResult> assignmentResults(String jobId) {
         ConnectToObservable.Builder<JobAssignmentResult> connectionBuilder =
                 new ConnectToObservable.Builder<JobAssignmentResult>()
                         .subscribeAttempts(subscribeAttemptsToMaster)
                         .name("/v1/api/master/assignmentresults")
-                        .decoder(JacksonCodecs.pojo(JobAssignmentResult.class));
+                        .decoder(new JsonCodec<JobAssignmentResult>(JobAssignmentResult.class));
         if (jobId != null && !jobId.isEmpty()) {
             Map<String, String> subscriptionParams = new HashMap<>();
             subscriptionParams.put("jobId", jobId);
