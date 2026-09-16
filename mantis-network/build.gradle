@@ -14,6 +14,20 @@
  * limitations under the License.
  */
 
+buildscript {
+    repositories {
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath 'me.champeau.jmh:jmh-gradle-plugin:0.7.3'
+    }
+}
+
+// JMH microbenchmarks live in src/jmh. Run with: ./gradlew :mantis-network:jmh
+// or build the self-contained jar (./gradlew :mantis-network:jmhJar) and drive it with the
+// standard JMH CLI, which is the only way to vary -t (thread count).
+apply plugin: 'me.champeau.jmh'
+
 ext {
     mqlVersion = '3.4.+'
     nettyVersion = '4.1.17.Final'
@@ -30,8 +44,19 @@ dependencies {
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
     testImplementation libraries.slf4jLog4j12
+
+    // The benchmarks drive the routers and the push-server batch wrap directly, so they need the
+    // metrics implementation that main only compiles against.
+    jmhImplementation libraries.spectatorApi
 }
 
 test {
     useJUnitPlatform()
+}
+
+jmh {
+    jmhVersion = '1.37'
+    fork = 1
+    warmupIterations = 5
+    iterations = 5
 }
