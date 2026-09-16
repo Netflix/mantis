@@ -17,6 +17,7 @@
 package io.reactivex.mantis.network.push;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -199,18 +200,18 @@ public class LegacyTcpPipelineConfigurator implements PipelineConfigurator<Remot
                               ChannelPromise promise) throws Exception {
 
                 if (ByteBuf.class.isAssignableFrom(msg.getClass())) {
-                    // handle data writes
+                    // handle data writes: prepend the header without copying the payload, which for
+                    // a push batch is on the order of half a megabyte.
                     ByteBuf bytes = (ByteBuf) msg;
-                    ByteBuf buf = ctx.alloc().buffer(bytes.readableBytes());
-                    writeHeader(buf, name);
-                    buf.writeBytes(bytes);
-                    bytes.release();
-                    super.write(ctx, buf, promise);
+                    ByteBuf header = ctx.alloc().buffer(headerSizeHint(name));
+                    writeHeader(header, name);
+                    super.write(ctx, Unpooled.wrappedBuffer(header, bytes), promise);
                 } else if (msg instanceof byte[]) {
                     // handle heart beat writes
-                    ByteBuf buf = ctx.alloc().buffer();
+                    byte[] bytes = (byte[]) msg;
+                    ByteBuf buf = ctx.alloc().buffer(headerSizeHint(name) + bytes.length);
                     writeHeader(buf, name);
-                    buf.writeBytes((byte[]) msg);
+                    buf.writeBytes(bytes);
                     super.write(ctx, buf, promise);
                     super.flush(ctx);
                 } else {
@@ -218,6 +219,15 @@ public class LegacyTcpPipelineConfigurator implements PipelineConfigurator<Remot
                 }
             }
         });
+    }
+
+    /**
+     * Size hint for the buffer {@link #writeHeader} fills: a version byte, a name-length byte, and
+     * the name itself. Only a hint — the buffer grows if it is wrong — but getting it right avoids a
+     * reallocation on every write.
+     */
+    private static int headerSizeHint(String name) {
+        return 2 + (name == null ? 0 : name.length());
     }
 
     private void writeHeader(ByteBuf buf, String name) {
