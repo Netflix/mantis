@@ -17,6 +17,9 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.server.core.domain.WorkerId;
+
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 
 /**
@@ -25,6 +28,7 @@ import lombok.Getter;
 @Getter
 public class TaskExecutorTaskCancelledException extends Exception {
     private static final long serialVersionUID = 1L;
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final WorkerId workerId;
 
@@ -37,5 +41,13 @@ public class TaskExecutorTaskCancelledException extends Exception {
     public synchronized Throwable fillInStackTrace() {
         // Do not include stack trace to be returned to clients
         return this;
+    }
+
+    /**
+     * Serializes the full exception object including workerId to JsonNode.
+     * @return JsonNode representation of this exception
+     */
+    public JsonNode toJsonNode() {
+        return mapper.valueToTree(this);
     }
 }
