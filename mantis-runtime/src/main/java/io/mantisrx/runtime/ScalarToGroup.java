@@ -54,7 +54,7 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
 
     public ScalarToGroup(ToGroupComputation<T, K, R> computation,
                   Config<T, K, R> config, Codec<T> inputCodec) {
-        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency);
+        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency, config.bufferSize);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
 
@@ -77,6 +77,7 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
         // default input type is concurrent for 'grouping' use case
         private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.CONCURRENT;
         private int concurrency = DEFAULT_STAGE_CONCURRENCY;
+        private int bufferSize = rx.internal.util.RxRingBuffer.SIZE;
         private long keyExpireTimeSeconds = Long.MAX_VALUE; // never expire by default
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
@@ -154,6 +155,15 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
         public Config<T, K, R> withParameters(List<ParameterDefinition<?>> params) {
             this.parameters = params;
             return this;
+        }
+
+        public Config<T, K, R> bufferSize(int bufferSize) {
+            this.bufferSize = bufferSize;
+            return this;
+        }
+
+        public int getBufferSize() {
+            return bufferSize;
         }
     }
 }
