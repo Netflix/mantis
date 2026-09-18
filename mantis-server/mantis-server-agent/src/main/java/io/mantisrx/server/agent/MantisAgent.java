@@ -28,12 +28,7 @@ public class MantisAgent implements Service {
     private CountDownLatch blockUntilShutdown = new CountDownLatch(1);
 
     public MantisAgent() {
-        Thread t = new Thread() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        };
+        Thread t = new Thread(this::shutdown);
         t.setDaemon(true);
         // shutdown hook
         Runtime.getRuntime().addShutdownHook(t);
