@@ -39,6 +39,8 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 
+import java.util.Optional;
+
 /**
  * Execution of WorkerPublisher that publishes the stream to the next stage.
  *
@@ -86,12 +88,17 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
 
                 Func1<T, byte[]> encoder = t1 -> stage.getOutputCodec().encode(t1);
                 Router router = this.routerFactory.scalarStageToStageRouter(name, encoder);
+                Func1<String, Optional<ProactiveRouter<T>>> proactiveFactory = (String k) -> Optional.empty();
+                if (stage.shouldUseProactiveRouter()) {
+                    proactiveFactory = (String name) -> Optional.of(routerFactory.scalarStageToStageProactiveRouter(name, encoder));
+                }
 
                 ServerConfig<T> config = new ServerConfig.Builder<T>()
                         .name(name)
                         .port(serverPort)
                         .metricsRegistry(MetricsRegistry.getInstance())
-                        .router(router)
+                        .groupRouter(router)
+                        .proactiveRouterFactory(proactiveFactory)
                         .build();
                 final LegacyTcpPushServer<T> modernServer =
                         PushServers.infiniteStreamLegacyTcpNested(config, toServe);
@@ -135,6 +142,12 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
         Func1<T, byte[]> valueEncoder = t1 -> stage.getOutputCodec().encode(t1);
         Func1<K, byte[]> keyEncoder = t1 -> stage.getOutputKeyCodec().encode(t1);
 
+        Router<KeyValuePair<K, T>> router = this.routerFactory.keyedRouter(name, keyEncoder, valueEncoder);
+        Func1<String, Optional<ProactiveRouter<KeyValuePair<K, T>>>> proactiveFactory = (String k) -> Optional.empty();
+        if (stage.shouldUseProactiveRouter()) {
+            proactiveFactory = (String name) -> Optional.of(routerFactory.keyedProactiveRouter(name, keyEncoder, valueEncoder));
+        }
+
         ServerConfig<KeyValuePair<K, T>> config = new ServerConfig.Builder<KeyValuePair<K, T>>()
             .name(name)
             .port(serverPort)
@@ -144,7 +157,8 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
             .maxChunkTimeMSec(maxChunkTimeMSec())
             .bufferCapacity(bufferCapacity())
             .useSpscQueue(useSpsc())
-            .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
+            .groupRouter(router)
+            .proactiveRouterFactory(proactiveFactory)
             .build();
 
         if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
@@ -161,7 +175,6 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
     private boolean useSpsc() {
         String stringValue = propService.getStringValue("mantis.w2w.spsc", "false");
         return Boolean.parseBoolean(stringValue);
-
     }
 
     private int bufferCapacity() {

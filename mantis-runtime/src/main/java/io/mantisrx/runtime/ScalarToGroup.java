@@ -54,7 +54,7 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
 
     public ScalarToGroup(ToGroupComputation<T, K, R> computation,
                   Config<T, K, R> config, Codec<T> inputCodec) {
-        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency);
+        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency, config.useProactiveRouter);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
 
@@ -79,6 +79,7 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
         private int concurrency = DEFAULT_STAGE_CONCURRENCY;
         private long keyExpireTimeSeconds = Long.MAX_VALUE; // never expire by default
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
+        private boolean useProactiveRouter = false;
 
         /**
          * @param codec is Codec of netty reactivex
@@ -129,6 +130,11 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
             return this;
         }
 
+        public Config<T, K, R> useProactiveRouter(boolean useProactiveRouter) {
+            this.useProactiveRouter = useProactiveRouter;
+            return this;
+        }
+
         public Codec<R> getCodec() {
             return codec;
         }
@@ -154,6 +160,10 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
         public Config<T, K, R> withParameters(List<ParameterDefinition<?>> params) {
             this.parameters = params;
             return this;
+        }
+
+        public boolean isUseProactiveRouter() {
+            return useProactiveRouter;
         }
     }
 }
