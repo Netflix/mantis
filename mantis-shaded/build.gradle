@@ -31,7 +31,6 @@ ext {
     curatorVersion = '5.1.+'
     zookeeperVersion = '3.6.0'
     jlineVersion = '0.9.94'
-    nettyVersion = '3.7.0.Final'
 }
 
 configurations {
@@ -65,7 +64,6 @@ dependencies {
     }
     shaded "org.apache.zookeeper:zookeeper-jute:$zookeeperVersion"
     shaded "jline:jline:$jlineVersion"
-    shaded "io.netty:netty:$nettyVersion"
 
     implementation libraries.vavr
 }
@@ -83,7 +81,6 @@ shadowJar {
     relocate 'org.apache.zookeeper', 'io.mantisrx.shaded.org.apache.zookeeper'
     relocate 'org.apache.jute', 'io.mantisrx.shaded.org.apache.jute'
     relocate 'jline', 'io.mantisrx.shaded.jline'
-    relocate 'org.jboss.netty', 'io.mantisrx.shaded.org.jboss.netty'
 
     mergeServiceFiles()
 }
