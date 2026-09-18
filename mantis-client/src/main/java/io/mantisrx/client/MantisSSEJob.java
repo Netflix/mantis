@@ -104,16 +104,17 @@ public class MantisSSEJob implements Closeable {
                     .take(1)
                     .toBlocking()
                     .first();
-            resultsObservable = exists ?
-                    sinksToObservable(builder.mantisClient.getSinkClientByJobName(
-                            builder.name,
-                            new SseSinkConnectionFunction(true, builder.onConnectionReset, builder.sinkParameters),
-                            builder.sinkConnectionsStatusObserver, builder.dataRecvTimeoutSecs)
-                    )
-                            .share()
-                    //.lift(new DropOperator<Observable<MantisServerSentEvent>>("client_connect_sse_share"))
-                    :
-                    Observable.just(Observable.just(new MantisServerSentEvent("No such job name " + builder.name)));
+            if (exists) {
+                resultsObservable = sinksToObservable(builder.mantisClient.getSinkClientByJobName(
+                        builder.name,
+                        new SseSinkConnectionFunction(true, builder.onConnectionReset, builder.sinkParameters),
+                        builder.sinkConnectionsStatusObserver, builder.dataRecvTimeoutSecs)
+                )
+                        .share();
+            } else {
+                logger.error("No such job cluster: {}", builder.name);
+                resultsObservable = Observable.just(Observable.just(new MantisServerSentEvent("No such job cluster: " + builder.name)));
+            }
         }
         return resultsObservable;
     }
