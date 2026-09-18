@@ -47,6 +47,8 @@ public class Context {
     private WorkerInfo workerInfo;
     // No longer used.
     private Observable<Boolean> prevStageCompletedObservable = BehaviorSubject.create(false);
+    // Callback for delayed eager subscription activation (used by perpetual jobs)
+    private Action0 eagerSubscriptionActivationCallback;
     // An Observable providing details of all workers of the current job
     private Observable<WorkerMap> workerMapObservable = Observable.empty();
     // Custom class loader
@@ -167,4 +169,23 @@ public class Context {
 
     @Nullable
     public ClassLoader getClassLoader() { return this.classLoader; }
+
+    /**
+     * Sets the callback for delayed eager subscription activation for perpetual jobs.
+     * This is used internally by SinkPublisher to allow SSE sinks to activate
+     * eager subscription when the first client connects.
+     */
+    public void setEagerSubscriptionActivationCallback(Action0 callback) {
+        this.eagerSubscriptionActivationCallback = callback;
+    }
+
+    /**
+     * Activates delayed eager subscription for perpetual jobs when first client connects.
+     * This is called by SSE sinks to ensure the job becomes perpetual.
+     */
+    public void activateEagerSubscription() {
+        if (eagerSubscriptionActivationCallback != null) {
+            eagerSubscriptionActivationCallback.call();
+        }
+    }
 }

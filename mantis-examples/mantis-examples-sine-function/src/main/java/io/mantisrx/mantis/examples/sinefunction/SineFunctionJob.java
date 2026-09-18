@@ -99,8 +99,55 @@ public class SineFunctionJob extends MantisJobProvider<Point> {
      * {@code AbstractServer:95 main - Rx server started at port: <PORT_NUMBER>} in the console output.
      * Connect to the port using {@code curl localhost:<PORT_NUMBER>}
      * to see a stream of (x, y) coordinates on a sine curve.
+     *
+     * Examples of different eager subscription strategies:
+     *
+     * 1. Default (IMMEDIATE) - starts processing immediately:
+     *    LocalJobExecutorNetworked.execute(new SineFunctionJob().getJobInstance(),
+     *        new Parameter("useRandom", "false"));
+     *
+     * 2. ON_FIRST_CLIENT - waits for first SSE client to connect:
+     *    LocalJobExecutorNetworked.execute(new SineFunctionJob().getJobInstance(),
+     *        new Parameter("useRandom", "false"),
+     *        new Parameter("mantis.job.worker.eager.subscription.strategy", "ON_FIRST_CLIENT"));
+     *
+     * 3. TIMEOUT_BASED - waits for client or 30 seconds, whichever comes first:
+     *    LocalJobExecutorNetworked.execute(new SineFunctionJob().getJobInstance(),
+     *        new Parameter("useRandom", "false"),
+     *        new Parameter("mantis.job.worker.eager.subscription.strategy", "TIMEOUT_BASED"),
+     *        new Parameter("mantis.job.worker.eager.subscription.timeout.secs", "30"));
      */
     public static void main(String[] args) {
+        // Example: Use ON_FIRST_CLIENT strategy - job will wait for first SSE connection
+        System.out.println("Starting Sine Function Job with ON_FIRST_CLIENT strategy");
+        System.out.println("Job will wait for first client connection before generating data");
+        System.out.println("Connect with: curl localhost:<port> (port will be displayed in logs)");
+
+        LocalJobExecutorNetworked.execute(new SineFunctionJob().getJobInstance(),
+                new Parameter("useRandom", "false"),
+                new Parameter("mantis.job.worker.eager.subscription.strategy", "ON_FIRST_CLIENT"));
+    }
+
+    /**
+     * Alternative main method showing TIMEOUT_BASED strategy
+     */
+    public static void mainWithTimeout(String[] args) {
+        System.out.println("Starting Sine Function Job with TIMEOUT_BASED strategy (30 second timeout)");
+        System.out.println("Job will wait up to 30 seconds for first client, then start generating data");
+
+        LocalJobExecutorNetworked.execute(new SineFunctionJob().getJobInstance(),
+                new Parameter("useRandom", "false"),
+                new Parameter("mantis.job.worker.eager.subscription.strategy", "TIMEOUT_BASED"),
+                new Parameter("mantis.job.worker.eager.subscription.timeout.secs", "30"));
+    }
+
+    /**
+     * Traditional main method with immediate processing (backward compatible)
+     */
+    public static void mainImmediate(String[] args) {
+        System.out.println("Starting Sine Function Job with IMMEDIATE strategy (default)");
+        System.out.println("Job will start generating data immediately");
+
         LocalJobExecutorNetworked.execute(new SineFunctionJob().getJobInstance(),
                 new Parameter("useRandom", "false"));
     }

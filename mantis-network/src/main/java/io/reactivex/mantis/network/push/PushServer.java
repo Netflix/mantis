@@ -93,6 +93,10 @@ public abstract class PushServer<T, R> {
             @Override
             public void call() {
                 trigger.start();
+                // Call first connection callback for delayed eager subscription
+                if (config.getFirstConnectionCallback() != null) {
+                    config.getFirstConnectionCallback().call();
+                }
             }
         };
         Action0 doOnZeroConnections = new Action0() {
