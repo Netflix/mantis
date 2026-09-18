@@ -292,13 +292,42 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         return withFuture(gateway.listActiveClusters());
     }
 
-    private Route getActiveJobOverview(ClusterID clusterID, Optional<String> startingIndex,
+    private Route getActiveJobOverview(
+        ClusterID clusterID,
+        Optional<String> startingIndex,
         Optional<String> pageSize) {
-        CompletableFuture<PagedActiveJobOverview> jobsOverview =
-            gateway.getClusterFor(clusterID).getActiveJobOverview(
-                startingIndex.map(Integer::parseInt),
-                pageSize.map(Integer::parseInt));
-        return withFuture(jobsOverview);
+
+        Optional<Integer> parsedStartingIndex =
+            parseNonNegativeInteger(startingIndex);
+        Optional<Integer> parsedPageSize =
+            parseNonNegativeInteger(pageSize);
+
+        return validate(
+            () -> startingIndex.isEmpty() || parsedStartingIndex.isPresent(),
+            "startingIndex must be a non-negative integer",
+            () -> validate(
+                () -> pageSize.isEmpty() || parsedPageSize.isPresent(),
+                "pageSize must be a non-negative integer",
+                () -> withFuture(
+                    gateway.getClusterFor(clusterID)
+                        .getActiveJobOverview(
+                            parsedStartingIndex,
+                            parsedPageSize))));
+    }
+
+    private Optional<Integer> parseNonNegativeInteger(
+        Optional<String> parameterValue) {
+
+        return parameterValue.flatMap(value -> {
+            try {
+                int parsedValue = Integer.parseInt(value);
+                return parsedValue >= 0
+                    ? Optional.of(parsedValue)
+                    : Optional.empty();
+            } catch (NumberFormatException exception) {
+                return Optional.empty();
+            }
+        });
     }
 
     private Route getResourceOverview(ClusterID clusterID) {
