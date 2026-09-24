@@ -167,7 +167,7 @@ public class TaskExecutorStateTest {
     @Test
     public void availableHeartbeatCannotReleaseStillOwnedExecutor()
         throws TaskExecutorTaskCancelledException {
-        registerAndStartWorker(WORKER_ID);
+        registerAndStartWorker(WORKER_ID, true);
 
         assertFalse(state.onHeartbeat(
             new TaskExecutorHeartbeat(
@@ -187,15 +187,19 @@ public class TaskExecutorStateTest {
     }
 
     @Test
-    public void authoritativeAvailableStatusReleasesQuarantinedExecutor()
+    public void availableStatusCannotReleaseQuarantinedExecutor()
         throws TaskExecutorTaskCancelledException {
-        registerAndStartWorker(WORKER_ID);
+        registerAndStartWorker(WORKER_ID, true);
         state.onHeartbeat(new TaskExecutorHeartbeat(
             TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available()));
 
-        assertTrue(state.onTaskExecutorStatusChange(new TaskExecutorStatusChange(
+        assertFalse(state.onTaskExecutorStatusChange(new TaskExecutorStatusChange(
             TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+        assertFalse(state.isAvailable());
+        assertEquals(WORKER_ID, state.getCancelledWorkerId());
 
+        assertTrue(state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
         assertTrue(state.isAvailable());
         assertEquals(null, state.getWorkerId());
         assertEquals(null, state.getCancelledWorkerId());
@@ -216,24 +220,49 @@ public class TaskExecutorStateTest {
     }
 
     @Test
-    public void legacyRepeatedAvailableHeartbeatsRemainQuarantined()
+    public void legacyAvailableHeartbeatReleasesRunningExecutor()
         throws TaskExecutorTaskCancelledException {
         registerAndStartWorker(WORKER_ID);
 
-        assertFalse(state.onHeartbeat(new TaskExecutorHeartbeat(
-            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
-        assertFalse(state.onHeartbeat(new TaskExecutorHeartbeat(
+        assertTrue(state.onHeartbeat(new TaskExecutorHeartbeat(
             TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
 
-        assertEquals(WORKER_ID, state.getWorkerId());
-        assertEquals(WORKER_ID, state.getCancelledWorkerId());
-        assertFalse(state.isAvailable());
+        assertTrue(state.isAvailable());
+        assertEquals(null, state.getWorkerId());
+        assertEquals(null, state.getCancelledWorkerId());
+
+        ArgumentCaptor<WorkerEvent> eventCaptor = ArgumentCaptor.forClass(WorkerEvent.class);
+        verify(router).routeWorkerEvent(eventCaptor.capture());
+        WorkerTerminate termination = (WorkerTerminate) eventCaptor.getValue();
+        assertEquals(WORKER_ID, termination.getWorkerId());
+        assertEquals(JobCompletedReason.Lost, termination.getReason());
     }
 
     @Test
-    public void availableHeartbeatCannotClearLegacyPreparationCancellation()
+    public void legacyAssignedDisconnectReleasesOnFirstAvailableHeartbeat()
         throws TaskExecutorTaskCancelledException {
         registerAndAssignWorker(WORKER_ID);
+
+        assertTrue(state.onDisconnection());
+        assertEquals(WORKER_ID, state.getCancelledWorkerId());
+        assertTrue(state.onRegistration(registration()));
+
+        assertTrue(state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+        assertTrue(state.isAvailable());
+        assertEquals(null, state.getCancelledWorkerId());
+
+        ArgumentCaptor<WorkerEvent> eventCaptor = ArgumentCaptor.forClass(WorkerEvent.class);
+        verify(router).routeWorkerEvent(eventCaptor.capture());
+        WorkerTerminate termination = (WorkerTerminate) eventCaptor.getValue();
+        assertEquals(WORKER_ID, termination.getWorkerId());
+        assertEquals(JobCompletedReason.Lost, termination.getReason());
+    }
+
+    @Test
+    public void availableHeartbeatCannotClearPreparationCancellation()
+        throws TaskExecutorTaskCancelledException {
+        registerAndAssignWorker(WORKER_ID, true);
         state.setCancelledWorkerOnTask(WORKER_ID);
 
         state.onHeartbeat(
@@ -336,6 +365,59 @@ public class TaskExecutorStateTest {
                 TASK_EXECUTOR_ID,
                 CLUSTER_ID,
                 TaskExecutorReport.occupied(WORKER_ID)));
+    }
+
+    @Test
+    public void assignedDisconnectReconcilesBeforeReturningToPending()
+        throws TaskExecutorTaskCancelledException {
+        registerAndAssignWorker(WORKER_ID, true);
+        long assignmentEpoch = state.getAssignmentEpoch();
+
+        assertTrue(state.onDisconnection());
+        assertEquals(WORKER_ID, state.getCancelledWorkerId());
+        assertFalse(state.isCurrentAssignment(WORKER_ID, assignmentEpoch));
+        ArgumentCaptor<WorkerEvent> eventCaptor = ArgumentCaptor.forClass(WorkerEvent.class);
+        verify(router).routeWorkerEvent(eventCaptor.capture());
+        WorkerTerminate termination = (WorkerTerminate) eventCaptor.getValue();
+        assertEquals(WORKER_ID, termination.getWorkerId());
+        assertEquals(JobCompletedReason.Lost, termination.getReason());
+
+        assertTrue(state.onRegistration(registration(true)));
+        assertFalse(state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+        assertFalse(state.isAvailable());
+        assertEquals(WORKER_ID, state.getCancelledWorkerId());
+
+        assertTrue(state.onHeartbeat(new TaskExecutorHeartbeat(
+            TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())));
+        assertTrue(state.isAvailable());
+        assertEquals(null, state.getCancelledWorkerId());
+    }
+
+    @Test
+    public void isCurrentAssignmentIsFalseAfterDisconnection()
+        throws TaskExecutorTaskCancelledException {
+        registerAndAssignWorker(WORKER_ID, true);
+        long assignmentEpoch = state.getAssignmentEpoch();
+        assertTrue(state.isCurrentAssignment(WORKER_ID, assignmentEpoch));
+
+        assertTrue(state.onDisconnection());
+
+        assertFalse(state.isCurrentAssignment(WORKER_ID, assignmentEpoch));
+    }
+
+    @Test
+    public void isCurrentAssignmentIsFalseWhileReconciling()
+        throws TaskExecutorTaskCancelledException {
+        registerAndAssignWorker(WORKER_ID, true);
+        long assignmentEpoch = state.getAssignmentEpoch();
+        assertTrue(state.isCurrentAssignment(WORKER_ID, assignmentEpoch));
+
+        state.setCancelledWorkerOnTask(WORKER_ID);
+
+        assertTrue(state.isRegistered());
+        assertTrue(state.isAssigned());
+        assertFalse(state.isCurrentAssignment(WORKER_ID, assignmentEpoch));
     }
 
     private void registerAndStartWorker(WorkerId workerId)

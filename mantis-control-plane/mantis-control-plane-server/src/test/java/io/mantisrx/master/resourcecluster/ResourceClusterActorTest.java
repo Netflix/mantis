@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -70,6 +71,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorTaskCancelledException;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.mantisrx.server.master.scheduler.WorkerLaunchFailed;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
@@ -138,6 +140,7 @@ public class ResourceClusterActorTest {
             .taskExecutorAttributes(
                 ImmutableMap.of(
                     WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_1.getResourceID(),
+                    TaskExecutorRegistration.ACCEPTED_TASK_RESERVATION_ATTRIBUTE, Boolean.TRUE.toString(),
                     "attr1", "attr1"))
             .build();
 
@@ -312,7 +315,7 @@ public class ResourceClusterActorTest {
         tEStatus = resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get();
         assertEquals(WORKER_ID, tEStatus.getCancelledWorkerId());
 
-        // The agent's status change is emitted after cancellation cleanup completes.
+        // An unsequenced status update cannot prove that it follows this cancellation.
         assertEquals(Ack.getInstance(),
             resourceCluster
                 .notifyTaskExecutorStatusChange(
@@ -320,6 +323,16 @@ public class ResourceClusterActorTest {
                         TASK_EXECUTOR_ID,
                         CLUSTER_ID,
                         TaskExecutorReport.available())).get());
+
+        tEStatus = resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get();
+        assertEquals(WORKER_ID, tEStatus.getCancelledWorkerId());
+
+        assertEquals(Ack.getInstance(), resourceCluster.heartBeatFromTaskExecutor(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+        assertEquals(Ack.getInstance(), resourceCluster.heartBeatFromTaskExecutor(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
 
         tEStatus = resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get();
         assertEquals(null, tEStatus.getCancelledWorkerId());
@@ -346,6 +359,190 @@ public class ResourceClusterActorTest {
             "disconnect/reconnect discarded cancellation ownership",
             WORKER_ID,
             resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get().getCancelledWorkerId());
+    }
+
+    @Test
+    public void duplicateDisconnectionDoesNotReviveAssignedExecutor() throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(Ack.getInstance(), resourceCluster.heartBeatFromTaskExecutor(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+
+        TaskExecutorAllocationRequest assignment = TaskExecutorAllocationRequest.of(
+            WORKER_ID,
+            SchedulingConstraints.of(MACHINE_DEFINITION),
+            JOB_METADATA,
+            0,
+            MantisJobDurationType.Perpetual);
+        assertEquals(
+            TASK_EXECUTOR_ID,
+            resourceCluster.getTaskExecutorsFor(Collections.singleton(assignment))
+                .get().values().iterator().next());
+
+        assertEquals(Ack.getInstance(), resourceCluster.disconnectTaskExecutor(
+            new TaskExecutorDisconnection(TASK_EXECUTOR_ID, CLUSTER_ID)).get());
+        assertEquals(Ack.getInstance(), resourceCluster.disconnectTaskExecutor(
+            new TaskExecutorDisconnection(TASK_EXECUTOR_ID, CLUSTER_ID)).get());
+
+        ActorRef executorStateManagerActor = actorSystem.actorSelection(
+                resourceClusterActor.path().child("executorStateManager-clusterId"))
+            .resolveOne(Duration.ofSeconds(2)).toCompletableFuture().get();
+        TestKit probe = new TestKit(actorSystem);
+        executorStateManagerActor.tell(
+            new AssignmentHandlerActor.TaskExecutorAssignmentFailAndTerminate(
+                TASK_EXECUTOR_ID,
+                assignment,
+                new RuntimeException("late assignment failure"),
+                1,
+                1L,
+                AssignmentHandlerActor.AssignmentFailureType.MayHaveRun),
+            probe.getRef());
+        executorStateManagerActor.tell(
+            new GetTaskExecutorStatusRequest(TASK_EXECUTOR_ID, CLUSTER_ID),
+            probe.getRef());
+
+        Failure failure = probe.expectMsgClass(Failure.class);
+        assertTrue(failure.cause() instanceof TaskExecutorNotFoundException);
+    }
+
+    @Test
+    public void lateStatusDoesNotReviveArchivedExecutor() throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(Ack.getInstance(), resourceCluster.disconnectTaskExecutor(
+            new TaskExecutorDisconnection(TASK_EXECUTOR_ID, CLUSTER_ID)).get());
+
+        try {
+            resourceCluster.notifyTaskExecutorStatusChange(
+                new TaskExecutorStatusChange(
+                    TASK_EXECUTOR_ID,
+                    CLUSTER_ID,
+                    TaskExecutorReport.available())).get();
+            Assert.fail("late status should not revive an archived executor");
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof TaskExecutorNotFoundException);
+        }
+
+        try {
+            resourceCluster.getTaskExecutorState(TASK_EXECUTOR_ID).get();
+            Assert.fail("archived executor should remain outside the active state map");
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof TaskExecutorNotFoundException);
+        }
+    }
+
+    @Test
+    public void assignedExecutorRecoversAvailabilityAfterDisconnectAndReconnect() throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(Ack.getInstance(), resourceCluster.heartBeatFromTaskExecutor(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+        assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getAvailableTaskExecutors().get());
+
+        TaskExecutorAllocationRequest assignment = TaskExecutorAllocationRequest.of(
+            WORKER_ID,
+            SchedulingConstraints.of(MACHINE_DEFINITION),
+            JOB_METADATA,
+            0,
+            MantisJobDurationType.Perpetual);
+        assertEquals(
+            TASK_EXECUTOR_ID,
+            resourceCluster.getTaskExecutorsFor(Collections.singleton(assignment))
+                .get().values().iterator().next());
+        assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
+
+        assertEquals(Ack.getInstance(), resourceCluster.disconnectTaskExecutor(
+            new TaskExecutorDisconnection(TASK_EXECUTOR_ID, CLUSTER_ID)).get());
+        assertEquals(ImmutableList.of(), resourceCluster.getRegisteredTaskExecutors().get());
+
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getRegisteredTaskExecutors().get());
+        assertEquals(Ack.getInstance(), resourceCluster.heartBeatFromTaskExecutor(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+        assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
+
+        assertEquals(Ack.getInstance(), resourceCluster.heartBeatFromTaskExecutor(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+        assertEquals(
+            "disconnect while assigned stranded the executor",
+            ImmutableList.of(TASK_EXECUTOR_ID),
+            resourceCluster.getAvailableTaskExecutors().get());
+
+        // findBestFit skips executors leased within schedulerLeaseExpirationDuration.
+        Thread.sleep(150);
+
+        TaskExecutorAllocationRequest reassignment = TaskExecutorAllocationRequest.of(
+            WORKER_ID_2,
+            SchedulingConstraints.of(MACHINE_DEFINITION),
+            new JobMetadata(WORKER_ID_2.getJobId(), null, null, 1, "testuser", null,
+                ImmutableList.of(), -1, -1, -1),
+            0,
+            MantisJobDurationType.Perpetual);
+        assertEquals(
+            TASK_EXECUTOR_ID,
+            resourceCluster.getTaskExecutorsFor(Collections.singleton(reassignment))
+                .get().values().iterator().next());
+    }
+
+    @Test
+    public void lateAssignmentFailureForUnregisteredExecutorIsIgnored() throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(Ack.getInstance(), resourceCluster.heartBeatFromTaskExecutor(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+
+        TaskExecutorAllocationRequest assignment = TaskExecutorAllocationRequest.of(
+            WORKER_ID,
+            SchedulingConstraints.of(MACHINE_DEFINITION),
+            JOB_METADATA,
+            0,
+            MantisJobDurationType.Perpetual);
+        assertEquals(
+            TASK_EXECUTOR_ID,
+            resourceCluster.getTaskExecutorsFor(Collections.singleton(assignment))
+                .get().values().iterator().next());
+
+        assertEquals(Ack.getInstance(), resourceCluster.disconnectTaskExecutor(
+            new TaskExecutorDisconnection(TASK_EXECUTOR_ID, CLUSTER_ID)).get());
+
+        // The heartbeat revives the archived state without a stored registration, so the executor
+        // is tracked again while still unregistered.
+        try {
+            resourceCluster.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get();
+            Assert.fail("heartbeat without a stored registration should not be accepted");
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof TaskExecutorNotFoundException);
+        }
+
+        ActorRef executorStateManagerActor = actorSystem.actorSelection(
+                resourceClusterActor.path().child("executorStateManager-clusterId"))
+            .resolveOne(Duration.ofSeconds(2)).toCompletableFuture().get();
+        TestKit probe = new TestKit(actorSystem);
+        executorStateManagerActor.tell(
+            new AssignmentHandlerActor.TaskExecutorAssignmentFailAndTerminate(
+                TASK_EXECUTOR_ID,
+                assignment,
+                new RuntimeException("late assignment failure"),
+                1,
+                1L,
+                AssignmentHandlerActor.AssignmentFailureType.MayHaveRun),
+            probe.getRef());
+        executorStateManagerActor.tell(
+            new GetTaskExecutorStatusRequest(TASK_EXECUTOR_ID, CLUSTER_ID),
+            probe.getRef());
+
+        TaskExecutorStatus status = probe.expectMsgClass(TaskExecutorStatus.class);
+        assertEquals(false, status.isRegistered());
+        assertEquals(WORKER_ID, status.getWorkerId());
+        assertEquals(WORKER_ID, status.getCancelledWorkerId());
+
+        verify(jobMessageRouter, never())
+            .routeWorkerEvent(ArgumentMatchers.argThat(event -> event instanceof WorkerLaunchFailed));
+
+        assertEquals(ImmutableList.of(), resourceCluster.getRegisteredTaskExecutors().get());
+        assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
     }
 
     @Test
@@ -733,6 +930,14 @@ public class ResourceClusterActorTest {
                         CLUSTER_ID,
                         TaskExecutorReport.available())).get());
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getRegisteredTaskExecutors().get());
+        assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
+
+        assertEquals(Ack.getInstance(), resourceCluster.heartBeatFromTaskExecutor(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+        assertEquals(Ack.getInstance(), resourceCluster.heartBeatFromTaskExecutor(
+            new TaskExecutorHeartbeat(
+                TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getAvailableTaskExecutors().get());
     }
 

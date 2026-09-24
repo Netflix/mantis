@@ -549,10 +549,15 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
     }
 
     private void onTaskExecutorStatusChange(TaskExecutorStatusChange statusChange) {
-        setupTaskExecutorStateIfNecessary(statusChange.getTaskExecutorID());
         try {
             final TaskExecutorID taskExecutorID = statusChange.getTaskExecutorID();
             final TaskExecutorState state = this.delegate.get(taskExecutorID);
+            if (state == null) {
+                sender().tell(
+                    new Status.Failure(new TaskExecutorNotFoundException(taskExecutorID)),
+                    self());
+                return;
+            }
             boolean stateChange = state.onTaskExecutorStatusChange(statusChange);
             if (stateChange) {
                 syncAvailabilityIndex(taskExecutorID, state);
@@ -664,38 +669,42 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             log.error("[TaskExecutorAssignmentFailure] TaskExecutor lost during task assignment: {}", request);
             return;
         }
-        WorkerId expectedWorker = request.getAllocationRequest().getWorkerId();
-        if (!state.isCurrentAssignment(expectedWorker, request.getAssignmentEpoch())) {
-            log.info("Ignoring stale assignment failure for {} epoch {} on executor {}",
-                expectedWorker, request.getAssignmentEpoch(), request.getTaskExecutorID());
-            return;
-        }
+        try {
+            WorkerId expectedWorker = request.getAllocationRequest().getWorkerId();
+            if (!state.isCurrentAssignment(expectedWorker, request.getAssignmentEpoch())) {
+                log.info("Ignoring stale assignment failure for {} epoch {} on executor {}",
+                    expectedWorker, request.getAssignmentEpoch(), request.getTaskExecutorID());
+                return;
+            }
 
-        jobMessageRouter.routeWorkerEvent(new WorkerLaunchFailed(
-            expectedWorker,
-            request.getAllocationRequest().getStageNum(),
-            "Failed to assign worker to task executor " + request.getTaskExecutorID()));
+            jobMessageRouter.routeWorkerEvent(new WorkerLaunchFailed(
+                expectedWorker,
+                request.getAllocationRequest().getStageNum(),
+                "Failed to assign worker to task executor " + request.getTaskExecutorID()));
 
-        if (request.getFailureType() == AssignmentHandlerActor.AssignmentFailureType.NotSent) {
-            state.onUnassignment();
-            disconnectTaskExecutor(request.getTaskExecutorID());
-            return;
-        }
+            if (request.getFailureType() == AssignmentHandlerActor.AssignmentFailureType.NotSent) {
+                state.onUnassignment();
+                disconnectTaskExecutor(request.getTaskExecutorID());
+                return;
+            }
 
-        WorkerId cancellationTarget = expectedWorker;
-        if (request.getThrowable() instanceof TaskAlreadyRunningException) {
-            cancellationTarget = ((TaskAlreadyRunningException) request.getThrowable())
-                .getCurrentlyRunningWorkerTask();
-            state.quarantineWorkerOnTask(cancellationTarget);
-        } else {
-            state.setCancelledWorkerOnTask(cancellationTarget);
+            WorkerId cancellationTarget = expectedWorker;
+            if (request.getThrowable() instanceof TaskAlreadyRunningException) {
+                cancellationTarget = ((TaskAlreadyRunningException) request.getThrowable())
+                    .getCurrentlyRunningWorkerTask();
+                state.quarantineWorkerOnTask(cancellationTarget);
+            } else {
+                state.setCancelledWorkerOnTask(cancellationTarget);
+            }
+            this.delegate.tryMarkUnavailable(request.getTaskExecutorID());
+            cancelTaskOnExecutor(state, request.getTaskExecutorID(), cancellationTarget);
+        } catch (IllegalStateException e) {
+            log.warn("Ignoring assignment failure for disconnected executor {}",
+                request.getTaskExecutorID(), e);
         }
-        this.delegate.tryMarkUnavailable(request.getTaskExecutorID());
-        cancelTaskOnExecutor(state, request.getTaskExecutorID(), cancellationTarget);
     }
 
     private void onTaskExecutorDisconnection(TaskExecutorDisconnection disconnection) {
-        setupTaskExecutorStateIfNecessary(disconnection.getTaskExecutorID());
         try {
             disconnectTaskExecutor(disconnection.getTaskExecutorID());
             sender().tell(Ack.getInstance(), self());
@@ -706,18 +715,19 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
 
     private void disconnectTaskExecutor(TaskExecutorID taskExecutorID) {
         final TaskExecutorState state = this.delegate.get(taskExecutorID);
+        if (state == null) {
+            getTimers().cancel(getHeartbeatTimerFor(taskExecutorID));
+            return;
+        }
         if (state.isRegistered()) {
             this.delegate.tryMarkUnavailable(taskExecutorID);
         }
-        boolean stateChange = state.onDisconnection();
-        if (stateChange) {
-            this.delegate.archive(taskExecutorID);
-            getTimers().cancel(getHeartbeatTimerFor(taskExecutorID));
-        }
+        state.onDisconnection();
+        this.delegate.archive(taskExecutorID);
+        getTimers().cancel(getHeartbeatTimerFor(taskExecutorID));
     }
 
     private void onTaskExecutorHeartbeatTimeout(HeartbeatTimeout timeout) {
-        setupTaskExecutorStateIfNecessary(timeout.getTaskExecutorID());
         try {
             metrics.incrementCounter(
                 ResourceClusterActorMetrics.HEARTBEAT_TIMEOUT,
@@ -725,6 +735,10 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             log.info("heartbeat timeout received for {}", timeout.getTaskExecutorID());
             final TaskExecutorID taskExecutorID = timeout.getTaskExecutorID();
             final TaskExecutorState state = this.delegate.get(taskExecutorID);
+            if (state == null) {
+                log.debug("Ignoring heartbeat timeout for inactive executor {}", taskExecutorID);
+                return;
+            }
             if (state.getLastActivity().compareTo(timeout.getLastActivity()) <= 0) {
                 log.info("Disconnecting task executor {}", timeout.getTaskExecutorID());
                 disconnectTaskExecutor(timeout.getTaskExecutorID());

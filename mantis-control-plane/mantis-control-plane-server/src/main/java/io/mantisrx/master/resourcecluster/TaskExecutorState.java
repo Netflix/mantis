@@ -86,11 +86,6 @@ class TaskExecutorState {
     private WorkerId cancelledWorkerOnTask;
     private long assignmentEpoch;
 
-    // previousWorkerId: tracks the last WorkerId this executor was running before disconnection
-    // This enables targeted notifications when the executor reconnects
-    @Nullable
-    private WorkerId previousWorkerId;
-
     static TaskExecutorState of(Clock clock, RpcService rpcService, JobMessageRouter jobMessageRouter) {
         return new TaskExecutorState(
             RegistrationState.Unregistered,
@@ -104,8 +99,7 @@ class TaskExecutorState {
             jobMessageRouter,
             ReconciliationState.None,
             null,
-            0L,
-            null);
+            0L);
     }
 
     boolean isRegistered() {
@@ -164,8 +158,14 @@ class TaskExecutorState {
         } else {
             state = RegistrationState.Unregistered;
             registration = null;
-            previousWorkerId = getWorkerId();
-            if (previousWorkerId == null) {
+            WorkerId workerId = getWorkerId();
+            if (availabilityState instanceof Assigned
+                && reconciliationState == ReconciliationState.None) {
+                reconciliationState = ReconciliationState.Cancelling;
+                cancelledWorkerOnTask = workerId;
+                notifyWorkerLost(workerId);
+            }
+            if (workerId == null) {
                 setAvailabilityState(null);
             }
             updateTicker();
@@ -212,7 +212,9 @@ class TaskExecutorState {
     }
 
     boolean isCurrentAssignment(WorkerId workerId, long expectedEpoch) {
-        return isAssigned()
+        return isRegistered()
+            && isAssigned()
+            && reconciliationState == ReconciliationState.None
             && assignmentEpoch == expectedEpoch
             && workerId.equals(getWorkerId());
     }
@@ -274,17 +276,9 @@ class TaskExecutorState {
         if (reconciliationState != ReconciliationState.None) {
             if (report instanceof Available) {
                 if (!heartbeat) {
-                    clearReconciliation();
-                    return setAvailabilityState(AvailabilityState.pending());
+                    return false;
                 }
-                if (registration.reservesAcceptedTask()) {
-                    if (reconciliationState == ReconciliationState.Verifying) {
-                        clearReconciliation();
-                        return setAvailabilityState(AvailabilityState.pending());
-                    }
-                    reconciliationState = ReconciliationState.Verifying;
-                }
-                return false;
+                return onAvailableHeartbeatWhileReconciling();
             }
 
             WorkerId reportedWorker = ((Occupied) report).getWorkerId();
@@ -315,8 +309,7 @@ class TaskExecutorState {
                     "Executor expected worker {} but reports {}; quarantining reported worker.",
                     expectedWorker,
                     reportedWorker);
-                jobMessageRouter.routeWorkerEvent(
-                    new WorkerTerminate(expectedWorker, WorkerState.Failed, JobCompletedReason.Lost));
+                notifyWorkerLost(expectedWorker);
                 quarantineWorkerOnTask(reportedWorker);
                 if (heartbeat) {
                     throw cancellationException(heartbeatTaskExecutorID, reportedWorker);
@@ -326,20 +319,52 @@ class TaskExecutorState {
         }
 
         if (heartbeat && availabilityState instanceof Running && report instanceof Available) {
-            WorkerId runningWorkerId = availabilityState.getWorkerId();
-            log.warn(
-                "Heartbeat indicates available while running {}. Preserving ownership for reconciliation.",
-                runningWorkerId);
-            reconciliationState = registration.reservesAcceptedTask()
-                ? ReconciliationState.Verifying
-                : ReconciliationState.Quarantined;
-            cancelledWorkerOnTask = runningWorkerId;
-            jobMessageRouter.routeWorkerEvent(
-                new WorkerTerminate(runningWorkerId, WorkerState.Failed, JobCompletedReason.Lost));
-            return false;
+            return onAvailableHeartbeatWhileRunning(report);
         }
 
         return handleStatusChange(report);
+    }
+
+    // Only an executor that reserves its accepted task can confirm that Available was observed
+    // after the worker it was told to drop, so its fence is held for one extra heartbeat. An
+    // executor without that attribute cannot produce that signal, and fencing it on Available
+    // would strand it for good, so Available stays authoritative there.
+    private boolean onAvailableHeartbeatWhileReconciling() {
+        if (!registration.reservesAcceptedTask()) {
+            if (availabilityState instanceof Running) {
+                notifyWorkerLost(availabilityState.getWorkerId());
+            }
+            clearReconciliation();
+            return setAvailabilityState(AvailabilityState.pending());
+        }
+        if (reconciliationState == ReconciliationState.Verifying) {
+            clearReconciliation();
+            return setAvailabilityState(AvailabilityState.pending());
+        }
+        reconciliationState = ReconciliationState.Verifying;
+        return false;
+    }
+
+    private boolean onAvailableHeartbeatWhileRunning(TaskExecutorReport report) {
+        WorkerId runningWorkerId = availabilityState.getWorkerId();
+        notifyWorkerLost(runningWorkerId);
+        if (!registration.reservesAcceptedTask()) {
+            log.warn("Heartbeat indicates available while running {}. Marking worker as lost.", runningWorkerId);
+            return handleStatusChange(report);
+        }
+        log.warn(
+            "Heartbeat indicates available while running {}. Preserving ownership for reconciliation.",
+            runningWorkerId);
+        reconciliationState = ReconciliationState.Verifying;
+        cancelledWorkerOnTask = runningWorkerId;
+        return false;
+    }
+
+    private void notifyWorkerLost(@Nullable WorkerId workerId) {
+        if (workerId != null) {
+            jobMessageRouter.routeWorkerEvent(
+                new WorkerTerminate(workerId, WorkerState.Failed, JobCompletedReason.Lost));
+        }
     }
 
     private TaskExecutorTaskCancelledException cancellationException(
@@ -415,7 +440,9 @@ class TaskExecutorState {
     }
 
     boolean isRunningOrAssigned(WorkerId workerId) {
-        return this.getWorkerId() != null && this.getWorkerId().equals(workerId);
+        return isRegistered()
+            && this.getWorkerId() != null
+            && this.getWorkerId().equals(workerId);
     }
 
     // Captures the last interaction from the task executor. Any interactions
@@ -458,14 +485,5 @@ class TaskExecutorState {
 
     boolean containsAttributes(Map<String, String> attributes) {
         return registration != null && registration.containsAttributes(attributes);
-    }
-
-    @Nullable
-    WorkerId getPreviousWorkerId() {
-        return previousWorkerId;
-    }
-
-    void clearPreviousWorkerId() {
-        this.previousWorkerId = null;
     }
 }
