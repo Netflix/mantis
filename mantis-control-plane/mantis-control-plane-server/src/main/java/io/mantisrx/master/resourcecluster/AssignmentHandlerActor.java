@@ -11,6 +11,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.server.worker.TaskExecutorGateway.TaskAlreadyRunningException;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.flink.util.ExceptionUtils;
@@ -18,6 +19,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -96,6 +98,8 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
             request, request.getAttempt(), maxAssignmentRetries);
         try {
             TaskExecutorRegistration registration = request.getRegistration();
+            // Gateway completion and timeout race for the right to start submission.
+            AtomicBoolean submitGateClaimed = new AtomicBoolean();
             // Use the gateway future from the request
             CompletableFuture<TaskExecutorGateway> gatewayFut = request.getGatewayFuture();
 
@@ -104,6 +108,11 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
                     .<Object>thenComposeAsync(gateway -> {
                         log.debug("Successfully obtained gateway for task executor {}",
                             registration.getTaskExecutorID());
+                        if (!submitGateClaimed.compareAndSet(false, true)) {
+                            return CompletableFuture.failedFuture(
+                                new java.util.concurrent.TimeoutException(
+                                    "Assignment attempt expired before submit started"));
+                        }
                         return gateway
                             .submitTask(
                                 executeStageRequestFactory.of(
@@ -119,7 +128,9 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
                                     log.error("[Submit Task] failed for {}: {}",
                                         registration.getTaskExecutorID(), throwable.getMessage());
                                     return new TaskExecutorAssignmentFailedEvent(
-                                        request, ExceptionUtils.stripCompletionException(throwable));
+                                        request,
+                                        unwrapAssignmentFailure(throwable),
+                                        AssignmentFailureType.MayHaveRun);
                                 });
                     })
                     .exceptionally(throwable -> {
@@ -127,30 +138,54 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
                             registration.getTaskExecutorID(), throwable);
                         return new TaskExecutorAssignmentFailedEvent(
                             request,
-                            ExceptionUtils.stripCompletionException(throwable));
+                            unwrapAssignmentFailure(throwable),
+                            submitGateClaimed.get()
+                                ? AssignmentFailureType.MayHaveRun
+                                : AssignmentFailureType.NotSent);
                     })
                     .toCompletableFuture()
                     .orTimeout(
                         assignmentTimeout.toMillis(),
                         java.util.concurrent.TimeUnit.MILLISECONDS)
                     .exceptionally(throwable -> {
-                        if (throwable instanceof java.util.concurrent.TimeoutException) {
+                        Throwable cause = unwrapAssignmentFailure(throwable);
+                        if (cause instanceof java.util.concurrent.TimeoutException) {
+                            boolean preventedSubmit = submitGateClaimed.compareAndSet(false, true);
                             log.warn("Assignment timeout for task executor {} after {}ms",
                                 registration.getTaskExecutorID(), assignmentTimeout.toMillis());
                             return new TaskExecutorAssignmentFailedEvent(
                                 request,
-                                throwable);
+                                cause,
+                                preventedSubmit
+                                    ? AssignmentFailureType.NotSent
+                                    : AssignmentFailureType.MayHaveRun);
                         }
                         return new TaskExecutorAssignmentFailedEvent(
                             request,
-                            ExceptionUtils.stripCompletionException(throwable));
+                            cause,
+                            submitGateClaimed.get()
+                                ? AssignmentFailureType.MayHaveRun
+                                : AssignmentFailureType.NotSent);
                     });
 
             akka.pattern.Patterns.pipe(ackFuture, getContext().getDispatcher()).to(self());
         } catch (Exception e) {
             log.error("Exception during task executor assignment for {}",
                 request.getRegistration().getTaskExecutorID(), e);
-            self().tell(new TaskExecutorAssignmentFailedEvent(request, e), self());
+            self().tell(new TaskExecutorAssignmentFailedEvent(
+                request, unwrapAssignmentFailure(e), AssignmentFailureType.NotSent), self());
+        }
+    }
+
+    private static Throwable unwrapAssignmentFailure(Throwable throwable) {
+        Throwable current = throwable;
+        while (true) {
+            Throwable unwrapped = ExceptionUtils.stripCompletionException(
+                ExceptionUtils.stripExecutionException(current));
+            if (unwrapped == current) {
+                return current;
+            }
+            current = unwrapped;
         }
     }
 
@@ -170,7 +205,13 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
             maxAssignmentRetries,
             event.getThrowable().getMessage());
 
-        if (request.getAttempt() >= maxAssignmentRetries) {
+        Throwable failure = event.getThrowable();
+        AssignmentFailureType failureType = failure instanceof TaskAlreadyRunningException
+            ? AssignmentFailureType.Conflict
+            : event.getFailureType();
+
+        if (failureType != AssignmentFailureType.NotSent
+            || request.getAttempt() >= maxAssignmentRetries) {
             log.error("Assignment failed for {} after {} attempts, giving up",
                 registration.getTaskExecutorID(), maxAssignmentRetries);
 
@@ -178,8 +219,10 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
             getContext().parent().tell(new TaskExecutorAssignmentFailAndTerminate(
                 registration.getTaskExecutorID(),
                 request.getAllocationRequest(),
-                event.getThrowable(),
-                request.getAttempt()
+                failure,
+                request.getAttempt(),
+                request.getAssignmentEpoch(),
+                failureType
             ), self());
         } else {
             log.info("Retrying assignment for {} in {} (attempt {}/{})",
@@ -256,6 +299,7 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
         TaskExecutorRegistration registration;
         CompletableFuture<TaskExecutorGateway> gatewayFuture;
         int attempt;
+        long assignmentEpoch;
 
         /*
         Deprecated field.
@@ -272,6 +316,7 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
             @JsonProperty("registration") TaskExecutorRegistration registration,
             @JsonProperty("gatewayFuture") CompletableFuture<TaskExecutorGateway> gatewayFuture,
             @JsonProperty("attempt") int attempt,
+            @JsonProperty("assignmentEpoch") long assignmentEpoch,
             @JsonProperty("previousFailure") @Nullable Throwable previousFailure,
             @JsonProperty("requestTime") Instant requestTime
         ) {
@@ -280,6 +325,7 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
             this.registration = registration;
             this.gatewayFuture = gatewayFuture;
             this.attempt = attempt;
+            this.assignmentEpoch = assignmentEpoch;
             this.previousFailure = previousFailure;
             this.requestTime = requestTime;
         }
@@ -290,12 +336,23 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
             TaskExecutorRegistration registration,
             CompletableFuture<TaskExecutorGateway> gatewayFuture
         ) {
+            return of(allocationRequest, taskExecutorID, registration, gatewayFuture, 0L);
+        }
+
+        public static TaskExecutorAssignmentRequest of(
+            TaskExecutorAllocationRequest allocationRequest,
+            TaskExecutorID taskExecutorID,
+            TaskExecutorRegistration registration,
+            CompletableFuture<TaskExecutorGateway> gatewayFuture,
+            long assignmentEpoch
+        ) {
             return new TaskExecutorAssignmentRequest(
                 allocationRequest,
                 taskExecutorID,
                 registration,
                 gatewayFuture,
                 1,
+                assignmentEpoch,
                 null,
                 Instant.now()
             );
@@ -316,6 +373,7 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
                 registration,
                 freshGatewayFuture,  // Use fresh future instead of reusing the old one
                 attempt + 1,
+                assignmentEpoch,
                 null,
                 requestTime
             );
@@ -343,6 +401,13 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
     private static class TaskExecutorAssignmentFailedEvent {
         TaskExecutorAssignmentRequest request;
         Throwable throwable;
+        AssignmentFailureType failureType;
+    }
+
+    enum AssignmentFailureType {
+        NotSent,
+        MayHaveRun,
+        Conflict,
     }
 
     @Value
@@ -351,6 +416,8 @@ public class AssignmentHandlerActor extends AbstractActorWithTimers {
         TaskExecutorAllocationRequest allocationRequest;
         Throwable throwable;
         int attemptCount;
+        long assignmentEpoch;
+        AssignmentFailureType failureType;
     }
 
     @Value

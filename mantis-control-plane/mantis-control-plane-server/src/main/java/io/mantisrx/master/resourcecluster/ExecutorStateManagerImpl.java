@@ -45,6 +45,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration.TaskExecutorGroupKey;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
+import io.mantisrx.shaded.com.google.common.cache.RemovalCause;
 import io.mantisrx.shaded.com.google.common.cache.RemovalListener;
 
 import java.time.Duration;
@@ -134,7 +135,9 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
         .expireAfterWrite(24, TimeUnit.HOURS)
         .removalListener(notification -> {
             TaskExecutorState state = (TaskExecutorState) notification.getValue();
-            boolean teIsDisabled = state != null && state.onNodeDisabled();
+            boolean teIsDisabled = notification.getCause() != RemovalCause.EXPLICIT
+                && state != null
+                && state.onNodeDisabled();
             log.info("Archived TaskExecutor: {} with disabled state: {} removed due to: {}", notification.getKey(), teIsDisabled, notification.getCause());
         })
         .build();
@@ -180,13 +183,15 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
 
     @Override
     public void trackIfAbsent(TaskExecutorID taskExecutorID, TaskExecutorState state) {
-        this.taskExecutorStateMap.putIfAbsent(taskExecutorID, state);
-        if (this.archivedState.getIfPresent(taskExecutorID) != null) {
+        TaskExecutorState archived = this.archivedState.getIfPresent(taskExecutorID);
+        TaskExecutorState stateToTrack = archived == null ? state : archived;
+        this.taskExecutorStateMap.putIfAbsent(taskExecutorID, stateToTrack);
+        if (archived != null) {
             log.info("Reviving archived executor: {}", taskExecutorID);
             this.archivedState.invalidate(taskExecutorID);
         }
 
-        tryMarkAvailable(taskExecutorID, state);
+        tryMarkAvailable(taskExecutorID, this.taskExecutorStateMap.get(taskExecutorID));
     }
 
     /**

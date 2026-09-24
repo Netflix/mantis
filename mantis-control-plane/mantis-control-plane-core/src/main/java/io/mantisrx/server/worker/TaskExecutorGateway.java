@@ -75,8 +75,12 @@ public interface TaskExecutorGateway extends RpcGateway {
         }
 
         public TaskAlreadyRunningException(WorkerId workerId, Throwable cause) {
-            super(cause);
+            super(String.format("Task executor is already running %s", workerId), cause);
             this.currentlyRunningWorkerTask = workerId;
+        }
+
+        public WorkerId getCurrentlyRunningWorkerTask() {
+            return currentlyRunningWorkerTask;
         }
     }
 
