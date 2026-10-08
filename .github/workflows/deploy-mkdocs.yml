@@ -1,0 +1,24 @@
+name: "Push MkDocs to gh-pages"
+on:
+  push:
+    branches: [ "master" ]
+
+  workflow_dispatch:
+        
+jobs:
+  deploy-mkdocs:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python
+        uses: actions/setup-python@v4
+        with:
+            python-version: '3.10'
+            cache: 'pip'
+      - name: Install dependencies 
+        run: pip install -r requirements.txt
+      - name: Build and push
+        run: mkdocs gh-deploy --force
