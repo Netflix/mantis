@@ -30,6 +30,7 @@ import io.mantisrx.publish.internal.discovery.proto.WorkerAssignments;
 import io.mantisrx.publish.internal.discovery.proto.WorkerHost;
 import io.mantisrx.publish.internal.exceptions.NonRetryableException;
 import io.mantisrx.publish.internal.exceptions.RetryableException;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ public class DefaultMantisApiClient implements MantisApiClient {
 
     private static final int CONNECT_TIMEOUT_MS = 1_000;
     private static final int READ_TIMEOUT_MS = 1_000;
+    private static final int MAX_LOGGED_BODY_CHARS = 200;
     private static final Logger logger = LoggerFactory.getLogger(DefaultMantisApiClient.class);
     private static final String JOB_CLUSTER_MAPPING_URL_FORMAT = "http://%s:%d/api/v1/mantis/publish/streamJobClusterMap";
     private static final String JOB_DISCOVERY_URL_FORMAT = "http://%s:%d/jobClusters/discoveryInfo/%s";
@@ -77,14 +79,13 @@ public class DefaultMantisApiClient implements MantisApiClient {
                     AppJobClustersMap appJobClustersMap = serializer.fromJSON(response.entityAsString(), AppJobClustersMap.class);
                     logger.debug("AppJobClustersMap: {}", appJobClustersMap);
                     return appJobClustersMap;
-                } else if (status >= 300 && status < 500) {
-                    // TODO: handle redirects
-                    logger.warn("got {} response from api on Job cluster mapping request for {}", status, app);
-                    throw new CompletionException(new NonRetryableException("Failed to get job cluster mapping info for " + app + " status " + status));
                 } else {
-                    logger.warn("got {} response from api on Job cluster mapping request for {}", status, app);
-                    throw new CompletionException(new RetryableException("Failed to get job job cluster mapping info for " + app + " status " + status));
+                    throw failureFor(response, "job cluster mapping", String.valueOf(app));
                 }
+            } catch (JsonProcessingException e) {
+                // a 2xx with a non-JSON body (e.g. a proxy or master that is not ready yet) is transient
+                logger.warn("unparseable response from api for {}, will retry: {}", uri, e.getOriginalMessage());
+                throw new CompletionException(new RetryableException("Unparseable response from " + uri + ": " + e.getOriginalMessage()));
             } catch (IOException e) {
                 logger.warn("caught exception", e);
                 throw new CompletionException(e);
@@ -108,19 +109,41 @@ public class DefaultMantisApiClient implements MantisApiClient {
                     JobDiscoveryInfo jobDiscoveryInfo = convertJobSchedInfo(jobSchedulingInfo, jobClusterName);
                     logger.debug(jobDiscoveryInfo.toString());
                     return jobDiscoveryInfo;
-                } else if (status >= 300 && status < 500) {
-                    // TODO: handle redirects
-                    logger.warn("got {} response from api on Job Discovery request for {}", status, jobClusterName);
-                    throw new CompletionException(new NonRetryableException("Failed to get job discovery info for " + jobClusterName + " status " + status));
                 } else {
-                    logger.warn("got {} response from api on Job Discovery request for {}", status, jobClusterName);
-                    throw new CompletionException(new RetryableException("Failed to get job discovery info for " + jobClusterName + " status " + status));
+                    throw failureFor(response, "job discovery", jobClusterName);
                 }
+            } catch (JsonProcessingException e) {
+                // a 2xx with a non-JSON body (e.g. a proxy or master that is not ready yet) is transient
+                logger.warn("unparseable response from api for {}, will retry: {}", uri, e.getOriginalMessage());
+                throw new CompletionException(new RetryableException("Unparseable response from " + uri + ": " + e.getOriginalMessage()));
             } catch (IOException e) {
                 logger.warn("caught exception", e);
                 throw new CompletionException(e);
             }
         });
+    }
+
+    /**
+     * 3xx (e.g. a non-leader master redirecting to the leader) and 5xx (e.g. master not ready yet) are transient and
+     * retryable. 4xx indicates a problem with the request itself and will not resolve by retrying.
+     */
+    private CompletionException failureFor(HttpResponse response, String request, String target) {
+        int status = response.status();
+        String body = truncate(response.entityAsString());
+        String message = "Failed to get " + request + " info for " + target + " status " + status + " body: " + body;
+        if (status >= 400 && status < 500) {
+            logger.error("got {} response from api on {} request for {}, body: {}", status, request, target, body);
+            return new CompletionException(new NonRetryableException(message));
+        }
+        logger.warn("got {} response from api on {} request for {}, body: {}", status, request, target, body);
+        return new CompletionException(new RetryableException(message));
+    }
+
+    private static String truncate(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.length() <= MAX_LOGGED_BODY_CHARS ? s : s.substring(0, MAX_LOGGED_BODY_CHARS) + "...";
     }
 
     private JobDiscoveryInfo convertJobSchedInfo(JobSchedulingInfo jobSchedulingInfo, String jobClusterName) {

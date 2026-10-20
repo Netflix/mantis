@@ -33,6 +33,8 @@ import io.mantisrx.discovery.proto.JobDiscoveryInfo;
 import io.mantisrx.discovery.proto.MantisWorker;
 import io.mantisrx.discovery.proto.StageWorkers;
 import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
+import io.mantisrx.publish.internal.exceptions.NonRetryableException;
+import io.mantisrx.publish.internal.exceptions.RetryableException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -40,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
@@ -104,6 +107,38 @@ public class DefaultMantisApiClientTest {
 
         Assertions.assertEquals(expectedInfo, jobDiscoveryInfo);
         Assertions.assertEquals(expectedMap, appJobClustersMap);
+    }
+
+    @Test
+    public void errorStatusesMapToRetryability() throws Exception {
+        final DefaultMantisApiClient client = newClient();
+        assertFailure(client, "MultipleChoicesJob", 300, "", RetryableException.class);
+        assertFailure(client, "NotFoundJob", 404, "not found", NonRetryableException.class);
+        assertFailure(client, "NotReadyJob", 503, "Mantis master awaiting to be ready", RetryableException.class);
+    }
+
+    @Test
+    public void nonJsonSuccessBodyIsRetryable() throws Exception {
+        assertFailure(newClient(), "NotJsonJob", 200, "Mantis master awaiting to be ready", RetryableException.class);
+    }
+
+    private void assertFailure(DefaultMantisApiClient client, String job, int status, String body,
+                               Class<? extends Exception> expected) throws Exception {
+        mantisAPI.stubFor(get(urlMatching("/jobClusters/discoveryInfo/" + job))
+            .willReturn(aResponse().withStatus(status).withBody(body)));
+        final ExecutionException e = Assertions.assertThrows(ExecutionException.class,
+            () -> client.jobDiscoveryInfo(job).get(30, TimeUnit.SECONDS));
+        Assertions.assertEquals(expected, e.getCause().getClass());
+    }
+
+    private DefaultMantisApiClient newClient() {
+        final Properties props = new Properties();
+        final DefaultSettableConfig config = new DefaultSettableConfig();
+        props.put("mantis.publish.discovery.api.hostname", "127.0.0.1");
+        props.put("mantis.publish.discovery.api.port", mantisAPI.port());
+        config.setProperties(props);
+        final PropertyRepository propsRepo = DefaultPropertyFactory.from(config);
+        return new DefaultMantisApiClient(new SampleArchaiusMrePublishConfiguration(propsRepo), HttpClient.create(new DefaultRegistry()));
     }
 
     private static final byte[] readStub(String resourceFile) throws IOException {
