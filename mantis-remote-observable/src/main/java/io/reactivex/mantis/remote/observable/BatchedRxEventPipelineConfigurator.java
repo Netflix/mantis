@@ -16,16 +16,14 @@
 
 package io.reactivex.mantis.remote.observable;
 
+import io.mantisrx.common.util.FilteredDeserializer;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
@@ -41,29 +39,8 @@ public class BatchedRxEventPipelineConfigurator implements PipelineConfigurator<
     private static final Logger logger = LoggerFactory.getLogger(BatchedRxEventPipelineConfigurator.class);
     private static final byte PROTOCOL_VERSION = 1;
 
-    @SuppressWarnings("unchecked")
     static Map<String, String> fromBytesToMap(byte[] bytes) {
-        Map<String, String> map = null;
-        ByteArrayInputStream bis = null;
-        ObjectInput in = null;
-        try {
-            bis = new ByteArrayInputStream(bytes);
-            in = new ObjectInputStream(bis);
-            map = (Map<String, String>) in.readObject();
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e1) {
-            throw new RuntimeException(e1);
-        } finally {
-            try {
-                if (bis != null) {bis.close();}
-                if (in != null) {in.close();}
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return map;
+        return FilteredDeserializer.readStringMap(bytes);
     }
 
     static byte[] fromMapToBytes(Map<String, String> map) {
