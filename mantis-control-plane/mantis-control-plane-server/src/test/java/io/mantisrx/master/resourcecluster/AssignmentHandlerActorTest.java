@@ -46,9 +46,11 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.server.worker.TaskExecutorGateway.TaskAlreadyRunningException;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -187,19 +189,16 @@ public class AssignmentHandlerActorTest {
         ActorRef parent = actorSystem.actorOf(Props.create(ForwarderParent.class, props, probe.getRef(), taskExecutorGateway));
         ActorRef actor = probe.expectMsgClass(ActorRef.class);
 
-        // First call fails, second succeeds
-        CompletableFuture<Ack> failedFuture = new CompletableFuture<>();
-        failedFuture.completeExceptionally(new RuntimeException("fail"));
-
+        CompletableFuture<TaskExecutorGateway> failedGatewayFuture = new CompletableFuture<>();
+        failedGatewayFuture.completeExceptionally(new RuntimeException("fail"));
         when(taskExecutorGateway.submitTask(any()))
-            .thenReturn(failedFuture)
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
 
         TaskExecutorAssignmentRequest request = TaskExecutorAssignmentRequest.of(
             createAllocationRequest(),
             taskExecutorID,
             createRegistration(),
-            CompletableFuture.completedFuture(taskExecutorGateway)
+            failedGatewayFuture
         );
 
         actor.tell(request, probe.getRef());
@@ -207,8 +206,8 @@ public class AssignmentHandlerActorTest {
         // Should eventually succeed and send no failure message
         probe.expectNoMessage(Duration.ofMillis(500));
 
-        // Verify retry happened - note: retry gets a fresh gateway, so we verify at least 2 calls
-        verify(taskExecutorGateway, times(2)).submitTask(any());
+        // The first, pre-submit gateway failure retries with a fresh gateway.
+        verify(taskExecutorGateway, times(1)).submitTask(any());
     }
 
     @Test
@@ -222,27 +221,63 @@ public class AssignmentHandlerActorTest {
             2, // 2 retries (total 2 attempts)
             Duration.ofMillis(50)
         );
-        ActorRef parent = actorSystem.actorOf(Props.create(ForwarderParent.class, props, probe.getRef(), taskExecutorGateway));
+        ActorRef parent = actorSystem.actorOf(Props.create(ForwarderParent.class, props, probe.getRef()));
         ActorRef actor = probe.expectMsgClass(ActorRef.class);
 
-        CompletableFuture<Ack> failedFuture = new CompletableFuture<>();
-        failedFuture.completeExceptionally(new RuntimeException("fail"));
-
-        when(taskExecutorGateway.submitTask(any())).thenReturn(failedFuture);
+        CompletableFuture<TaskExecutorGateway> failedGatewayFuture = new CompletableFuture<>();
+        failedGatewayFuture.completeExceptionally(new RuntimeException("fail"));
 
         TaskExecutorAssignmentRequest request = TaskExecutorAssignmentRequest.of(
             createAllocationRequest(),
             taskExecutorID,
             createRegistration(),
-            CompletableFuture.completedFuture(taskExecutorGateway)
+            failedGatewayFuture
         );
 
         actor.tell(request, probe.getRef());
 
         TaskExecutorAssignmentFailAndTerminate msg = probe.expectMsgClass(TaskExecutorAssignmentFailAndTerminate.class);
         assertEquals(taskExecutorID, msg.getTaskExecutorID());
+        assertEquals(2, msg.getAttemptCount());
 
-        verify(taskExecutorGateway, times(2)).submitTask(any());
+        verify(taskExecutorGateway, times(0)).submitTask(any());
+    }
+
+    @Test
+    public void testTaskAlreadyRunningFailureIsUnwrappedAndNotRetried() {
+        TestKit probe = new TestKit(actorSystem);
+        Props props = AssignmentHandlerActor.props(
+            clusterID,
+            jobMessageRouter,
+            Duration.ofSeconds(10),
+            executeStageRequestFactory,
+            3,
+            Duration.ofMillis(50));
+        ActorRef parent = actorSystem.actorOf(
+            Props.create(ForwarderParent.class, props, probe.getRef(), taskExecutorGateway));
+        ActorRef actor = probe.expectMsgClass(ActorRef.class);
+
+        WorkerId runningWorkerId = WorkerId.fromIdUnsafe("job-1-worker-1-2");
+        CompletableFuture<Ack> failedFuture = new CompletableFuture<>();
+        failedFuture.completeExceptionally(
+            new ExecutionException(new TaskAlreadyRunningException(runningWorkerId)));
+        when(taskExecutorGateway.submitTask(any())).thenReturn(failedFuture);
+
+        actor.tell(
+            TaskExecutorAssignmentRequest.of(
+                createAllocationRequest(),
+                taskExecutorID,
+                createRegistration(),
+                CompletableFuture.completedFuture(taskExecutorGateway),
+                1L),
+            probe.getRef());
+
+        TaskExecutorAssignmentFailAndTerminate message =
+            probe.expectMsgClass(TaskExecutorAssignmentFailAndTerminate.class);
+        assertEquals(1, message.getAttemptCount());
+        assertTrue(message.getThrowable() instanceof TaskAlreadyRunningException);
+        probe.expectNoMessage(Duration.ofMillis(200));
+        verify(taskExecutorGateway, times(1)).submitTask(any());
     }
 
     @Test
@@ -277,6 +312,39 @@ public class AssignmentHandlerActorTest {
         assertTrue(msg.getThrowable() instanceof java.util.concurrent.TimeoutException);
     }
 
+    @Test
+    public void lateGatewayCannotSubmitAfterAssignmentTimeout() {
+        TestKit probe = new TestKit(actorSystem);
+        Duration timeout = Duration.ofMillis(100);
+        Props props = AssignmentHandlerActor.props(
+            clusterID,
+            jobMessageRouter,
+            timeout,
+            executeStageRequestFactory,
+            1,
+            Duration.ofMillis(50));
+        ActorRef parent = actorSystem.actorOf(
+            Props.create(ForwarderParent.class, props, probe.getRef(), taskExecutorGateway));
+        ActorRef actor = probe.expectMsgClass(ActorRef.class);
+        CompletableFuture<TaskExecutorGateway> delayedGateway = new CompletableFuture<>();
+
+        actor.tell(
+            TaskExecutorAssignmentRequest.of(
+                createAllocationRequest(),
+                taskExecutorID,
+                createRegistration(),
+                delayedGateway),
+            probe.getRef());
+
+        TaskExecutorAssignmentFailAndTerminate message =
+            probe.expectMsgClass(TaskExecutorAssignmentFailAndTerminate.class);
+        assertEquals(AssignmentHandlerActor.AssignmentFailureType.NotSent, message.getFailureType());
+
+        delayedGateway.complete(taskExecutorGateway);
+        probe.expectNoMessage(Duration.ofMillis(200));
+        verify(taskExecutorGateway, times(0)).submitTask(any());
+    }
+
     public static class ForwarderParent extends AbstractActor {
         private final ActorRef probe;
         private final Props childProps;
@@ -308,9 +376,9 @@ public class AssignmentHandlerActorTest {
                     if (taskExecutorGateway != null) {
                         sender().tell(CompletableFuture.completedFuture(taskExecutorGateway), self());
                     } else {
-                        // Fallback: create a completed future with a mock gateway
-                        CompletableFuture<TaskExecutorGateway> gatewayFuture = CompletableFuture.completedFuture(
-                            mock(TaskExecutorGateway.class));
+                        CompletableFuture<TaskExecutorGateway> gatewayFuture = new CompletableFuture<>();
+                        gatewayFuture.completeExceptionally(
+                            new RuntimeException("gateway unavailable"));
                         sender().tell(gatewayFuture, self());
                     }
                 })
@@ -319,4 +387,3 @@ public class AssignmentHandlerActorTest {
         }
     }
 }
-

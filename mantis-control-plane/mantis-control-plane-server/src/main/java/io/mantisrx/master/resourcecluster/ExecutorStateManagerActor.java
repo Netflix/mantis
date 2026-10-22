@@ -65,6 +65,7 @@ import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerLaunchFailed;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.server.worker.TaskExecutorGateway.TaskAlreadyRunningException;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
@@ -463,11 +464,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
                     clusterID,
                     TaskExecutorReport.occupied(request.getWorkerId())));
             if (stateChange) {
-                if (state.isAvailable()) {
-                    this.delegate.tryMarkAvailable(taskExecutorID);
-                } else {
-                    this.delegate.tryMarkUnavailable(taskExecutorID);
-                }
+                syncAvailabilityIndex(taskExecutorID, state);
             }
 
             updateHeartbeatTimeout(taskExecutorID);
@@ -491,6 +488,9 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         log.info("Request for registering on resource cluster {}: {}.", clusterID, registration);
         final TaskExecutorID taskExecutorID = registration.getTaskExecutorID();
         final TaskExecutorState state = this.delegate.get(taskExecutorID);
+        if (state.isRegistered() && !registration.equals(state.getRegistration())) {
+            this.delegate.tryMarkUnavailable(taskExecutorID);
+        }
         boolean stateChange = state.onRegistration(registration);
         mantisJobStore.storeNewTaskExecutor(registration);
         if (stateChange) {
@@ -536,8 +536,8 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
                     state.getRegistration(), heartbeat.getTaskExecutorID());
             }
             boolean stateChange = state.onHeartbeat(heartbeat);
-            if (stateChange && state.isAvailable()) {
-                this.delegate.tryMarkAvailable(taskExecutorID);
+            if (stateChange) {
+                syncAvailabilityIndex(taskExecutorID, state);
             }
 
             updateHeartbeatTimeout(heartbeat.getTaskExecutorID());
@@ -549,17 +549,18 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
     }
 
     private void onTaskExecutorStatusChange(TaskExecutorStatusChange statusChange) {
-        setupTaskExecutorStateIfNecessary(statusChange.getTaskExecutorID());
         try {
             final TaskExecutorID taskExecutorID = statusChange.getTaskExecutorID();
             final TaskExecutorState state = this.delegate.get(taskExecutorID);
+            if (state == null) {
+                sender().tell(
+                    new Status.Failure(new TaskExecutorNotFoundException(taskExecutorID)),
+                    self());
+                return;
+            }
             boolean stateChange = state.onTaskExecutorStatusChange(statusChange);
             if (stateChange) {
-                if (state.isAvailable()) {
-                    this.delegate.tryMarkAvailable(taskExecutorID);
-                } else {
-                    this.delegate.tryMarkUnavailable(taskExecutorID);
-                }
+                syncAvailabilityIndex(taskExecutorID, state);
             }
 
             updateHeartbeatTimeout(statusChange.getTaskExecutorID());
@@ -604,6 +605,7 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
 
         // Mark task executor as assigned
         taskExecutorState.onAssignment(allocationRequest.getWorkerId());
+        long assignmentEpoch = taskExecutorState.getAssignmentEpoch();
 
         // Get task executor registration info
         TaskExecutorRegistration registration = taskExecutorState.getRegistration();
@@ -624,7 +626,21 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
                 registration.getWorkerPorts()));
 
         // Get the gateway future from the TaskExecutorState
-        CompletableFuture<TaskExecutorGateway> gatewayFuture = taskExecutorState.getGatewayAsync();
+        CompletableFuture<TaskExecutorGateway> gatewayFuture;
+        try {
+            gatewayFuture = taskExecutorState.getGatewayAsync();
+        } catch (IllegalStateException e) {
+            self().tell(
+                new AssignmentHandlerActor.TaskExecutorAssignmentFailAndTerminate(
+                    taskExecutorID,
+                    allocationRequest,
+                    e,
+                    1,
+                    assignmentEpoch,
+                    AssignmentHandlerActor.AssignmentFailureType.NotSent),
+                self());
+            return;
+        }
 
         // Delegate actual assignment logic to AssignmentHandlerActor
         AssignmentHandlerActor.TaskExecutorAssignmentRequest assignmentRequest =
@@ -632,7 +648,8 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
                 allocationRequest,
                 taskExecutorID,
                 registration,
-                gatewayFuture
+                gatewayFuture,
+                assignmentEpoch
             );
 
         assignmentHandlerActor.tell(assignmentRequest, self());
@@ -650,30 +667,44 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
 
         if (state == null) {
             log.error("[TaskExecutorAssignmentFailure] TaskExecutor lost during task assignment: {}", request);
+            return;
         }
-        else if (state.isRunningTask()) {
-            log.warn("[onTaskExecutorAssignmentFailure] TaskExecutor {} entered running state already; no need to act",
-                request.getTaskExecutorID());
-        } else {
-            log.error("[onTaskExecutorAssignmentFailure] TaskExecutor {} failed to accept assignment: {}",
-                request.getTaskExecutorID(), request.getAllocationRequest());
-            try
-            {
-                jobMessageRouter.routeWorkerEvent(new WorkerLaunchFailed(
-                    request.getAllocationRequest().getWorkerId(),
-                    request.getAllocationRequest().getStageNum(),
-                    "Failed to assign worker to task executor " + request.getTaskExecutorID()));
-                state.onUnassignment();
-                // disconnect the TE since it cannot be assigned.
-                disconnectTaskExecutor(request.getTaskExecutorID());
-            } catch (IllegalStateException e) {
-                log.error("Failed to un-assign taskExecutor {}", request.getTaskExecutorID(), e);
+        try {
+            WorkerId expectedWorker = request.getAllocationRequest().getWorkerId();
+            if (!state.isCurrentAssignment(expectedWorker, request.getAssignmentEpoch())) {
+                log.info("Ignoring stale assignment failure for {} epoch {} on executor {}",
+                    expectedWorker, request.getAssignmentEpoch(), request.getTaskExecutorID());
+                return;
             }
+
+            jobMessageRouter.routeWorkerEvent(new WorkerLaunchFailed(
+                expectedWorker,
+                request.getAllocationRequest().getStageNum(),
+                "Failed to assign worker to task executor " + request.getTaskExecutorID()));
+
+            if (request.getFailureType() == AssignmentHandlerActor.AssignmentFailureType.NotSent) {
+                state.onUnassignment();
+                disconnectTaskExecutor(request.getTaskExecutorID());
+                return;
+            }
+
+            WorkerId cancellationTarget = expectedWorker;
+            if (request.getThrowable() instanceof TaskAlreadyRunningException) {
+                cancellationTarget = ((TaskAlreadyRunningException) request.getThrowable())
+                    .getCurrentlyRunningWorkerTask();
+                state.quarantineWorkerOnTask(cancellationTarget);
+            } else {
+                state.setCancelledWorkerOnTask(cancellationTarget);
+            }
+            this.delegate.tryMarkUnavailable(request.getTaskExecutorID());
+            cancelTaskOnExecutor(state, request.getTaskExecutorID(), cancellationTarget);
+        } catch (IllegalStateException e) {
+            log.warn("Ignoring assignment failure for disconnected executor {}",
+                request.getTaskExecutorID(), e);
         }
     }
 
     private void onTaskExecutorDisconnection(TaskExecutorDisconnection disconnection) {
-        setupTaskExecutorStateIfNecessary(disconnection.getTaskExecutorID());
         try {
             disconnectTaskExecutor(disconnection.getTaskExecutorID());
             sender().tell(Ack.getInstance(), self());
@@ -684,15 +715,19 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
 
     private void disconnectTaskExecutor(TaskExecutorID taskExecutorID) {
         final TaskExecutorState state = this.delegate.get(taskExecutorID);
-        boolean stateChange = state.onDisconnection();
-        if (stateChange) {
-            this.delegate.archive(taskExecutorID);
+        if (state == null) {
             getTimers().cancel(getHeartbeatTimerFor(taskExecutorID));
+            return;
         }
+        if (state.isRegistered()) {
+            this.delegate.tryMarkUnavailable(taskExecutorID);
+        }
+        state.onDisconnection();
+        this.delegate.archive(taskExecutorID);
+        getTimers().cancel(getHeartbeatTimerFor(taskExecutorID));
     }
 
     private void onTaskExecutorHeartbeatTimeout(HeartbeatTimeout timeout) {
-        setupTaskExecutorStateIfNecessary(timeout.getTaskExecutorID());
         try {
             metrics.incrementCounter(
                 ResourceClusterActorMetrics.HEARTBEAT_TIMEOUT,
@@ -700,6 +735,10 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             log.info("heartbeat timeout received for {}", timeout.getTaskExecutorID());
             final TaskExecutorID taskExecutorID = timeout.getTaskExecutorID();
             final TaskExecutorState state = this.delegate.get(taskExecutorID);
+            if (state == null) {
+                log.debug("Ignoring heartbeat timeout for inactive executor {}", taskExecutorID);
+                return;
+            }
             if (state.getLastActivity().compareTo(timeout.getLastActivity()) <= 0) {
                 log.info("Disconnecting task executor {}", timeout.getTaskExecutorID());
                 disconnectTaskExecutor(timeout.getTaskExecutorID());
@@ -714,6 +753,14 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
         this.delegate.trackIfAbsent(
             taskExecutorID,
             TaskExecutorState.of(clock, rpcService, jobMessageRouter));
+    }
+
+    private void syncAvailabilityIndex(TaskExecutorID taskExecutorID, TaskExecutorState state) {
+        if (state.isAvailable()) {
+            this.delegate.tryMarkAvailable(taskExecutorID);
+        } else {
+            this.delegate.tryMarkUnavailable(taskExecutorID);
+        }
     }
 
     private void updateHeartbeatTimeout(TaskExecutorID taskExecutorID) {
@@ -949,20 +996,30 @@ public class ExecutorStateManagerActor extends AbstractActorWithTimers {
             state.setCancelledWorkerOnTask(request.getWorkerId());
 
             // Proactively call cancelTask on gateway
-            state.getGatewayAsync().thenAccept(gateway -> {
-                gateway.cancelTask(request.getWorkerId())
-                    .whenComplete((ack, throwable) -> {
-                        if (throwable != null) {
-                            log.warn("Failed to proactively cancel task {} on executor {}", request.getWorkerId(), taskExecutorID, throwable);
-                        } else {
-                            log.info("Successfully proactively cancelled task {} on executor {}", request.getWorkerId(), taskExecutorID);
-                        }
-                    });
-            });
+            cancelTaskOnExecutor(state, taskExecutorID, request.getWorkerId());
             sender().tell(Ack.getInstance(), self());
         } else {
             log.info("Cannot find executor to proactively terminate worker {}", request.getWorkerId());
             sender().tell(new Status.Failure(new TaskNotFoundException(request.getWorkerId())), self());
+        }
+    }
+
+    private void cancelTaskOnExecutor(
+        TaskExecutorState state,
+        TaskExecutorID taskExecutorID,
+        WorkerId workerId) {
+        try {
+            state.getGatewayAsync()
+                .thenCompose(gateway -> gateway.cancelTask(workerId))
+                .whenComplete((ack, throwable) -> {
+                    if (throwable != null) {
+                        log.warn("Failed to cancel task {} on executor {}", workerId, taskExecutorID, throwable);
+                    } else {
+                        log.info("Cancellation accepted for task {} on executor {}", workerId, taskExecutorID);
+                    }
+                });
+        } catch (IllegalStateException e) {
+            log.warn("Cannot cancel task {} on unregistered executor {}", workerId, taskExecutorID, e);
         }
     }
 
