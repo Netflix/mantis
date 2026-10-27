@@ -9,7 +9,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "3.0.1"
+            "locked": "3.0.2"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -56,7 +56,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
@@ -68,13 +68,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
@@ -83,10 +83,10 @@
             "locked": "1.3.8"
         },
         "org.apache.avro:avro": {
-            "locked": "1.10.2"
+            "locked": "1.11.4"
         },
         "org.apache.hadoop:hadoop-common": {
-            "locked": "2.7.3"
+            "locked": "3.4.3"
         },
         "org.apache.iceberg:iceberg-api": {
             "locked": "0.14.1"
@@ -117,7 +117,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.30"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -129,7 +129,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.12"
         }
     },
     "lombok": {
@@ -142,7 +142,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "3.0.1"
+            "locked": "3.0.2"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -160,7 +160,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "2.11.0"
+            "locked": "2.16.1"
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
@@ -208,7 +208,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
@@ -221,13 +221,13 @@
                 "io.mantisrx:mantis-network",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
@@ -251,10 +251,10 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "0.27ea0"
+            "locked": "0.27ea1"
         },
         "org.apache.hadoop:hadoop-common": {
-            "locked": "2.7.3"
+            "locked": "3.4.3"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
@@ -268,20 +268,20 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.10"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "1.7.10"
+            "locked": "1.7.0"
         },
         "org.xerial.snappy:snappy-java": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.12"
         }
     },
     "testAnnotationProcessor": {
@@ -294,7 +294,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "3.0.1"
+            "locked": "3.0.2"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "1.3.10"
@@ -344,7 +344,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
@@ -356,13 +356,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
@@ -371,10 +371,10 @@
             "locked": "1.3.8"
         },
         "org.apache.avro:avro": {
-            "locked": "1.10.2"
+            "locked": "1.11.4"
         },
         "org.apache.hadoop:hadoop-common": {
-            "locked": "2.7.3"
+            "locked": "3.4.3"
         },
         "org.apache.iceberg:iceberg-api": {
             "locked": "0.14.1"
@@ -407,7 +407,7 @@
             "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
-            "locked": "5.14.2"
+            "locked": "5.24.0"
         },
         "org.projectlombok:lombok": {
             "locked": "1.18.36"
@@ -417,7 +417,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.30"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -429,7 +429,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.12"
         }
     },
     "testRuntimeClasspath": {
@@ -437,7 +437,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "3.0.1"
+            "locked": "3.0.2"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -458,7 +458,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "2.11.0"
+            "locked": "2.16.1"
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
@@ -506,7 +506,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
@@ -519,13 +519,13 @@
                 "io.mantisrx:mantis-network",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.127.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
@@ -549,13 +549,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "0.27ea0"
+            "locked": "0.27ea1"
         },
         "org.apache.avro:avro": {
-            "locked": "1.10.2"
+            "locked": "1.11.4"
         },
         "org.apache.hadoop:hadoop-common": {
-            "locked": "2.7.3"
+            "locked": "3.4.3"
         },
         "org.apache.iceberg:iceberg-api": {
             "locked": "0.14.1"
@@ -588,7 +588,7 @@
             "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
-            "locked": "5.14.2"
+            "locked": "5.24.0"
         },
         "org.projectlombok:lombok": {
             "locked": "1.18.36"
@@ -606,13 +606,13 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "1.7.10"
+            "locked": "1.7.0"
         },
         "org.xerial.snappy:snappy-java": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.10.7"
+            "locked": "1.1.10.12"
         }
     }
 }
