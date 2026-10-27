@@ -167,10 +167,13 @@ import javax.annotation.Nullable;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import rx.Observable;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
+import scala.PartialFunction;
+import scala.runtime.BoxedUnit;
 
 
 /**
@@ -185,6 +188,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private static final String BOOKKEEPING_TIMER_KEY = "JOB_CLUSTER_BOOKKEEPING";
     private static final Integer DEFAULT_LIMIT = 100;
     private static final Integer DEFAULT_ACTIVE_JOB_LIMIT = 5000;
+
+    private static final String MDC_KEY_CLUSTER_NAME = "clusterName";
 
     private final Logger logger = LoggerFactory.getLogger(JobClusterActor.class);
 
@@ -671,6 +676,24 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     MetricGroupId getMetricGroupId(String name) {
         return new MetricGroupId("JobClusterActor", new BasicTag("jobCluster", name));
+    }
+
+    /**
+     * Wraps every message this actor processes so that the cluster name is available via
+     * SLF4J's MDC for the duration of that message's handling. This lets every log line
+     * emitted while handling a message automatically include the cluster name (for logging
+     * backends that render MDC values, e.g. structured/JSON encoders, or a pattern layout
+     * with %X{clusterName}), instead of requiring each of this class's log call sites to pass
+     * `name` explicitly.
+     */
+    @Override
+    public void aroundReceive(PartialFunction<Object, BoxedUnit> receive, Object msg) {
+        MDC.put(MDC_KEY_CLUSTER_NAME, name);
+        try {
+            super.aroundReceive(receive, msg);
+        } finally {
+            MDC.remove(MDC_KEY_CLUSTER_NAME);
+        }
     }
 
     @Override

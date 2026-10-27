@@ -64,8 +64,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import akka.actor.AbstractActor.Receive;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.japi.pf.ReceiveBuilder;
+import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.Config;
@@ -141,6 +144,7 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -150,6 +154,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
+import org.slf4j.MDC;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
@@ -329,6 +334,34 @@ public class JobClusterAkkaTest {
     private JobDefinition createJob(String name2) throws InvalidJobException {
 
         return createJob(name2, 0, MantisJobDurationType.Perpetual, null);
+    }
+
+    // LOGGING TESTS ////////////////////////////////////////////////////////////////////////////////
+    @Test
+    public void testAroundReceivePutsClusterNameInMdcDuringMessageHandlingAndClearsItAfter() {
+        String clusterName = "mdcTestCluster";
+        MantisSchedulerFactory schedulerMockFactory = mock(MantisSchedulerFactory.class);
+
+        TestActorRef<JobClusterActor> actorRef = TestActorRef.create(
+            system,
+            props(clusterName, jobStore, schedulerMockFactory, eventPublisher, costsCalculator, 0));
+        JobClusterActor actor = actorRef.underlyingActor();
+
+        // Call aroundReceive directly (bypassing the mailbox/dispatcher) with a receive
+        // handler that captures the MDC value synchronously while "processing" the message,
+        // since MDC is thread-local and reading it from the test thread after the fact
+        // (post message-send) wouldn't observe the value set-and-cleared during handling.
+        AtomicReference<String> observedDuringProcessing = new AtomicReference<>();
+        Receive captureMdcReceive = ReceiveBuilder.create()
+            .matchAny(msg -> observedDuringProcessing.set(MDC.get("clusterName")))
+            .build();
+
+        actor.aroundReceive(captureMdcReceive.onMessage(), "any-test-message");
+
+        assertEquals("MDC should contain the cluster name while the actor is handling a message",
+            clusterName, observedDuringProcessing.get());
+        assertNull("MDC should be cleared once message handling completes",
+            MDC.get("clusterName"));
     }
 
     // CLUSTER CRUD TESTS ///////////////////////////////////////////////////////////////////////////
