@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
-import rx.functions.Func2;
 
 
 public class ConditionalRetry {
@@ -41,32 +40,18 @@ public class ConditionalRetry {
     public ConditionalRetry(Counter counter, String name, final int max) {
         this.counter = counter;
         this.name = name;
-        this.retryLogic =
-                new Func1<Observable<? extends Throwable>, Observable<?>>() {
-                    @Override
-                    public Observable<?> call(Observable<? extends Throwable> attempts) {
-                        return attempts
-                                .zipWith(Observable.range(1, max), new Func2<Throwable, Integer, Integer>() {
-                                    @Override
-                                    public Integer call(Throwable t1, Integer integer) {
-                                        return integer;
-                                    }
-                                })
-                                .flatMap(new Func1<Integer, Observable<?>>() {
-                                    @Override
-                                    public Observable<?> call(Integer integer) {
-                                        if (errorRef.get() != null)
-                                            return Observable.error(errorRef.get());
-                                        if (ConditionalRetry.this.counter != null)
-                                            ConditionalRetry.this.counter.increment();
-                                        long delay = 2 * (integer > 10 ? 10 : integer);
-                                        logger.info(": retrying " + ConditionalRetry.this.name +
-                                                " after sleeping for " + delay + " secs");
-                                        return Observable.timer(delay, TimeUnit.SECONDS);
-                                    }
-                                });
-                    }
-                };
+        this.retryLogic = attempts -> attempts
+                .zipWith(Observable.range(1, max), (t1, integer) -> integer)
+                .flatMap(integer -> {
+                    if (errorRef.get() != null)
+                        return Observable.error(errorRef.get());
+                    if (ConditionalRetry.this.counter != null)
+                        ConditionalRetry.this.counter.increment();
+                    long delay = 2 * (integer > 10 ? 10 : integer);
+                    logger.info(": retrying " + ConditionalRetry.this.name +
+                            " after sleeping for " + delay + " secs");
+                    return Observable.timer(delay, TimeUnit.SECONDS);
+                });
     }
 
     public void setErrorRef(Throwable error) {

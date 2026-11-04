@@ -39,9 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Observer;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
 public class MasterClientWrapper {
@@ -86,21 +83,14 @@ public class MasterClientWrapper {
         Services.startAndWait(haServices);
         MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         clientWrapper.getMasterClientApi()
-                .flatMap(new Func1<MantisMasterGateway, Observable<EndpointChange>>() {
-                    @Override
-                    public Observable<EndpointChange> call(MantisMasterGateway mantisMasterClientApi) {
-                        Integer sinkStage = null;
-                        return mantisMasterClientApi.getSinkStageNum(jobId)
+                .flatMap(mantisMasterClientApi ->
+                        mantisMasterClientApi.getSinkStageNum(jobId)
                                 .take(1) // only need to figure out sink stage number once
-                                .flatMap(new Func1<Integer, Observable<EndpointChange>>() {
-                                    @Override
-                                    public Observable<EndpointChange> call(Integer integer) {
-                                        logger.info("Getting sink locations for " + jobId);
-                                        return clientWrapper.getSinkLocations(jobId, integer, 0, 0);
-                                    }
-                                });
-                    }
-                }).toBlocking().subscribe((ep) -> {
+                                .flatMap(integer -> {
+                                    logger.info("Getting sink locations for " + jobId);
+                                    return clientWrapper.getSinkLocations(jobId, integer, 0, 0);
+                                })
+                ).toBlocking().subscribe((ep) -> {
             System.out.println("Endpoint Change -> " + ep);
         });
         Thread.sleep(50000);
@@ -149,19 +139,9 @@ public class MasterClientWrapper {
                     Endpoint ep = new WorkerEndpoint(getWrappedHost(host.getHost(), host.getWorkerNumber()), host.getPort().get(0),
                             stageNum, host.getMetricsPort(), host.getWorkerIndex(), host.getWorkerNumber(),
                             // completed callback
-                            new Action0() {
-                                @Override
-                                public void call() {
-                                    logger.info("job " + jobId + " WorkerIndex " + workerIndex + " completed");
-                                }
-                            },
+                            () -> logger.info("job " + jobId + " WorkerIndex " + workerIndex + " completed"),
                             // error callback
-                            new Action1<Throwable>() {
-                                @Override
-                                public void call(Throwable t1) {
-                                    logger.info("job " + jobId + " WorkerIndex " + workerIndex + " failed");
-                                }
-                            }
+                            t1 -> logger.info("job " + jobId + " WorkerIndex " + workerIndex + " failed")
                     );
                     endpoints.add(ep);
                 }
@@ -176,38 +156,15 @@ public class MasterClientWrapper {
         Observable<List<Endpoint>> schedulingUpdates =
                                 masterClientApi
                                         .schedulingChanges(jobId)
-                                        .doOnError(new Action1<Throwable>() {
-                                            @Override
-                                            public void call(Throwable throwable) {
-                                                logger.warn("Error on scheduling changes observable: " + throwable);
-                                            }
-                                        })
+                                        .doOnError(throwable -> logger.warn("Error on scheduling changes observable: " + throwable))
                                         .retryWhen(schedInfoRetry.getRetryLogic())
-                                        .map(new Func1<JobSchedulingInfo, Map<Integer, WorkerAssignments>>() {
-                                            @Override
-                                            public Map<Integer, WorkerAssignments> call(JobSchedulingInfo jobSchedulingInfo) {
-                                                logger.info("Got scheduling info for " + jobId);
-                                                return jobSchedulingInfo.getWorkerAssignments();
-                                            }
+                                        .map(jobSchedulingInfo -> {
+                                            logger.info("Got scheduling info for " + jobId);
+                                            return jobSchedulingInfo.getWorkerAssignments();
                                         })
-                                        .filter(new Func1<Map<Integer, WorkerAssignments>, Boolean>() {
-                                            @Override
-                                            public Boolean call(Map<Integer, WorkerAssignments> workerAssignments) {
-                                                return workerAssignments != null;
-                                            }
-                                        })
-                                        .map(new Func1<Map<Integer, WorkerAssignments>, List<Endpoint>>() {
-                                            @Override
-                                            public List<Endpoint> call(Map<Integer, WorkerAssignments> workerAssignments) {
-                                                return getAllNonJobMasterEndpoints(jobId, workerAssignments);
-                                            }
-                                        })
-                                        .doOnError(new Action1<Throwable>() {
-                                            @Override
-                                            public void call(Throwable throwable) {
-                                                logger.error(throwable.getMessage(), throwable);
-                                            }
-                                        });
+                                        .filter(workerAssignments -> workerAssignments != null)
+                                        .map(workerAssignments -> getAllNonJobMasterEndpoints(jobId, workerAssignments))
+                                        .doOnError(throwable -> logger.error(throwable.getMessage(), throwable));
 
         return (new ToDeltaEndpointInjector(schedulingUpdates)).deltas();
     }
