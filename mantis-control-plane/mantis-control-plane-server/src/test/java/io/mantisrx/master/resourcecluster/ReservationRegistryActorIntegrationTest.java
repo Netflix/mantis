@@ -52,6 +52,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import io.mantisrx.server.core.ExecuteStageRequest;
@@ -345,12 +346,11 @@ public class ReservationRegistryActorIntegrationTest {
     public void testAssignmentRetry() throws Exception {
         TestKit probe = new TestKit(system);
 
-        // Reset gateway mock to have different behavior for this test
-        // 1. Fail first
-        // 2. Succeed second
-        when(gateway.submitTask(any()))
-            .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Connection failed")))
-            .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        AtomicInteger connectionAttempts = new AtomicInteger();
+        rpcService.setRpcGatewayFutureFunction(ignored ->
+            connectionAttempts.getAndIncrement() == 0
+                ? CompletableFuture.failedFuture(new RuntimeException("Connection failed"))
+                : CompletableFuture.completedFuture(gateway));
 
         TaskExecutorRegistration registration = TaskExecutorRegistration.builder()
             .taskExecutorID(TASK_EXECUTOR_ID_1)
@@ -390,8 +390,8 @@ public class ReservationRegistryActorIntegrationTest {
         assertTrue(view.getGroups().isEmpty() || view.getGroups().values().stream()
             .allMatch(g -> g.getReservationCount() == 0));
 
-        // Verify gateway was called twice
-        verify(gateway, timeout(5000).times(2)).submitTask(any());
+        assertTrue(connectionAttempts.get() >= 2);
+        verify(gateway, timeout(5000).times(1)).submitTask(any());
 
         // Verify WorkerLaunched event was routed (eventually success)
         verify(jobMessageRouter, timeout(5000).times(1)).routeWorkerEvent(any(WorkerLaunched.class));
@@ -401,9 +401,11 @@ public class ReservationRegistryActorIntegrationTest {
     public void testAssignmentFailure() throws Exception {
         TestKit probe = new TestKit(system);
 
-        // Fail always
-        when(gateway.submitTask(any()))
-            .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Permanent failure")));
+        AtomicInteger connectionAttempts = new AtomicInteger();
+        rpcService.setRpcGatewayFutureFunction(ignored -> {
+            connectionAttempts.incrementAndGet();
+            return CompletableFuture.failedFuture(new RuntimeException("Permanent failure"));
+        });
 
         TaskExecutorRegistration registration = TaskExecutorRegistration.builder()
             .taskExecutorID(TASK_EXECUTOR_ID_2)
@@ -437,8 +439,8 @@ public class ReservationRegistryActorIntegrationTest {
         // Wait for retries to exhaust
         Thread.sleep(1000);
 
-        // Verify gateway called multiple times (3 retries)
-        verify(gateway, timeout(5000).atLeast(3)).submitTask(any());
+        assertTrue(connectionAttempts.get() >= 3);
+        verify(gateway, times(0)).submitTask(any());
 
         // Verify WorkerLaunchFailed event was routed
         verify(jobMessageRouter, timeout(5000).times(1)).routeWorkerEvent(any(WorkerLaunchFailed.class));

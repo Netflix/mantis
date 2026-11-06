@@ -49,6 +49,9 @@ import lombok.experimental.FieldDefaults;
 @ToString
 @EqualsAndHashCode
 public class TaskExecutorRegistration {
+    public static final String ACCEPTED_TASK_RESERVATION_ATTRIBUTE =
+        "mantis_task_executor_accepted_task_reservation";
+
     @NonNull
     TaskExecutorID taskExecutorID;
 
@@ -147,6 +150,13 @@ public class TaskExecutorRegistration {
         }
 
         return Optional.empty();
+    }
+
+    @JsonIgnore
+    public boolean reservesAcceptedTask() {
+        return getAttributeByKey(ACCEPTED_TASK_RESERVATION_ATTRIBUTE)
+            .map(Boolean::parseBoolean)
+            .orElse(false);
     }
 
     @JsonIgnore
