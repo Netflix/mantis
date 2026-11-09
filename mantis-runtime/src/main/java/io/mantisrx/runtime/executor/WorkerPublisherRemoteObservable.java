@@ -39,6 +39,8 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 
+import static io.mantisrx.common.SystemParameters.*;
+
 /**
  * Execution of WorkerPublisher that publishes the stream to the next stage.
  *
@@ -91,6 +93,11 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
                         .name(name)
                         .port(serverPort)
                         .metricsRegistry(MetricsRegistry.getInstance())
+                        .numQueueConsumers(scalarNumConsumerThreads())
+                        .maxChunkSize(scalarMaxChunkSize())
+                        .maxChunkTimeMSec(scalarMaxChunkTimeMSec())
+                        .bufferCapacity(scalarBufferCapacity())
+                        .useSpscQueue(scalarUseSpsc())
                         .router(router)
                         .build();
                 final LegacyTcpPushServer<T> modernServer =
@@ -182,6 +189,33 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
     private int numConsumerThreads() {
         // num threads to read/process from consumer queue
         String stringValue = propService.getStringValue("mantis.w2w.toKeyThreads", "1");
+        return Integer.parseInt(stringValue);
+    }
+
+    private boolean scalarUseSpsc() {
+        String stringValue = propService.getStringValue(SCALAR_WORKER_TO_WORKER_SPSC, "false");
+        return Boolean.parseBoolean(stringValue);
+
+    }
+
+    private int scalarBufferCapacity() {
+        String stringValue = propService.getStringValue(SCALAR_WORKER_TO_WORKER_BUFFER_CAPACITY, "50000");
+        return Integer.parseInt(stringValue);
+    }
+
+    private int scalarMaxChunkTimeMSec() {
+        String stringValue = propService.getStringValue(SCALAR_WORKER_TO_WORKER_MAX_CHUNK_TIME_MSEC, "250");
+        return Integer.parseInt(stringValue);
+    }
+
+    private int scalarMaxChunkSize() {
+        String stringValue = propService.getStringValue(SCALAR_WORKER_TO_WORKER_MAX_CHUNK_SIZE, "1000");
+        return Integer.parseInt(stringValue);
+    }
+
+    private int scalarNumConsumerThreads() {
+        // num threads to read/process from consumer queue
+        String stringValue = propService.getStringValue(SCALAR_WORKER_TO_WORKER_CONSUMER_THREADS, "1");
         return Integer.parseInt(stringValue);
     }
 
