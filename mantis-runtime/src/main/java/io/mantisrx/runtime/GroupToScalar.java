@@ -56,7 +56,7 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
 
     GroupToScalar(GroupToScalarComputation<K, T, R> computation,
                   Config<K, T, R> config, Codec<K> inputKeyCodec, Codec<T> inputCodec) {
-        super(config.description, inputKeyCodec, inputCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency);
+        super(config.description, inputKeyCodec, inputCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency, config.useProactiveRouter);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }
@@ -80,6 +80,7 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
         private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
         private int concurrency = DEFAULT_STAGE_CONCURRENCY;
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
+        private boolean useProactiveRouter = false;
 
         /**
          * @param codec is netty reactivex Codec
@@ -126,6 +127,11 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
             return this;
         }
 
+        public Config<K, T, R> shouldUseProactiveRouter(boolean useProactiveRouter) {
+            this.useProactiveRouter = useProactiveRouter;
+            return this;
+        }
+
         public Codec<R> getCodec() {
             return codec;
         }
@@ -149,6 +155,9 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
             return this;
         }
 
+        public boolean getUseProactiveRouter() {
+            return useProactiveRouter;
+        }
     }
 
 }
