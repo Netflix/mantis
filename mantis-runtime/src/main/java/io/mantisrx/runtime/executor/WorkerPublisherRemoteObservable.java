@@ -55,15 +55,11 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
     private String jobName;
     private RouterFactory routerFactory;
 
-    public WorkerPublisherRemoteObservable(int serverPort,
-                                           String name, Observable<Integer> minConnectionsToSubscribe,
-                                           String jobName) {
-        this(serverPort, name, minConnectionsToSubscribe, jobName, new Routers());
+    public WorkerPublisherRemoteObservable(int serverPort, String name, String jobName) {
+        this(serverPort, name, jobName, new Routers());
     }
 
-    public WorkerPublisherRemoteObservable(int serverPort,
-                                           String name, Observable<Integer> minConnectionsToSubscribe,
-                                           String jobName, RouterFactory routerFactory) {
+    public WorkerPublisherRemoteObservable(int serverPort, String name, String jobName, RouterFactory routerFactory) {
         this.name = name;
         this.serverPort = serverPort;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
