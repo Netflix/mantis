@@ -55,6 +55,8 @@ import rx.subscriptions.CompositeSubscription;
 /* package */ class WorkerMetricHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkerMetricHandler.class);
+    private static final int DEFAULT_METRICS_INTERVAL_SECONDS = 30;
+
     private final PublishSubject<MetricData> metricDataSubject = PublishSubject.create();
     private final Observer<JobAutoScaler.Event> jobAutoScaleObserver;
     private final MantisMasterGateway masterClientApi;
@@ -62,6 +64,7 @@ import rx.subscriptions.CompositeSubscription;
     private final MetricAggregator metricAggregator;
     private final Map<Integer, Integer> numWorkersByStage = new HashMap<>();
     private final Map<Integer, List<WorkerHost>> workerHostsByStage = new HashMap<>();
+    private final int metricsIntervalSeconds;
 
     private final String jobId;
     private final Func1<Integer, Integer> lookupNumWorkersByStage = stage -> {
@@ -82,12 +85,22 @@ import rx.subscriptions.CompositeSubscription;
                                final MantisMasterGateway masterClientApi,
                                final AutoScaleMetricsConfig autoScaleMetricsConfig,
                                final JobAutoscalerManager jobAutoscalerManager) {
+        this(jobId, jobAutoScaleObserver, masterClientApi, autoScaleMetricsConfig, jobAutoscalerManager, DEFAULT_METRICS_INTERVAL_SECONDS);
+    }
+
+    public WorkerMetricHandler(final String jobId,
+                               final Observer<JobAutoScaler.Event> jobAutoScaleObserver,
+                               final MantisMasterGateway masterClientApi,
+                               final AutoScaleMetricsConfig autoScaleMetricsConfig,
+                               final JobAutoscalerManager jobAutoscalerManager,
+                               final int metricsIntervalSeconds) {
         this.jobId = jobId;
         this.jobAutoScaleObserver = jobAutoScaleObserver;
         this.masterClientApi = masterClientApi;
         this.autoScaleMetricsConfig = autoScaleMetricsConfig;
         this.metricAggregator = new MetricAggregator(autoScaleMetricsConfig);
         this.jobAutoscalerManager = jobAutoscalerManager;
+        this.metricsIntervalSeconds = metricsIntervalSeconds;
     }
 
     public Observer<MetricData> initAndGetMetricDataObserver() {
@@ -129,13 +142,17 @@ import rx.subscriptions.CompositeSubscription;
 
         private final Map<Integer, Integer> workerNumberByIndex = new HashMap<>();
 
+        private final int metricsIntervalSeconds;
+
         public StageMetricDataOperator(final int stage,
                                        final Func1<Integer, Integer> numStageWorkersFn,
-                                       final AutoScaleMetricsConfig autoScaleMetricsConfig) {
+                                       final AutoScaleMetricsConfig autoScaleMetricsConfig,
+                                       final int metricsIntervalSeconds) {
             logger.debug("setting operator for stage " + stage);
             this.stage = stage;
             this.numStageWorkersFn = numStageWorkersFn;
             this.autoScaleMetricsConfig = autoScaleMetricsConfig;
+            this.metricsIntervalSeconds = metricsIntervalSeconds;
 
             Action1<Integer> workerResubmitFunc = workerIndex -> {
                 try {
@@ -261,8 +278,6 @@ import rx.subscriptions.CompositeSubscription;
                 }
             }
         }
-
-        private static final int metricsIntervalSeconds = 30; // TODO make it configurable
 
         @Override
         public Subscriber<? super MetricData> call(final Subscriber<? super Object> child) {
@@ -510,7 +525,7 @@ import rx.subscriptions.CompositeSubscription;
                 .doOnNext(go -> {
                     final Integer stage = go.getKey();
                     final Subscription s = go
-                            .lift(new StageMetricDataOperator(stage, lookupNumWorkersByStage, autoScaleMetricsConfig))
+                            .lift(new StageMetricDataOperator(stage, lookupNumWorkersByStage, autoScaleMetricsConfig, metricsIntervalSeconds))
                             .subscribe();
                     logger.info("adding subscription for stage {} StageMetricDataOperator", stage);
                     stageSubscriptions.add(s);
