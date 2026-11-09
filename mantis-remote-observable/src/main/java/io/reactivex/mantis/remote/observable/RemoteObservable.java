@@ -20,6 +20,7 @@ import com.mantisrx.common.utils.NettyUtils;
 import io.mantisrx.common.MantisGroup;
 import io.mantisrx.common.codec.Decoder;
 import io.mantisrx.common.codec.Encoder;
+import io.mantisrx.common.util.FilteredDeserializer;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -34,11 +35,8 @@ import io.reactivex.mantis.remote.observable.ingress.IngressPolicies;
 import io.reactivex.mantis.remote.observable.ingress.IngressPolicy;
 import io.reactivx.mantis.operators.DropOperator;
 import io.reactivx.mantis.operators.GroupedObservableUtils;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
@@ -642,26 +640,6 @@ public class RemoteObservable {
     }
 
     static Throwable fromBytesToThrowable(byte[] bytes) {
-        Throwable t = null;
-        ByteArrayInputStream bis = null;
-        ObjectInput in = null;
-        try {
-            bis = new ByteArrayInputStream(bytes);
-            in = new ObjectInputStream(bis);
-            t = (Throwable) in.readObject();
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e1) {
-            throw new RuntimeException(e1);
-        } finally {
-            try {
-                if (bis != null) {bis.close();}
-                if (in != null) {in.close();}
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return t;
+        return FilteredDeserializer.readThrowable(bytes);
     }
 }
