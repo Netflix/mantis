@@ -28,11 +28,13 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
 import io.reactivx.mantis.operators.DropOperator;
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -335,7 +337,7 @@ public abstract class PushServer<T, R> {
                 .buffer(200, TimeUnit.MILLISECONDS)
                 .flatMap((List<List<byte[]>> bufferOfBuffers) -> {
                         if (bufferOfBuffers != null && !bufferOfBuffers.isEmpty()) {
-                            ByteBuffer blockBuffer = null;
+                            ByteBuf blockBuffer = null;
 
                             int size = 0;
                             for (List<byte[]> buffer : bufferOfBuffers) {
@@ -352,47 +354,16 @@ public abstract class PushServer<T, R> {
                                             ? CompressionUtils.compressAndBase64EncodeBytes(bufferOfBuffers, useSnappy)
                                             : CompressionUtils.compressAndBase64EncodeBytes(bufferOfBuffers, useSnappy, delimiter);
 
-                                        blockBuffer = ByteBuffer.allocate(prefix.length + compressedData.length + nwnw.length);
-                                        blockBuffer.put(prefix);
-                                        blockBuffer.put(compressedData);
-                                        blockBuffer.put(nwnw);
+                                        blockBuffer = wrap(prefix, compressedData, nwnw);
                                     } else {
-                                        int totalBytes = 0;
-                                        for (List<byte[]> buffer : bufferOfBuffers) {
-
-                                            for (byte[] data : buffer) {
-                                                totalBytes += (data.length + prefix.length + nwnw.length);
-                                            }
-                                        }
-                                        byte[] block = new byte[totalBytes];
-                                        blockBuffer = ByteBuffer.wrap(block);
-                                        for (List<byte[]> buffer : bufferOfBuffers) {
-                                            for (byte[] data : buffer) {
-                                                blockBuffer.put(prefix);
-                                                blockBuffer.put(data);
-                                                blockBuffer.put(nwnw);
-                                            }
-                                        }
+                                        blockBuffer = wrapDelimited(bufferOfBuffers, batchSize, prefix, nwnw);
                                     }
                                 } else {
-                                    int totalBytes = 0;
-                                    for (List<byte[]> buffer : bufferOfBuffers) {
-
-                                        for (byte[] data : buffer) {
-                                            totalBytes += (data.length);
-                                        }
-                                    }
-                                    byte[] block = new byte[totalBytes];
-                                    blockBuffer = ByteBuffer.wrap(block);
-                                    for (List<byte[]> buffer : bufferOfBuffers) {
-                                        for (byte[] data : buffer) {
-                                            blockBuffer.put(data);
-                                        }
-                                    }
+                                    blockBuffer = wrapBare(bufferOfBuffers, batchSize);
                                 }
                                 return
                                     writer
-                                        .writeBytesAndFlush(blockBuffer.array())
+                                        .writeBytesAndFlush(blockBuffer)
                                         .retry(writeRetryCount)
                                         .doOnError((Throwable t1) -> failedToWriteBatch(connection, batchSize, legacyDroppedWrites, metaMsgSubject))
                                         .doOnCompleted(() -> {
@@ -415,6 +386,100 @@ public abstract class PushServer<T, R> {
                         return Observable.empty();
                     }
                 );
+    }
+
+    /**
+     * Largest number of components a batch may be written as before it is concatenated instead.
+     *
+     * <p>A gathering write is capped at 1024 iovecs by the JDK, so past that point a composite
+     * buffer stops buying anything: the channel has to make several write syscalls regardless, and
+     * the per-component bookkeeping costs more than the copy it was avoiding. Batches that large are
+     * rare — the fleet average is tens of events per 200ms window — so this is a safety valve, not
+     * the common path.
+     */
+    static final int MAX_WRAPPED_COMPONENTS = 1024;
+
+    /**
+     * Presents {@code parts} as one logical buffer without copying their contents.
+     *
+     * <p>Note the explicit component count: {@link Unpooled#wrappedBuffer(byte[]...)} defaults to a
+     * limit of 16 and silently <em>consolidates</em> — that is, copies everything into one array —
+     * once a composite exceeds it, which would reintroduce exactly the copy this avoids.
+     */
+    static ByteBuf wrap(byte[]... parts) {
+        return Unpooled.wrappedBuffer(Math.max(parts.length, 1), parts);
+    }
+
+    /**
+     * Wraps every event in the batch back to back, as the non-SSE protocol frames them.
+     *
+     * @param events the event count already computed by the caller, used only to size the component
+     *               array; the actual components come from iterating the batch, so a stale count
+     *               cannot produce a short or padded buffer.
+     */
+    static ByteBuf wrapBare(List<List<byte[]>> bufferOfBuffers, int events) {
+        if (events > MAX_WRAPPED_COMPONENTS) {
+            return copyBare(bufferOfBuffers);
+        }
+        List<byte[]> parts = new ArrayList<>(events);
+        for (List<byte[]> buffer : bufferOfBuffers) {
+            parts.addAll(buffer);
+        }
+        return wrap(parts.toArray(new byte[0][]));
+    }
+
+    /** Wraps every event in the batch surrounded by the SSE {@code prefix} and {@code suffix}. */
+    static ByteBuf wrapDelimited(List<List<byte[]>> bufferOfBuffers, int events,
+                                 byte[] prefix, byte[] suffix) {
+        if (events > MAX_WRAPPED_COMPONENTS / 3) {
+            return copyDelimited(bufferOfBuffers, prefix, suffix);
+        }
+        List<byte[]> parts = new ArrayList<>(events * 3);
+        for (List<byte[]> buffer : bufferOfBuffers) {
+            for (byte[] data : buffer) {
+                parts.add(prefix);
+                parts.add(data);
+                parts.add(suffix);
+            }
+        }
+        return wrap(parts.toArray(new byte[0][]));
+    }
+
+    /** Concatenating fallback for {@link #wrapBare}; byte-for-byte identical output. */
+    static ByteBuf copyBare(List<List<byte[]>> bufferOfBuffers) {
+        int totalBytes = 0;
+        for (List<byte[]> buffer : bufferOfBuffers) {
+            for (byte[] data : buffer) {
+                totalBytes += data.length;
+            }
+        }
+        ByteBuf block = Unpooled.buffer(totalBytes, totalBytes);
+        for (List<byte[]> buffer : bufferOfBuffers) {
+            for (byte[] data : buffer) {
+                block.writeBytes(data);
+            }
+        }
+        return block;
+    }
+
+    /** Concatenating fallback for {@link #wrapDelimited}; byte-for-byte identical output. */
+    static ByteBuf copyDelimited(List<List<byte[]>> bufferOfBuffers,
+                                 byte[] prefix, byte[] suffix) {
+        int totalBytes = 0;
+        for (List<byte[]> buffer : bufferOfBuffers) {
+            for (byte[] data : buffer) {
+                totalBytes += data.length + prefix.length + suffix.length;
+            }
+        }
+        ByteBuf block = Unpooled.buffer(totalBytes, totalBytes);
+        for (List<byte[]> buffer : bufferOfBuffers) {
+            for (byte[] data : buffer) {
+                block.writeBytes(prefix);
+                block.writeBytes(data);
+                block.writeBytes(suffix);
+            }
+        }
+        return block;
     }
 
     protected void failedToWriteBatch(AsyncConnection<T> connection,
