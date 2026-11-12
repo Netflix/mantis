@@ -16,6 +16,9 @@
 
 package io.mantisrx.runtime.sink;
 
+import static io.mantisrx.common.SystemParameters.SSE_CONNECTION_BUFFER_INTERVAL_MS;
+import static io.mantisrx.common.SystemParameters.SSE_CONNECTION_BUFFER_MODE;
+
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Metadata;
@@ -169,6 +172,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
             if (predicate != null) {
                 config.predicate(predicate.getPredicate());
             }
+            configureConnectionBuffer(config, propService);
             pushServerSse = PushServers.infiniteStreamSse(config.build(), observable,
                 requestPreprocessor, requestPostprocessor,
                 subscribeProcessor, context, true);
@@ -194,6 +198,13 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
             httpServer.start();
         }
         portObservable.onNext(port);
+    }
+
+    static <T> void configureConnectionBuffer(ServerConfig.Builder<T> config, MantisPropertiesLoader properties) {
+        config.connectionBufferMode(ServerConfig.ConnectionBufferMode.fromString(
+                properties.getStringValue(SSE_CONNECTION_BUFFER_MODE, "periodic")))
+            .connectionBufferIntervalMs(Integer.parseInt(
+                properties.getStringValue(SSE_CONNECTION_BUFFER_INTERVAL_MS, "200")));
     }
 
     @Override

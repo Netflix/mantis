@@ -17,6 +17,8 @@
 package io.mantisrx.common;
 
 public final class SystemParameters {
+    public static final String SSE_CONNECTION_BUFFER_MODE = "mantis.sse.connectionBufferMode";
+    public static final String SSE_CONNECTION_BUFFER_INTERVAL_MS = "mantis.sse.connectionBufferIntervalMs";
     public static final String JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM = "mantis.jobmaster.autoscale.metric";
     public static final String JOB_MASTER_AUTOSCALE_CONFIG_SYSTEM_PARAM = "mantis.jobmaster.autoscale.adaptive.config";
     public static final String JOB_MASTER_CLUTCH_SYSTEM_PARAM = "mantis.jobmaster.clutch.config";
