@@ -24,6 +24,7 @@ import io.mantisrx.runtime.parameter.type.BooleanParameter;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validation;
+import io.mantisrx.runtime.parameter.validator.Validator;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,6 +43,24 @@ public class ParameterUtils {
     static final Map<String, ParameterDefinition<?>> systemParams = new ConcurrentHashMap<>();
 
     static {
+        ParameterDefinition<String> connectionBufferMode = new StringParameter()
+                .name(SSE_CONNECTION_BUFFER_MODE)
+                .validator(new Validator<String>("periodic or activity", value ->
+                        "periodic".equals(value) || "activity".equals(value)
+                                ? Validation.passed() : Validation.failed("Expected periodic or activity")))
+                .defaultValue("periodic")
+                .description("Modern SSE connection buffering mode, read at server startup")
+                .build();
+        systemParams.put(connectionBufferMode.getName(), connectionBufferMode);
+
+        ParameterDefinition<Integer> connectionBufferInterval = new IntParameter()
+                .name(SSE_CONNECTION_BUFFER_INTERVAL_MS)
+                .validator(Validators.range(1, Integer.MAX_VALUE))
+                .defaultValue(200)
+                .description("Modern SSE connection buffer window in milliseconds, read at server startup")
+                .build();
+        systemParams.put(connectionBufferInterval.getName(), connectionBufferInterval);
+
         ParameterDefinition<Integer> keyBuffer = new IntParameter()
                 .name("mantis.w2w.toKeyBuffer")
                 .validator(Validators.range(1, 100000))

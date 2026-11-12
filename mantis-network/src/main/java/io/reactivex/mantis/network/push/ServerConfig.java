@@ -19,10 +19,29 @@ package io.reactivex.mantis.network.push;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import rx.functions.Func1;
 
 
 public class ServerConfig<T> {
+
+    /** Connection window policy, independent of the queue chunking policy. */
+    public enum ConnectionBufferMode {
+        PERIODIC, ACTIVITY;
+
+        public static ConnectionBufferMode fromString(String value) {
+            if ("periodic".equals(value)) {
+                return PERIODIC;
+            }
+            if ("activity".equals(value)) {
+                return ACTIVITY;
+            }
+            throw new IllegalArgumentException("Connection buffer mode must be periodic or activity");
+        }
+    }
+
+    private final ConnectionBufferMode connectionBufferMode;
+    private final int connectionBufferIntervalMs;
 
     private String name;
     private int port;
@@ -38,6 +57,8 @@ public class ServerConfig<T> {
     private boolean useSpscQueue = false;
 
     public ServerConfig(Builder<T> builder) {
+        this.connectionBufferMode = builder.connectionBufferMode;
+        this.connectionBufferIntervalMs = builder.connectionBufferIntervalMs;
         this.name = builder.name;
         this.port = builder.port;
         this.bufferCapacity = builder.bufferCapacity;
@@ -100,7 +121,33 @@ public class ServerConfig<T> {
         return useSpscQueue;
     }
 
+    public ConnectionBufferMode getConnectionBufferMode() {
+        return connectionBufferMode;
+    }
+
+    public int getConnectionBufferIntervalMs() {
+        return connectionBufferIntervalMs;
+    }
+
     public static class Builder<T> {
+
+        private ConnectionBufferMode connectionBufferMode = ConnectionBufferMode.PERIODIC;
+        private int connectionBufferIntervalMs = 200;
+
+        /** Select periodic windows or windows started by the first chunk after an idle period. */
+        public Builder<T> connectionBufferMode(ConnectionBufferMode mode) {
+            this.connectionBufferMode = Objects.requireNonNull(mode, "connectionBufferMode");
+            return this;
+        }
+
+        /** Set the connection window duration in milliseconds, independently of queue chunking. */
+        public Builder<T> connectionBufferIntervalMs(int intervalMs) {
+            if (intervalMs <= 0) {
+                throw new IllegalArgumentException("connectionBufferIntervalMs must be positive");
+            }
+            this.connectionBufferIntervalMs = intervalMs;
+            return this;
+        }
 
         private String name;
         private int port;

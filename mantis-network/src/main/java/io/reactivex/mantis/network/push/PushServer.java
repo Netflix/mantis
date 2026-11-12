@@ -50,6 +50,7 @@ import mantis.io.reactivex.netty.server.RxServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
+import rx.schedulers.Schedulers;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Func1;
@@ -75,6 +76,7 @@ public abstract class PushServer<T, R> {
     private Observable<String> serverSignals;
     private String serverName;
     private final int maxNotWritableTimeSec;
+    private final ConnectionBuffer<List<byte[]>> connectionBuffer;
     private final ScheduledExecutorService scheduledExecutorService;
     private final MetricsRegistry metricsRegistry;
 
@@ -84,6 +86,8 @@ public abstract class PushServer<T, R> {
         this.serverSignals = serverSignals;
         serverName = config.getName();
         maxNotWritableTimeSec = config.getMaxNotWritableTimeSec();
+        connectionBuffer = new ConnectionBuffer<>(config.getConnectionBufferMode(),
+            config.getConnectionBufferIntervalMs(), Schedulers.computation());
         metricsRegistry = config.getMetricsRegistry();
 
         outboundBuffer = new MonitoredQueue<T>(serverName, config.getBufferCapacity(), config.useSpscQueue());
@@ -332,7 +336,7 @@ public abstract class PushServer<T, R> {
                     }
                 ) // per connection buffer
                 .lift(new DisableBackPressureOperator<List<byte[]>>())
-                .buffer(200, TimeUnit.MILLISECONDS)
+                .compose(connectionBuffer)
                 .flatMap((List<List<byte[]>> bufferOfBuffers) -> {
                         if (bufferOfBuffers != null && !bufferOfBuffers.isEmpty()) {
                             ByteBuffer blockBuffer = null;

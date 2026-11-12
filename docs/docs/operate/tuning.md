@@ -106,6 +106,49 @@ bottleneck. In this case, you can increase `stageConcurrency` to increase proces
     exceed this number, then you will have idle consumers wasting resources which means adding more
     workers to your Kafka Source Job will not have any positive effect.
 
+## SSE connection buffering
+
+The modern `ServerSentEventsSink` supports per-job connection buffer settings:
+
+| Job parameter | Default | Accepted values |
+| --- | --- | --- |
+| `mantis.sse.connectionBufferMode` | `periodic` | `periodic`, `activity` |
+| `mantis.sse.connectionBufferIntervalMs` | `200` | Positive integer milliseconds |
+
+`periodic` retains the existing recurring connection timer, including when a connection
+is idle. `activity` starts a fixed window when the first chunk arrives. Further chunks
+join that window without resetting its deadline. After the window flushes, no further
+connection buffer timer is scheduled until another chunk arrives. Each connection has
+its own window. Completion flushes pending chunks; errors discard pending chunks.
+
+For example, include these job parameters to select activity-driven 100 ms buffering:
+
+```json
+{
+  "parameters": [
+    {"name": "mantis.sse.connectionBufferMode", "value": "activity"},
+    {"name": "mantis.sse.connectionBufferIntervalMs", "value": "100"}
+  ]
+}
+```
+
+An interval of `150` selects the same policy with a 150 ms window. These settings are
+read when the SSE server is constructed; submit a new job or restart its workers to
+apply changes. They do not automatically adapt to traffic.
+
+Activity mode avoids connection buffer timer callbacks during idle periods, which can
+help workloads with sparse connections. Its first chunk waits the full window, whereas
+a chunk in periodic mode waits only until the next periodic tick. Shorter windows can
+reduce buffering latency but produce smaller batches and more writes on busy streams.
+Evaluate CPU, write rate, batch size, end-to-end latency, and drops for your workload
+before selecting a setting. This window is additional to queue chunking controlled by
+`mantis.sse.batchInterval` and chunk-size settings; it is not an end-to-end latency bound.
+
+The job parameters apply to the modern SSE implementation (`mantis.sse.newServerImpl`),
+which is enabled by default. Legacy SSE is unaffected. Other `PushServer` users can
+configure `ServerConfig.Builder.connectionBufferMode(...)` and
+`connectionBufferIntervalMs(...)` directly; their defaults remain periodic 200 ms.
+
 <!-- Do not edit below this line -->
 <!-- START -->
 <!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->
