@@ -176,7 +176,7 @@ public class StreamManager {
 
                 if (numSubs > maxSubs) {
                     // Cleanup any subscriptions we might have added to another stream before hitting
-                    // the limit on subs for this stream.
+                    // the limit on subs for this stream. This also resets the active query gauges.
                     removeStreamSubscription(sub);
                     LOG.warn("QUERY SUBSCRIPTION REJECTED: Number of subscriptions for stream {} exceeded max {}. " +
                             "Increase (default mre.publish.max.subscriptions.per.stream.default or " +
@@ -184,6 +184,8 @@ public class StreamManager {
                         stream, maxSubs, sub);
                     getStreamMetrics(stream).ifPresent(m ->
                         m.getMantisQueryRejectedCounter().increment());
+                    // The query is rejected as a whole, do not add it to the remaining streams.
+                    return;
                 }
 
                 getStreamMetrics(stream).ifPresent(m ->
