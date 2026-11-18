@@ -222,6 +222,41 @@ class StreamManagerTest {
     }
 
     @Test
+    void testRejectedSubscriptionIsNotAddedToLaterStreams() {
+        final String fullStream = "fullStream";
+        final String otherStream = "otherStream";
+        config.setProperty(
+                String.format(SampleArchaiusMrePublishConfiguration.MAX_SUBS_PER_STREAM_FORMAT, fullStream), 1);
+        streamManager.registerStream(fullStream);
+        streamManager.registerStream(otherStream);
+
+        Subscription existing = SubscriptionFactory
+                .getSubscription("existing", "SELECT * FROM " + fullStream).get();
+        streamManager.addStreamSubscription(existing);
+
+        // the limit is hit on the first subject, so the whole query must be rejected
+        Subscription multi = SubscriptionFactory
+                .getSubscription("multi", "SELECT * FROM " + fullStream + ", " + otherStream).get();
+        streamManager.addStreamSubscription(multi);
+
+        assertEquals(1, streamManager.getStreamSubscriptions(fullStream).size());
+        assertTrue(streamManager.getStreamSubscriptions(fullStream).contains(existing));
+        assertFalse(streamManager.hasSubscriptions(otherStream));
+        assertEquals(1.0,
+                streamManager.getStreamMetrics(fullStream).get().getMantisActiveQueryCountGauge().get());
+        assertEquals(0.0,
+                streamManager.getStreamMetrics(otherStream).get().getMantisActiveQueryCountGauge().get());
+
+        // same query with the subjects in the other order behaves the same way
+        Subscription reversed = SubscriptionFactory
+                .getSubscription("reversed", "SELECT * FROM " + otherStream + ", " + fullStream).get();
+        streamManager.addStreamSubscription(reversed);
+
+        assertEquals(1, streamManager.getStreamSubscriptions(fullStream).size());
+        assertFalse(streamManager.hasSubscriptions(otherStream));
+    }
+
+    @Test
     void testStreamLimits() throws InterruptedException {
         final String streamName = "testStream";
         // create stream queue
